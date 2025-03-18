@@ -1,0 +1,189 @@
+{
+  "program_id": "11111111111111111111111111111111",
+  "instructions": [
+    {
+      "type": "payer",
+      "src_ix_name": "create_account",
+      "src_discriminator": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_signer",
+          "index": 0,
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "index_map": [
+        -1,
+        1
+      ]
+    },
+    {
+      "src_ix_name": "assign",
+      "src_discriminator": [
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "transfer",
+      "src_discriminator": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "dst_ix_name": "system_transfer",
+      "dst_discriminator": [
+        167,
+        164,
+        195,
+        155,
+        219,
+        152,
+        191,
+        230
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        -1,
+        4
+      ]
+    },
+    {
+      "type": "payer",
+      "src_ix_name": "create_account_with_seed",
+      "src_discriminator": [
+        3,
+        0,
+        0,
+        0
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_signer",
+          "index": 0,
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "index_map": [
+        -1,
+        1
+      ]
+    },
+    {
+      "src_ix_name": "advance_nonce_account",
+      "src_discriminator": [
+        4,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_nonce_account",
+      "src_discriminator": [
+        5,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "initialize_nonce_account",
+      "src_discriminator": [
+        6,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "authorize_nonce_account",
+      "src_discriminator": [
+        7,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "allocate",
+      "src_discriminator": [
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "allocate_with_seed",
+      "src_discriminator": [
+        9,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "assign_with_seed",
+      "src_discriminator": [
+        10,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "transfer_with_seed",
+      "src_discriminator": [
+        11,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "src_ix_name": "upgrade_nonce_account",
+      "src_discriminator": [
+        12,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "program_id": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+  "instructions": [
+    {
+      "type": "payer",
+      "src_ix_name": "create",
+      "src_discriminator": [
+        0
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_signer",
+          "index": 0,
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "index_map": [
+        -1,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "type": "payer",
+      "src_ix_name": "create_idempotent",
+      "src_discriminator": [
+        1
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_signer",
+          "index": 0,
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "index_map": [
+        -1,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "src_ix_name": "recover_nested",
+      "src_discriminator": [
+        2
+      ]
+    }
+  ]
+}

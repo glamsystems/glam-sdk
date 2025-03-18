@@ -1,0 +1,290 @@
+{
+  "program_id": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  "instructions": [
+    {
+      "src_ix_name": "initialize_mint",
+      "src_discriminator": [
+        0
+      ]
+    },
+    {
+      "src_ix_name": "initialize_account",
+      "src_discriminator": [
+        1
+      ]
+    },
+    {
+      "src_ix_name": "initialize_multisig",
+      "src_discriminator": [
+        2
+      ]
+    },
+    {
+      "src_ix_name": "transfer",
+      "src_discriminator": [
+        3
+      ],
+      "dst_ix_name": "token_transfer",
+      "dst_discriminator": [
+        210,
+        16,
+        52,
+        5,
+        247,
+        164,
+        59,
+        18
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        -1
+      ]
+    },
+    {
+      "src_ix_name": "Approve",
+      "src_discriminator": [
+        4
+      ]
+    },
+    {
+      "src_ix_name": "Revoke",
+      "src_discriminator": [
+        5
+      ]
+    },
+    {
+      "src_ix_name": "set_authority",
+      "src_discriminator": [
+        6
+      ]
+    },
+    {
+      "src_ix_name": "mint_to",
+      "src_discriminator": [
+        7
+      ]
+    },
+    {
+      "src_ix_name": "burn",
+      "src_discriminator": [
+        8
+      ]
+    },
+    {
+      "src_ix_name": "close_account",
+      "src_discriminator": [
+        9
+      ],
+      "dst_ix_name": "token_close_account",
+      "dst_discriminator": [
+        240,
+        32,
+        179,
+        154,
+        96,
+        110,
+        43,
+        79
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [
+        {
+          "account": "11111111111111111111111111111111",
+          "index": 4,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        5,
+        -1,
+        -1
+      ]
+    },
+    {
+      "src_ix_name": "freeze_account",
+      "src_discriminator": [
+        10
+      ]
+    },
+    {
+      "src_ix_name": "thaw_account",
+      "src_discriminator": [
+        11
+      ]
+    },
+    {
+      "src_ix_name": "transfer_checked",
+      "src_discriminator": [
+        12
+      ],
+      "dst_ix_name": "token_transfer_checked",
+      "dst_discriminator": [
+        169,
+        178,
+        117,
+        156,
+        169,
+        191,
+        199,
+        116
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        6,
+        -1
+      ]
+    },
+    {
+      "src_ix_name": "approve_checked",
+      "src_discriminator": [
+        13
+      ]
+    },
+    {
+      "src_ix_name": "mint_to_checked",
+      "src_discriminator": [
+        14
+      ]
+    },
+    {
+      "src_ix_name": "burn_checked",
+      "src_discriminator": [
+        15
+      ]
+    },
+    {
+      "src_ix_name": "initialize_account2",
+      "src_discriminator": [
+        16
+      ]
+    },
+    {
+      "src_ix_name": "sync_native",
+      "src_discriminator": [
+        17
+      ]
+    },
+    {
+      "src_ix_name": "initialize_account3",
+      "src_discriminator": [
+        18
+      ]
+    },
+    {
+      "src_ix_name": "initialize_multisig2",
+      "src_discriminator": [
+        19
+      ]
+    },
+    {
+      "src_ix_name": "initialize_mint2",
+      "src_discriminator": [
+        20
+      ]
+    },
+    {
+      "src_ix_name": "get_account_data_size",
+      "src_discriminator": [
+        21
+      ]
+    },
+    {
+      "src_ix_name": "initialize_immutable_owner",
+      "src_discriminator": [
+        22
+      ]
+    },
+    {
+      "src_ix_name": "amount_to_ui_amount",
+      "src_discriminator": [
+        23
+      ]
+    },
+    {
+      "src_ix_name": "ui_amount_to_amount",
+      "src_discriminator": [
+        24
+      ]
+    }
+  ]
+}

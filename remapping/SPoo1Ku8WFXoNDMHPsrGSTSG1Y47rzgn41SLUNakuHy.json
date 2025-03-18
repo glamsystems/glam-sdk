@@ -1,0 +1,584 @@
+{
+  "program_id": [
+    "SVSPxpvHdN29nkVg9rPapPNDddN5DipNLRUFhyjFThE",
+    "SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy",
+    "SP12tWFxD9oJsVWNavTTBZvMbA6gkAmxtVgxdqvyvhY",
+    "SPMBzsVUuoHA4Jm6KunbsotaahvVikZs1JyTW6iJvbn"
+  ],
+  "instructions": [
+    {
+      "src_ix_name": "Initialize",
+      "src_discriminator": [
+        0
+      ]
+    },
+    {
+      "src_ix_name": "add_validator_to_pool",
+      "src_discriminator": [
+        1
+      ]
+    },
+    {
+      "src_ix_name": "remove_validator_from_pool",
+      "src_discriminator": [
+        2
+      ]
+    },
+    {
+      "src_ix_name": "decrease_validator_stake",
+      "src_discriminator": [
+        3
+      ]
+    },
+    {
+      "src_ix_name": "increase_validator_stake",
+      "src_discriminator": [
+        4
+      ]
+    },
+    {
+      "src_ix_name": "set_preferred_validator",
+      "src_discriminator": [
+        5
+      ]
+    },
+    {
+      "src_ix_name": "update_validator_list_balance",
+      "src_discriminator": [
+        6
+      ]
+    },
+    {
+      "src_ix_name": "update_stake_pool_balance",
+      "src_discriminator": [
+        7
+      ]
+    },
+    {
+      "src_ix_name": "cleanup_removed_validator_entries",
+      "src_discriminator": [
+        8
+      ]
+    },
+    {
+      "src_ix_name": "deposit_stake",
+      "src_discriminator": [
+        9
+      ],
+      "dst_ix_name": "stake_pool_deposit_stake",
+      "dst_discriminator": [
+        212,
+        158,
+        195,
+        174,
+        179,
+        105,
+        9,
+        97
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_stake",
+      "src_discriminator": [
+        10
+      ],
+      "dst_ix_name": "stake_pool_withdraw_stake",
+      "dst_discriminator": [
+        7,
+        70,
+        250,
+        22,
+        49,
+        1,
+        143,
+        1
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        -1,
+        -1,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ]
+    },
+    {
+      "src_ix_name": "set_manager",
+      "src_discriminator": [
+        11
+      ]
+    },
+    {
+      "src_ix_name": "set_fee",
+      "src_discriminator": [
+        12
+      ]
+    },
+    {
+      "src_ix_name": "set_staker",
+      "src_discriminator": [
+        13
+      ]
+    },
+    {
+      "src_ix_name": "deposit_sol",
+      "src_discriminator": [
+        14
+      ],
+      "dst_ix_name": "stake_pool_deposit_sol",
+      "dst_discriminator": [
+        147,
+        187,
+        91,
+        151,
+        158,
+        187,
+        247,
+        79
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        6,
+        -1,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "src_ix_name": "set_funding_authority",
+      "src_discriminator": [
+        15
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_sol",
+      "src_discriminator": [
+        16
+      ],
+      "dst_ix_name": "stake_pool_withdraw_sol",
+      "dst_discriminator": [
+        179,
+        100,
+        204,
+        0,
+        192,
+        46,
+        233,
+        181
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6,
+        7,
+        -1,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "src_ix_name": "create_token_metadata",
+      "src_discriminator": [
+        17
+      ]
+    },
+    {
+      "src_ix_name": "update_token_metadata",
+      "src_discriminator": [
+        18
+      ]
+    },
+    {
+      "src_ix_name": "increase_additional_validator_stake",
+      "src_discriminator": [
+        19
+      ]
+    },
+    {
+      "src_ix_name": "decrease_additional_validator_stake",
+      "src_discriminator": [
+        20
+      ]
+    },
+    {
+      "src_ix_name": "decrease_validator_stake_with_reserve",
+      "src_discriminator": [
+        21
+      ]
+    },
+    {
+      "src_ix_name": "Redelegate",
+      "src_discriminator": [
+        22
+      ]
+    },
+    {
+      "src_ix_name": "deposit_stake_with_slippage",
+      "src_discriminator": [
+        23
+      ],
+      "dst_ix_name": "stake_pool_deposit_stake_with_slippage",
+      "dst_discriminator": [
+        185,
+        104,
+        64,
+        97,
+        108,
+        243,
+        239,
+        165
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_stake_with_slippage",
+      "src_discriminator": [
+        24
+      ],
+      "dst_ix_name": "stake_pool_withdraw_stake_with_slippage",
+      "dst_discriminator": [
+        74,
+        83,
+        151,
+        22,
+        32,
+        149,
+        154,
+        141
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        -1,
+        -1,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ]
+    },
+    {
+      "src_ix_name": "deposit_sol_with_slippage",
+      "src_discriminator": [
+        25
+      ],
+      "dst_ix_name": "stake_pool_deposit_sol_with_slippage",
+      "dst_discriminator": [
+        57,
+        21,
+        43,
+        19,
+        86,
+        36,
+        25,
+        172
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        6,
+        -1,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_sol_with_slippage",
+      "src_discriminator": [
+        26
+      ],
+      "dst_ix_name": "stake_pool_withdraw_sol_with_slippage",
+      "dst_discriminator": [
+        210,
+        92,
+        86,
+        93,
+        123,
+        17,
+        117,
+        89
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6,
+        7,
+        -1,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    }
+  ]
+}
