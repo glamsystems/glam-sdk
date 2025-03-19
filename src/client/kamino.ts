@@ -218,7 +218,7 @@ export class KaminoLendingClient {
   getUserMetadataPda(owner: PublicKey) {
     const [userMetadataPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("user_meta"), owner.toBuffer()],
-      kLendProgramId.staging,
+      kLendProgramId.prod,
     );
     return userMetadataPda;
   }
@@ -228,13 +228,13 @@ export class KaminoLendingClient {
       Buffer.from([args.tag]),
       Buffer.from([args.id]),
       owner.toBuffer(),
-      lendingMarketMain.staging.toBuffer(),
+      lendingMarketMain.prod.toBuffer(),
       PublicKey.default.toBuffer(),
       PublicKey.default.toBuffer(),
     ];
     const [obligation, _] = PublicKey.findProgramAddressSync(
       seed,
-      kLendProgramId.staging,
+      kLendProgramId.prod,
     );
     return obligation;
   }
@@ -243,7 +243,7 @@ export class KaminoLendingClient {
     const [obligationFarm] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("user"),
-        reserveFarmState.staging.toBuffer(),
+        reserveFarmState.prod.toBuffer(),
         obligation.toBuffer(),
       ],
       KaminoFarmsProgramId,
@@ -268,10 +268,8 @@ export class KaminoLendingClient {
       .accounts({
         glamState: statePda,
         glamSigner: signer,
-        cpiProgram: kLendProgramId.staging,
-        obligationOwner: vault,
         obligation,
-        lendingMarket: lendingMarketMain.staging,
+        lendingMarket: lendingMarketMain.prod,
         seed1Account: new PublicKey(0),
         seed2Account: new PublicKey(0),
         ownerUserMetadata: userMetadata,
@@ -283,14 +281,12 @@ export class KaminoLendingClient {
       .accounts({
         glamState: statePda,
         glamSigner: signer,
-        cpiProgram: kLendProgramId.staging,
-        owner: vault,
         obligation,
-        lendingMarketAuthority: lendingMarketAuthority.staging,
-        reserve: solReserve.staging,
-        reserveFarmState: reserveFarmState.staging,
+        lendingMarketAuthority: lendingMarketAuthority.prod,
+        reserve: solReserve.prod,
+        reserveFarmState: reserveFarmState.prod,
         obligationFarm,
-        lendingMarket: lendingMarketMain.staging,
+        lendingMarket: lendingMarketMain.prod,
         farmsProgram: KaminoFarmsProgramId,
       })
       .instruction();
@@ -300,10 +296,8 @@ export class KaminoLendingClient {
       .accounts({
         glamState: statePda,
         glamSigner: signer,
-        cpiProgram: kLendProgramId.staging,
-        owner: vault,
         userMetadata,
-        referrerUserMetadata: kLendProgramId.staging, // none
+        referrerUserMetadata: kLendProgramId.prod, // none
       })
       .postInstructions([initObligationIx, initObligationFarmIx])
       .transaction();
@@ -331,21 +325,21 @@ export class KaminoLendingClient {
     const refreshIxs = [
       refreshReserve(
         {
-          reserve: solReserve.staging,
-          lendingMarket: lendingMarketMain.staging,
-          pythOracle: kLendProgramId.staging,
-          switchboardPriceOracle: kLendProgramId.staging,
-          switchboardTwapOracle: kLendProgramId.staging,
+          reserve: solReserve.prod,
+          lendingMarket: lendingMarketMain.prod,
+          pythOracle: kLendProgramId.prod,
+          switchboardPriceOracle: kLendProgramId.prod,
+          switchboardTwapOracle: kLendProgramId.prod,
           scopePrices,
         },
-        kLendProgramId.staging,
+        kLendProgramId.prod,
       ),
       refreshObligation(
         {
-          lendingMarket: lendingMarketMain.staging,
+          lendingMarket: lendingMarketMain.prod,
           obligation,
         },
-        kLendProgramId.staging,
+        kLendProgramId.prod,
       ),
       refreshObligationFarmsForReserve(
         { mode: 0 },
@@ -353,43 +347,44 @@ export class KaminoLendingClient {
           crank: this.base.getSigner(),
           baseAccounts: {
             obligation,
-            lendingMarketAuthority: lendingMarketAuthority.staging,
-            reserve: solReserve.staging,
-            reserveFarmState: reserveFarmState.staging,
+            lendingMarketAuthority: lendingMarketAuthority.prod,
+            reserve: solReserve.prod,
+            reserveFarmState: reserveFarmState.prod,
             obligationFarmUserState: obligationFarm,
-            lendingMarket: lendingMarketMain.staging,
+            lendingMarket: lendingMarketMain.prod,
           },
           farmsProgram: KaminoFarmsProgramId,
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
         },
-        kLendProgramId.staging,
+        kLendProgramId.prod,
       ),
     ];
 
     const tx = await this.base.program.methods
-      .kaminoLendingDepositReserveLiquidityAndObligationCollateral(
+      .kaminoLendingDepositReserveLiquidityAndObligationCollateralV2(
         new BN(amount),
       )
       .accounts({
         glamState: statePda,
         glamSigner: signer,
-        cpiProgram: kLendProgramId.staging,
-        owner: vault,
         obligation,
-        lendingMarket: lendingMarketMain.staging,
-        lendingMarketAuthority: lendingMarketAuthority.staging,
-        reserve: solReserve.staging,
+        lendingMarket: lendingMarketMain.prod,
+        lendingMarketAuthority: lendingMarketAuthority.prod,
+        reserve: solReserve.prod,
         reserveLiquidityMint: asset,
-        reserveLiquiditySupply: reserveLiquiditySupply.staging,
-        reserveCollateralMint: reserveCollateralMint.staging,
+        reserveLiquiditySupply: reserveLiquiditySupply.prod,
+        reserveCollateralMint: reserveCollateralMint.prod,
         reserveDestinationDepositCollateral:
-          reserveDestinationDepositCollateral.staging,
+          reserveDestinationDepositCollateral.prod,
         userSourceLiquidity: this.base.getVaultAta(statePda, asset),
-        placeholderUserDestinationCollateral: kLendProgramId.staging,
+        placeholderUserDestinationCollateral: kLendProgramId.prod,
         collateralTokenProgram: TOKEN_PROGRAM_ID,
         liquidityTokenProgram: TOKEN_PROGRAM_ID,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        obligationFarmUserState: obligationFarm,
+        reserveFarmState: reserveFarmState.prod,
+        farmsProgram: KaminoFarmsProgramId,
       })
       .preInstructions(refreshIxs) // 3 refresh ixs
       .postInstructions([refreshIxs[2]]) // 1 refresh ix

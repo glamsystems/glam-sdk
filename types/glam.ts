@@ -2895,16 +2895,16 @@ export type Glam = {
       "args": []
     },
     {
-      "name": "kaminoLendingDepositReserveLiquidityAndObligationCollateral",
+      "name": "kaminoLendingDepositReserveLiquidityAndObligationCollateralV2",
       "discriminator": [
-        31,
-        162,
-        4,
-        146,
-        60,
-        225,
-        15,
-        0
+        93,
+        120,
+        106,
+        112,
+        40,
+        45,
+        84,
+        32
       ],
       "accounts": [
         {
@@ -2937,11 +2937,8 @@ export type Glam = {
           "signer": true
         },
         {
-          "name": "cpiProgram"
-        },
-        {
-          "name": "owner",
-          "writable": true
+          "name": "cpiProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "obligation",
@@ -2958,8 +2955,7 @@ export type Glam = {
           "writable": true
         },
         {
-          "name": "reserveLiquidityMint",
-          "writable": true
+          "name": "reserveLiquidityMint"
         },
         {
           "name": "reserveLiquiditySupply",
@@ -2988,6 +2984,17 @@ export type Glam = {
         },
         {
           "name": "instructionSysvarAccount"
+        },
+        {
+          "name": "obligationFarmUserState",
+          "writable": true
+        },
+        {
+          "name": "reserveFarmState",
+          "writable": true
+        },
+        {
+          "name": "farmsProgram"
         }
       ],
       "args": [
@@ -3040,10 +3047,8 @@ export type Glam = {
           "signer": true
         },
         {
-          "name": "cpiProgram"
-        },
-        {
-          "name": "obligationOwner"
+          "name": "cpiProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "feePayer",
@@ -3129,7 +3134,8 @@ export type Glam = {
           "signer": true
         },
         {
-          "name": "cpiProgram"
+          "name": "cpiProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "payer",
@@ -3137,15 +3143,11 @@ export type Glam = {
           "signer": true
         },
         {
-          "name": "owner"
-        },
-        {
           "name": "obligation",
           "writable": true
         },
         {
-          "name": "lendingMarketAuthority",
-          "writable": true
+          "name": "lendingMarketAuthority"
         },
         {
           "name": "reserve",
@@ -3224,10 +3226,8 @@ export type Glam = {
           "signer": true
         },
         {
-          "name": "cpiProgram"
-        },
-        {
-          "name": "owner"
+          "name": "cpiProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "feePayer",

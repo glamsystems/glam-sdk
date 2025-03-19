@@ -2889,16 +2889,16 @@
       "args": []
     },
     {
-      "name": "kamino_lending_deposit_reserve_liquidity_and_obligation_collateral",
+      "name": "kamino_lending_deposit_reserve_liquidity_and_obligation_collateral_v2",
       "discriminator": [
-        31,
-        162,
-        4,
-        146,
-        60,
-        225,
-        15,
-        0
+        93,
+        120,
+        106,
+        112,
+        40,
+        45,
+        84,
+        32
       ],
       "accounts": [
         {
@@ -2931,11 +2931,8 @@
           "signer": true
         },
         {
-          "name": "cpi_program"
-        },
-        {
-          "name": "owner",
-          "writable": true
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "obligation",
@@ -2952,8 +2949,7 @@
           "writable": true
         },
         {
-          "name": "reserve_liquidity_mint",
-          "writable": true
+          "name": "reserve_liquidity_mint"
         },
         {
           "name": "reserve_liquidity_supply",
@@ -2982,6 +2978,17 @@
         },
         {
           "name": "instruction_sysvar_account"
+        },
+        {
+          "name": "obligation_farm_user_state",
+          "writable": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true
+        },
+        {
+          "name": "farms_program"
         }
       ],
       "args": [
@@ -3034,10 +3041,8 @@
           "signer": true
         },
         {
-          "name": "cpi_program"
-        },
-        {
-          "name": "obligation_owner"
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "fee_payer",
@@ -3123,7 +3128,8 @@
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "payer",
@@ -3131,15 +3137,11 @@
           "signer": true
         },
         {
-          "name": "owner"
-        },
-        {
           "name": "obligation",
           "writable": true
         },
         {
-          "name": "lending_market_authority",
-          "writable": true
+          "name": "lending_market_authority"
         },
         {
           "name": "reserve",
@@ -3218,10 +3220,8 @@
           "signer": true
         },
         {
-          "name": "cpi_program"
-        },
-        {
-          "name": "owner"
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "fee_payer",
