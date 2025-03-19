@@ -2912,6 +2912,7 @@ export type Glam = {
         },
         {
           "name": "glamVault",
+          "writable": true,
           "pda": {
             "seeds": [
               {
