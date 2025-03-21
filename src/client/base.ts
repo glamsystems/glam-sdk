@@ -36,6 +36,7 @@ import {
   SEED_VAULT,
   SEED_METADATA,
   SEED_MINT,
+  SEED_ESCROW,
 } from "../constants";
 
 import { GlamProgram, getGlamProgram } from "../glamExports";
@@ -440,6 +441,14 @@ export class BaseClient {
   getVaultPda(statePda: PublicKey): PublicKey {
     const [pda, _bump] = PublicKey.findProgramAddressSync(
       [Buffer.from(SEED_VAULT), statePda.toBuffer()],
+      this.program.programId,
+    );
+    return pda;
+  }
+
+  getEscrowPda(statePda: PublicKey): PublicKey {
+    const [pda, _bump] = PublicKey.findProgramAddressSync(
+      [Buffer.from(SEED_ESCROW), statePda.toBuffer()],
       this.program.programId,
     );
     return pda;

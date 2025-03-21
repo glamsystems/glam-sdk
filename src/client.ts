@@ -1,7 +1,6 @@
 import { GlamClientConfig } from "./clientConfig";
 import { BaseClient } from "./client/base";
 import { DriftClient } from "./client/drift";
-import { InvestorClient } from "./client/investor";
 import { JupiterSwapClient } from "./client/jupiter";
 import { JupiterVoteClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
@@ -11,6 +10,8 @@ import { StateClient } from "./client/state";
 import { MintClient } from "./client/mint";
 import { KaminoLendingClient } from "./client/kamino";
 import { MeteoraDlmmClient } from "./client/meteora";
+import { InvestorClient } from "./client/investor";
+import { PriceClient } from "./client/price";
 
 export { JUPITER_API_DEFAULT } from "./client/base";
 
@@ -26,6 +27,7 @@ export class GlamClient extends BaseClient {
   private _jupiterVote?: JupiterVoteClient;
   private _marinade?: MarinadeClient;
   private _wsol?: WSolClient;
+  private _price?: PriceClient;
   private _staking?: StakingClient;
   private _state?: StateClient;
   private _mint?: MintClient;
@@ -83,6 +85,13 @@ export class GlamClient extends BaseClient {
       this._staking = new StakingClient(this, this.marinade);
     }
     return this._staking;
+  }
+
+  get price(): PriceClient {
+    if (!this._price) {
+      this._price = new PriceClient(this);
+    }
+    return this._price;
   }
 
   get state(): StateClient {

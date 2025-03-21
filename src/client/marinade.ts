@@ -15,9 +15,8 @@ import {
 import { Marinade } from "@marinade.finance/marinade-ts-sdk";
 
 import { BaseClient, TxOptions } from "./base";
-import { MARINADE_PROGRAM_ID, MSOL } from "../constants";
-
-const TICKET_SIZE = 88;
+import { MARINADE_PROGRAM_ID, MARINADE_TICKET_SIZE, MSOL } from "../constants";
+import { fetchMarinadeTicketAccounts } from "../utils/helpers";
 
 export type Ticket = {
   address: PublicKey; // offset 8 after anchor discriminator
@@ -37,8 +36,9 @@ export class MarinadeClient {
   public async deposit(
     statePda: PublicKey,
     amount: BN,
+    txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(statePda, amount, {});
+    const tx = await this.depositTx(statePda, amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -80,31 +80,21 @@ export class MarinadeClient {
    * Utils
    */
 
-  _getTicketsAccounts = async (state: PublicKey) =>
-    await this.base.provider.connection.getParsedProgramAccounts(
-      MARINADE_PROGRAM_ID,
-      {
-        filters: [
-          {
-            dataSize: TICKET_SIZE,
-          },
-          {
-            memcmp: {
-              offset: 40,
-              bytes: this.base.getVaultPda(state).toBase58(),
-            },
-          },
-        ],
-      },
-    );
-
   async getTickets(state: PublicKey): Promise<PublicKey[]> {
-    const accounts = await this._getTicketsAccounts(state);
+    const vault = this.base.getVaultPda(state);
+    const accounts = await fetchMarinadeTicketAccounts(
+      this.base.provider.connection,
+      vault,
+    );
     return accounts.map((a) => a.pubkey);
   }
 
   async getParsedTickets(state: PublicKey): Promise<Ticket[]> {
-    const accounts = await this._getTicketsAccounts(state);
+    const vault = this.base.getVaultPda(state);
+    const accounts = await fetchMarinadeTicketAccounts(
+      this.base.provider.connection,
+      vault,
+    );
 
     const currentEpoch = await this.base.provider.connection.getEpochInfo();
     return accounts.map((a) => {
@@ -295,7 +285,7 @@ export class MarinadeClient {
     );
     const lamports =
       await this.base.provider.connection.getMinimumBalanceForRentExemption(
-        TICKET_SIZE,
+        MARINADE_TICKET_SIZE,
       );
     const createTicketIx = SystemProgram.createAccountWithSeed({
       fromPubkey: glamSigner,
@@ -303,7 +293,7 @@ export class MarinadeClient {
       basePubkey: glamSigner,
       seed: ticketSeed,
       lamports,
-      space: TICKET_SIZE,
+      space: MARINADE_TICKET_SIZE,
       programId: MARINADE_PROGRAM_ID,
     });
     const tx = await this.base.program.methods

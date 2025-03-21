@@ -9,7 +9,57 @@ import {
   RpcResponseAndContext,
   SimulatedTransactionResponse,
   SignatureResult,
+  StakeProgram,
 } from "@solana/web3.js";
+import {
+  MARINADE_PROGRAM_ID,
+  MARINADE_TICKET_SIZE,
+  STAKE_ACCOUNT_SIZE,
+} from "../constants";
+
+export const fetchStakeAccounts = async (
+  connection: Connection,
+  withdrawAuthority: PublicKey,
+): Promise<PublicKey[]> => {
+  const accounts = await connection.getParsedProgramAccounts(
+    StakeProgram.programId,
+    {
+      filters: [
+        {
+          dataSize: STAKE_ACCOUNT_SIZE,
+        },
+        {
+          memcmp: {
+            offset: 12,
+            bytes: withdrawAuthority.toBase58(),
+          },
+        },
+      ],
+    },
+  );
+  // order by lamports desc
+  return accounts
+    .sort((a, b) => b.account.lamports - a.account.lamports)
+    .map((a) => a.pubkey);
+};
+
+export const fetchMarinadeTicketAccounts = async (
+  connection: Connection,
+  beneficiary: PublicKey,
+) =>
+  await connection.getParsedProgramAccounts(MARINADE_PROGRAM_ID, {
+    filters: [
+      {
+        dataSize: MARINADE_TICKET_SIZE,
+      },
+      {
+        memcmp: {
+          offset: 40,
+          bytes: beneficiary.toBase58(),
+        },
+      },
+    ],
+  });
 
 export const getSimulationComputeUnits = async (
   connection: Connection,

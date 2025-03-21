@@ -241,6 +241,243 @@
       ]
     },
     {
+      "name": "claim",
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_escrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "asset"
+        },
+        {
+          "name": "signer_asset_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "escrow_asset_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_escrow"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_mint",
       "docs": [
         "Closes a mint and releases its resources.",
@@ -1688,6 +1925,339 @@
         {
           "name": "amount",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fulfill",
+      "discriminator": [
+        143,
+        2,
+        52,
+        206,
+        174,
+        164,
+        247,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_escrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_mint",
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "escrow_mint_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_escrow"
+              },
+              {
+                "kind": "account",
+                "path": "token_2022_program"
+              },
+              {
+                "kind": "account",
+                "path": "glam_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "asset"
+        },
+        {
+          "name": "vault_asset_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "escrow_asset_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_escrow"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "asset"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "token_2022_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "mint_id",
+          "type": "u8"
         }
       ]
     },
@@ -4598,43 +5168,35 @@
       "args": []
     },
     {
-      "name": "redeem",
-      "docs": [
-        "Redeems a specified amount of shares.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `amount`: The amount of shares to redeem.",
-        "- `in_kind`: Whether to redeem in kind.",
-        "- `skip_state`: Should always be true (state check to be implemented)."
-      ],
+      "name": "redeem_queued",
       "discriminator": [
-        184,
-        12,
-        86,
-        149,
-        70,
-        196,
-        97,
-        225
+        3,
+        43,
+        239,
+        213,
+        40,
+        225,
+        179,
+        28
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
-          "name": "glam_vault",
-          "writable": true,
+          "name": "glam_escrow",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
                 ]
               },
               {
@@ -4654,39 +5216,117 @@
           "signer": true
         },
         {
-          "name": "signer_share_ata",
-          "writable": true
-        },
-        {
-          "name": "signer_policy",
+          "name": "signer_mint_ata",
           "writable": true,
-          "optional": true,
           "pda": {
             "seeds": [
               {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
-                ]
+                "kind": "account",
+                "path": "signer"
               },
               {
                 "kind": "account",
-                "path": "signer_share_ata"
+                "path": "token_2022_program"
+              },
+              {
+                "kind": "account",
+                "path": "glam_mint"
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "escrow_mint_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_escrow"
+              },
+              {
+                "kind": "account",
+                "path": "token_2022_program"
+              },
+              {
+                "kind": "account",
+                "path": "glam_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
           }
         },
         {
@@ -4694,26 +5334,22 @@
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
           "name": "token_2022_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
         {
-          "name": "amount",
+          "name": "mint_id",
+          "type": "u8"
+        },
+        {
+          "name": "shares_in",
           "type": "u64"
-        },
-        {
-          "name": "in_kind",
-          "type": "bool"
-        },
-        {
-          "name": "skip_state",
-          "type": "bool"
         }
       ]
     },
@@ -6384,32 +7020,24 @@
       ]
     },
     {
-      "name": "subscribe",
-      "docs": [
-        "Subscribes to a specified amount of shares.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `amount`: The amount of shares to subscribe.",
-        "- `skip_state`: Should always be true (state check to be implemented)."
-      ],
+      "name": "subscribe_instant",
       "discriminator": [
-        254,
-        28,
         191,
-        138,
-        156,
-        179,
-        183,
-        53
+        239,
+        146,
+        220,
+        75,
+        86,
+        193,
+        152
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -6434,21 +7062,66 @@
           "writable": true
         },
         {
-          "name": "signer_share_ata",
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint_to",
+          "writable": true
+        },
+        {
+          "name": "deposit_asset"
+        },
+        {
+          "name": "vault_deposit_ata",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "glam_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
-              },
-              {
-                "kind": "account",
-                "path": "glam_mint"
+                "path": "deposit_asset"
               }
             ],
             "program": {
@@ -6491,60 +7164,94 @@
           }
         },
         {
-          "name": "asset"
-        },
-        {
-          "name": "vault_ata",
-          "writable": true
-        },
-        {
-          "name": "signer_asset_ata",
-          "writable": true
-        },
-        {
-          "name": "signer_policy",
+          "name": "signer_deposit_ata",
           "writable": true,
-          "optional": true,
           "pda": {
             "seeds": [
               {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
                 "kind": "const",
                 "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
                 ]
               },
               {
                 "kind": "account",
-                "path": "signer_share_ata"
+                "path": "deposit_asset"
               }
-            ]
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
           }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
           "name": "token_program",
@@ -6561,12 +7268,8 @@
           "type": "u8"
         },
         {
-          "name": "amount",
+          "name": "amount_in",
           "type": "u64"
-        },
-        {
-          "name": "skip_state",
-          "type": "bool"
         }
       ]
     },
@@ -7258,19 +7961,6 @@
       ]
     },
     {
-      "name": "PolicyAccount",
-      "discriminator": [
-        218,
-        201,
-        183,
-        164,
-        156,
-        127,
-        81,
-        175
-      ]
-    },
-    {
       "name": "StateAccount",
       "discriminator": [
         142,
@@ -7347,8 +8037,8 @@
     },
     {
       "code": 49008,
-      "name": "InvalidShareClass",
-      "msg": "Share class not allowed to subscribe"
+      "name": "InvalidMintId",
+      "msg": "Invalid mint id"
     },
     {
       "code": 49009,
@@ -7442,11 +8132,16 @@
     },
     {
       "code": 51007,
+      "name": "LedgerNotFound",
+      "msg": "Ledger not found"
+    },
+    {
+      "code": 51008,
       "name": "UnpricedExternalAccounts",
       "msg": "Not all external vault accounts are priced"
     },
     {
-      "code": 51008,
+      "code": 51009,
       "name": "VaultNotPriced",
       "msg": "No priced assets found"
     },
@@ -7752,6 +8447,9 @@
           },
           {
             "name": "PricedAssets"
+          },
+          {
+            "name": "Ledger"
           }
         ]
       }
@@ -7900,6 +8598,21 @@
                   "vec": {
                     "defined": {
                       "name": "PricedAssets"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "Ledger",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "LedgerEntry"
                     }
                   }
                 }
@@ -8263,6 +8976,66 @@
           },
           {
             "name": "MeteoraDlmm"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LedgerEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "LedgerEntryKind"
+              }
+            }
+          },
+          {
+            "name": "incoming",
+            "type": {
+              "defined": {
+                "name": "PubkeyAmount"
+              }
+            }
+          },
+          {
+            "name": "value",
+            "type": "u64"
+          },
+          {
+            "name": "outgoing",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "PubkeyAmount"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LedgerEntryKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Subscription"
+          },
+          {
+            "name": "Redemption"
           }
         ]
       }
@@ -9081,18 +9854,6 @@
       }
     },
     {
-      "name": "PolicyAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "locked_until_ts",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
       "name": "PositionDirection",
       "type": {
         "kind": "enum",
@@ -9136,12 +9897,6 @@
           },
           {
             "name": "USD"
-          },
-          {
-            "name": "Asset"
-          },
-          {
-            "name": "EUR"
           }
         ]
       }
@@ -9190,6 +9945,26 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PubkeyAmount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }
@@ -9790,6 +10565,16 @@
     }
   ],
   "constants": [
+    {
+      "name": "SEED_ACCOUNT_POLICY",
+      "type": "string",
+      "value": "\"account-policy\""
+    },
+    {
+      "name": "SEED_ESCROW",
+      "type": "string",
+      "value": "\"escrow\""
+    },
     {
       "name": "SEED_METADATA",
       "type": "string",

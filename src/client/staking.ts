@@ -9,7 +9,7 @@ import {
   SystemProgram,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { MSOL } from "../constants";
+import { MSOL, STAKE_ACCOUNT_SIZE } from "../constants";
 import { BaseClient, TxOptions } from "./base";
 import { MarinadeClient } from "./marinade";
 import { getStakePoolAccount } from "@solana/spl-stake-pool";
@@ -32,8 +32,6 @@ type StakeAccountInfo = {
   state: string;
   voter?: PublicKey; // if undefined, the stake account is not delegated
 };
-
-const STAKE_ACCOUNT_SIZE = 200;
 
 export class StakingClient {
   public constructor(
@@ -237,30 +235,6 @@ export class StakingClient {
       programId,
     );
     return publicKey;
-  }
-
-  async getStakeAccounts(withdrawAuthority: PublicKey): Promise<PublicKey[]> {
-    const accounts =
-      await this.base.provider.connection.getParsedProgramAccounts(
-        StakeProgram.programId,
-        {
-          filters: [
-            {
-              dataSize: STAKE_ACCOUNT_SIZE,
-            },
-            {
-              memcmp: {
-                offset: 12,
-                bytes: withdrawAuthority.toBase58(),
-              },
-            },
-          ],
-        },
-      );
-    // order by lamports desc
-    return accounts
-      .sort((a, b) => b.account.lamports - a.account.lamports)
-      .map((a) => a.pubkey);
   }
 
   async getStakeAccountsWithStates(

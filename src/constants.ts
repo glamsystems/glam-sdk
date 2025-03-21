@@ -13,6 +13,12 @@ export const SEED_STATE = (
 export const SEED_VAULT = (
   GlamIDLJson.constants.find((x) => x.name === "SEED_VAULT")?.value || ""
 ).replace(/"/g, "");
+export const SEED_ESCROW = (
+  GlamIDLJson.constants.find((x) => x.name === "SEED_ESCROW")?.value || ""
+).replace(/"/g, "");
+
+export const MARINADE_TICKET_SIZE = 88;
+export const STAKE_ACCOUNT_SIZE = 200;
 
 /**
  * Token mints. If no devnet version is defined, assume mainnet and devnet addresses are the same.

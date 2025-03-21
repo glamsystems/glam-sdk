@@ -11,35 +11,32 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
   TOKEN_2022_PROGRAM_ID,
+  closeAccount,
+  createCloseAccountInstruction,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
 import { WSOL } from "../constants";
 import { StateModel } from "../models";
+import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
+import { ASSETS_MAINNET } from "./assets";
 
 export class InvestorClient {
   public constructor(readonly base: BaseClient) {}
 
-  /*
-   * Client methods
-   */
-
-  public async subscribe(
+  public async subscribeInstant(
     statePda: PublicKey,
     asset: PublicKey,
     amount: BN,
-    stateModel?: StateModel,
     mintId: number = 0,
-    skipState: boolean = true,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.subscribeTx(
+    const tx = await this.subscribeInstantTx(
       statePda,
       asset,
       amount,
-      stateModel,
       mintId,
-      skipState,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -47,253 +44,210 @@ export class InvestorClient {
 
   public async redeem(
     statePda: PublicKey,
+    asset: PublicKey,
     amount: BN,
-    inKind: boolean = false,
-    stateModel?: StateModel,
     mintId: number = 0,
-    skipState: boolean = true,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.redeemTx(
-      statePda,
-      amount,
-      inKind,
-      stateModel,
-      mintId,
-      skipState,
-      txOptions,
-    );
+    const tx = await this.redeemTx(statePda, asset, amount, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  /*
-   * API methods
-   */
-
-  public async subscribeTx(
+  public async fulfill(
     statePda: PublicKey,
     asset: PublicKey,
-    amount: BN,
-    stateModel?: StateModel,
     mintId: number = 0,
-    skipState: boolean = true,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.fulfillTx(statePda, asset, mintId, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async claim(
+    statePda: PublicKey,
+    asset: PublicKey,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.claimTx(statePda, asset, mintId, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async subscribeInstantTx(
+    glamState: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
+    if (mintId !== 0 || !asset.equals(WSOL)) {
+      throw new Error("Only WSOL is supported & mintId must be 0");
+    }
+
     const signer = txOptions.signer || this.base.getSigner();
 
     // glam mint token to receive
-    const mintPda = this.base.getMintPda(statePda, mintId);
-    const signerShareAta = this.base.getMintAta(signer, mintPda);
+    const glamMint = this.base.getMintPda(glamState, mintId);
+    const mintTo = this.base.getMintAta(signer, glamMint);
 
-    // asset token to transfer
-    const assetMeta = this.base.getAssetMeta(asset.toBase58());
-    const vault = this.base.getVaultPda(statePda);
-    const vaultAta = this.base.getAta(asset, vault, assetMeta?.programId);
-    const signerAssetAta = this.base.getAta(
-      asset,
-      signer,
-      assetMeta?.programId,
-    );
+    // asset token to transfer to vault
+    const vault = this.base.getVaultPda(glamState);
+    const vaultInput = this.base.getAta(asset, vault);
+    const signerInput = this.base.getAta(asset, signer);
 
-    // remaining accounts may have 3 parts:
-    // 1. treasury atas + pricing to compute AUM
-    // 2. marinade ticket
-    // 3. stake accounts
-    if (!stateModel) {
-      stateModel = await this.base.fetchState(statePda);
-    }
-    let remainingAccounts = (stateModel.assets || []).flatMap((asset) => {
-      const assetMeta = this.base.getAssetMeta(asset.toBase58());
-      const vaultAta = this.base.getVaultAta(
-        statePda,
-        asset,
-        assetMeta?.programId,
-      );
-
-      return [
-        { pubkey: vaultAta, isSigner: false, isWritable: false },
-        {
-          // For some LSTs we have both state and pricing accounts
-          // The program should always prefer the state account
-          pubkey: assetMeta.stateAccount || assetMeta.pricingAccount!,
-          isSigner: false,
-          isWritable: false,
-        },
-      ];
-    });
-
-    remainingAccounts = remainingAccounts.concat(
-      (stateModel.externalVaultAccounts || []).map((address) => ({
-        pubkey: address,
-        isSigner: false,
-        isWritable: false,
-      })),
-    );
-
-    // SOL -> wSOL
-    // If the user doesn't have enough wSOL but does have SOL, we auto wrap
+    const wrapSolIxs = asset.equals(WSOL)
+      ? [
+          createAssociatedTokenAccountIdempotentInstruction(
+            signer,
+            signerInput,
+            signer,
+            asset,
+          ),
+          SystemProgram.transfer({
+            fromPubkey: signer,
+            toPubkey: signerInput,
+            lamports: amount.toNumber(),
+          }),
+          createSyncNativeInstruction(signerInput),
+        ]
+      : [];
     let preInstructions: TransactionInstruction[] = [
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        signerAssetAta,
-        signer,
-        asset,
-        assetMeta?.programId,
-      ),
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        vaultAta,
+        vaultInput,
         vault,
         asset,
-        assetMeta?.programId,
       ),
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        signerShareAta,
+        mintTo,
         signer,
-        mintPda,
+        glamMint,
         TOKEN_2022_PROGRAM_ID,
       ),
+      ...wrapSolIxs,
+      ...(txOptions.preInstructions || []),
     ];
 
-    if (WSOL.equals(asset)) {
-      const connection = this.base.provider.connection;
-      let wsolBalance = new BN(0);
-      try {
-        wsolBalance = new BN(
-          (
-            await connection.getTokenAccountBalance(signerAssetAta)
-          ).value.amount,
-        );
-      } catch (err) {
-        // ignore
-      }
-      const delta = amount.sub(wsolBalance);
-      if (delta.gt(new BN(0))) {
-        preInstructions = preInstructions.concat([
-          SystemProgram.transfer({
-            fromPubkey: signer,
-            toPubkey: signerAssetAta,
-            lamports: delta.toNumber(),
-          }),
-          createSyncNativeInstruction(signerAssetAta),
-        ]);
-      }
-    }
+    const postInstructions = asset.equals(WSOL)
+      ? [createCloseAccountInstruction(signerInput, signer, signer)]
+      : [];
 
     const tx = await this.base.program.methods
-      .subscribe(0, amount, skipState)
+      .subscribeInstant(0, amount)
       .accounts({
-        glamState: statePda,
-        glamMint: mintPda,
-        asset,
-        vaultAta,
-        signerAssetAta,
+        glamState,
+        glamMint,
+        signer,
+        depositAsset: asset,
+        mintTo,
         //TODO: only add if the fund has lock-up? (just for efficiency)
         // signerAccountPolicy: null,
-        signer,
       })
-      .remainingAccounts(remainingAccounts)
       .preInstructions(preInstructions)
+      .postInstructions(postInstructions)
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async redeemTx(
-    statePda: PublicKey,
+    glamState: PublicKey,
+    asset: PublicKey,
     amount: BN,
-    inKind: boolean = false,
-    stateModel?: StateModel,
     mintId: number = 0,
-    skipState: boolean = true,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
-
-    // share class token to receive
-    const glamMint = this.base.getMintPda(statePda, mintId);
-    const signerShareAta = this.base.getMintAta(signer, glamMint);
-
-    // remaining accounts = assets + signer atas + treasury atas + pricing to compute AUM
-    if (!stateModel) {
-      stateModel = await this.base.fetchState(statePda);
+    if (mintId !== 0 || !asset.equals(WSOL)) {
+      throw new Error("Only WSOL is supported & mintId must be 0");
     }
-    let remainingAccounts = (stateModel.assets || []).flatMap((asset: any) => {
-      const assetMeta = this.base.getAssetMeta(asset.toBase58());
-      const vaultAta = this.base.getVaultAta(
-        statePda,
-        asset,
-        assetMeta?.programId,
-      );
-      const signerAta = getAssociatedTokenAddressSync(
-        asset,
+
+    const signer = txOptions.signer || this.base.getSigner();
+    const glamMint = this.base.getMintPda(glamState, mintId);
+
+    const preInstructions = [
+      createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        true,
-        assetMeta?.programId,
-      );
-
-      return [
-        { pubkey: vaultAta, isSigner: false, isWritable: true },
-        {
-          // For some LSTs we have both state and pricing accounts
-          // The program should always prefer the state account
-          pubkey: assetMeta.stateAccount || assetMeta.pricingAccount,
-          isSigner: false,
-          isWritable: false,
-        },
-        { pubkey: asset, isSigner: false, isWritable: false },
-        { pubkey: signerAta, isSigner: false, isWritable: true },
-      ];
-    });
-
-    remainingAccounts = remainingAccounts.concat(
-      (stateModel.externalVaultAccounts || []).map((address: PublicKey) => ({
-        pubkey: address,
-        isSigner: false,
-        isWritable: false,
-      })),
-    );
-
-    const preInstructions = (
-      await Promise.all(
-        (stateModel.assets || []).map(async (asset: any, j: number) => {
-          // not in kind, we only need the base asset ATA
-          if (!inKind && j > 0) {
-            return null;
-          }
-
-          const assetMeta = this.base.getAssetMeta(asset.toBase58());
-          const signerAta = getAssociatedTokenAddressSync(
-            asset,
-            signer,
-            true,
-            assetMeta?.programId,
-          );
-
-          return createAssociatedTokenAccountIdempotentInstruction(
-            signer,
-            signerAta,
-            signer,
-            asset,
-            assetMeta?.programId,
-          );
-        }),
-      )
-    ).filter((x: any) => !!x) as TransactionInstruction[];
+        this.base.getMintAta(signer, glamMint),
+        signer,
+        glamMint,
+        TOKEN_2022_PROGRAM_ID,
+      ),
+    ];
 
     const tx = await this.base.program.methods
-      .redeem(amount, inKind, skipState)
+      .redeemQueued(0, amount)
       .accounts({
-        glamState: statePda,
+        glamState,
         glamMint,
-        signerShareAta,
-        //TODO: only add if the fund has lock-up? (just for efficiency)
-        // signerAccountPolicy: null,
         signer,
       })
-      .remainingAccounts(remainingAccounts)
       .preInstructions(preInstructions)
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async fulfillTx(
+    glamState: PublicKey,
+    asset: PublicKey,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    if (mintId !== 0 || !asset.equals(WSOL)) {
+      throw new Error("Only WSOL is supported & mintId must be 0");
+    }
+
+    const signer = txOptions.signer || this.base.getSigner();
+    const glamMint = this.base.getMintPda(glamState, mintId);
+
+    const tx = await this.base.program.methods
+      .fulfill(0)
+      .accounts({
+        glamState,
+        glamMint,
+        signer,
+        asset,
+      })
+      .preInstructions(txOptions.preInstructions || [])
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async claimTx(
+    glamState: PublicKey,
+    asset: PublicKey,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    if (mintId !== 0 || !asset.equals(WSOL)) {
+      throw new Error("Only WSOL is supported & mintId must be 0");
+    }
+
+    const signer = txOptions.signer || this.base.getSigner();
+    const glamMint = this.base.getMintPda(glamState, mintId);
+    const signerAta = this.base.getAta(asset, signer);
+
+    const tx = await this.base.program.methods
+      .claim()
+      .accounts({
+        glamState,
+        signer,
+        asset,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          signer,
+          signerAta,
+          signer,
+          asset,
+        ),
+      ])
+      .postInstructions([
+        createCloseAccountInstruction(signerAta, signer, signer),
+      ])
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
