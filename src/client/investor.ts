@@ -140,7 +140,6 @@ export class InvestorClient {
         glamMint,
         signer,
         depositAsset: asset,
-        mintTo,
         //TODO: only add if the fund has lock-up? (just for efficiency)
         // signerAccountPolicy: null,
       })
@@ -183,6 +182,35 @@ export class InvestorClient {
         signer,
       })
       .preInstructions(preInstructions)
+      // FIXME: skip transfer hook extra accounts for now.
+      // we need to create a new program for the transfer hook
+      // .remainingAccounts([
+      // {
+      //   pubkey: new PublicKey("extract_account_metas"),
+      //   isSigner: false,
+      //   isWritable: false,
+      // },
+      // {
+      //   pubkey: new PublicKey("glam_state"),
+      //   isSigner: false,
+      //   isWritable: false,
+      // },
+      // {
+      //   pubkey: new PublicKey("src_policy_account"),
+      //   isSigner: false,
+      //   isWritable: false,
+      // },
+      // {
+      //   pubkey: new PublicKey("dst_policy_account"),
+      //   isSigner: false,
+      //   isWritable: false,
+      // },
+      // {
+      //   pubkey: this.base.program.programId,
+      //   isSigner: false,
+      //   isWritable: false,
+      // },
+      // ])
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
