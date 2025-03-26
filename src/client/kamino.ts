@@ -263,6 +263,7 @@ export class KaminoLendingClient {
     const obligation = this.getObligationPda(vault, args);
     const obligationFarm = this.getObligationFarm(obligation);
 
+    // @ts-ignore
     const initObligationIx = await this.base.program.methods
       .kaminoLendingInitObligation(args)
       .accounts({

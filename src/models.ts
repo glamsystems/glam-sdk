@@ -7,12 +7,12 @@ import { BN } from "@coral-xyz/anchor";
 import { SEED_METADATA, SEED_MINT, SEED_VAULT } from "./constants";
 
 export const GlamIntegrations =
-GlamProtocolIdlJson?.types
+  GlamProtocolIdlJson?.types
     ?.find((t) => t.name === "Integration")
     ?.type?.variants?.map((v) => v.name) ?? [];
 
 export const GlamPermissions =
-GlamProtocolIdlJson?.types
+  GlamProtocolIdlJson?.types
     ?.find((t) => t.name === "Permission")
     ?.type?.variants?.map((v) => v.name) ?? [];
 
@@ -251,11 +251,13 @@ export class StateModel extends StateIdlModel {
       stateModel.rawOpenfunds?.legalFundNameIncludingUmbrella ||
       (stateModel.mints && stateModel.mints[0]?.name);
 
+    // @ts-ignore
     return new StateModel(stateModel, glamProgramId);
   }
 }
 
-export type FundOpenfundsModelType = IdlTypes<GlamProtocol>["fundOpenfundsModel"];
+export type FundOpenfundsModelType =
+  IdlTypes<GlamProtocol>["fundOpenfundsModel"];
 export class FundOpenfundsModel implements FundOpenfundsModelType {
   fundDomicileAlpha2: string | null;
   legalFundNameIncludingUmbrella: string | null;
@@ -354,7 +356,8 @@ export class MintModel extends MintIdlModel {
   }
 }
 
-export type MintOpenfundsModelType = IdlTypes<GlamProtocol>["mintOpenfundsModel"];
+export type MintOpenfundsModelType =
+  IdlTypes<GlamProtocol>["mintOpenfundsModel"];
 export class MintOpenfundsModel implements MintOpenfundsModelType {
   isin: string | null;
   shareClassCurrency: string | null;

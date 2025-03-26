@@ -434,6 +434,7 @@ export class DriftClient {
     const [_, userStats] = this.getUser(glamState);
     const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
 
+    // @ts-ignore
     return await this.base.program.methods
       .driftInitializeUserStats()
       .accounts({

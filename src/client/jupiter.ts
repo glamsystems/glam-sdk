@@ -183,6 +183,7 @@ export class JupiterSwapClient {
       inputTokenProgram,
       outputTokenProgram,
     );
+    // @ts-ignore
     const tx = await this.base.program.methods
       .jupiterSwap(swapIx.data)
       .accounts({

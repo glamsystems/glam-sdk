@@ -599,6 +599,7 @@ export class BaseClient {
     statePda: PublicKey,
     mintIdx: number = 0,
   ): Promise<boolean> {
+    // @ts-ignore
     const state = await this.fetchStateAccount(statePda);
     if (state.params.length <= 1 + mintIdx) {
       throw new Error("Invalid mint index");

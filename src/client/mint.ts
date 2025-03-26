@@ -60,6 +60,7 @@ export class MintClient {
   public async closeMintIx(glamState: PublicKey, mintId: number = 0) {
     const glamMint = this.base.getMintPda(glamState, mintId);
 
+    // @ts-ignore
     return await this.base.program.methods
       .closeMint(mintId)
       .accounts({

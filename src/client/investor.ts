@@ -142,6 +142,7 @@ export class InvestorClient {
       );
     }
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .subscribeInstant(0, amount)
       .accounts({

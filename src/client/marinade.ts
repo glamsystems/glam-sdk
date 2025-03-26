@@ -197,6 +197,7 @@ export class MarinadeClient {
       marinadeState.msolMintAddress,
     );
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .marinadeDeposit(amount)
       .accounts({

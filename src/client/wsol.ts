@@ -50,6 +50,7 @@ export class WSolClient {
     const vault = this.base.getVaultPda(glamState);
     const to = this.base.getAta(WSOL, vault);
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({

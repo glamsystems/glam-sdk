@@ -17,6 +17,7 @@ export class PriceClient {
    * !! It doesn't reflect the actual AUM of the vault. If the vault has not been priced or pricing data is outdated, the number is NOT meaningful.
    */
   public async getAum(glamState: PublicKey) {
+    // @ts-ignore
     const glamStateAccount = await this.base.fetchStateAccount(glamState);
     let pricedAssets = [] as any[];
     glamStateAccount.params[0].forEach((param) => {

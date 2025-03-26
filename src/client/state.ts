@@ -48,6 +48,7 @@ export class StateClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     let stateModel = this.enrichStateModel(partialStateModel);
 
+    // @ts-ignore
     const glamState = this.base.getStatePda(stateModel);
     const glamVault = this.base.getVaultPda(glamState);
     const openfunds = this.base.getOpenfundsPda(glamState);

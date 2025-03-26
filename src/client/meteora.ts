@@ -68,6 +68,7 @@ export class MeteoraDlmmClient {
 
     const position = Keypair.generate();
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .meteoraDlmmInitializePosition(minBinId, maxBinId - minBinId + 1)
       .accounts({

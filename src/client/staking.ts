@@ -402,6 +402,7 @@ export class StakingClient {
 
     console.log(`stakePool ${stakePool}, programId: ${stakePoolProgram}`);
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .stakePoolDepositSol(lamports)
       .accounts({
