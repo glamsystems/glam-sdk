@@ -17,7 +17,7 @@ import {
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
-import { WSOL } from "../constants";
+import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 import { StateModel } from "../models";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 import { ASSETS_MAINNET } from "./assets";
@@ -133,6 +133,15 @@ export class InvestorClient {
       ? [createCloseAccountInstruction(signerInput, signer, signer)]
       : [];
 
+    // Check if lockup is enabled on the fund, if so, add signerPolicy
+    let signerPolicy = null;
+    if (await this.base.isLockupEnabled(glamState)) {
+      signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
+      console.log(
+        `signerPolicy: ${signerPolicy} for signer ${signer} and token account ${mintTo}`,
+      );
+    }
+
     const tx = await this.base.program.methods
       .subscribeInstant(0, amount)
       .accounts({
@@ -140,8 +149,7 @@ export class InvestorClient {
         glamMint,
         signer,
         depositAsset: asset,
-        //TODO: only add if the fund has lock-up? (just for efficiency)
-        // signerAccountPolicy: null,
+        signerPolicy,
       })
       .preInstructions(preInstructions)
       .postInstructions(postInstructions)
@@ -174,6 +182,23 @@ export class InvestorClient {
       ),
     ];
 
+    const remainingAccounts: PublicKey[] = [];
+    if (await this.base.isLockupEnabled(glamState)) {
+      const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
+      const signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
+      const escrow = this.base.getEscrowPda(glamState);
+      const escrowPolicy = this.base.getAccountPolicyPda(glamState, escrow);
+      remainingAccounts.push(
+        ...[
+          extraMetasAccount,
+          glamState,
+          signerPolicy,
+          escrowPolicy,
+          TRANSFER_HOOK_PROGRAM,
+        ],
+      );
+    }
+
     const tx = await this.base.program.methods
       .redeemQueued(0, amount)
       .accounts({
@@ -182,35 +207,13 @@ export class InvestorClient {
         signer,
       })
       .preInstructions(preInstructions)
-      // FIXME: skip transfer hook extra accounts for now.
-      // we need to create a new program for the transfer hook
-      // .remainingAccounts([
-      // {
-      //   pubkey: new PublicKey("extract_account_metas"),
-      //   isSigner: false,
-      //   isWritable: false,
-      // },
-      // {
-      //   pubkey: new PublicKey("glam_state"),
-      //   isSigner: false,
-      //   isWritable: false,
-      // },
-      // {
-      //   pubkey: new PublicKey("src_policy_account"),
-      //   isSigner: false,
-      //   isWritable: false,
-      // },
-      // {
-      //   pubkey: new PublicKey("dst_policy_account"),
-      //   isSigner: false,
-      //   isWritable: false,
-      // },
-      // {
-      //   pubkey: this.base.program.programId,
-      //   isSigner: false,
-      //   isWritable: false,
-      // },
-      // ])
+      .remainingAccounts(
+        remainingAccounts.map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);

@@ -29,7 +29,7 @@ import {
   Metadata,
   StateIdlModel,
 } from "../models";
-import { WSOL } from "../constants";
+import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 
 type PublicKeyOrString = PublicKey | string;
 
@@ -59,15 +59,26 @@ export class StateClient {
       throw new Error("Multiple mints not supported");
     }
 
-    // No share class, only need to initialize the fund
+    // No share class, only need to initialize the state
     if (mints && mints.length === 0) {
-      const txSig = await this.base.program.methods
+      const tx = await this.base.program.methods
         .initializeState(stateModel)
         .accountsPartial({ glamState, glamSigner, glamVault })
-        .rpc();
+        .transaction();
+      const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+      const txSig = await this.base.sendAndConfirm(vTx);
+
       return [txSig, glamState];
     }
 
+    let extraMetasAccount =
+      mints &&
+      mints[0].lockUpPeriodInSeconds &&
+      mints[0].lockUpPeriodInSeconds > 0
+        ? this.base.getExtraMetasPda(glamState)
+        : null;
+
+    // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
       const initStateIx = await this.base.program.methods
         .initializeState(stateModel)
@@ -78,19 +89,24 @@ export class StateClient {
       // Access violation in stack frame 5 at address 0x200005ff8 of size 8
       mints[0].rawOpenfunds = null;
       const newMint = this.base.getMintPda(glamState, 0);
-      const txSig = await this.base.program.methods
+      const tx = await this.base.program.methods
         .addMint(mints[0])
         .accounts({
           glamState,
           glamSigner,
           newMint,
+          extraMetasAccount,
         })
         .preInstructions([initStateIx])
-        .rpc();
+        .transaction();
+      const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+      const txSig = await this.base.sendAndConfirm(vTx);
+
       return [txSig, glamState];
     }
 
-    const txSig = await this.base.program.methods
+    // Initialize state and add mints in separate transactions
+    const tx = await this.base.program.methods
       .initializeState(stateModel)
       .accountsPartial({
         glamState,
@@ -98,7 +114,9 @@ export class StateClient {
         glamSigner,
         openfundsMetadata: openfunds,
       })
-      .rpc();
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    const txSig = await this.base.sendAndConfirm(vTx);
 
     const addMintTxs = await Promise.all(
       (mints || []).map(async (mint, j: number) => {
@@ -107,18 +125,17 @@ export class StateClient {
         // FIXME: setting rawOpenfunds to null is a workarond for
         // Access violation in stack frame 5 at address 0x200005ff8 of size 8
         mint.rawOpenfunds = null;
-        return await this.base.program.methods
+        const tx = await this.base.program.methods
           .addMint(mint)
           .accounts({
             glamState,
             glamSigner,
             newMint,
+            extraMetasAccount,
           })
-          .preInstructions([
-            // FIXME: estimate compute units
-            ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
-          ])
-          .rpc();
+          .transaction();
+        const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+        return await this.base.sendAndConfirm(vTx);
       }),
     );
     console.log("addMintTxs", addMintTxs);

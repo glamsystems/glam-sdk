@@ -1,20 +1,24 @@
 import { PublicKey } from "@solana/web3.js";
-import { GlamIDLJson } from "./glamExports";
+import { GlamProtocolIdlJson } from "./glamExports";
 
 export const SEED_METADATA = (
-  GlamIDLJson.constants.find((x) => x.name === "SEED_METADATA")?.value || ""
+  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_METADATA")
+    ?.value || ""
 ).replace(/"/g, "");
 export const SEED_MINT = (
-  GlamIDLJson.constants.find((x) => x.name === "SEED_MINT")?.value || ""
+  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_MINT")?.value || ""
 ).replace(/"/g, "");
 export const SEED_STATE = (
-  GlamIDLJson.constants.find((x) => x.name === "SEED_STATE")?.value || ""
+  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_STATE")?.value ||
+  ""
 ).replace(/"/g, "");
 export const SEED_VAULT = (
-  GlamIDLJson.constants.find((x) => x.name === "SEED_VAULT")?.value || ""
+  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_VAULT")?.value ||
+  ""
 ).replace(/"/g, "");
 export const SEED_ESCROW = (
-  GlamIDLJson.constants.find((x) => x.name === "SEED_ESCROW")?.value || ""
+  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_ESCROW")?.value ||
+  ""
 ).replace(/"/g, "");
 
 export const MARINADE_TICKET_SIZE = 88;
@@ -69,6 +73,9 @@ export const GOVERNANCE_PROGRAM_ID = new PublicKey(
 );
 export const JUP_VOTE_PROGRAM = new PublicKey(
   "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj",
+);
+export const TRANSFER_HOOK_PROGRAM = new PublicKey(
+  "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy",
 );
 
 /**

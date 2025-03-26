@@ -1,5 +1,5 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import { Glam, GlamIDLJson } from "./glamExports";
+import { GlamProtocol, GlamProtocolIdlJson } from "./glamExports";
 import { PublicKey } from "@solana/web3.js";
 import { ExtensionType, getExtensionData, Mint } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
@@ -7,26 +7,26 @@ import { BN } from "@coral-xyz/anchor";
 import { SEED_METADATA, SEED_MINT, SEED_VAULT } from "./constants";
 
 export const GlamIntegrations =
-  GlamIDLJson?.types
+GlamProtocolIdlJson?.types
     ?.find((t) => t.name === "Integration")
     ?.type?.variants?.map((v) => v.name) ?? [];
 
 export const GlamPermissions =
-  GlamIDLJson?.types
+GlamProtocolIdlJson?.types
     ?.find((t) => t.name === "Permission")
     ?.type?.variants?.map((v) => v.name) ?? [];
 
-const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamIDLJson.address);
+const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamProtocolIdlJson.address);
 
 export type StateAccountType = { vault: {} } | { mint: {} } | { fund: {} };
 
 // @ts-ignore cli-build failed due to "Type instantiation is excessively deep and possibly infinite."
-export type StateAccount = IdlAccounts<Glam>["stateAccount"];
+export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 
 export type OpenfundsMetadataAccount =
-  IdlAccounts<Glam>["openfundsMetadataAccount"];
+  IdlAccounts<GlamProtocol>["openfundsMetadataAccount"];
 
-export type StateModelType = IdlTypes<Glam>["stateModel"];
+export type StateModelType = IdlTypes<GlamProtocol>["stateModel"];
 export class StateIdlModel implements StateModelType {
   id: PublicKey | null;
   accountType: StateAccountType | null;
@@ -255,7 +255,7 @@ export class StateModel extends StateIdlModel {
   }
 }
 
-export type FundOpenfundsModelType = IdlTypes<Glam>["fundOpenfundsModel"];
+export type FundOpenfundsModelType = IdlTypes<GlamProtocol>["fundOpenfundsModel"];
 export class FundOpenfundsModel implements FundOpenfundsModelType {
   fundDomicileAlpha2: string | null;
   legalFundNameIncludingUmbrella: string | null;
@@ -296,7 +296,7 @@ export class FundOpenfundsModel implements FundOpenfundsModelType {
   }
 }
 
-export type MintModelType = IdlTypes<Glam>["mintModel"];
+export type MintModelType = IdlTypes<GlamProtocol>["mintModel"];
 export class MintIdlModel implements MintModelType {
   symbol: string | null;
   name: string | null;
@@ -354,7 +354,7 @@ export class MintModel extends MintIdlModel {
   }
 }
 
-export type MintOpenfundsModelType = IdlTypes<Glam>["mintOpenfundsModel"];
+export type MintOpenfundsModelType = IdlTypes<GlamProtocol>["mintOpenfundsModel"];
 export class MintOpenfundsModel implements MintOpenfundsModelType {
   isin: string | null;
   shareClassCurrency: string | null;
@@ -427,7 +427,7 @@ export class MintOpenfundsModel implements MintOpenfundsModelType {
   }
 }
 
-export type CompanyModelType = IdlTypes<Glam>["companyModel"];
+export type CompanyModelType = IdlTypes<GlamProtocol>["companyModel"];
 export class CompanyModel implements CompanyModelType {
   fundGroupName: string | null;
   manCo: string | null;
@@ -444,9 +444,9 @@ export class CompanyModel implements CompanyModelType {
   }
 }
 
-export type MetadataType = IdlTypes<Glam>["metadata"];
+export type MetadataType = IdlTypes<GlamProtocol>["metadata"];
 export class Metadata implements MetadataType {
-  template: IdlTypes<Glam>["metadataTemplate"];
+  template: IdlTypes<GlamProtocol>["metadataTemplate"];
   pubkey: PublicKey;
   uri: string;
 
@@ -457,7 +457,7 @@ export class Metadata implements MetadataType {
   }
 }
 
-export type ManagerModelType = IdlTypes<Glam>["managerModel"];
+export type ManagerModelType = IdlTypes<GlamProtocol>["managerModel"];
 export class ManagerModel implements ManagerModelType {
   portfolioManagerName: string | null;
   pubkey: PublicKey | null;
@@ -470,7 +470,7 @@ export class ManagerModel implements ManagerModelType {
   }
 }
 
-export type CreatedModelType = IdlTypes<Glam>["createdModel"];
+export type CreatedModelType = IdlTypes<GlamProtocol>["createdModel"];
 export class CreatedModel implements CreatedModelType {
   key: number[]; // Uint8Array;
   createdBy: PublicKey;
@@ -483,8 +483,8 @@ export class CreatedModel implements CreatedModelType {
   }
 }
 
-export type Permission = IdlTypes<Glam>["permission"];
-export type DelegateAclType = IdlTypes<Glam>["delegateAcl"];
+export type Permission = IdlTypes<GlamProtocol>["permission"];
+export type DelegateAclType = IdlTypes<GlamProtocol>["delegateAcl"];
 export class DelegateAcl implements DelegateAclType {
   pubkey: PublicKey;
   permissions: Permission[];
@@ -497,4 +497,4 @@ export class DelegateAcl implements DelegateAclType {
   }
 }
 
-export type Integration = IdlTypes<Glam>["integration"];
+export type Integration = IdlTypes<GlamProtocol>["integration"];

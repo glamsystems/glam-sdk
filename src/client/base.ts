@@ -37,6 +37,7 @@ import {
   SEED_METADATA,
   SEED_MINT,
   SEED_ESCROW,
+  TRANSFER_HOOK_PROGRAM,
 } from "../constants";
 
 import { GlamProgram, getGlamProgram } from "../glamExports";
@@ -563,6 +564,26 @@ export class BaseClient {
     return this.getAta(mintPda, user, TOKEN_2022_PROGRAM_ID);
   }
 
+  getExtraMetasPda(glamState: PublicKey, mintIdx: number = 0): PublicKey {
+    const mintPda = this.getMintPda(glamState, mintIdx);
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("extra-account-metas"), mintPda.toBuffer()],
+      TRANSFER_HOOK_PROGRAM,
+    )[0];
+  }
+
+  getAccountPolicyPda(
+    glamState: PublicKey,
+    subject: PublicKey,
+    mintIdx: number = 0,
+  ): PublicKey {
+    const ata = this.getMintAta(subject, this.getMintPda(glamState, mintIdx));
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("account-policy"), ata.toBuffer()],
+      TRANSFER_HOOK_PROGRAM,
+    )[0];
+  }
+
   getName(stateModel: Partial<StateModel>) {
     const name =
       stateModel.name ||
@@ -572,6 +593,25 @@ export class BaseClient {
       throw new Error("Name not be inferred from state model");
     }
     return name;
+  }
+
+  async isLockupEnabled(
+    statePda: PublicKey,
+    mintIdx: number = 0,
+  ): Promise<boolean> {
+    const state = await this.fetchStateAccount(statePda);
+    if (state.params.length <= 1 + mintIdx) {
+      throw new Error("Invalid mint index");
+    }
+    for (const param of state.params[1 + mintIdx]) {
+      const name = Object.keys(param.name)[0];
+      // @ts-ignore
+      const value = Object.values(param.value)[0].val;
+      if (name === "lockUp") {
+        return new BN(value).toNumber() > 0;
+      }
+    }
+    return false;
   }
 
   public async fetchStateAccount(statePda: PublicKey): Promise<StateAccount> {

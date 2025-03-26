@@ -2,12 +2,12 @@ import { Program, Provider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 
 import type { ClusterNetwork } from "./clientConfig";
-import type { Glam } from "../target/types/glam";
-import GlamIDLJson from "../target/idl/glam.json";
+import type { GlamProtocol } from "../target/types/glam_protocol";
+import GlamProtocolIdlJson from "../target/idl/glam_protocol.json";
 
-const GlamIDL = GlamIDLJson as Glam;
-export { Glam, GlamIDL, GlamIDLJson };
-export type GlamProgram = Program<Glam>;
+const GlamIdl = GlamProtocolIdlJson as GlamProtocol;
+export { GlamProtocol, GlamIdl, GlamProtocolIdlJson};
+export type GlamProgram = Program<GlamProtocol>;
 
 export function getGlamProgramId(cluster?: ClusterNetwork) {
   switch (cluster) {
@@ -25,11 +25,11 @@ export function getGlamProgram(
 ): GlamProgram {
   switch (cluster) {
     case "mainnet-beta":
-      return new Program(GlamIDL, provider) as GlamProgram;
+      return new Program(GlamIdl, provider) as GlamProgram;
 
     default:
-      const idl = { ...GlamIDLJson };
+      const idl = { ...GlamProtocolIdlJson };
       idl.address = getGlamProgramId(cluster).toBase58();
-      return new Program(idl as Glam, provider) as GlamProgram;
+      return new Program(idl as GlamProtocol, provider) as GlamProgram;
   }
 }

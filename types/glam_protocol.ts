@@ -1,14 +1,20 @@
-{
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/glam_protocol.json`.
+ */
+export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
-    "name": "glam",
+    "name": "glamProtocol",
     "version": "0.4.10",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
   "instructions": [
     {
-      "name": "add_mint",
+      "name": "addMint",
       "docs": [
         "Adds a new mint.",
         "",
@@ -31,56 +37,25 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "new_mint",
+          "name": "newMint",
           "writable": true
         },
         {
-          "name": "extra_account_meta_list",
+          "name": "extraMetasAccount",
           "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  120,
-                  116,
-                  114,
-                  97,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "new_mint"
-              }
-            ]
-          }
+          "optional": true
         },
         {
-          "name": "openfunds_metadata",
+          "name": "openfundsMetadata",
           "writable": true,
           "optional": true,
           "pda": {
@@ -100,33 +75,37 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "transferHookProgram",
+          "address": "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy"
         }
       ],
       "args": [
         {
-          "name": "mint_model",
+          "name": "mintModel",
           "type": {
             "defined": {
-              "name": "MintModel"
+              "name": "mintModel"
             }
           }
         }
       ]
     },
     {
-      "name": "burn_tokens",
+      "name": "burnTokens",
       "docs": [
         "Burns a specified amount of tokens for the given mint.",
         "",
@@ -153,19 +132,19 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "from_ata",
+          "name": "fromAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -175,11 +154,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -225,13 +204,13 @@
           "name": "from"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
@@ -254,11 +233,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_escrow",
+          "name": "glamEscrow",
           "pda": {
             "seeds": [
               {
@@ -274,7 +253,7 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
@@ -288,7 +267,7 @@
           "name": "asset"
         },
         {
-          "name": "signer_asset_ata",
+          "name": "signerAssetAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -378,13 +357,13 @@
           }
         },
         {
-          "name": "escrow_asset_ata",
+          "name": "escrowAssetAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_escrow"
+                "path": "glamEscrow"
               },
               {
                 "kind": "const",
@@ -468,17 +447,17 @@
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "close_mint",
+      "name": "closeMint",
       "docs": [
         "Closes a mint and releases its resources.",
         "",
@@ -501,11 +480,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -521,58 +500,25 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "extra_account_meta_list",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  120,
-                  116,
-                  114,
-                  97,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_mint"
-              }
-            ]
-          }
-        },
-        {
           "name": "metadata",
+          "docs": [
+            "FIXME: close transfer hook extra metas account"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -591,25 +537,25 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "close_state",
+      "name": "closeState",
       "docs": [
         "Closes a state account and releases its resources.",
         "",
@@ -631,11 +577,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -651,13 +597,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
@@ -681,20 +627,20 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "drift_balance_value_usd",
+      "name": "driftBalanceValueUsd",
       "docs": [
         "Gets the balance value of a user's positions in USD.",
         "",
@@ -716,10 +662,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault"
+          "name": "glamVault"
         },
         {
           "name": "signer",
@@ -733,13 +679,13 @@
           "name": "user"
         },
         {
-          "name": "user_stats"
+          "name": "userStats"
         }
       ],
       "args": []
     },
     {
-      "name": "drift_cancel_orders",
+      "name": "driftCancelOrders",
       "docs": [
         "Cancels drift orders.",
         "",
@@ -767,10 +713,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -785,18 +731,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -809,17 +755,17 @@
       ],
       "args": [
         {
-          "name": "market_type",
+          "name": "marketType",
           "type": {
             "option": {
               "defined": {
-                "name": "MarketType"
+                "name": "marketType"
               }
             }
           }
         },
         {
-          "name": "market_index",
+          "name": "marketIndex",
           "type": {
             "option": "u16"
           }
@@ -829,7 +775,7 @@
           "type": {
             "option": {
               "defined": {
-                "name": "PositionDirection"
+                "name": "positionDirection"
               }
             }
           }
@@ -837,7 +783,7 @@
       ]
     },
     {
-      "name": "drift_cancel_orders_by_ids",
+      "name": "driftCancelOrdersByIds",
       "docs": [
         "Cancels drift orders by order IDs.",
         "",
@@ -863,10 +809,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -881,18 +827,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -905,7 +851,7 @@
       ],
       "args": [
         {
-          "name": "order_ids",
+          "name": "orderIds",
           "type": {
             "vec": "u32"
           }
@@ -913,7 +859,7 @@
       ]
     },
     {
-      "name": "drift_delete_user",
+      "name": "driftDeleteUser",
       "docs": [
         "Deletes a drift user (sub account).",
         "",
@@ -938,10 +884,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -957,18 +903,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -976,7 +922,7 @@
           "writable": true
         },
         {
-          "name": "user_stats",
+          "name": "userStats",
           "writable": true
         },
         {
@@ -987,7 +933,7 @@
       "args": []
     },
     {
-      "name": "drift_deposit",
+      "name": "driftDeposit",
       "docs": [
         "Deposits to drift.",
         "",
@@ -1014,10 +960,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1033,18 +979,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1055,24 +1001,24 @@
           "writable": true
         },
         {
-          "name": "user_stats",
+          "name": "userStats",
           "writable": true
         },
         {
-          "name": "spot_market_vault",
+          "name": "spotMarketVault",
           "writable": true
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "market_index",
+          "name": "marketIndex",
           "type": "u16"
         },
         {
@@ -1080,13 +1026,13 @@
           "type": "u64"
         },
         {
-          "name": "reduce_only",
+          "name": "reduceOnly",
           "type": "bool"
         }
       ]
     },
     {
-      "name": "drift_initialize_user",
+      "name": "driftInitializeUser",
       "discriminator": [
         107,
         244,
@@ -1099,10 +1045,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1117,18 +1063,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1136,7 +1082,7 @@
           "writable": true
         },
         {
-          "name": "user_stats",
+          "name": "userStats",
           "writable": true
         },
         {
@@ -1153,13 +1099,13 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "sub_account_id",
+          "name": "subAccountId",
           "type": "u16"
         },
         {
@@ -1174,7 +1120,7 @@
       ]
     },
     {
-      "name": "drift_initialize_user_stats",
+      "name": "driftInitializeUserStats",
       "docs": [
         "Initializes a drift account owned by vault and creates a subaccount.",
         "",
@@ -1199,10 +1145,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1217,22 +1163,22 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
-          "name": "user_stats",
+          "name": "userStats",
           "writable": true
         },
         {
@@ -1249,14 +1195,14 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "drift_modify_order",
+      "name": "driftModifyOrder",
       "docs": [
         "Modifies an existing drift order.",
         "",
@@ -1283,10 +1229,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1301,18 +1247,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1325,23 +1271,23 @@
       ],
       "args": [
         {
-          "name": "order_id",
+          "name": "orderId",
           "type": {
             "option": "u32"
           }
         },
         {
-          "name": "modify_order_params",
+          "name": "modifyOrderParams",
           "type": {
             "defined": {
-              "name": "ModifyOrderParams"
+              "name": "modifyOrderParams"
             }
           }
         }
       ]
     },
     {
-      "name": "drift_place_orders",
+      "name": "driftPlaceOrders",
       "docs": [
         "Places orders on drift.",
         "",
@@ -1368,10 +1314,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1387,18 +1333,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1415,7 +1361,7 @@
           "type": {
             "vec": {
               "defined": {
-                "name": "OrderParams"
+                "name": "orderParams"
               }
             }
           }
@@ -1423,7 +1369,7 @@
       ]
     },
     {
-      "name": "drift_update_user_custom_margin_ratio",
+      "name": "driftUpdateUserCustomMarginRatio",
       "docs": [
         "Updates custom margin ratio.",
         "",
@@ -1450,10 +1396,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1468,18 +1414,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1489,17 +1435,17 @@
       ],
       "args": [
         {
-          "name": "sub_account_id",
+          "name": "subAccountId",
           "type": "u16"
         },
         {
-          "name": "margin_ratio",
+          "name": "marginRatio",
           "type": "u32"
         }
       ]
     },
     {
-      "name": "drift_update_user_delegate",
+      "name": "driftUpdateUserDelegate",
       "docs": [
         "Sets a delegate on the specified sub account.",
         "",
@@ -1526,10 +1472,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1544,18 +1490,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1565,7 +1511,7 @@
       ],
       "args": [
         {
-          "name": "sub_account_id",
+          "name": "subAccountId",
           "type": "u16"
         },
         {
@@ -1575,7 +1521,7 @@
       ]
     },
     {
-      "name": "drift_update_user_margin_trading_enabled",
+      "name": "driftUpdateUserMarginTradingEnabled",
       "docs": [
         "Enables/Disables margin trading.",
         "",
@@ -1602,10 +1548,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1620,18 +1566,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1641,17 +1587,17 @@
       ],
       "args": [
         {
-          "name": "sub_account_id",
+          "name": "subAccountId",
           "type": "u16"
         },
         {
-          "name": "margin_trading_enabled",
+          "name": "marginTradingEnabled",
           "type": "bool"
         }
       ]
     },
     {
-      "name": "drift_withdraw",
+      "name": "driftWithdraw",
       "docs": [
         "Withdraws from drift.",
         "",
@@ -1678,10 +1624,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1697,18 +1643,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
         },
         {
@@ -1719,27 +1665,27 @@
           "writable": true
         },
         {
-          "name": "user_stats",
+          "name": "userStats",
           "writable": true
         },
         {
-          "name": "spot_market_vault",
+          "name": "spotMarketVault",
           "writable": true
         },
         {
-          "name": "drift_signer"
+          "name": "driftSigner"
         },
         {
-          "name": "user_token_account",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "market_index",
+          "name": "marketIndex",
           "type": "u16"
         },
         {
@@ -1747,13 +1693,13 @@
           "type": "u64"
         },
         {
-          "name": "reduce_only",
+          "name": "reduceOnly",
           "type": "bool"
         }
       ]
     },
     {
-      "name": "force_transfer_tokens",
+      "name": "forceTransferTokens",
       "docs": [
         "Forcefully transfers a specified amount of tokens from one account to another.",
         "",
@@ -1780,20 +1726,20 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "from_ata",
+          "name": "fromAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1803,11 +1749,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -1850,7 +1796,7 @@
           }
         },
         {
-          "name": "to_ata",
+          "name": "toAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -1860,11 +1806,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -1913,13 +1859,13 @@
           "name": "to"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
@@ -1942,11 +1888,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -1961,13 +1907,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_escrow",
+          "name": "glamEscrow",
           "pda": {
             "seeds": [
               {
@@ -1983,13 +1929,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
@@ -1998,21 +1944,21 @@
           "signer": true
         },
         {
-          "name": "escrow_mint_ata",
+          "name": "escrowMintAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_escrow"
+                "path": "glamEscrow"
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -2058,13 +2004,13 @@
           "name": "asset"
         },
         {
-          "name": "vault_asset_ata",
+          "name": "vaultAssetAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_vault"
+                "path": "glamVault"
               },
               {
                 "kind": "const",
@@ -2148,13 +2094,13 @@
           }
         },
         {
-          "name": "escrow_asset_ata",
+          "name": "escrowAssetAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_escrow"
+                "path": "glamEscrow"
               },
               {
                 "kind": "const",
@@ -2238,31 +2184,31 @@
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "initialize_state",
+      "name": "initializeState",
       "docs": [
         "Initializes a state account from the provided StateModel instance.",
         "",
@@ -2285,7 +2231,7 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2301,7 +2247,7 @@
               },
               {
                 "kind": "account",
-                "path": "glam_signer"
+                "path": "glamSigner"
               },
               {
                 "kind": "arg",
@@ -2311,7 +2257,7 @@
           }
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2327,18 +2273,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "openfunds_metadata",
+          "name": "openfundsMetadata",
           "writable": true,
           "optional": true,
           "pda": {
@@ -2358,13 +2304,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -2373,14 +2319,14 @@
           "name": "state",
           "type": {
             "defined": {
-              "name": "StateModel"
+              "name": "stateModel"
             }
           }
         }
       ]
     },
     {
-      "name": "jupiter_gov_new_vote",
+      "name": "jupiterGovNewVote",
       "docs": [
         "Creates a new vote.",
         "",
@@ -2405,10 +2351,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -2423,18 +2369,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "GovaE4iu227srtG2s3tZzB4RmWBzw8sTwrCLZz7kN7rY"
         },
         {
@@ -2450,7 +2396,7 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -2462,7 +2408,7 @@
       ]
     },
     {
-      "name": "jupiter_set_max_swap_slippage",
+      "name": "jupiterSetMaxSwapSlippage",
       "docs": [
         "Sets the max swap slippage.",
         "",
@@ -2485,11 +2431,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -2502,7 +2448,7 @@
       ]
     },
     {
-      "name": "jupiter_swap",
+      "name": "jupiterSwap",
       "docs": [
         "Swaps assets using Jupiter.",
         "",
@@ -2531,11 +2477,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2551,36 +2497,36 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
         },
         {
-          "name": "input_vault_ata",
+          "name": "inputVaultAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_vault"
+                "path": "glamVault"
               },
               {
                 "kind": "account",
-                "path": "input_token_program"
+                "path": "inputTokenProgram"
               },
               {
                 "kind": "account",
-                "path": "input_mint"
+                "path": "inputMint"
               }
             ],
             "program": {
@@ -2623,21 +2569,21 @@
           }
         },
         {
-          "name": "output_vault_ata",
+          "name": "outputVaultAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_vault"
+                "path": "glamVault"
               },
               {
                 "kind": "account",
-                "path": "output_token_program"
+                "path": "outputTokenProgram"
               },
               {
                 "kind": "account",
-                "path": "output_mint"
+                "path": "outputMint"
               }
             ],
             "program": {
@@ -2680,28 +2626,28 @@
           }
         },
         {
-          "name": "input_mint"
+          "name": "inputMint"
         },
         {
-          "name": "output_mint"
+          "name": "outputMint"
         },
         {
-          "name": "input_stake_pool",
+          "name": "inputStakePool",
           "optional": true
         },
         {
-          "name": "output_stake_pool",
+          "name": "outputStakePool",
           "optional": true
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "input_token_program"
+          "name": "inputTokenProgram"
         },
         {
-          "name": "output_token_program"
+          "name": "outputTokenProgram"
         }
       ],
       "args": [
@@ -2712,7 +2658,7 @@
       ]
     },
     {
-      "name": "jupiter_vote_cast_vote",
+      "name": "jupiterVoteCastVote",
       "docs": [
         "Casts a vote.",
         "",
@@ -2738,10 +2684,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -2756,18 +2702,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -2788,7 +2734,7 @@
           "name": "governor"
         },
         {
-          "name": "govern_program"
+          "name": "governProgram"
         }
       ],
       "args": [
@@ -2799,7 +2745,7 @@
       ]
     },
     {
-      "name": "jupiter_vote_cast_vote_checked",
+      "name": "jupiterVoteCastVoteChecked",
       "docs": [
         "Casts a vote, only if expected_side is already recorded.",
         "",
@@ -2826,10 +2772,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -2844,18 +2790,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -2876,7 +2822,7 @@
           "name": "governor"
         },
         {
-          "name": "govern_program"
+          "name": "governProgram"
         }
       ],
       "args": [
@@ -2885,13 +2831,13 @@
           "type": "u8"
         },
         {
-          "name": "expected_side",
+          "name": "expectedSide",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "jupiter_vote_increase_locked_amount",
+      "name": "jupiterVoteIncreaseLockedAmount",
       "docs": [
         "Increases the locked amount (aka stakes JUP).",
         "",
@@ -2917,10 +2863,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -2936,18 +2882,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -2959,15 +2905,15 @@
           "writable": true
         },
         {
-          "name": "escrow_tokens",
+          "name": "escrowTokens",
           "writable": true
         },
         {
-          "name": "source_tokens",
+          "name": "sourceTokens",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -2978,7 +2924,7 @@
       ]
     },
     {
-      "name": "jupiter_vote_merge_partial_unstaking",
+      "name": "jupiterVoteMergePartialUnstaking",
       "docs": [
         "Merges partial unstaking.",
         "",
@@ -3003,10 +2949,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3021,18 +2967,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3044,14 +2990,14 @@
           "writable": true
         },
         {
-          "name": "partial_unstake",
+          "name": "partialUnstake",
           "writable": true
         }
       ],
       "args": []
     },
     {
-      "name": "jupiter_vote_new_escrow",
+      "name": "jupiterVoteNewEscrow",
       "docs": [
         "Initializes a locked voter escrow.",
         "",
@@ -3076,10 +3022,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3094,18 +3040,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3122,14 +3068,14 @@
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "jupiter_vote_open_partial_unstaking",
+      "name": "jupiterVoteOpenPartialUnstaking",
       "docs": [
         "Partially unstakes JUP.",
         "",
@@ -3156,10 +3102,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3174,18 +3120,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3197,12 +3143,12 @@
           "writable": true
         },
         {
-          "name": "partial_unstake",
+          "name": "partialUnstake",
           "writable": true,
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -3218,7 +3164,7 @@
       ]
     },
     {
-      "name": "jupiter_vote_toggle_max_lock",
+      "name": "jupiterVoteToggleMaxLock",
       "docs": [
         "Toggles max lock.",
         "",
@@ -3245,10 +3191,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3263,18 +3209,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3287,13 +3233,13 @@
       ],
       "args": [
         {
-          "name": "is_max_lock",
+          "name": "isMaxLock",
           "type": "bool"
         }
       ]
     },
     {
-      "name": "jupiter_vote_withdraw",
+      "name": "jupiterVoteWithdraw",
       "docs": [
         "Withdraws all unstaked JUP.",
         "",
@@ -3318,10 +3264,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -3337,18 +3283,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3360,21 +3306,21 @@
           "writable": true
         },
         {
-          "name": "escrow_tokens",
+          "name": "escrowTokens",
           "writable": true
         },
         {
-          "name": "destination_tokens",
+          "name": "destinationTokens",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "jupiter_vote_withdraw_partial_unstaking",
+      "name": "jupiterVoteWithdrawPartialUnstaking",
       "docs": [
         "Withdraws JUP from partial unstaking.",
         "",
@@ -3399,10 +3345,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -3418,18 +3364,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
         },
         {
@@ -3441,25 +3387,25 @@
           "writable": true
         },
         {
-          "name": "partial_unstake",
+          "name": "partialUnstake",
           "writable": true
         },
         {
-          "name": "escrow_tokens",
+          "name": "escrowTokens",
           "writable": true
         },
         {
-          "name": "destination_tokens",
+          "name": "destinationTokens",
           "writable": true
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": []
     },
     {
-      "name": "kamino_lending_deposit_reserve_liquidity_and_obligation_collateral_v2",
+      "name": "kaminoLendingDepositReserveLiquidityAndObligationCollateralV2",
       "discriminator": [
         93,
         120,
@@ -3472,10 +3418,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -3491,18 +3437,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
@@ -3510,67 +3456,67 @@
           "writable": true
         },
         {
-          "name": "lending_market"
+          "name": "lendingMarket"
         },
         {
-          "name": "lending_market_authority"
+          "name": "lendingMarketAuthority"
         },
         {
           "name": "reserve",
           "writable": true
         },
         {
-          "name": "reserve_liquidity_mint"
+          "name": "reserveLiquidityMint"
         },
         {
-          "name": "reserve_liquidity_supply",
+          "name": "reserveLiquiditySupply",
           "writable": true
         },
         {
-          "name": "reserve_collateral_mint",
+          "name": "reserveCollateralMint",
           "writable": true
         },
         {
-          "name": "reserve_destination_deposit_collateral",
+          "name": "reserveDestinationDepositCollateral",
           "writable": true
         },
         {
-          "name": "user_source_liquidity",
+          "name": "userSourceLiquidity",
           "writable": true
         },
         {
-          "name": "placeholder_user_destination_collateral"
+          "name": "placeholderUserDestinationCollateral"
         },
         {
-          "name": "collateral_token_program"
+          "name": "collateralTokenProgram"
         },
         {
-          "name": "liquidity_token_program"
+          "name": "liquidityTokenProgram"
         },
         {
-          "name": "instruction_sysvar_account"
+          "name": "instructionSysvarAccount"
         },
         {
-          "name": "obligation_farm_user_state",
+          "name": "obligationFarmUserState",
           "writable": true
         },
         {
-          "name": "reserve_farm_state",
+          "name": "reserveFarmState",
           "writable": true
         },
         {
-          "name": "farms_program"
+          "name": "farmsProgram"
         }
       ],
       "args": [
         {
-          "name": "liquidity_amount",
+          "name": "liquidityAmount",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "kamino_lending_init_obligation",
+      "name": "kaminoLendingInitObligation",
       "discriminator": [
         219,
         210,
@@ -3583,10 +3529,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3601,22 +3547,22 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
-          "name": "fee_payer",
+          "name": "feePayer",
           "writable": true,
           "signer": true
         },
@@ -3625,23 +3571,23 @@
           "writable": true
         },
         {
-          "name": "lending_market"
+          "name": "lendingMarket"
         },
         {
-          "name": "seed1_account"
+          "name": "seed1Account"
         },
         {
-          "name": "seed2_account"
+          "name": "seed2Account"
         },
         {
-          "name": "owner_user_metadata"
+          "name": "ownerUserMetadata"
         },
         {
           "name": "rent",
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -3650,14 +3596,14 @@
           "name": "args",
           "type": {
             "defined": {
-              "name": "InitObligationArgs"
+              "name": "initObligationArgs"
             }
           }
         }
       ]
     },
     {
-      "name": "kamino_lending_init_obligation_farms_for_reserve",
+      "name": "kaminoLendingInitObligationFarmsForReserve",
       "discriminator": [
         227,
         61,
@@ -3670,10 +3616,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3688,18 +3634,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
@@ -3712,32 +3658,32 @@
           "writable": true
         },
         {
-          "name": "lending_market_authority"
+          "name": "lendingMarketAuthority"
         },
         {
           "name": "reserve",
           "writable": true
         },
         {
-          "name": "reserve_farm_state",
+          "name": "reserveFarmState",
           "writable": true
         },
         {
-          "name": "obligation_farm",
+          "name": "obligationFarm",
           "writable": true
         },
         {
-          "name": "lending_market"
+          "name": "lendingMarket"
         },
         {
-          "name": "farms_program"
+          "name": "farmsProgram"
         },
         {
           "name": "rent",
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
@@ -3749,7 +3695,7 @@
       ]
     },
     {
-      "name": "kamino_lending_init_user_metadata",
+      "name": "kaminoLendingInitUserMetadata",
       "discriminator": [
         200,
         95,
@@ -3762,10 +3708,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -3780,50 +3726,50 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
-          "name": "fee_payer",
+          "name": "feePayer",
           "writable": true,
           "signer": true
         },
         {
-          "name": "user_metadata",
+          "name": "userMetadata",
           "writable": true
         },
         {
-          "name": "referrer_user_metadata"
+          "name": "referrerUserMetadata"
         },
         {
           "name": "rent",
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "user_lookup_table",
+          "name": "userLookupTable",
           "type": "pubkey"
         }
       ]
     },
     {
-      "name": "marinade_claim",
+      "name": "marinadeClaim",
       "docs": [
         "Claims tickets that were unstaked in the previous epoch to get SOL.",
         "",
@@ -3848,11 +3794,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -3868,18 +3814,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
         },
         {
@@ -3887,25 +3833,25 @@
           "writable": true
         },
         {
-          "name": "reserve_pda",
+          "name": "reservePda",
           "writable": true
         },
         {
-          "name": "ticket_account",
+          "name": "ticketAccount",
           "writable": true
         },
         {
           "name": "clock"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "marinade_deposit",
+      "name": "marinadeDeposit",
       "docs": [
         "Deposits SOL to get mSOL.",
         "",
@@ -3931,10 +3877,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -3950,18 +3896,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
         },
         {
@@ -3969,37 +3915,37 @@
           "writable": true
         },
         {
-          "name": "msol_mint",
+          "name": "msolMint",
           "writable": true
         },
         {
-          "name": "liq_pool_sol_leg_pda",
+          "name": "liqPoolSolLegPda",
           "writable": true
         },
         {
-          "name": "liq_pool_msol_leg",
+          "name": "liqPoolMsolLeg",
           "writable": true
         },
         {
-          "name": "liq_pool_msol_leg_authority"
+          "name": "liqPoolMsolLegAuthority"
         },
         {
-          "name": "reserve_pda",
+          "name": "reservePda",
           "writable": true
         },
         {
-          "name": "mint_to",
+          "name": "mintTo",
           "writable": true
         },
         {
-          "name": "msol_mint_authority"
+          "name": "msolMintAuthority"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -4010,7 +3956,7 @@
       ]
     },
     {
-      "name": "marinade_deposit_stake_account",
+      "name": "marinadeDepositStakeAccount",
       "docs": [
         "Deposits a stake account to get mSOL.",
         "",
@@ -4036,11 +3982,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4056,18 +4002,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
         },
         {
@@ -4075,31 +4021,31 @@
           "writable": true
         },
         {
-          "name": "validator_list",
+          "name": "validatorList",
           "writable": true
         },
         {
-          "name": "stake_list",
+          "name": "stakeList",
           "writable": true
         },
         {
-          "name": "stake_account",
+          "name": "stakeAccount",
           "writable": true
         },
         {
-          "name": "duplication_flag",
+          "name": "duplicationFlag",
           "writable": true
         },
         {
-          "name": "msol_mint",
+          "name": "msolMint",
           "writable": true
         },
         {
-          "name": "mint_to",
+          "name": "mintTo",
           "writable": true
         },
         {
-          "name": "msol_mint_authority"
+          "name": "msolMintAuthority"
         },
         {
           "name": "clock"
@@ -4109,25 +4055,25 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "stake_program"
+          "name": "stakeProgram"
         }
       ],
       "args": [
         {
-          "name": "validator_idx",
+          "name": "validatorIdx",
           "type": "u32"
         }
       ]
     },
     {
-      "name": "marinade_liquid_unstake",
+      "name": "marinadeLiquidUnstake",
       "docs": [
         "Unstakes mSOL to get SOL immediately with a small fee.",
         "",
@@ -4153,10 +4099,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4172,18 +4118,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
         },
         {
@@ -4191,42 +4137,42 @@
           "writable": true
         },
         {
-          "name": "msol_mint",
+          "name": "msolMint",
           "writable": true
         },
         {
-          "name": "liq_pool_sol_leg_pda",
+          "name": "liqPoolSolLegPda",
           "writable": true
         },
         {
-          "name": "liq_pool_msol_leg",
+          "name": "liqPoolMsolLeg",
           "writable": true
         },
         {
-          "name": "treasury_msol_account",
+          "name": "treasuryMsolAccount",
           "writable": true
         },
         {
-          "name": "get_msol_from",
+          "name": "getMsolFrom",
           "writable": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "msol_amount",
+          "name": "msolAmount",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "marinade_order_unstake",
+      "name": "marinadeOrderUnstake",
       "docs": [
         "Unstakes mSOL to get a ticket that can be claimed at the next epoch.",
         "",
@@ -4252,11 +4198,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4272,18 +4218,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
         },
         {
@@ -4291,15 +4237,15 @@
           "writable": true
         },
         {
-          "name": "msol_mint",
+          "name": "msolMint",
           "writable": true
         },
         {
-          "name": "burn_msol_from",
+          "name": "burnMsolFrom",
           "writable": true
         },
         {
-          "name": "new_ticket_account",
+          "name": "newTicketAccount",
           "writable": true
         },
         {
@@ -4310,18 +4256,18 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "msol_amount",
+          "name": "msolAmount",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "meteora_dlmm_add_liquidity_by_strategy",
+      "name": "meteoraDlmmAddLiquidityByStrategy",
       "discriminator": [
         81,
         139,
@@ -4334,10 +4280,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4353,18 +4299,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
@@ -4372,51 +4318,51 @@
           "writable": true
         },
         {
-          "name": "lb_pair",
+          "name": "lbPair",
           "writable": true
         },
         {
-          "name": "bin_array_bitmap_extension",
+          "name": "binArrayBitmapExtension",
           "writable": true
         },
         {
-          "name": "user_token_x",
+          "name": "userTokenX",
           "writable": true
         },
         {
-          "name": "user_token_y",
+          "name": "userTokenY",
           "writable": true
         },
         {
-          "name": "reserve_x",
+          "name": "reserveX",
           "writable": true
         },
         {
-          "name": "reserve_y",
+          "name": "reserveY",
           "writable": true
         },
         {
-          "name": "token_x_mint"
+          "name": "tokenXMint"
         },
         {
-          "name": "token_y_mint"
+          "name": "tokenYMint"
         },
         {
-          "name": "bin_array_lower",
+          "name": "binArrayLower",
           "writable": true
         },
         {
-          "name": "bin_array_upper",
+          "name": "binArrayUpper",
           "writable": true
         },
         {
-          "name": "token_x_program"
+          "name": "tokenXProgram"
         },
         {
-          "name": "token_y_program"
+          "name": "tokenYProgram"
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4427,14 +4373,14 @@
           "name": "params",
           "type": {
             "defined": {
-              "name": "LiquidityParameterByStrategy"
+              "name": "liquidityParameterByStrategy"
             }
           }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_claim_fee",
+      "name": "meteoraDlmmClaimFee",
       "discriminator": [
         78,
         116,
@@ -4447,10 +4393,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4466,22 +4412,22 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
-          "name": "lb_pair",
+          "name": "lbPair",
           "writable": true
         },
         {
@@ -4489,40 +4435,40 @@
           "writable": true
         },
         {
-          "name": "bin_array_lower",
+          "name": "binArrayLower",
           "writable": true
         },
         {
-          "name": "bin_array_upper",
+          "name": "binArrayUpper",
           "writable": true
         },
         {
-          "name": "reserve_x",
+          "name": "reserveX",
           "writable": true
         },
         {
-          "name": "reserve_y",
+          "name": "reserveY",
           "writable": true
         },
         {
-          "name": "user_token_x",
+          "name": "userTokenX",
           "writable": true
         },
         {
-          "name": "user_token_y",
+          "name": "userTokenY",
           "writable": true
         },
         {
-          "name": "token_x_mint"
+          "name": "tokenXMint"
         },
         {
-          "name": "token_y_mint"
+          "name": "tokenYMint"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4531,7 +4477,7 @@
       "args": []
     },
     {
-      "name": "meteora_dlmm_close_position",
+      "name": "meteoraDlmmClosePosition",
       "discriminator": [
         186,
         117,
@@ -4544,10 +4490,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4563,18 +4509,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
@@ -4582,19 +4528,19 @@
           "writable": true
         },
         {
-          "name": "lb_pair",
+          "name": "lbPair",
           "writable": true
         },
         {
-          "name": "bin_array_lower",
+          "name": "binArrayLower",
           "writable": true
         },
         {
-          "name": "bin_array_upper",
+          "name": "binArrayUpper",
           "writable": true
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4603,7 +4549,7 @@
       "args": []
     },
     {
-      "name": "meteora_dlmm_initialize_position",
+      "name": "meteoraDlmmInitializePosition",
       "discriminator": [
         223,
         94,
@@ -4616,10 +4562,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4635,18 +4581,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
@@ -4660,10 +4606,10 @@
           "signer": true
         },
         {
-          "name": "lb_pair"
+          "name": "lbPair"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -4671,7 +4617,7 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4679,7 +4625,7 @@
       ],
       "args": [
         {
-          "name": "lower_bin_id",
+          "name": "lowerBinId",
           "type": "i32"
         },
         {
@@ -4689,7 +4635,7 @@
       ]
     },
     {
-      "name": "meteora_dlmm_remove_liquidity_by_range",
+      "name": "meteoraDlmmRemoveLiquidityByRange",
       "discriminator": [
         223,
         12,
@@ -4702,10 +4648,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4721,18 +4667,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
@@ -4740,51 +4686,51 @@
           "writable": true
         },
         {
-          "name": "lb_pair",
+          "name": "lbPair",
           "writable": true
         },
         {
-          "name": "bin_array_bitmap_extension",
+          "name": "binArrayBitmapExtension",
           "writable": true
         },
         {
-          "name": "user_token_x",
+          "name": "userTokenX",
           "writable": true
         },
         {
-          "name": "user_token_y",
+          "name": "userTokenY",
           "writable": true
         },
         {
-          "name": "reserve_x",
+          "name": "reserveX",
           "writable": true
         },
         {
-          "name": "reserve_y",
+          "name": "reserveY",
           "writable": true
         },
         {
-          "name": "token_x_mint"
+          "name": "tokenXMint"
         },
         {
-          "name": "token_y_mint"
+          "name": "tokenYMint"
         },
         {
-          "name": "bin_array_lower",
+          "name": "binArrayLower",
           "writable": true
         },
         {
-          "name": "bin_array_upper",
+          "name": "binArrayUpper",
           "writable": true
         },
         {
-          "name": "token_x_program"
+          "name": "tokenXProgram"
         },
         {
-          "name": "token_y_program"
+          "name": "tokenYProgram"
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4792,21 +4738,21 @@
       ],
       "args": [
         {
-          "name": "from_bin_id",
+          "name": "fromBinId",
           "type": "i32"
         },
         {
-          "name": "to_bin_id",
+          "name": "toBinId",
           "type": "i32"
         },
         {
-          "name": "bps_to_remove",
+          "name": "bpsToRemove",
           "type": "u16"
         }
       ]
     },
     {
-      "name": "meteora_dlmm_swap",
+      "name": "meteoraDlmmSwap",
       "discriminator": [
         127,
         64,
@@ -4819,10 +4765,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4838,65 +4784,65 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
-          "name": "lb_pair",
+          "name": "lbPair",
           "writable": true
         },
         {
-          "name": "bin_array_bitmap_extension"
+          "name": "binArrayBitmapExtension"
         },
         {
-          "name": "reserve_x",
+          "name": "reserveX",
           "writable": true
         },
         {
-          "name": "reserve_y",
+          "name": "reserveY",
           "writable": true
         },
         {
-          "name": "user_token_in",
+          "name": "userTokenIn",
           "writable": true
         },
         {
-          "name": "user_token_out",
+          "name": "userTokenOut",
           "writable": true
         },
         {
-          "name": "token_x_mint"
+          "name": "tokenXMint"
         },
         {
-          "name": "token_y_mint"
+          "name": "tokenYMint"
         },
         {
           "name": "oracle",
           "writable": true
         },
         {
-          "name": "host_fee_in",
+          "name": "hostFeeIn",
           "writable": true
         },
         {
-          "name": "token_x_program"
+          "name": "tokenXProgram"
         },
         {
-          "name": "token_y_program"
+          "name": "tokenYProgram"
         },
         {
-          "name": "event_authority"
+          "name": "eventAuthority"
         },
         {
           "name": "program"
@@ -4904,17 +4850,17 @@
       ],
       "args": [
         {
-          "name": "amount_in",
+          "name": "amountIn",
           "type": "u64"
         },
         {
-          "name": "min_amount_out",
+          "name": "minAmountOut",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "mint_tokens",
+      "name": "mintTokens",
       "docs": [
         "Mints a specified amount of tokens for the given mint.",
         "",
@@ -4941,20 +4887,20 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "mint_to",
+          "name": "mintTo",
           "writable": true,
           "pda": {
             "seeds": [
@@ -4964,11 +4910,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -5014,13 +4960,13 @@
           "name": "recipient"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
@@ -5030,7 +4976,7 @@
       ]
     },
     {
-      "name": "price_stakes",
+      "name": "priceStakes",
       "discriminator": [
         0,
         60,
@@ -5043,11 +4989,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -5062,13 +5008,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -5076,7 +5022,7 @@
       "args": []
     },
     {
-      "name": "price_tickets",
+      "name": "priceTickets",
       "discriminator": [
         253,
         18,
@@ -5089,11 +5035,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -5108,13 +5054,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -5122,7 +5068,7 @@
       "args": []
     },
     {
-      "name": "price_vault",
+      "name": "priceVault",
       "discriminator": [
         47,
         213,
@@ -5135,11 +5081,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -5154,13 +5100,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -5168,7 +5114,7 @@
       "args": []
     },
     {
-      "name": "redeem_queued",
+      "name": "redeemQueued",
       "discriminator": [
         3,
         43,
@@ -5181,11 +5127,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_escrow",
+          "name": "glamEscrow",
           "pda": {
             "seeds": [
               {
@@ -5201,13 +5147,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
@@ -5216,7 +5162,7 @@
           "signer": true
         },
         {
-          "name": "signer_mint_ata",
+          "name": "signerMintAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5226,11 +5172,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -5273,21 +5219,21 @@
           }
         },
         {
-          "name": "escrow_mint_ata",
+          "name": "escrowMintAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_escrow"
+                "path": "glamEscrow"
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -5330,63 +5276,31 @@
           }
         },
         {
-          "name": "signer_policy",
-          "writable": true,
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "signer_mint_ata"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
-          "name": "shares_in",
+          "name": "sharesIn",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "set_subscribe_redeem_enabled",
+      "name": "setSubscribeRedeemEnabled",
       "docs": [
         "Enables or disables the subscribe and redeem functionality.",
         "",
@@ -5411,11 +5325,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -5428,7 +5342,7 @@
       ]
     },
     {
-      "name": "set_token_accounts_states",
+      "name": "setTokenAccountsStates",
       "docs": [
         "Sets the frozen state of the token accounts for the specified mint.",
         "",
@@ -5455,25 +5369,25 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
@@ -5483,7 +5397,7 @@
       ]
     },
     {
-      "name": "stake_authorize",
+      "name": "stakeAuthorize",
       "discriminator": [
         127,
         247,
@@ -5496,11 +5410,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5516,18 +5430,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -5541,17 +5455,17 @@
       ],
       "args": [
         {
-          "name": "new_authority",
+          "name": "newAuthority",
           "type": "pubkey"
         },
         {
-          "name": "staker_with_withdrawer",
+          "name": "stakerWithWithdrawer",
           "type": "u32"
         }
       ]
     },
     {
-      "name": "stake_deactivate",
+      "name": "stakeDeactivate",
       "docs": [
         "Deactivates stake accounts.",
         "",
@@ -5576,10 +5490,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5595,18 +5509,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -5621,7 +5535,7 @@
       "args": []
     },
     {
-      "name": "stake_delegate_stake",
+      "name": "stakeDelegateStake",
       "docs": [
         "Delegates stake account to a validator.",
         "",
@@ -5646,11 +5560,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5666,18 +5580,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -5692,17 +5606,17 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         },
         {
-          "name": "stake_config"
+          "name": "stakeConfig"
         }
       ],
       "args": []
     },
     {
-      "name": "stake_initialize",
+      "name": "stakeInitialize",
       "docs": [
         "Initializes a stake account",
         "",
@@ -5728,11 +5642,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5748,18 +5662,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -5771,14 +5685,14 @@
           "address": "SysvarRent111111111111111111111111111111111"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "stake_merge",
+      "name": "stakeMerge",
       "docs": [
         "Merges two stake accounts.",
         "",
@@ -5803,11 +5717,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5823,26 +5737,26 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
-          "name": "destination_stake",
+          "name": "destinationStake",
           "writable": true
         },
         {
-          "name": "source_stake",
+          "name": "sourceStake",
           "writable": true
         },
         {
@@ -5850,14 +5764,14 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "stake_move_lamports",
+      "name": "stakeMoveLamports",
       "discriminator": [
         21,
         85,
@@ -5870,11 +5784,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5890,26 +5804,26 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
-          "name": "source_stake",
+          "name": "sourceStake",
           "writable": true
         },
         {
-          "name": "destination_stake",
+          "name": "destinationStake",
           "writable": true
         }
       ],
@@ -5921,7 +5835,7 @@
       ]
     },
     {
-      "name": "stake_move_stake",
+      "name": "stakeMoveStake",
       "discriminator": [
         9,
         190,
@@ -5934,11 +5848,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -5954,26 +5868,26 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
-          "name": "source_stake",
+          "name": "sourceStake",
           "writable": true
         },
         {
-          "name": "destination_stake",
+          "name": "destinationStake",
           "writable": true
         }
       ],
@@ -5985,7 +5899,7 @@
       ]
     },
     {
-      "name": "stake_pool_deposit_sol",
+      "name": "stakePoolDepositSol",
       "docs": [
         "Deposits SOL to a stake pool to get pool token.",
         "",
@@ -6011,11 +5925,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6031,63 +5945,63 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "reserve_stake",
+          "name": "reserveStake",
           "writable": true
         },
         {
-          "name": "pool_tokens_to",
+          "name": "poolTokensTo",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "referrer_pool_tokens_account",
+          "name": "referrerPoolTokensAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "lamports_in",
+          "name": "lamportsIn",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_deposit_sol_with_slippage",
+      "name": "stakePoolDepositSolWithSlippage",
       "discriminator": [
         57,
         21,
@@ -6100,11 +6014,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6120,67 +6034,67 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "reserve_stake",
+          "name": "reserveStake",
           "writable": true
         },
         {
-          "name": "pool_tokens_to",
+          "name": "poolTokensTo",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "referrer_pool_tokens_account",
+          "name": "referrerPoolTokensAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "lamports_in",
+          "name": "lamportsIn",
           "type": "u64"
         },
         {
-          "name": "minimum_pool_tokens_out",
+          "name": "minimumPoolTokensOut",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_deposit_stake",
+      "name": "stakePoolDepositStake",
       "docs": [
         "Deposits a stake account to a stake pool to get pool token.",
         "",
@@ -6205,11 +6119,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6225,56 +6139,56 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "validator_list",
+          "name": "validatorList",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "deposit_stake",
+          "name": "depositStake",
           "writable": true
         },
         {
-          "name": "validator_stake_account",
+          "name": "validatorStakeAccount",
           "writable": true
         },
         {
-          "name": "reserve_stake_account",
+          "name": "reserveStakeAccount",
           "writable": true
         },
         {
-          "name": "pool_tokens_to",
+          "name": "poolTokensTo",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "referrer_pool_tokens_account",
+          "name": "referrerPoolTokensAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6282,21 +6196,21 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
       "args": []
     },
     {
-      "name": "stake_pool_deposit_stake_with_slippage",
+      "name": "stakePoolDepositStakeWithSlippage",
       "discriminator": [
         185,
         104,
@@ -6309,11 +6223,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6329,56 +6243,56 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "validator_list",
+          "name": "validatorList",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "deposit_stake",
+          "name": "depositStake",
           "writable": true
         },
         {
-          "name": "validator_stake_account",
+          "name": "validatorStakeAccount",
           "writable": true
         },
         {
-          "name": "reserve_stake_account",
+          "name": "reserveStakeAccount",
           "writable": true
         },
         {
-          "name": "pool_tokens_to",
+          "name": "poolTokensTo",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "referrer_pool_tokens_account",
+          "name": "referrerPoolTokensAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6386,26 +6300,26 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "minimum_pool_tokens_out",
+          "name": "minimumPoolTokensOut",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_withdraw_sol",
+      "name": "stakePoolWithdrawSol",
       "docs": [
         "Unstakes from pool token to get SOL immediately.",
         "",
@@ -6431,10 +6345,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6450,40 +6364,40 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "pool_tokens_from",
+          "name": "poolTokensFrom",
           "writable": true
         },
         {
-          "name": "reserve_stake",
+          "name": "reserveStake",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6491,26 +6405,26 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "pool_tokens_in",
+          "name": "poolTokensIn",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_withdraw_sol_with_slippage",
+      "name": "stakePoolWithdrawSolWithSlippage",
       "discriminator": [
         210,
         92,
@@ -6523,10 +6437,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6542,40 +6456,40 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "pool_tokens_from",
+          "name": "poolTokensFrom",
           "writable": true
         },
         {
-          "name": "reserve_stake",
+          "name": "reserveStake",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6583,30 +6497,30 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
-          "name": "pool_tokens_in",
+          "name": "poolTokensIn",
           "type": "u64"
         },
         {
-          "name": "minimum_lamports_out",
+          "name": "minimumLamportsOut",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_withdraw_stake",
+      "name": "stakePoolWithdrawStake",
       "docs": [
         "Unstakes from pool token into a stake account.",
         "",
@@ -6632,11 +6546,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6652,32 +6566,32 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "validator_list",
+          "name": "validatorList",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "validator_stake_account",
+          "name": "validatorStakeAccount",
           "writable": true
         },
         {
@@ -6685,15 +6599,15 @@
           "writable": true
         },
         {
-          "name": "pool_tokens_from",
+          "name": "poolTokensFrom",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6701,22 +6615,22 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "pool_tokens_in",
+          "name": "poolTokensIn",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_pool_withdraw_stake_with_slippage",
+      "name": "stakePoolWithdrawStakeWithSlippage",
       "discriminator": [
         74,
         83,
@@ -6729,11 +6643,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6749,32 +6663,32 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "stake_pool",
+          "name": "stakePool",
           "writable": true
         },
         {
-          "name": "validator_list",
+          "name": "validatorList",
           "writable": true
         },
         {
-          "name": "stake_pool_withdraw_authority"
+          "name": "stakePoolWithdrawAuthority"
         },
         {
-          "name": "validator_stake_account",
+          "name": "validatorStakeAccount",
           "writable": true
         },
         {
@@ -6782,15 +6696,15 @@
           "writable": true
         },
         {
-          "name": "pool_tokens_from",
+          "name": "poolTokensFrom",
           "writable": true
         },
         {
-          "name": "fee_account",
+          "name": "feeAccount",
           "writable": true
         },
         {
-          "name": "pool_mint",
+          "name": "poolMint",
           "writable": true
         },
         {
@@ -6798,26 +6712,26 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         },
         {
-          "name": "stake_program",
+          "name": "stakeProgram",
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "pool_tokens_in",
+          "name": "poolTokensIn",
           "type": "u64"
         },
         {
-          "name": "minimum_lamports_out",
+          "name": "minimumLamportsOut",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "stake_redelegate",
+      "name": "stakeRedelegate",
       "docs": [
         "Redelegates an existing stake account to a new validator (a new stake account will be created).",
         "",
@@ -6842,11 +6756,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6862,18 +6776,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -6881,20 +6795,20 @@
           "writable": true
         },
         {
-          "name": "new_stake",
+          "name": "newStake",
           "writable": true
         },
         {
           "name": "vote"
         },
         {
-          "name": "stake_config"
+          "name": "stakeConfig"
         }
       ],
       "args": []
     },
     {
-      "name": "stake_split",
+      "name": "stakeSplit",
       "docs": [
         "Splits from an existing stake account to get a new stake account.",
         "",
@@ -6920,11 +6834,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -6940,18 +6854,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -6959,7 +6873,7 @@
           "writable": true
         },
         {
-          "name": "split_stake",
+          "name": "splitStake",
           "writable": true
         }
       ],
@@ -6971,7 +6885,7 @@
       ]
     },
     {
-      "name": "stake_withdraw",
+      "name": "stakeWithdraw",
       "docs": [
         "Withdraws SOL from stake accounts.",
         "",
@@ -6997,11 +6911,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7017,18 +6931,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "Stake11111111111111111111111111111111111111"
         },
         {
@@ -7040,7 +6954,7 @@
           "address": "SysvarC1ock11111111111111111111111111111111"
         },
         {
-          "name": "stake_history",
+          "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
         }
       ],
@@ -7052,7 +6966,7 @@
       ]
     },
     {
-      "name": "subscribe_instant",
+      "name": "subscribeInstant",
       "discriminator": [
         191,
         239,
@@ -7065,11 +6979,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_escrow",
+          "name": "glamEscrow",
           "pda": {
             "seeds": [
               {
@@ -7085,13 +6999,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "pda": {
             "seeds": [
               {
@@ -7106,13 +7020,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
@@ -7121,7 +7035,7 @@
           "signer": true
         },
         {
-          "name": "signer_mint_ata",
+          "name": "signerMintAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7131,11 +7045,11 @@
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -7178,21 +7092,21 @@
           }
         },
         {
-          "name": "escrow_mint_ata",
+          "name": "escrowMintAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_escrow"
+                "path": "glamEscrow"
               },
               {
                 "kind": "account",
-                "path": "token_2022_program"
+                "path": "token2022Program"
               },
               {
                 "kind": "account",
-                "path": "glam_mint"
+                "path": "glamMint"
               }
             ],
             "program": {
@@ -7235,16 +7149,16 @@
           }
         },
         {
-          "name": "deposit_asset"
+          "name": "depositAsset"
         },
         {
-          "name": "vault_deposit_ata",
+          "name": "vaultDepositAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_vault"
+                "path": "glamVault"
               },
               {
                 "kind": "const",
@@ -7285,7 +7199,7 @@
               },
               {
                 "kind": "account",
-                "path": "deposit_asset"
+                "path": "depositAsset"
               }
             ],
             "program": {
@@ -7328,7 +7242,7 @@
           }
         },
         {
-          "name": "signer_deposit_ata",
+          "name": "signerDepositAta",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7375,7 +7289,7 @@
               },
               {
                 "kind": "account",
-                "path": "deposit_asset"
+                "path": "depositAsset"
               }
             ],
             "program": {
@@ -7418,67 +7332,44 @@
           }
         },
         {
-          "name": "signer_policy",
+          "name": "signerPolicy",
           "writable": true,
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "signer_mint_ata"
-              }
-            ]
-          }
+          "optional": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_program",
+          "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "associated_token_program",
+          "name": "associatedTokenProgram",
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "transferHookProgram",
+          "address": "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
-          "name": "amount_in",
+          "name": "amountIn",
           "type": "u64"
         }
       ]
     },
     {
-      "name": "system_transfer",
+      "name": "systemTransfer",
       "docs": [
         "Transfer vault SOL to wSOL token account or allowlisted addresses.",
         "",
@@ -7502,10 +7393,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7521,18 +7412,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program",
+          "name": "cpiProgram",
           "address": "11111111111111111111111111111111"
         },
         {
@@ -7548,7 +7439,7 @@
       ]
     },
     {
-      "name": "token_close_account",
+      "name": "tokenCloseAccount",
       "discriminator": [
         240,
         32,
@@ -7561,10 +7452,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7580,32 +7471,32 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "token_account",
+          "name": "tokenAccount",
           "writable": true
         }
       ],
       "args": []
     },
     {
-      "name": "token_transfer",
+      "name": "tokenTransfer",
       "discriminator": [
         210,
         16,
@@ -7618,10 +7509,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7637,18 +7528,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
           "name": "from",
@@ -7667,7 +7558,7 @@
       ]
     },
     {
-      "name": "token_transfer_checked",
+      "name": "tokenTransferChecked",
       "discriminator": [
         169,
         178,
@@ -7680,10 +7571,10 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glamState"
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -7699,18 +7590,18 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "cpi_program"
+          "name": "cpiProgram"
         },
         {
           "name": "from",
@@ -7736,138 +7627,7 @@
       ]
     },
     {
-      "name": "transfer_hook",
-      "discriminator": [
-        105,
-        37,
-        101,
-        197,
-        75,
-        251,
-        102,
-        26
-      ],
-      "accounts": [
-        {
-          "name": "src_account"
-        },
-        {
-          "name": "mint"
-        },
-        {
-          "name": "dst_account"
-        },
-        {
-          "name": "owner"
-        },
-        {
-          "name": "extra_account_meta_list",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  120,
-                  116,
-                  114,
-                  97,
-                  45,
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "state"
-        },
-        {
-          "name": "src_account_policy",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "src_account"
-              }
-            ]
-          }
-        },
-        {
-          "name": "dst_account_policy",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  99,
-                  99,
-                  111,
-                  117,
-                  110,
-                  116,
-                  45,
-                  112,
-                  111,
-                  108,
-                  105,
-                  99,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "dst_account"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "update_mint",
+      "name": "updateMint",
       "docs": [
         "Updates an existing mint with new metadata.",
         "",
@@ -7891,40 +7651,40 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "glam_mint",
+          "name": "glamMint",
           "writable": true
         },
         {
-          "name": "token_2022_program",
+          "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         }
       ],
       "args": [
         {
-          "name": "mint_id",
+          "name": "mintId",
           "type": "u8"
         },
         {
-          "name": "mint_model",
+          "name": "mintModel",
           "type": {
             "defined": {
-              "name": "MintModel"
+              "name": "mintModel"
             }
           }
         }
       ]
     },
     {
-      "name": "update_state",
+      "name": "updateState",
       "docs": [
         "Updates an existing state account with new parameters.",
         "",
@@ -7947,11 +7707,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         }
@@ -7961,7 +7721,7 @@
           "name": "state",
           "type": {
             "defined": {
-              "name": "StateModel"
+              "name": "stateModel"
             }
           }
         }
@@ -7991,11 +7751,11 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
+          "name": "glamState",
           "writable": true
         },
         {
-          "name": "glam_vault",
+          "name": "glamVault",
           "writable": true,
           "pda": {
             "seeds": [
@@ -8011,13 +7771,13 @@
               },
               {
                 "kind": "account",
-                "path": "glam_state"
+                "path": "glamState"
               }
             ]
           }
         },
         {
-          "name": "glam_signer",
+          "name": "glamSigner",
           "writable": true,
           "signer": true
         },
@@ -8025,17 +7785,17 @@
           "name": "asset"
         },
         {
-          "name": "vault_ata",
+          "name": "vaultAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_vault"
+                "path": "glamVault"
               },
               {
                 "kind": "account",
-                "path": "token_program"
+                "path": "tokenProgram"
               },
               {
                 "kind": "account",
@@ -8082,17 +7842,17 @@
           }
         },
         {
-          "name": "signer_ata",
+          "name": "signerAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "glam_signer"
+                "path": "glamSigner"
               },
               {
                 "kind": "account",
-                "path": "token_program"
+                "path": "tokenProgram"
               },
               {
                 "kind": "account",
@@ -8139,7 +7899,7 @@
           }
         },
         {
-          "name": "token_program"
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -8152,7 +7912,7 @@
   ],
   "accounts": [
     {
-      "name": "OpenfundsMetadataAccount",
+      "name": "openfundsMetadataAccount",
       "discriminator": [
         5,
         89,
@@ -8165,20 +7925,7 @@
       ]
     },
     {
-      "name": "PolicyAccount",
-      "discriminator": [
-        218,
-        201,
-        183,
-        164,
-        156,
-        127,
-        81,
-        175
-      ]
-    },
-    {
-      "name": "StateAccount",
+      "name": "stateAccount",
       "discriminator": [
         142,
         247,
@@ -8194,205 +7941,210 @@
   "errors": [
     {
       "code": 48000,
-      "name": "NotAuthorized",
+      "name": "notAuthorized",
       "msg": "Signer is not authorized"
     },
     {
       "code": 48001,
-      "name": "IntegrationDisabled",
+      "name": "integrationDisabled",
       "msg": "Integration is disabled"
     },
     {
       "code": 48002,
-      "name": "StateAccountDisabled",
+      "name": "stateAccountDisabled",
       "msg": "State account is disabled"
     },
     {
       "code": 48003,
-      "name": "InvalidSignerAccount",
+      "name": "invalidSignerAccount",
       "msg": "Invalid signer ata"
     },
     {
       "code": 49000,
-      "name": "InvalidAccountType",
+      "name": "invalidAccountType",
       "msg": "Invalid account type"
     },
     {
       "code": 49001,
-      "name": "InvalidName",
+      "name": "invalidName",
       "msg": "Name too long: max 64 chars"
     },
     {
       "code": 49002,
-      "name": "InvalidSymbol",
+      "name": "invalidSymbol",
       "msg": "Symbol too long: max 32 chars"
     },
     {
       "code": 49003,
-      "name": "InvalidUri",
+      "name": "invalidUri",
       "msg": "Uri too long: max 128 chars"
     },
     {
       "code": 49004,
-      "name": "InvalidAssetsLen",
+      "name": "invalidAssetsLen",
       "msg": "Too many assets: max 100"
     },
     {
       "code": 49005,
-      "name": "GlamMintNotFound",
+      "name": "glamMintNotFound",
       "msg": "Glam mint not found"
     },
     {
       "code": 49006,
-      "name": "MintsNotClosed",
+      "name": "mintsNotClosed",
       "msg": "Mints must be closed before closing Glam state account"
     },
     {
       "code": 49007,
-      "name": "InvalidMintId",
+      "name": "invalidMintId",
       "msg": "Invalid mint id"
     },
     {
       "code": 49008,
-      "name": "InvalidRemainingAccounts",
+      "name": "invalidRemainingAccounts",
       "msg": "Invalid accounts: the transaction is malformed"
     },
     {
       "code": 49009,
-      "name": "InvalidVaultTokenAccount",
+      "name": "invalidVaultTokenAccount",
       "msg": "Invalid vault ata"
     },
     {
       "code": 49010,
-      "name": "NonZeroSupply",
+      "name": "nonZeroSupply",
       "msg": "Glam mint supply not zero"
     },
     {
+      "code": 49011,
+      "name": "missingAccount",
+      "msg": "An account required by the instruction is missing"
+    },
+    {
       "code": 50000,
-      "name": "WithdrawDenied",
+      "name": "withdrawDenied",
       "msg": "Withdraw denied. Only vaults allow withdraws (funds and mints don't)"
     },
     {
       "code": 50001,
-      "name": "InvalidAssetForSwap",
+      "name": "invalidAssetForSwap",
       "msg": "Asset cannot be swapped"
     },
     {
       "code": 50002,
-      "name": "InvalidSwap",
+      "name": "invalidSwap",
       "msg": "Swap failed"
     },
     {
       "code": 50003,
-      "name": "InvalidTokenAccount",
+      "name": "invalidTokenAccount",
       "msg": "Invalid token account"
     },
     {
       "code": 50004,
-      "name": "InvalidVoteSide",
+      "name": "invalidVoteSide",
       "msg": "Invalid vote side"
     },
     {
       "code": 50005,
-      "name": "MultipleStakeAccountsDisallowed",
+      "name": "multipleStakeAccountsDisallowed",
       "msg": "Multiple stake accounts disallowed"
     },
     {
       "code": 51000,
-      "name": "InvalidAssetPrice",
+      "name": "invalidAssetPrice",
       "msg": "Invalid asset price"
     },
     {
       "code": 51001,
-      "name": "InvalidStableCoinPriceForSubscribe",
+      "name": "invalidStableCoinPriceForSubscribe",
       "msg": "Subscription not allowed: invalid stable coin price"
     },
     {
       "code": 51002,
-      "name": "SubscribeRedeemDisabled",
+      "name": "subscribeRedeemDisabled",
       "msg": "Subscription and redemption disabled"
     },
     {
       "code": 51003,
-      "name": "InvalidAssetSubscribe",
+      "name": "invalidAssetSubscribe",
       "msg": "Asset not allowed to subscribe"
     },
     {
       "code": 51004,
-      "name": "LedgerNotFound",
+      "name": "ledgerNotFound",
       "msg": "Ledger not found"
     },
     {
       "code": 51005,
-      "name": "InvalidLedgerEntry",
+      "name": "invalidLedgerEntry",
       "msg": "Invalid ledger entry"
     },
     {
       "code": 51100,
-      "name": "InvalidPricingOracle",
+      "name": "invalidPricingOracle",
       "msg": "Invalid oracle for asset price"
     },
     {
       "code": 51101,
-      "name": "PricingError",
+      "name": "pricingError",
       "msg": "Pricing error"
     },
     {
       "code": 51102,
-      "name": "PriceTooOld",
+      "name": "priceTooOld",
       "msg": "Price is too old"
     },
     {
       "code": 51103,
-      "name": "UnpricedExternalAccounts",
+      "name": "unpricedExternalAccounts",
       "msg": "Not all external vault accounts are priced"
     },
     {
       "code": 51104,
-      "name": "VaultNotPriced",
+      "name": "vaultNotPriced",
       "msg": "No priced assets found"
     },
     {
       "code": 52000,
-      "name": "TransfersDisabled",
+      "name": "transfersDisabled",
       "msg": "Policy violation: transfers disabled"
     },
     {
       "code": 52001,
-      "name": "InvalidPolicyAccount",
+      "name": "invalidPolicyAccount",
       "msg": "Policy account is mandatory"
     },
     {
       "code": 52002,
-      "name": "AmountTooBig",
+      "name": "amountTooBig",
       "msg": "Policy violation: amount too big"
     },
     {
       "code": 52003,
-      "name": "LockUp",
-      "msg": "Policy violation: lock-up period"
+      "name": "lockUp",
+      "msg": "Policy violation: lock-up has not expired"
     }
   ],
   "types": [
     {
-      "name": "AccountType",
+      "name": "accountType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Vault"
+            "name": "vault"
           },
           {
-            "name": "Mint"
+            "name": "mint"
           },
           {
-            "name": "Fund"
+            "name": "fund"
           }
         ]
       }
     },
     {
-      "name": "CompanyField",
+      "name": "companyField",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8400,7 +8152,7 @@
             "name": "name",
             "type": {
               "defined": {
-                "name": "CompanyFieldName"
+                "name": "companyFieldName"
               }
             }
           },
@@ -8412,137 +8164,137 @@
       }
     },
     {
-      "name": "CompanyFieldName",
+      "name": "companyFieldName",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "FundGroupName"
+            "name": "fundGroupName"
           },
           {
-            "name": "ManCo"
+            "name": "manCo"
           },
           {
-            "name": "DomicileOfManCo"
+            "name": "domicileOfManCo"
           },
           {
-            "name": "BICOfCustodian"
+            "name": "bicOfCustodian"
           },
           {
-            "name": "CollateralManagerName"
+            "name": "collateralManagerName"
           },
           {
-            "name": "CustodianBankName"
+            "name": "custodianBankName"
           },
           {
-            "name": "DomicileOfCustodianBank"
+            "name": "domicileOfCustodianBank"
           },
           {
-            "name": "FundAdministratorName"
+            "name": "fundAdministratorName"
           },
           {
-            "name": "FundAdvisorName"
+            "name": "fundAdvisorName"
           },
           {
-            "name": "FundPromoterName"
+            "name": "fundPromoterName"
           },
           {
-            "name": "IsSelfManagedInvestmentCompany"
+            "name": "isSelfManagedInvestmentCompany"
           },
           {
-            "name": "LEIOfCustodianBank"
+            "name": "leiOfCustodianBank"
           },
           {
-            "name": "LEIOfManCo"
+            "name": "leiOfManCo"
           },
           {
-            "name": "PortfolioManagingCompanyName"
+            "name": "portfolioManagingCompanyName"
           },
           {
-            "name": "SecuritiesLendingCounterpartyName"
+            "name": "securitiesLendingCounterpartyName"
           },
           {
-            "name": "SwapCounterpartyName"
+            "name": "swapCounterpartyName"
           },
           {
-            "name": "AddressofManCo"
+            "name": "addressofManCo"
           },
           {
-            "name": "AuditorName"
+            "name": "auditorName"
           },
           {
-            "name": "CityofManCo"
+            "name": "cityofManCo"
           },
           {
-            "name": "EmailAddressOfManCo"
+            "name": "emailAddressOfManCo"
           },
           {
-            "name": "FundWebsiteOfManCo"
+            "name": "fundWebsiteOfManCo"
           },
           {
-            "name": "IsUNPRISignatory"
+            "name": "isUnpriSignatory"
           },
           {
-            "name": "PhoneCountryCodeofManCo"
+            "name": "phoneCountryCodeofManCo"
           },
           {
-            "name": "PhoneNumberofManCo"
+            "name": "phoneNumberofManCo"
           },
           {
-            "name": "SubInvestmentAdvisorName"
+            "name": "subInvestmentAdvisorName"
           },
           {
-            "name": "ZIPCodeofManCo"
+            "name": "zipCodeofManCo"
           },
           {
-            "name": "DomicileOfUmbrella"
+            "name": "domicileOfUmbrella"
           },
           {
-            "name": "HasUmbrella"
+            "name": "hasUmbrella"
           },
           {
-            "name": "LEIOfUmbrella"
+            "name": "leiOfUmbrella"
           },
           {
-            "name": "Umbrella"
+            "name": "umbrella"
           },
           {
-            "name": "GlobalIntermediaryIdentificationNumberOfUmbrella"
+            "name": "globalIntermediaryIdentificationNumberOfUmbrella"
           }
         ]
       }
     },
     {
-      "name": "CompanyModel",
+      "name": "companyModel",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "fund_group_name",
+            "name": "fundGroupName",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "man_co",
+            "name": "manCo",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "domicile_of_man_co",
+            "name": "domicileOfManCo",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "email_address_of_man_co",
+            "name": "emailAddressOfManCo",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "fund_website_of_man_co",
+            "name": "fundWebsiteOfManCo",
             "type": {
               "option": "string"
             }
@@ -8551,7 +8303,7 @@
       }
     },
     {
-      "name": "CreatedModel",
+      "name": "createdModel",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8565,18 +8317,18 @@
             }
           },
           {
-            "name": "created_by",
+            "name": "createdBy",
             "type": "pubkey"
           },
           {
-            "name": "created_at",
+            "name": "createdAt",
             "type": "i64"
           }
         ]
       }
     },
     {
-      "name": "DelegateAcl",
+      "name": "delegateAcl",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8589,20 +8341,20 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "Permission"
+                  "name": "permission"
                 }
               }
             }
           },
           {
-            "name": "expires_at",
+            "name": "expiresAt",
             "type": "i64"
           }
         ]
       }
     },
     {
-      "name": "EngineField",
+      "name": "engineField",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8610,7 +8362,7 @@
             "name": "name",
             "type": {
               "defined": {
-                "name": "EngineFieldName"
+                "name": "engineFieldName"
               }
             }
           },
@@ -8618,7 +8370,7 @@
             "name": "value",
             "type": {
               "defined": {
-                "name": "EngineFieldValue"
+                "name": "engineFieldValue"
               }
             }
           }
@@ -8626,53 +8378,53 @@
       }
     },
     {
-      "name": "EngineFieldName",
+      "name": "engineFieldName",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Allowlist"
+            "name": "allowlist"
           },
           {
-            "name": "Blocklist"
+            "name": "blocklist"
           },
           {
-            "name": "ExternalVaultAccounts"
+            "name": "externalVaultAccounts"
           },
           {
-            "name": "LockUp"
+            "name": "lockUp"
           },
           {
-            "name": "DriftMarketIndexesPerp"
+            "name": "driftMarketIndexesPerp"
           },
           {
-            "name": "DriftMarketIndexesSpot"
+            "name": "driftMarketIndexesSpot"
           },
           {
-            "name": "DriftOrderTypes"
+            "name": "driftOrderTypes"
           },
           {
-            "name": "MaxSwapSlippageBps"
+            "name": "maxSwapSlippageBps"
           },
           {
-            "name": "TransferToAllowlist"
+            "name": "transferToAllowlist"
           },
           {
-            "name": "PricedAssets"
+            "name": "pricedAssets"
           },
           {
-            "name": "Ledger"
+            "name": "ledger"
           }
         ]
       }
     },
     {
-      "name": "EngineFieldValue",
+      "name": "engineFieldValue",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Boolean",
+            "name": "boolean",
             "fields": [
               {
                 "name": "val",
@@ -8681,7 +8433,7 @@
             ]
           },
           {
-            "name": "Date",
+            "name": "date",
             "fields": [
               {
                 "name": "val",
@@ -8690,7 +8442,7 @@
             ]
           },
           {
-            "name": "Double",
+            "name": "double",
             "fields": [
               {
                 "name": "val",
@@ -8699,7 +8451,7 @@
             ]
           },
           {
-            "name": "Integer",
+            "name": "integer",
             "fields": [
               {
                 "name": "val",
@@ -8708,7 +8460,7 @@
             ]
           },
           {
-            "name": "String",
+            "name": "string",
             "fields": [
               {
                 "name": "val",
@@ -8717,7 +8469,7 @@
             ]
           },
           {
-            "name": "Time",
+            "name": "time",
             "fields": [
               {
                 "name": "val",
@@ -8726,7 +8478,7 @@
             ]
           },
           {
-            "name": "U8",
+            "name": "u8",
             "fields": [
               {
                 "name": "val",
@@ -8735,7 +8487,7 @@
             ]
           },
           {
-            "name": "U64",
+            "name": "u64",
             "fields": [
               {
                 "name": "val",
@@ -8744,7 +8496,7 @@
             ]
           },
           {
-            "name": "Pubkey",
+            "name": "pubkey",
             "fields": [
               {
                 "name": "val",
@@ -8753,7 +8505,7 @@
             ]
           },
           {
-            "name": "Percentage",
+            "name": "percentage",
             "fields": [
               {
                 "name": "val",
@@ -8762,7 +8514,7 @@
             ]
           },
           {
-            "name": "URI",
+            "name": "uri",
             "fields": [
               {
                 "name": "val",
@@ -8771,7 +8523,7 @@
             ]
           },
           {
-            "name": "Timestamp",
+            "name": "timestamp",
             "fields": [
               {
                 "name": "val",
@@ -8780,7 +8532,7 @@
             ]
           },
           {
-            "name": "VecPubkey",
+            "name": "vecPubkey",
             "fields": [
               {
                 "name": "val",
@@ -8791,7 +8543,7 @@
             ]
           },
           {
-            "name": "VecU32",
+            "name": "vecU32",
             "fields": [
               {
                 "name": "val",
@@ -8802,14 +8554,14 @@
             ]
           },
           {
-            "name": "VecPricedAssets",
+            "name": "vecPricedAssets",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "PricedAssets"
+                      "name": "pricedAssets"
                     }
                   }
                 }
@@ -8817,14 +8569,14 @@
             ]
           },
           {
-            "name": "Ledger",
+            "name": "ledger",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "LedgerEntry"
+                      "name": "ledgerEntry"
                     }
                   }
                 }
@@ -8835,7 +8587,7 @@
       }
     },
     {
-      "name": "FundField",
+      "name": "fundField",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8843,7 +8595,7 @@
             "name": "name",
             "type": {
               "defined": {
-                "name": "FundFieldName"
+                "name": "fundFieldName"
               }
             }
           },
@@ -8855,138 +8607,138 @@
       }
     },
     {
-      "name": "FundFieldName",
+      "name": "fundFieldName",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "FundDomicileAlpha2"
+            "name": "fundDomicileAlpha2"
           },
           {
-            "name": "FundDomicileAlpha3"
+            "name": "fundDomicileAlpha3"
           },
           {
-            "name": "LegalFundNameIncludingUmbrella"
+            "name": "legalFundNameIncludingUmbrella"
           },
           {
-            "name": "FiscalYearEnd"
+            "name": "fiscalYearEnd"
           },
           {
-            "name": "FundCurrency"
+            "name": "fundCurrency"
           },
           {
-            "name": "FundLaunchDate"
+            "name": "fundLaunchDate"
           },
           {
-            "name": "InvestmentObjective"
+            "name": "investmentObjective"
           },
           {
-            "name": "IsETC"
+            "name": "isEtc"
           },
           {
-            "name": "IsEUDirectiveRelevant"
+            "name": "isEuDirectiveRelevant"
           },
           {
-            "name": "IsFundOfFunds"
+            "name": "isFundOfFunds"
           },
           {
-            "name": "IsPassiveFund"
+            "name": "isPassiveFund"
           },
           {
-            "name": "IsREIT"
+            "name": "isReit"
           },
           {
-            "name": "LegalForm"
+            "name": "legalForm"
           },
           {
-            "name": "LegalFundNameOnly"
+            "name": "legalFundNameOnly"
           },
           {
-            "name": "OpenEndedOrClosedEndedFundStructure"
+            "name": "openEndedOrClosedEndedFundStructure"
           },
           {
-            "name": "TypeOfEUDirective"
+            "name": "typeOfEuDirective"
           },
           {
-            "name": "UCITSVersion"
+            "name": "ucitsVersion"
           },
           {
-            "name": "CurrencyHedgePortfolio"
+            "name": "currencyHedgePortfolio"
           },
           {
-            "name": "DepositoryName"
+            "name": "depositoryName"
           },
           {
-            "name": "FundValuationPoint"
+            "name": "fundValuationPoint"
           },
           {
-            "name": "FundValuationPointTimeZone"
+            "name": "fundValuationPointTimeZone"
           },
           {
-            "name": "FundValuationPointTimeZoneUsingTZDatabase"
+            "name": "fundValuationPointTimeZoneUsingTzDatabase"
           },
           {
-            "name": "HasCollateralManager"
+            "name": "hasCollateralManager"
           },
           {
-            "name": "HasEmbeddedDerivatives"
+            "name": "hasEmbeddedDerivatives"
           },
           {
-            "name": "HasSecuritiesLending"
+            "name": "hasSecuritiesLending"
           },
           {
-            "name": "HasSwap"
+            "name": "hasSwap"
           },
           {
-            "name": "IsLeveraged"
+            "name": "isLeveraged"
           },
           {
-            "name": "IsShariaCompliant"
+            "name": "isShariaCompliant"
           },
           {
-            "name": "IsShort"
+            "name": "isShort"
           },
           {
-            "name": "LEIofDepositoryBank"
+            "name": "leIofDepositoryBank"
           },
           {
-            "name": "LEIOfFund"
+            "name": "leiOfFund"
           },
           {
-            "name": "LocationOfBearerShare"
+            "name": "locationOfBearerShare"
           },
           {
-            "name": "LocationOfShareRegister"
+            "name": "locationOfShareRegister"
           },
           {
-            "name": "MaximumLeverageInFund"
+            "name": "maximumLeverageInFund"
           },
           {
-            "name": "MiFIDSecuritiesClassification"
+            "name": "miFidSecuritiesClassification"
           },
           {
-            "name": "MoneyMarketTypeOfFund"
+            "name": "moneyMarketTypeOfFund"
           },
           {
-            "name": "TrusteeName"
+            "name": "trusteeName"
           },
           {
-            "name": "AuMFund"
+            "name": "auMFund"
           },
           {
-            "name": "AuMFundDate"
+            "name": "auMFundDate"
           },
           {
-            "name": "NoSFund"
+            "name": "noSFund"
           },
           {
-            "name": "NoSFundDate"
+            "name": "noSFundDate"
           }
         ]
       }
     },
     {
-      "name": "FundManagerField",
+      "name": "fundManagerField",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8994,7 +8746,7 @@
             "name": "name",
             "type": {
               "defined": {
-                "name": "FundManagerFieldName"
+                "name": "fundManagerFieldName"
               }
             }
           },
@@ -9006,134 +8758,134 @@
       }
     },
     {
-      "name": "FundManagerFieldName",
+      "name": "fundManagerFieldName",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "PortfolioManagerForename"
+            "name": "portfolioManagerForename"
           },
           {
-            "name": "PortfolioManagerName"
+            "name": "portfolioManagerName"
           },
           {
-            "name": "PortfolioManagerYearOfBirth"
+            "name": "portfolioManagerYearOfBirth"
           },
           {
-            "name": "PortfolioManagerYearOfExperienceStart"
+            "name": "portfolioManagerYearOfExperienceStart"
           },
           {
-            "name": "PortfolioManagerBriefBiography"
+            "name": "portfolioManagerBriefBiography"
           },
           {
-            "name": "PortfolioManagerType"
+            "name": "portfolioManagerType"
           },
           {
-            "name": "PortfolioManagerRoleStartingDate"
+            "name": "portfolioManagerRoleStartingDate"
           },
           {
-            "name": "PortfolioManagerRoleEndDate"
+            "name": "portfolioManagerRoleEndDate"
           }
         ]
       }
     },
     {
-      "name": "FundOpenfundsModel",
+      "name": "fundOpenfundsModel",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "fund_domicile_alpha_2",
+            "name": "fundDomicileAlpha2",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "legal_fund_name_including_umbrella",
+            "name": "legalFundNameIncludingUmbrella",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "fiscal_year_end",
+            "name": "fiscalYearEnd",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "fund_currency",
+            "name": "fundCurrency",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "fund_launch_date",
+            "name": "fundLaunchDate",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "investment_objective",
+            "name": "investmentObjective",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "is_etc",
+            "name": "isEtc",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_eu_directive_relevant",
+            "name": "isEuDirectiveRelevant",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_fund_of_funds",
+            "name": "isFundOfFunds",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_passive_fund",
+            "name": "isPassiveFund",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_reit",
+            "name": "isReit",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "legal_form",
+            "name": "legalForm",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "legal_fund_name_only",
+            "name": "legalFundNameOnly",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "open_ended_or_closed_ended_fund_structure",
+            "name": "openEndedOrClosedEndedFundStructure",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "type_of_eu_directive",
+            "name": "typeOfEuDirective",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "ucits_version",
+            "name": "ucitsVersion",
             "type": {
               "option": "string"
             }
@@ -9142,7 +8894,7 @@
       }
     },
     {
-      "name": "InitObligationArgs",
+      "name": "initObligationArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9158,42 +8910,42 @@
       }
     },
     {
-      "name": "Integration",
+      "name": "integration",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Drift"
+            "name": "drift"
           },
           {
-            "name": "SplStakePool"
+            "name": "splStakePool"
           },
           {
-            "name": "SanctumStakePool"
+            "name": "sanctumStakePool"
           },
           {
-            "name": "NativeStaking"
+            "name": "nativeStaking"
           },
           {
-            "name": "Marinade"
+            "name": "marinade"
           },
           {
-            "name": "JupiterSwap"
+            "name": "jupiterSwap"
           },
           {
-            "name": "JupiterVote"
+            "name": "jupiterVote"
           },
           {
-            "name": "KaminoLending"
+            "name": "kaminoLending"
           },
           {
-            "name": "MeteoraDlmm"
+            "name": "meteoraDlmm"
           }
         ]
       }
     },
     {
-      "name": "LedgerEntry",
+      "name": "ledgerEntry",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9209,7 +8961,7 @@
             "name": "kind",
             "type": {
               "defined": {
-                "name": "LedgerEntryKind"
+                "name": "ledgerEntryKind"
               }
             }
           },
@@ -9217,7 +8969,7 @@
             "name": "incoming",
             "type": {
               "defined": {
-                "name": "PubkeyAmount"
+                "name": "pubkeyAmount"
               }
             }
           },
@@ -9230,7 +8982,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "PubkeyAmount"
+                  "name": "pubkeyAmount"
                 }
               }
             }
@@ -9239,45 +8991,45 @@
       }
     },
     {
-      "name": "LedgerEntryKind",
+      "name": "ledgerEntryKind",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Subscription"
+            "name": "subscription"
           },
           {
-            "name": "Redemption"
+            "name": "redemption"
           }
         ]
       }
     },
     {
-      "name": "LiquidityParameterByStrategy",
+      "name": "liquidityParameterByStrategy",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "amount_x",
+            "name": "amountX",
             "type": "u64"
           },
           {
-            "name": "amount_y",
+            "name": "amountY",
             "type": "u64"
           },
           {
-            "name": "active_id",
+            "name": "activeId",
             "type": "i32"
           },
           {
-            "name": "max_active_bin_slippage",
+            "name": "maxActiveBinSlippage",
             "type": "i32"
           },
           {
-            "name": "strategy_parameters",
+            "name": "strategyParameters",
             "type": {
               "defined": {
-                "name": "StrategyParameters"
+                "name": "strategyParameters"
               }
             }
           }
@@ -9285,26 +9037,26 @@
       }
     },
     {
-      "name": "ManagerKind",
+      "name": "managerKind",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Wallet"
+            "name": "wallet"
           },
           {
-            "name": "Squads"
+            "name": "squads"
           }
         ]
       }
     },
     {
-      "name": "ManagerModel",
+      "name": "managerModel",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "portfolio_manager_name",
+            "name": "portfolioManagerName",
             "type": {
               "option": "string"
             }
@@ -9320,7 +9072,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "ManagerKind"
+                  "name": "managerKind"
                 }
               }
             }
@@ -9329,21 +9081,21 @@
       }
     },
     {
-      "name": "MarketType",
+      "name": "marketType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Spot"
+            "name": "spot"
           },
           {
-            "name": "Perp"
+            "name": "perp"
           }
         ]
       }
     },
     {
-      "name": "Metadata",
+      "name": "metadata",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9351,7 +9103,7 @@
             "name": "template",
             "type": {
               "defined": {
-                "name": "MetadataTemplate"
+                "name": "metadataTemplate"
               }
             }
           },
@@ -9367,18 +9119,18 @@
       }
     },
     {
-      "name": "MetadataTemplate",
+      "name": "metadataTemplate",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Openfunds"
+            "name": "openfunds"
           }
         ]
       }
     },
     {
-      "name": "MintModel",
+      "name": "mintModel",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9401,7 +9153,7 @@
             }
           },
           {
-            "name": "state_pubkey",
+            "name": "statePubkey",
             "type": {
               "option": "pubkey"
             }
@@ -9413,7 +9165,7 @@
             }
           },
           {
-            "name": "image_uri",
+            "name": "imageUri",
             "type": {
               "option": "string"
             }
@@ -9435,35 +9187,35 @@
             }
           },
           {
-            "name": "lock_up_period_in_seconds",
+            "name": "lockUpPeriodInSeconds",
             "type": {
               "option": "i32"
             }
           },
           {
-            "name": "permanent_delegate",
+            "name": "permanentDelegate",
             "type": {
               "option": "pubkey"
             }
           },
           {
-            "name": "default_account_state_frozen",
+            "name": "defaultAccountStateFrozen",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_raw_openfunds",
+            "name": "isRawOpenfunds",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "raw_openfunds",
+            "name": "rawOpenfunds",
             "type": {
               "option": {
                 "defined": {
-                  "name": "MintOpenfundsModel"
+                  "name": "mintOpenfundsModel"
                 }
               }
             }
@@ -9472,7 +9224,7 @@
       }
     },
     {
-      "name": "MintOpenfundsModel",
+      "name": "mintOpenfundsModel",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9483,151 +9235,151 @@
             }
           },
           {
-            "name": "share_class_currency",
+            "name": "shareClassCurrency",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "currency_of_minimal_subscription",
+            "name": "currencyOfMinimalSubscription",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "full_share_class_name",
+            "name": "fullShareClassName",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "investment_status",
+            "name": "investmentStatus",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_initial_subscription_category",
+            "name": "minimalInitialSubscriptionCategory",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_initial_subscription_in_amount",
+            "name": "minimalInitialSubscriptionInAmount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_initial_subscription_in_shares",
+            "name": "minimalInitialSubscriptionInShares",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_distribution_policy",
+            "name": "shareClassDistributionPolicy",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_extension",
+            "name": "shareClassExtension",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_launch_date",
+            "name": "shareClassLaunchDate",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_lifecycle",
+            "name": "shareClassLifecycle",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "launch_price",
+            "name": "launchPrice",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "launch_price_currency",
+            "name": "launchPriceCurrency",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "launch_price_date",
+            "name": "launchPriceDate",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "currency_of_minimal_or_maximum_redemption",
+            "name": "currencyOfMinimalOrMaximumRedemption",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "has_lock_up_for_redemption",
+            "name": "hasLockUpForRedemption",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "is_valid_isin",
+            "name": "isValidIsin",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "lock_up_comment",
+            "name": "lockUpComment",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "lock_up_period_in_days",
+            "name": "lockUpPeriodInDays",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "maximum_initial_redemption_in_amount",
+            "name": "maximumInitialRedemptionInAmount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "maximum_initial_redemption_in_shares",
+            "name": "maximumInitialRedemptionInShares",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_initial_redemption_in_amount",
+            "name": "minimalInitialRedemptionInAmount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_initial_redemption_in_shares",
+            "name": "minimalInitialRedemptionInShares",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "minimal_redemption_category",
+            "name": "minimalRedemptionCategory",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_dividend_type",
+            "name": "shareClassDividendType",
             "type": {
               "option": "string"
             }
@@ -9648,7 +9400,7 @@
       }
     },
     {
-      "name": "ModifyOrderParams",
+      "name": "modifyOrderParams",
       "type": {
         "kind": "struct",
         "fields": [
@@ -9657,13 +9409,13 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "PositionDirection"
+                  "name": "positionDirection"
                 }
               }
             }
           },
           {
-            "name": "base_asset_amount",
+            "name": "baseAssetAmount",
             "type": {
               "option": "u64"
             }
@@ -9675,69 +9427,69 @@
             }
           },
           {
-            "name": "reduce_only",
+            "name": "reduceOnly",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "post_only",
+            "name": "postOnly",
             "type": {
               "option": {
                 "defined": {
-                  "name": "PostOnlyParam"
+                  "name": "postOnlyParam"
                 }
               }
             }
           },
           {
-            "name": "immediate_or_cancel",
+            "name": "immediateOrCancel",
             "type": {
               "option": "bool"
             }
           },
           {
-            "name": "max_ts",
+            "name": "maxTs",
             "type": {
               "option": "i64"
             }
           },
           {
-            "name": "trigger_price",
+            "name": "triggerPrice",
             "type": {
               "option": "u64"
             }
           },
           {
-            "name": "trigger_condition",
+            "name": "triggerCondition",
             "type": {
               "option": {
                 "defined": {
-                  "name": "OrderTriggerCondition"
+                  "name": "orderTriggerCondition"
                 }
               }
             }
           },
           {
-            "name": "oracle_price_offset",
+            "name": "oraclePriceOffset",
             "type": {
               "option": "i32"
             }
           },
           {
-            "name": "auction_duration",
+            "name": "auctionDuration",
             "type": {
               "option": "u8"
             }
           },
           {
-            "name": "auction_start_price",
+            "name": "auctionStartPrice",
             "type": {
               "option": "i64"
             }
           },
           {
-            "name": "auction_end_price",
+            "name": "auctionEndPrice",
             "type": {
               "option": "i64"
             }
@@ -9752,12 +9504,12 @@
       }
     },
     {
-      "name": "OpenfundsMetadataAccount",
+      "name": "openfundsMetadataAccount",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "fund_id",
+            "name": "fundId",
             "type": "pubkey"
           },
           {
@@ -9765,7 +9517,7 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "CompanyField"
+                  "name": "companyField"
                 }
               }
             }
@@ -9775,30 +9527,30 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "FundField"
+                  "name": "fundField"
                 }
               }
             }
           },
           {
-            "name": "share_classes",
+            "name": "shareClasses",
             "type": {
               "vec": {
                 "vec": {
                   "defined": {
-                    "name": "ShareClassField"
+                    "name": "shareClassField"
                   }
                 }
               }
             }
           },
           {
-            "name": "fund_managers",
+            "name": "fundManagers",
             "type": {
               "vec": {
                 "vec": {
                   "defined": {
-                    "name": "FundManagerField"
+                    "name": "fundManagerField"
                   }
                 }
               }
@@ -9808,23 +9560,23 @@
       }
     },
     {
-      "name": "OrderParams",
+      "name": "orderParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "order_type",
+            "name": "orderType",
             "type": {
               "defined": {
-                "name": "OrderType"
+                "name": "orderType"
               }
             }
           },
           {
-            "name": "market_type",
+            "name": "marketType",
             "type": {
               "defined": {
-                "name": "MarketType"
+                "name": "marketType"
               }
             }
           },
@@ -9832,16 +9584,16 @@
             "name": "direction",
             "type": {
               "defined": {
-                "name": "PositionDirection"
+                "name": "positionDirection"
               }
             }
           },
           {
-            "name": "user_order_id",
+            "name": "userOrderId",
             "type": "u8"
           },
           {
-            "name": "base_asset_amount",
+            "name": "baseAssetAmount",
             "type": "u64"
           },
           {
@@ -9849,65 +9601,65 @@
             "type": "u64"
           },
           {
-            "name": "market_index",
+            "name": "marketIndex",
             "type": "u16"
           },
           {
-            "name": "reduce_only",
+            "name": "reduceOnly",
             "type": "bool"
           },
           {
-            "name": "post_only",
+            "name": "postOnly",
             "type": {
               "defined": {
-                "name": "PostOnlyParam"
+                "name": "postOnlyParam"
               }
             }
           },
           {
-            "name": "immediate_or_cancel",
+            "name": "immediateOrCancel",
             "type": "bool"
           },
           {
-            "name": "max_ts",
+            "name": "maxTs",
             "type": {
               "option": "i64"
             }
           },
           {
-            "name": "trigger_price",
+            "name": "triggerPrice",
             "type": {
               "option": "u64"
             }
           },
           {
-            "name": "trigger_condition",
+            "name": "triggerCondition",
             "type": {
               "defined": {
-                "name": "OrderTriggerCondition"
+                "name": "orderTriggerCondition"
               }
             }
           },
           {
-            "name": "oracle_price_offset",
+            "name": "oraclePriceOffset",
             "type": {
               "option": "i32"
             }
           },
           {
-            "name": "auction_duration",
+            "name": "auctionDuration",
             "type": {
               "option": "u8"
             }
           },
           {
-            "name": "auction_start_price",
+            "name": "auctionStartPrice",
             "type": {
               "option": "i64"
             }
           },
           {
-            "name": "auction_end_price",
+            "name": "auctionEndPrice",
             "type": {
               "option": "i64"
             }
@@ -9916,50 +9668,50 @@
       }
     },
     {
-      "name": "OrderTriggerCondition",
+      "name": "orderTriggerCondition",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Above"
+            "name": "above"
           },
           {
-            "name": "Below"
+            "name": "below"
           },
           {
-            "name": "TriggeredAbove"
+            "name": "triggeredAbove"
           },
           {
-            "name": "TriggeredBelow"
+            "name": "triggeredBelow"
           }
         ]
       }
     },
     {
-      "name": "OrderType",
+      "name": "orderType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Market"
+            "name": "market"
           },
           {
-            "name": "Limit"
+            "name": "limit"
           },
           {
-            "name": "TriggerMarket"
+            "name": "triggerMarket"
           },
           {
-            "name": "TriggerLimit"
+            "name": "triggerLimit"
           },
           {
-            "name": "Oracle"
+            "name": "oracle"
           }
         ]
       }
     },
     {
-      "name": "Permission",
+      "name": "permission",
       "docs": [
         "* Delegate ACL"
       ],
@@ -9967,166 +9719,154 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "DriftInitialize"
+            "name": "driftInitialize"
           },
           {
-            "name": "DriftUpdateUser"
+            "name": "driftUpdateUser"
           },
           {
-            "name": "DriftDeleteUser"
+            "name": "driftDeleteUser"
           },
           {
-            "name": "DriftDeposit"
+            "name": "driftDeposit"
           },
           {
-            "name": "DriftWithdraw"
+            "name": "driftWithdraw"
           },
           {
-            "name": "DriftPlaceOrders"
+            "name": "driftPlaceOrders"
           },
           {
-            "name": "DriftCancelOrders"
+            "name": "driftCancelOrders"
           },
           {
-            "name": "DriftPerpMarket"
+            "name": "driftPerpMarket"
           },
           {
-            "name": "DriftSpotMarket"
+            "name": "driftSpotMarket"
           },
           {
-            "name": "Stake"
+            "name": "stake"
           },
           {
-            "name": "Unstake"
+            "name": "unstake"
           },
           {
-            "name": "LiquidUnstake"
+            "name": "liquidUnstake"
           },
           {
-            "name": "JupiterSwapAllowlisted"
+            "name": "jupiterSwapAllowlisted"
           },
           {
-            "name": "JupiterSwapAny"
+            "name": "jupiterSwapAny"
           },
           {
-            "name": "WSolWrap"
+            "name": "wSolWrap"
           },
           {
-            "name": "WSolUnwrap"
+            "name": "wSolUnwrap"
           },
           {
-            "name": "MintTokens"
+            "name": "mintTokens"
           },
           {
-            "name": "BurnTokens"
+            "name": "burnTokens"
           },
           {
-            "name": "ForceTransferTokens"
+            "name": "forceTransferTokens"
           },
           {
-            "name": "SetTokenAccountState"
+            "name": "setTokenAccountState"
           },
           {
-            "name": "StakeJup"
+            "name": "stakeJup"
           },
           {
-            "name": "VoteOnProposal"
+            "name": "voteOnProposal"
           },
           {
-            "name": "UnstakeJup"
+            "name": "unstakeJup"
           },
           {
-            "name": "JupiterSwapLst"
+            "name": "jupiterSwapLst"
           },
           {
-            "name": "KaminoInit"
+            "name": "kaminoInit"
           },
           {
-            "name": "KaminoDeposit"
+            "name": "kaminoDeposit"
           },
           {
-            "name": "DriftModifyOrders"
+            "name": "driftModifyOrders"
           },
           {
-            "name": "MeteoraDlmmInitPosition"
+            "name": "meteoraDlmmInitPosition"
           },
           {
-            "name": "MeteoraDlmmClosePosition"
+            "name": "meteoraDlmmClosePosition"
           },
           {
-            "name": "MeteoraDlmmLiquidity"
+            "name": "meteoraDlmmLiquidity"
           },
           {
-            "name": "MeteoraDlmmSwap"
+            "name": "meteoraDlmmSwap"
           },
           {
-            "name": "TransferToAllowlisted"
+            "name": "transferToAllowlisted"
           }
         ]
       }
     },
     {
-      "name": "PolicyAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "locked_until_ts",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "PositionDirection",
+      "name": "positionDirection",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Long"
+            "name": "long"
           },
           {
-            "name": "Short"
+            "name": "short"
           }
         ]
       }
     },
     {
-      "name": "PostOnlyParam",
+      "name": "postOnlyParam",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "None"
+            "name": "none"
           },
           {
-            "name": "MustPostOnly"
+            "name": "mustPostOnly"
           },
           {
-            "name": "TryPostOnly"
+            "name": "tryPostOnly"
           },
           {
-            "name": "Slide"
+            "name": "slide"
           }
         ]
       }
     },
     {
-      "name": "PriceDenom",
+      "name": "priceDenom",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "SOL"
+            "name": "sol"
           },
           {
-            "name": "USD"
+            "name": "usd"
           }
         ]
       }
     },
     {
-      "name": "PricedAssets",
+      "name": "pricedAssets",
       "type": {
         "kind": "struct",
         "fields": [
@@ -10134,7 +9874,7 @@
             "name": "denom",
             "type": {
               "defined": {
-                "name": "PriceDenom"
+                "name": "priceDenom"
               }
             }
           },
@@ -10157,7 +9897,7 @@
             "type": "u8"
           },
           {
-            "name": "last_updated_slot",
+            "name": "lastUpdatedSlot",
             "type": "u64"
           },
           {
@@ -10165,7 +9905,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "Integration"
+                  "name": "integration"
                 }
               }
             }
@@ -10174,7 +9914,7 @@
       }
     },
     {
-      "name": "PubkeyAmount",
+      "name": "pubkeyAmount",
       "type": {
         "kind": "struct",
         "fields": [
@@ -10194,7 +9934,7 @@
       }
     },
     {
-      "name": "ShareClassField",
+      "name": "shareClassField",
       "type": {
         "kind": "struct",
         "fields": [
@@ -10202,7 +9942,7 @@
             "name": "name",
             "type": {
               "defined": {
-                "name": "ShareClassFieldName"
+                "name": "shareClassFieldName"
               }
             }
           },
@@ -10214,251 +9954,251 @@
       }
     },
     {
-      "name": "ShareClassFieldName",
+      "name": "shareClassFieldName",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "ISIN"
+            "name": "isin"
           },
           {
-            "name": "ShareClassCurrency"
+            "name": "shareClassCurrency"
           },
           {
-            "name": "AppliedSubscriptionFeeInFavourOfDistributor"
+            "name": "appliedSubscriptionFeeInFavourOfDistributor"
           },
           {
-            "name": "AppliedSubscriptionFeeInFavourOfDistributorReferenceDate"
+            "name": "appliedSubscriptionFeeInFavourOfDistributorReferenceDate"
           },
           {
-            "name": "CurrencyOfMinimalSubscription"
+            "name": "currencyOfMinimalSubscription"
           },
           {
-            "name": "FullShareClassName"
+            "name": "fullShareClassName"
           },
           {
-            "name": "HasPerformanceFee"
+            "name": "hasPerformanceFee"
           },
           {
-            "name": "HasSubscriptionFeeInFavourOfDistributor"
+            "name": "hasSubscriptionFeeInFavourOfDistributor"
           },
           {
-            "name": "InvestmentStatus"
+            "name": "investmentStatus"
           },
           {
-            "name": "ManagementFeeApplied"
+            "name": "managementFeeApplied"
           },
           {
-            "name": "ManagementFeeAppliedReferenceDate"
+            "name": "managementFeeAppliedReferenceDate"
           },
           {
-            "name": "ManagementFeeMaximum"
+            "name": "managementFeeMaximum"
           },
           {
-            "name": "MaximumSubscriptionFeeInFavourOfDistributor"
+            "name": "maximumSubscriptionFeeInFavourOfDistributor"
           },
           {
-            "name": "MinimalInitialSubscriptionCategory"
+            "name": "minimalInitialSubscriptionCategory"
           },
           {
-            "name": "MinimalInitialSubscriptionInAmount"
+            "name": "minimalInitialSubscriptionInAmount"
           },
           {
-            "name": "MinimalInitialSubscriptionInShares"
+            "name": "minimalInitialSubscriptionInShares"
           },
           {
-            "name": "MinimalSubsequentSubscriptionCategory"
+            "name": "minimalSubsequentSubscriptionCategory"
           },
           {
-            "name": "MinimalSubsequentSubscriptionInAmount"
+            "name": "minimalSubsequentSubscriptionInAmount"
           },
           {
-            "name": "MinimalSubsequentSubscriptionInShares"
+            "name": "minimalSubsequentSubscriptionInShares"
           },
           {
-            "name": "MinimumSubscriptionFeeInFavourOfDistributor"
+            "name": "minimumSubscriptionFeeInFavourOfDistributor"
           },
           {
-            "name": "ShareClassDistributionPolicy"
+            "name": "shareClassDistributionPolicy"
           },
           {
-            "name": "ShareClassExtension"
+            "name": "shareClassExtension"
           },
           {
-            "name": "ShareClassLaunchDate"
+            "name": "shareClassLaunchDate"
           },
           {
-            "name": "ShareClassLifecycle"
+            "name": "shareClassLifecycle"
           },
           {
-            "name": "SRRI"
+            "name": "srri"
           },
           {
-            "name": "LaunchPrice"
+            "name": "launchPrice"
           },
           {
-            "name": "LaunchPriceCurrency"
+            "name": "launchPriceCurrency"
           },
           {
-            "name": "LaunchPriceDate"
+            "name": "launchPriceDate"
           },
           {
-            "name": "HasAppliedSubscriptionFeeInFavourOfFund"
+            "name": "hasAppliedSubscriptionFeeInFavourOfFund"
           },
           {
-            "name": "AppliedSubscriptionFeeInFavourOfFund"
+            "name": "appliedSubscriptionFeeInFavourOfFund"
           },
           {
-            "name": "AppliedSubscriptionFeeInFavourOfFundReferenceDate"
+            "name": "appliedSubscriptionFeeInFavourOfFundReferenceDate"
           },
           {
-            "name": "MaximumSubscriptionFeeInFavourOfFund"
+            "name": "maximumSubscriptionFeeInFavourOfFund"
           },
           {
-            "name": "HasAppliedRedemptionFeeInFavourOfFund"
+            "name": "hasAppliedRedemptionFeeInFavourOfFund"
           },
           {
-            "name": "AppliedRedemptionFeeInFavourOfFund"
+            "name": "appliedRedemptionFeeInFavourOfFund"
           },
           {
-            "name": "AppliedRedemptionFeeInFavourOfFundReferenceDate"
+            "name": "appliedRedemptionFeeInFavourOfFundReferenceDate"
           },
           {
-            "name": "MaximumRedemptionFeeInFavourOfFund"
+            "name": "maximumRedemptionFeeInFavourOfFund"
           },
           {
-            "name": "AppliedRedemptionFeeInFavourOfDistributor"
+            "name": "appliedRedemptionFeeInFavourOfDistributor"
           },
           {
-            "name": "AppliedRedemptionFeeInFavourOfDistributorReferenceDate"
+            "name": "appliedRedemptionFeeInFavourOfDistributorReferenceDate"
           },
           {
-            "name": "CurrencyOfMinimalOrMaximumRedemption"
+            "name": "currencyOfMinimalOrMaximumRedemption"
           },
           {
-            "name": "CutOffDateOffsetForRedemption"
+            "name": "cutOffDateOffsetForRedemption"
           },
           {
-            "name": "CutOffDateOffsetForSubscription"
+            "name": "cutOffDateOffsetForSubscription"
           },
           {
-            "name": "CutOffTimeForRedemption"
+            "name": "cutOffTimeForRedemption"
           },
           {
-            "name": "CutOffTimeForSubscription"
+            "name": "cutOffTimeForSubscription"
           },
           {
-            "name": "HasLockUpForRedemption"
+            "name": "hasLockUpForRedemption"
           },
           {
-            "name": "HasRedemptionFeeInFavourOfDistributor"
+            "name": "hasRedemptionFeeInFavourOfDistributor"
           },
           {
-            "name": "IsValidISIN"
+            "name": "isValidIsin"
           },
           {
-            "name": "LockUpComment"
+            "name": "lockUpComment"
           },
           {
-            "name": "LockUpPeriodInDays"
+            "name": "lockUpPeriodInDays"
           },
           {
-            "name": "ManagementFeeMinimum"
+            "name": "managementFeeMinimum"
           },
           {
-            "name": "MaximalNumberOfPossibleDecimalsAmount"
+            "name": "maximalNumberOfPossibleDecimalsAmount"
           },
           {
-            "name": "MaximalNumberOfPossibleDecimalsNAV"
+            "name": "maximalNumberOfPossibleDecimalsNav"
           },
           {
-            "name": "MaximalNumberOfPossibleDecimalsShares"
+            "name": "maximalNumberOfPossibleDecimalsShares"
           },
           {
-            "name": "MaximumInitialRedemptionInAmount"
+            "name": "maximumInitialRedemptionInAmount"
           },
           {
-            "name": "MaximumInitialRedemptionInShares"
+            "name": "maximumInitialRedemptionInShares"
           },
           {
-            "name": "MaximumRedemptionFeeInFavourOfDistributor"
+            "name": "maximumRedemptionFeeInFavourOfDistributor"
           },
           {
-            "name": "MaximumSubsequentRedemptionInAmount"
+            "name": "maximumSubsequentRedemptionInAmount"
           },
           {
-            "name": "MaximumSubsequentRedemptionInShares"
+            "name": "maximumSubsequentRedemptionInShares"
           },
           {
-            "name": "MinimalInitialRedemptionInAmount"
+            "name": "minimalInitialRedemptionInAmount"
           },
           {
-            "name": "MinimalInitialRedemptionInShares"
+            "name": "minimalInitialRedemptionInShares"
           },
           {
-            "name": "MinimalRedemptionCategory"
+            "name": "minimalRedemptionCategory"
           },
           {
-            "name": "MinimalSubsequentRedemptionInAmount"
+            "name": "minimalSubsequentRedemptionInAmount"
           },
           {
-            "name": "MinimalSubsequentRedemptionInShares"
+            "name": "minimalSubsequentRedemptionInShares"
           },
           {
-            "name": "MinimumRedemptionFeeInFavourOfDistributor"
+            "name": "minimumRedemptionFeeInFavourOfDistributor"
           },
           {
-            "name": "MinimumRedemptionFeeInFavourOfFund"
+            "name": "minimumRedemptionFeeInFavourOfFund"
           },
           {
-            "name": "MinimumSubscriptionFeeInFavourOfFund"
+            "name": "minimumSubscriptionFeeInFavourOfFund"
           },
           {
-            "name": "PerformanceFeeMinimum"
+            "name": "performanceFeeMinimum"
           },
           {
-            "name": "RoundingMethodForPrices"
+            "name": "roundingMethodForPrices"
           },
           {
-            "name": "RoundingMethodForRedemptionInAmount"
+            "name": "roundingMethodForRedemptionInAmount"
           },
           {
-            "name": "RoundingMethodForRedemptionInShares"
+            "name": "roundingMethodForRedemptionInShares"
           },
           {
-            "name": "RoundingMethodForSubscriptionInAmount"
+            "name": "roundingMethodForSubscriptionInAmount"
           },
           {
-            "name": "RoundingMethodForSubscriptionInShares"
+            "name": "roundingMethodForSubscriptionInShares"
           },
           {
-            "name": "ShareClassDividendType"
+            "name": "shareClassDividendType"
           },
           {
-            "name": "CUSIP"
+            "name": "cusip"
           },
           {
-            "name": "Valor"
+            "name": "valor"
           },
           {
-            "name": "FundId"
+            "name": "fundId"
           },
           {
-            "name": "ImageUri"
+            "name": "imageUri"
           }
         ]
       }
     },
     {
-      "name": "StateAccount",
+      "name": "stateAccount",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "account_type",
+            "name": "accountType",
             "type": {
               "defined": {
-                "name": "AccountType"
+                "name": "accountType"
               }
             }
           },
@@ -10478,7 +10218,7 @@
             "name": "created",
             "type": {
               "defined": {
-                "name": "CreatedModel"
+                "name": "createdModel"
               }
             }
           },
@@ -10497,7 +10237,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "Metadata"
+                  "name": "metadata"
                 }
               }
             }
@@ -10517,11 +10257,11 @@
             }
           },
           {
-            "name": "delegate_acls",
+            "name": "delegateAcls",
             "type": {
               "vec": {
                 "defined": {
-                  "name": "DelegateAcl"
+                  "name": "delegateAcl"
                 }
               }
             }
@@ -10531,7 +10271,7 @@
             "type": {
               "vec": {
                 "defined": {
-                  "name": "Integration"
+                  "name": "integration"
                 }
               }
             }
@@ -10542,7 +10282,7 @@
               "vec": {
                 "vec": {
                   "defined": {
-                    "name": "EngineField"
+                    "name": "engineField"
                   }
                 }
               }
@@ -10552,7 +10292,7 @@
       }
     },
     {
-      "name": "StateModel",
+      "name": "stateModel",
       "type": {
         "kind": "struct",
         "fields": [
@@ -10563,11 +10303,11 @@
             }
           },
           {
-            "name": "account_type",
+            "name": "accountType",
             "type": {
               "option": {
                 "defined": {
-                  "name": "AccountType"
+                  "name": "accountType"
                 }
               }
             }
@@ -10599,7 +10339,7 @@
             }
           },
           {
-            "name": "external_vault_accounts",
+            "name": "externalVaultAccounts",
             "type": {
               "option": {
                 "vec": "pubkey"
@@ -10612,7 +10352,7 @@
               "option": {
                 "vec": {
                   "defined": {
-                    "name": "MintModel"
+                    "name": "mintModel"
                   }
                 }
               }
@@ -10623,7 +10363,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "CompanyModel"
+                  "name": "companyModel"
                 }
               }
             }
@@ -10633,7 +10373,7 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "ManagerModel"
+                  "name": "managerModel"
                 }
               }
             }
@@ -10643,18 +10383,18 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "CreatedModel"
+                  "name": "createdModel"
                 }
               }
             }
           },
           {
-            "name": "delegate_acls",
+            "name": "delegateAcls",
             "type": {
               "option": {
                 "vec": {
                   "defined": {
-                    "name": "DelegateAcl"
+                    "name": "delegateAcl"
                   }
                 }
               }
@@ -10666,14 +10406,14 @@
               "option": {
                 "vec": {
                   "defined": {
-                    "name": "Integration"
+                    "name": "integration"
                   }
                 }
               }
             }
           },
           {
-            "name": "drift_market_indexes_perp",
+            "name": "driftMarketIndexesPerp",
             "type": {
               "option": {
                 "vec": "u32"
@@ -10681,7 +10421,7 @@
             }
           },
           {
-            "name": "drift_market_indexes_spot",
+            "name": "driftMarketIndexesSpot",
             "type": {
               "option": {
                 "vec": "u32"
@@ -10689,7 +10429,7 @@
             }
           },
           {
-            "name": "drift_order_types",
+            "name": "driftOrderTypes",
             "type": {
               "option": {
                 "vec": "u32"
@@ -10701,17 +10441,17 @@
             "type": {
               "option": {
                 "defined": {
-                  "name": "Metadata"
+                  "name": "metadata"
                 }
               }
             }
           },
           {
-            "name": "raw_openfunds",
+            "name": "rawOpenfunds",
             "type": {
               "option": {
                 "defined": {
-                  "name": "FundOpenfundsModel"
+                  "name": "fundOpenfundsModel"
                 }
               }
             }
@@ -10720,23 +10460,23 @@
       }
     },
     {
-      "name": "StrategyParameters",
+      "name": "strategyParameters",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "min_bin_id",
+            "name": "minBinId",
             "type": "i32"
           },
           {
-            "name": "max_bin_id",
+            "name": "maxBinId",
             "type": "i32"
           },
           {
-            "name": "strategy_type",
+            "name": "strategyType",
             "type": {
               "defined": {
-                "name": "StrategyType"
+                "name": "strategyType"
               }
             }
           },
@@ -10753,36 +10493,36 @@
       }
     },
     {
-      "name": "StrategyType",
+      "name": "strategyType",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "SpotOneSide"
+            "name": "spotOneSide"
           },
           {
-            "name": "CurveOneSide"
+            "name": "curveOneSide"
           },
           {
-            "name": "BidAskOneSide"
+            "name": "bidAskOneSide"
           },
           {
-            "name": "SpotBalanced"
+            "name": "spotBalanced"
           },
           {
-            "name": "CurveBalanced"
+            "name": "curveBalanced"
           },
           {
-            "name": "BidAskBalanced"
+            "name": "bidAskBalanced"
           },
           {
-            "name": "SpotImBalanced"
+            "name": "spotImBalanced"
           },
           {
-            "name": "CurveImBalanced"
+            "name": "curveImBalanced"
           },
           {
-            "name": "BidAskImBalanced"
+            "name": "bidAskImBalanced"
           }
         ]
       }
@@ -10790,34 +10530,34 @@
   ],
   "constants": [
     {
-      "name": "SEED_ACCOUNT_POLICY",
+      "name": "seedAccountPolicy",
       "type": "string",
       "value": "\"account-policy\""
     },
     {
-      "name": "SEED_ESCROW",
+      "name": "seedEscrow",
       "type": "string",
       "value": "\"escrow\""
     },
     {
-      "name": "SEED_METADATA",
+      "name": "seedMetadata",
       "type": "string",
       "value": "\"metadata\""
     },
     {
-      "name": "SEED_MINT",
+      "name": "seedMint",
       "type": "string",
       "value": "\"mint\""
     },
     {
-      "name": "SEED_STATE",
+      "name": "seedState",
       "type": "string",
       "value": "\"state\""
     },
     {
-      "name": "SEED_VAULT",
+      "name": "seedVault",
       "type": "string",
       "value": "\"vault\""
     }
   ]
-}
+};
