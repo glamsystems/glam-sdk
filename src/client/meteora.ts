@@ -258,6 +258,7 @@ export class MeteoraDlmmClient {
         lbPair,
         binArrayLower,
         binArrayUpper,
+        rentReceiver: this.base.getSigner(),
         eventAuthority: EVENT_AUTHORITY,
         program: METEORA_DLMM,
       })

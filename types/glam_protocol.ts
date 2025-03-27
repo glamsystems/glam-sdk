@@ -4597,7 +4597,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4710,7 +4709,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4796,321 +4794,10 @@ export type GlamProtocol = {
       ],
       "args": [
         {
-          "name": "params",
+          "name": "liquidityParameter",
           "type": {
             "defined": {
               "name": "liquidityParameterByStrategy"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "meteoraDlmmAddLiquidityByStrategyOneSide",
-      "discriminator": [
-        141,
-        202,
-        255,
-        183,
-        129,
-        122,
-        36,
-        160
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lbPair",
-          "writable": true
-        },
-        {
-          "name": "binArrayBitmapExtension",
-          "writable": true
-        },
-        {
-          "name": "userToken",
-          "writable": true
-        },
-        {
-          "name": "reserve",
-          "writable": true
-        },
-        {
-          "name": "tokenMint"
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "eventAuthority"
-        },
-        {
-          "name": "program"
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": {
-              "name": "liquidityParameterByStrategyOneSide"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "meteoraDlmmAddLiquidityByWeight",
-      "discriminator": [
-        237,
-        211,
-        213,
-        27,
-        56,
-        6,
-        186,
-        219
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lbPair",
-          "writable": true
-        },
-        {
-          "name": "binArrayBitmapExtension",
-          "writable": true
-        },
-        {
-          "name": "userTokenX",
-          "writable": true
-        },
-        {
-          "name": "userTokenY",
-          "writable": true
-        },
-        {
-          "name": "reserveX",
-          "writable": true
-        },
-        {
-          "name": "reserveY",
-          "writable": true
-        },
-        {
-          "name": "tokenXMint"
-        },
-        {
-          "name": "tokenYMint"
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
-          "name": "tokenXProgram"
-        },
-        {
-          "name": "tokenYProgram"
-        },
-        {
-          "name": "eventAuthority"
-        },
-        {
-          "name": "program"
-        }
-      ],
-      "args": [
-        {
-          "name": "liquidityParameter",
-          "type": {
-            "defined": {
-              "name": "liquidityParameterByWeight"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "meteoraDlmmAddLiquidityOneSide",
-      "discriminator": [
-        131,
-        144,
-        48,
-        171,
-        201,
-        162,
-        156,
-        252
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lbPair",
-          "writable": true
-        },
-        {
-          "name": "binArrayBitmapExtension",
-          "writable": true
-        },
-        {
-          "name": "userToken",
-          "writable": true
-        },
-        {
-          "name": "reserve",
-          "writable": true
-        },
-        {
-          "name": "tokenMint"
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "eventAuthority"
-        },
-        {
-          "name": "program"
-        }
-      ],
-      "args": [
-        {
-          "name": "liquidityParameter",
-          "type": {
-            "defined": {
-              "name": "liquidityOneSideParameter"
             }
           }
         }
@@ -5134,7 +4821,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5206,7 +4892,7 @@ export type GlamProtocol = {
       ],
       "args": [
         {
-          "name": "liquidityParameter",
+          "name": "parameter",
           "type": {
             "defined": {
               "name": "addLiquiditySingleSidePreciseParameter"
@@ -5233,7 +4919,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5313,6 +4998,96 @@ export type GlamProtocol = {
       "args": []
     },
     {
+      "name": "meteoraDlmmClaimReward",
+      "discriminator": [
+        107,
+        160,
+        137,
+        17,
+        162,
+        0,
+        24,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "lbPair",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "binArrayLower",
+          "writable": true
+        },
+        {
+          "name": "binArrayUpper",
+          "writable": true
+        },
+        {
+          "name": "rewardVault",
+          "writable": true
+        },
+        {
+          "name": "rewardMint"
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "rewardIndex",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "meteoraDlmmClosePosition",
       "discriminator": [
         186,
@@ -5330,7 +5105,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5373,6 +5147,10 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayUpper",
+          "writable": true
+        },
+        {
+          "name": "rentReceiver",
           "writable": true
         },
         {
@@ -5402,7 +5180,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5471,110 +5248,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "meteoraDlmmRemoveAllLiquidity",
-      "discriminator": [
-        234,
-        136,
-        134,
-        108,
-        250,
-        61,
-        24,
-        161
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lbPair",
-          "writable": true
-        },
-        {
-          "name": "binArrayBitmapExtension",
-          "writable": true
-        },
-        {
-          "name": "userTokenX",
-          "writable": true
-        },
-        {
-          "name": "userTokenY",
-          "writable": true
-        },
-        {
-          "name": "reserveX",
-          "writable": true
-        },
-        {
-          "name": "reserveY",
-          "writable": true
-        },
-        {
-          "name": "tokenXMint"
-        },
-        {
-          "name": "tokenYMint"
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
-          "name": "tokenXProgram"
-        },
-        {
-          "name": "tokenYProgram"
-        },
-        {
-          "name": "eventAuthority"
-        },
-        {
-          "name": "program"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "meteoraDlmmRemoveLiquidity",
       "discriminator": [
         185,
@@ -5592,7 +5265,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5678,7 +5350,7 @@ export type GlamProtocol = {
       ],
       "args": [
         {
-          "name": "liquidityParameter",
+          "name": "binLiquidityRemoval",
           "type": {
             "vec": {
               "defined": {
@@ -5707,7 +5379,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -5824,7 +5495,6 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -9241,22 +8911,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "binLiquidityDistributionByWeight",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "binId",
-            "type": "i32"
-          },
-          {
-            "name": "weight",
-            "type": "u16"
-          }
-        ]
-      }
-    },
-    {
       "name": "binLiquidityReduction",
       "type": {
         "kind": "struct",
@@ -10150,36 +9804,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "liquidityOneSideParameter",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "activeId",
-            "type": "i32"
-          },
-          {
-            "name": "maxActiveBinSlippage",
-            "type": "i32"
-          },
-          {
-            "name": "binLiquidityDist",
-            "type": {
-              "vec": {
-                "defined": {
-                  "name": "binLiquidityDistributionByWeight"
-                }
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "liquidityParameter",
       "type": {
         "kind": "struct",
@@ -10231,68 +9855,6 @@ export type GlamProtocol = {
             "type": {
               "defined": {
                 "name": "strategyParameters"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "liquidityParameterByStrategyOneSide",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "activeId",
-            "type": "i32"
-          },
-          {
-            "name": "maxActiveBinSlippage",
-            "type": "i32"
-          },
-          {
-            "name": "strategyParameters",
-            "type": {
-              "defined": {
-                "name": "strategyParameters"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "liquidityParameterByWeight",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amountX",
-            "type": "u64"
-          },
-          {
-            "name": "amountY",
-            "type": "u64"
-          },
-          {
-            "name": "activeId",
-            "type": "i32"
-          },
-          {
-            "name": "maxActiveBinSlippage",
-            "type": "i32"
-          },
-          {
-            "name": "binLiquidityDist",
-            "type": {
-              "vec": {
-                "defined": {
-                  "name": "binLiquidityDistributionByWeight"
-                }
               }
             }
           }
@@ -11085,6 +10647,9 @@ export type GlamProtocol = {
           },
           {
             "name": "meteoraDlmmClaimFee"
+          },
+          {
+            "name": "meteoraDlmmClaimReward"
           },
           {
             "name": "meteoraDlmmSwap"
