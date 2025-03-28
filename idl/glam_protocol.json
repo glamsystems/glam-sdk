@@ -448,7 +448,12 @@
           "name": "token_program"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "mint_id",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "close_mint",
@@ -632,6 +637,123 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "crystallize_fees",
+      "discriminator": [
+        78,
+        0,
+        111,
+        26,
+        7,
+        12,
+        41,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_escrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_mint",
+          "writable": true
+        },
+        {
+          "name": "escrow_mint_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glam_escrow"
+              },
+              {
+                "kind": "account",
+                "path": "token_2022_program"
+              },
+              {
+                "kind": "account",
+                "path": "glam_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_2022_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mint_id",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "drift_balance_value_usd",
@@ -8739,6 +8861,11 @@
       "msg": "An account required by the instruction is missing"
     },
     {
+      "code": 49012,
+      "name": "InvalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
       "code": 50000,
       "name": "WithdrawDenied",
       "msg": "Withdraw denied. Only vaults allow withdraws (funds and mints don't)"
@@ -8858,6 +8985,58 @@
           },
           {
             "name": "Fund"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccumulatedFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault_subscription_fee",
+            "type": "u128"
+          },
+          {
+            "name": "vault_redemption_fee",
+            "type": "u128"
+          },
+          {
+            "name": "manager_subscription_fee",
+            "type": "u128"
+          },
+          {
+            "name": "manager_redemption_fee",
+            "type": "u128"
+          },
+          {
+            "name": "management_fee",
+            "type": "u128"
+          },
+          {
+            "name": "performance_fee",
+            "type": "u128"
+          },
+          {
+            "name": "protocol_base_fee",
+            "type": "u128"
+          },
+          {
+            "name": "high_water_mark",
+            "type": "u64"
+          },
+          {
+            "name": "last_performance_fee_crystallized",
+            "type": "i64"
+          },
+          {
+            "name": "last_management_fee_crystallized",
+            "type": "i64"
+          },
+          {
+            "name": "last_protocol_base_fee_crystallized",
+            "type": "i64"
           }
         ]
       }
@@ -9207,6 +9386,15 @@
           },
           {
             "name": "Ledger"
+          },
+          {
+            "name": "FeeStructure"
+          },
+          {
+            "name": "ClaimableFees"
+          },
+          {
+            "name": "ClaimedFees"
           }
         ]
       }
@@ -9375,6 +9563,96 @@
                 }
               }
             ]
+          },
+          {
+            "name": "FeeStructure",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "FeeStructure"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "AccumulatedFees",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "AccumulatedFees"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "EntryExitFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "subscription_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "redemption_fee_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeStructure",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault_fees",
+            "type": {
+              "defined": {
+                "name": "EntryExitFees"
+              }
+            }
+          },
+          {
+            "name": "manager_fees",
+            "type": {
+              "defined": {
+                "name": "EntryExitFees"
+              }
+            }
+          },
+          {
+            "name": "management_fee",
+            "type": {
+              "defined": {
+                "name": "ManagementFee"
+              }
+            }
+          },
+          {
+            "name": "performance_fee",
+            "type": {
+              "defined": {
+                "name": "PerformanceFee"
+              }
+            }
+          },
+          {
+            "name": "protocol_fees",
+            "type": {
+              "defined": {
+                "name": "ProtocolFees"
+              }
+            }
           }
         ]
       }
@@ -9856,6 +10134,18 @@
       }
     },
     {
+      "name": "ManagementFee",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "ManagerKind",
       "type": {
         "kind": "enum",
@@ -10021,6 +10311,16 @@
             "name": "default_account_state_frozen",
             "type": {
               "option": "bool"
+            }
+          },
+          {
+            "name": "fee_structure",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "FeeStructure"
+                }
+              }
             }
           },
           {
@@ -10530,6 +10830,22 @@
       }
     },
     {
+      "name": "PerformanceFee",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "hurdle_rate_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "Permission",
       "docs": [
         "* Delegate ACL"
@@ -10746,6 +11062,22 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "flow_fee_bps",
+            "type": "u16"
           }
         ]
       }

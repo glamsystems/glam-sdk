@@ -262,7 +262,7 @@ export class InvestorClient {
     const signerAta = this.base.getAta(asset, signer);
 
     const tx = await this.base.program.methods
-      .claim()
+      .claim(0)
       .accounts({
         glamState,
         signer,

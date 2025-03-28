@@ -454,7 +454,12 @@ export type GlamProtocol = {
           "name": "tokenProgram"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "mintId",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "closeMint",
@@ -638,6 +643,123 @@ export type GlamProtocol = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "crystallizeFees",
+      "discriminator": [
+        78,
+        0,
+        111,
+        26,
+        7,
+        12,
+        41,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamEscrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamMint",
+          "writable": true
+        },
+        {
+          "name": "escrowMintAta",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glamEscrow"
+              },
+              {
+                "kind": "account",
+                "path": "token2022Program"
+              },
+              {
+                "kind": "account",
+                "path": "glamMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token2022Program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mintId",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "driftBalanceValueUsd",
@@ -8745,6 +8867,11 @@ export type GlamProtocol = {
       "msg": "An account required by the instruction is missing"
     },
     {
+      "code": 49012,
+      "name": "invalidTimestamp",
+      "msg": "Invalid timestamp"
+    },
+    {
       "code": 50000,
       "name": "withdrawDenied",
       "msg": "Withdraw denied. Only vaults allow withdraws (funds and mints don't)"
@@ -8864,6 +8991,58 @@ export type GlamProtocol = {
           },
           {
             "name": "fund"
+          }
+        ]
+      }
+    },
+    {
+      "name": "accumulatedFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vaultSubscriptionFee",
+            "type": "u128"
+          },
+          {
+            "name": "vaultRedemptionFee",
+            "type": "u128"
+          },
+          {
+            "name": "managerSubscriptionFee",
+            "type": "u128"
+          },
+          {
+            "name": "managerRedemptionFee",
+            "type": "u128"
+          },
+          {
+            "name": "managementFee",
+            "type": "u128"
+          },
+          {
+            "name": "performanceFee",
+            "type": "u128"
+          },
+          {
+            "name": "protocolBaseFee",
+            "type": "u128"
+          },
+          {
+            "name": "highWaterMark",
+            "type": "u64"
+          },
+          {
+            "name": "lastPerformanceFeeCrystallized",
+            "type": "i64"
+          },
+          {
+            "name": "lastManagementFeeCrystallized",
+            "type": "i64"
+          },
+          {
+            "name": "lastProtocolBaseFeeCrystallized",
+            "type": "i64"
           }
         ]
       }
@@ -9213,6 +9392,15 @@ export type GlamProtocol = {
           },
           {
             "name": "ledger"
+          },
+          {
+            "name": "feeStructure"
+          },
+          {
+            "name": "claimableFees"
+          },
+          {
+            "name": "claimedFees"
           }
         ]
       }
@@ -9381,6 +9569,96 @@ export type GlamProtocol = {
                 }
               }
             ]
+          },
+          {
+            "name": "feeStructure",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "feeStructure"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "accumulatedFees",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "accumulatedFees"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "entryExitFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "subscriptionFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "redemptionFeeBps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feeStructure",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vaultFees",
+            "type": {
+              "defined": {
+                "name": "entryExitFees"
+              }
+            }
+          },
+          {
+            "name": "managerFees",
+            "type": {
+              "defined": {
+                "name": "entryExitFees"
+              }
+            }
+          },
+          {
+            "name": "managementFee",
+            "type": {
+              "defined": {
+                "name": "managementFee"
+              }
+            }
+          },
+          {
+            "name": "performanceFee",
+            "type": {
+              "defined": {
+                "name": "performanceFee"
+              }
+            }
+          },
+          {
+            "name": "protocolFees",
+            "type": {
+              "defined": {
+                "name": "protocolFees"
+              }
+            }
           }
         ]
       }
@@ -9862,6 +10140,18 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "managementFee",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "feeBps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "managerKind",
       "type": {
         "kind": "enum",
@@ -10027,6 +10317,16 @@ export type GlamProtocol = {
             "name": "defaultAccountStateFrozen",
             "type": {
               "option": "bool"
+            }
+          },
+          {
+            "name": "feeStructure",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "feeStructure"
+                }
+              }
             }
           },
           {
@@ -10536,6 +10836,22 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "performanceFee",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "feeBps",
+            "type": "u16"
+          },
+          {
+            "name": "hurdleRateBps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "permission",
       "docs": [
         "* Delegate ACL"
@@ -10752,6 +11068,22 @@ export type GlamProtocol = {
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "protocolFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "flowFeeBps",
+            "type": "u16"
           }
         ]
       }

@@ -314,6 +314,7 @@ export class MintIdlModel implements MintModelType {
   lockUpPeriodInSeconds: number | null;
   permanentDelegate: PublicKey | null;
   defaultAccountStateFrozen: boolean | null;
+  feeStructure: FeeStructure | null;
 
   isRawOpenfunds: boolean | null;
   rawOpenfunds: MintOpenfundsModel | null;
@@ -332,6 +333,7 @@ export class MintIdlModel implements MintModelType {
     this.lockUpPeriodInSeconds = data.lockUpPeriodInSeconds ?? null;
     this.permanentDelegate = data.permanentDelegate ?? null;
     this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
+    this.feeStructure = data.feeStructure ?? null;
   }
 }
 export class MintModel extends MintIdlModel {
@@ -501,3 +503,5 @@ export class DelegateAcl implements DelegateAclType {
 }
 
 export type Integration = IdlTypes<GlamProtocol>["integration"];
+
+export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
