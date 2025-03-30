@@ -8,23 +8,13 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.11",
+    "version": "0.4.12",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
   "instructions": [
     {
       "name": "addMint",
-      "docs": [
-        "Adds a new mint.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_model`: An instance of `MintModel` containing the metadata for the new mint.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         171,
         222,
@@ -90,7 +80,7 @@ export type GlamProtocol = {
         },
         {
           "name": "transferHookProgram",
-          "address": "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy"
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [
@@ -106,20 +96,6 @@ export type GlamProtocol = {
     },
     {
       "name": "burnTokens",
-      "docs": [
-        "Burns a specified amount of tokens for the given mint.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to burn tokens for.",
-        "- `amount`: The amount of tokens to burn.",
-        "",
-        "# Permission required",
-        "- Permission::BurnTokens",
-        "",
-        "# Integration required",
-        "- Integration::Mint"
-      ],
       "discriminator": [
         76,
         15,
@@ -463,16 +439,6 @@ export type GlamProtocol = {
     },
     {
       "name": "closeMint",
-      "docs": [
-        "Closes a mint and releases its resources.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to be closed.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         149,
         251,
@@ -561,15 +527,6 @@ export type GlamProtocol = {
     },
     {
       "name": "closeState",
-      "docs": [
-        "Closes a state account and releases its resources.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         25,
         1,
@@ -763,15 +720,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftBalanceValueUsd",
-      "docs": [
-        "Gets the balance value of a user's positions in USD.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         152,
         248,
@@ -808,21 +756,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftCancelOrders",
-      "docs": [
-        "Cancels drift orders.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `market_type`: The type of market (spot or perp) to cancel orders for.",
-        "- `market_index`: The index of the market to cancel orders for.",
-        "- `direction`: The direction of orders to cancel (long or short).",
-        "",
-        "# Permission required",
-        "- Permission::DriftCancelOrders",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         98,
         107,
@@ -906,19 +839,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftCancelOrdersByIds",
-      "docs": [
-        "Cancels drift orders by order IDs.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `order_ids`: A list of order IDs.",
-        "",
-        "# Permission required",
-        "- Permission::DriftCancelOrders",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         172,
         99,
@@ -982,18 +902,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftDeleteUser",
-      "docs": [
-        "Deletes a drift user (sub account).",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::DriftDeleteUser",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         179,
         118,
@@ -1056,20 +964,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftDeposit",
-      "docs": [
-        "Deposits to drift.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `market_index`: Index of the drift spot market.",
-        "- `amount`: Amount of asset to deposit.",
-        "",
-        "# Permission required",
-        "- Permission::DriftDeposit",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         252,
         63,
@@ -1243,18 +1137,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftInitializeUserStats",
-      "docs": [
-        "Initializes a drift account owned by vault and creates a subaccount.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::DriftInitialize",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         133,
         185,
@@ -1325,20 +1207,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftModifyOrder",
-      "docs": [
-        "Modifies an existing drift order.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `order_id`: The ID of the order to modify.",
-        "- `modify_order_params`: The parameters to modify the order with.",
-        "",
-        "# Permission required",
-        "- Permission::DriftModifyOrder",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         235,
         245,
@@ -1410,20 +1278,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftPlaceOrders",
-      "docs": [
-        "Places orders on drift.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `params`: A list of orders.",
-        "",
-        "# Permissions required",
-        "- Permission::DriftPlaceOrders",
-        "- Additional permission Permission::DriftSpotMarket or Permission::DriftPerpMarket is required depending on market type.",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         117,
         18,
@@ -1492,20 +1346,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftUpdateUserCustomMarginRatio",
-      "docs": [
-        "Updates custom margin ratio.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `sub_account_id`: Sub account.",
-        "- `margin_ratio`: Margin ratio.",
-        "",
-        "# Permission required",
-        "- Permission::DriftUpdateUser",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         4,
         47,
@@ -1568,20 +1408,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftUpdateUserDelegate",
-      "docs": [
-        "Sets a delegate on the specified sub account.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `sub_account_id`: Sub account.",
-        "- `delegate`: Delegate's wallet address.",
-        "",
-        "# Permission required",
-        "- Permission::DriftUpdateUser",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         36,
         181,
@@ -1644,20 +1470,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftUpdateUserMarginTradingEnabled",
-      "docs": [
-        "Enables/Disables margin trading.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `sub_account_id`: Sub account.",
-        "- `margin_trading_enabled`: Whether to enable or disable margin trading.",
-        "",
-        "# Permission required",
-        "- Permission::DriftUpdateUser",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         157,
         175,
@@ -1720,20 +1532,6 @@ export type GlamProtocol = {
     },
     {
       "name": "driftWithdraw",
-      "docs": [
-        "Withdraws from drift.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `market_index`: Index of the drift spot market.",
-        "- `amount`: Amount to withdraw.",
-        "",
-        "# Permission required",
-        "- Permission::DriftWithdraw",
-        "",
-        "# Integration required",
-        "- Integration::Drift"
-      ],
       "discriminator": [
         86,
         59,
@@ -1822,20 +1620,6 @@ export type GlamProtocol = {
     },
     {
       "name": "forceTransferTokens",
-      "docs": [
-        "Forcefully transfers a specified amount of tokens from one account to another.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to transfer tokens for.",
-        "- `amount`: The amount of tokens to transfer.",
-        "",
-        "# Permission required",
-        "- Permission::ForceTransferTokens",
-        "",
-        "# Integration required",
-        "- Integration::Mint"
-      ],
       "discriminator": [
         185,
         34,
@@ -2331,16 +2115,6 @@ export type GlamProtocol = {
     },
     {
       "name": "initializeState",
-      "docs": [
-        "Initializes a state account from the provided StateModel instance.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `state`: An instance of `StateModel` containing the details of the state to be initialized.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         190,
         171,
@@ -2449,18 +2223,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterGovNewVote",
-      "docs": [
-        "Creates a new vote.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::VoteOnProposal",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         235,
         179,
@@ -2531,16 +2293,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterSetMaxSwapSlippage",
-      "docs": [
-        "Sets the max swap slippage.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `slippage`: The maximum allowed slippage in basis points.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         110,
         79,
@@ -2571,22 +2323,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterSwap",
-      "docs": [
-        "Swaps assets using Jupiter.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `data`: The serialized Jupiter route data containing swap instructions and parameters.",
-        "",
-        "# Permission required",
-        "- Any of",
-        "- Permission::JupiterSwapAny: no restrictions.",
-        "- Permission::JupiterSwapAllowlisted: input and output are in the assets allowlist.",
-        "- Permission::JupiterSwapLst: input and output assets are both LST.",
-        "",
-        "# Integration required",
-        "- Integration::JupiterSwap"
-      ],
       "discriminator": [
         116,
         207,
@@ -2781,19 +2517,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteCastVote",
-      "docs": [
-        "Casts a vote.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `side`: The side to vote for.",
-        "",
-        "# Permission required",
-        "- Permission::VoteOnProposal",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         11,
         197,
@@ -2868,20 +2591,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteCastVoteChecked",
-      "docs": [
-        "Casts a vote, only if expected_side is already recorded.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `side`: The side to vote for.",
-        "- `expected_side`: The expected side to check in the Vote account.",
-        "",
-        "# Permission required",
-        "- Permission::VoteOnProposal",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         247,
         3,
@@ -2960,19 +2669,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteIncreaseLockedAmount",
-      "docs": [
-        "Increases the locked amount (aka stakes JUP).",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `amount`: The amount of JUP to stake.",
-        "",
-        "# Permission required",
-        "- Permission::StakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         225,
         38,
@@ -3047,18 +2743,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteMergePartialUnstaking",
-      "docs": [
-        "Merges partial unstaking.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::UnstakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         93,
         226,
@@ -3120,18 +2804,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteNewEscrow",
-      "docs": [
-        "Initializes a locked voter escrow.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::StakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         255,
         87,
@@ -3198,20 +2870,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteOpenPartialUnstaking",
-      "docs": [
-        "Partially unstakes JUP.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `amount`: The amount of JUP to partially unstake.",
-        "- `memo`: The memo for the partial unstaking.",
-        "",
-        "# Permission required",
-        "- Permission::UnstakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         84,
         7,
@@ -3287,20 +2945,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteToggleMaxLock",
-      "docs": [
-        "Toggles max lock.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `is_max_lock`: true to allow staking, false to initiate full unstaking.",
-        "",
-        "# Permission required",
-        "- Permission::StakeJup (if is_max_lock == true)",
-        "- Permission::UnstakeJup (if is_max_lock == false)",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         204,
         158,
@@ -3362,18 +3006,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteWithdraw",
-      "docs": [
-        "Withdraws all unstaked JUP.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::UnstakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         195,
         172,
@@ -3443,18 +3075,6 @@ export type GlamProtocol = {
     },
     {
       "name": "jupiterVoteWithdrawPartialUnstaking",
-      "docs": [
-        "Withdraws JUP from partial unstaking.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::UnstakeJup",
-        "",
-        "# Integration required",
-        "- Integration::JupiterVote"
-      ],
       "discriminator": [
         109,
         98,
@@ -4205,18 +3825,6 @@ export type GlamProtocol = {
     },
     {
       "name": "marinadeClaim",
-      "docs": [
-        "Claims tickets that were unstaked in the previous epoch to get SOL.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context containing the required accounts.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::Marinade"
-      ],
       "discriminator": [
         54,
         44,
@@ -4287,19 +3895,6 @@ export type GlamProtocol = {
     },
     {
       "name": "marinadeDeposit",
-      "docs": [
-        "Deposits SOL to get mSOL.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context containing the required accounts.",
-        "- `lamports`: The amount of SOL (in lamports) to deposit.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::Marinade"
-      ],
       "discriminator": [
         62,
         236,
@@ -4392,19 +3987,6 @@ export type GlamProtocol = {
     },
     {
       "name": "marinadeDepositStakeAccount",
-      "docs": [
-        "Deposits a stake account to get mSOL.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context containing the required accounts.",
-        "- `validator_idx`: Validator index in Marinade's validator list.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::Marinade"
-      ],
       "discriminator": [
         141,
         230,
@@ -4509,19 +4091,6 @@ export type GlamProtocol = {
     },
     {
       "name": "marinadeLiquidUnstake",
-      "docs": [
-        "Unstakes mSOL to get SOL immediately with a small fee.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context containing the required accounts.",
-        "- `msol_amount`: Amount of mSOL to unstake.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::Marinade"
-      ],
       "discriminator": [
         29,
         146,
@@ -4608,19 +4177,6 @@ export type GlamProtocol = {
     },
     {
       "name": "marinadeOrderUnstake",
-      "docs": [
-        "Unstakes mSOL to get a ticket that can be claimed at the next epoch.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context containing the required accounts.",
-        "- `msol_amount`: Amount of mSOL to unstake.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::Marinade"
-      ],
       "discriminator": [
         202,
         3,
@@ -5708,20 +5264,6 @@ export type GlamProtocol = {
     },
     {
       "name": "mintTokens",
-      "docs": [
-        "Mints a specified amount of tokens for the given mint.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to mint tokens for.",
-        "- `amount`: The amount of tokens to mint.",
-        "",
-        "# Permission required",
-        "- Permission::MintTokens",
-        "",
-        "# Integration required",
-        "- Integration::Mint"
-      ],
       "discriminator": [
         59,
         132,
@@ -6148,18 +5690,6 @@ export type GlamProtocol = {
     },
     {
       "name": "setSubscribeRedeemEnabled",
-      "docs": [
-        "Enables or disables the subscribe and redeem functionality.",
-        "",
-        "This allows the owner to pause/unpause subscription and redemption of a fund.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `enabled`: A boolean indicating whether to enable or disable the subscribe and redeem functionality.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         189,
         56,
@@ -6190,20 +5720,6 @@ export type GlamProtocol = {
     },
     {
       "name": "setTokenAccountsStates",
-      "docs": [
-        "Sets the frozen state of the token accounts for the specified mint.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to set the frozen state for.",
-        "- `frozen`: The new frozen state.",
-        "",
-        "# Permission required",
-        "- Permission::SetTokenAccountState",
-        "",
-        "# Integration required",
-        "- Integration::Mint"
-      ],
       "discriminator": [
         50,
         133,
@@ -6313,18 +5829,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeDeactivate",
-      "docs": [
-        "Deactivates stake accounts.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         224,
         10,
@@ -6383,18 +5887,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeDelegateStake",
-      "docs": [
-        "Delegates stake account to a validator.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         202,
         40,
@@ -6464,19 +5956,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeInitialize",
-      "docs": [
-        "Initializes a stake account",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `lamports`: The amount of SOL to initialize the stake account with.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         68,
         66,
@@ -6540,18 +6019,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeMerge",
-      "docs": [
-        "Merges two stake accounts.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         46,
         181,
@@ -6747,19 +6214,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakePoolDepositSol",
-      "docs": [
-        "Deposits SOL to a stake pool to get pool token.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `lamports_in`: The amount of SOL to deposit.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::SplStakePool or Integration::SanctumStakePool, depending on the stake pool program used."
-      ],
       "discriminator": [
         147,
         187,
@@ -6942,18 +6396,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakePoolDepositStake",
-      "docs": [
-        "Deposits a stake account to a stake pool to get pool token.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::Stake",
-        "",
-        "# Integration required",
-        "- Integration::SplStakePool or Integration::SanctumStakePool, depending on the stake pool program used."
-      ],
       "discriminator": [
         212,
         158,
@@ -7167,19 +6609,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakePoolWithdrawSol",
-      "docs": [
-        "Unstakes from pool token to get SOL immediately.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `pool_token_amount`: Amount of pool token to unstake.",
-        "",
-        "# Permission required",
-        "- Permission::LiquidUnstake",
-        "",
-        "# Integration required",
-        "- Integration::SplStakePool or Integration::SanctumStakePool, depending on the stake pool program used."
-      ],
       "discriminator": [
         179,
         100,
@@ -7368,19 +6797,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakePoolWithdrawStake",
-      "docs": [
-        "Unstakes from pool token into a stake account.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `pool_token_amount`: Amount of pool token to unstake.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::SplStakePool or Integration::SanctumStakePool, depending on the stake pool program used."
-      ],
       "discriminator": [
         7,
         70,
@@ -7579,18 +6995,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeRedelegate",
-      "docs": [
-        "Redelegates an existing stake account to a new validator (a new stake account will be created).",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         134,
         227,
@@ -7656,19 +7060,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeSplit",
-      "docs": [
-        "Splits from an existing stake account to get a new stake account.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `lamports`: The amount of SOL to split.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         63,
         128,
@@ -7733,19 +7124,6 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeWithdraw",
-      "docs": [
-        "Withdraws SOL from stake accounts.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `lamports`: The amount of SOL to withdraw.",
-        "",
-        "# Permission required",
-        "- Permission::Unstake",
-        "",
-        "# Integration required",
-        "- Integration::NativeStaking"
-      ],
       "discriminator": [
         199,
         13,
@@ -8201,7 +7579,7 @@ export type GlamProtocol = {
         },
         {
           "name": "transferHookProgram",
-          "address": "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy"
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [
@@ -8217,17 +7595,6 @@ export type GlamProtocol = {
     },
     {
       "name": "systemTransfer",
-      "docs": [
-        "Transfer vault SOL to wSOL token account or allowlisted addresses.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `lamports`: The amount of SOL to transfer.",
-        "",
-        "# Permission required",
-        "- Permission::WSolWrap if transfer to same vault's wSOL token account",
-        "- Permission::TransferToAllowlisted if transfer to allowlisted addresses"
-      ],
       "discriminator": [
         167,
         164,
@@ -8475,17 +7842,6 @@ export type GlamProtocol = {
     },
     {
       "name": "updateMint",
-      "docs": [
-        "Updates an existing mint with new metadata.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `mint_id`: The id of the mint to be updated.",
-        "- `mint_model`: An instance of `MintModel` containing the updated metadata for the new mint.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         212,
         203,
@@ -8532,16 +7888,6 @@ export type GlamProtocol = {
     },
     {
       "name": "updateState",
-      "docs": [
-        "Updates an existing state account with new parameters.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `state`: An instance of `StateModel` containing the updated details of the state.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         135,
         112,
@@ -8576,16 +7922,6 @@ export type GlamProtocol = {
     },
     {
       "name": "withdraw",
-      "docs": [
-        "Withdraw asset from vault into owner's wallet.",
-        "",
-        "# Parameters",
-        "- `ctx`: The context for the instruction.",
-        "- `amount`: The amount to withdraw.",
-        "",
-        "# Permission required",
-        "- Owner only, delegates not allowed"
-      ],
       "discriminator": [
         183,
         18,
@@ -8804,7 +8140,7 @@ export type GlamProtocol = {
     {
       "code": 48003,
       "name": "invalidSignerAccount",
-      "msg": "Invalid signer ata"
+      "msg": "Invalid signer token account"
     },
     {
       "code": 49000,
@@ -8838,8 +8174,8 @@ export type GlamProtocol = {
     },
     {
       "code": 49006,
-      "name": "mintsNotClosed",
-      "msg": "Mints must be closed before closing Glam state account"
+      "name": "cannotCloseState",
+      "msg": "Glam state cannot be closed, all mints must be closed first"
     },
     {
       "code": 49007,
@@ -8883,21 +8219,26 @@ export type GlamProtocol = {
     },
     {
       "code": 50002,
-      "name": "invalidSwap",
-      "msg": "Swap failed"
+      "name": "unsupportedSwapIx",
+      "msg": "Unsupported swap instruction"
     },
     {
       "code": 50003,
+      "name": "slippageLimitExceeded",
+      "msg": "Max slippage exceeded"
+    },
+    {
+      "code": 50004,
       "name": "invalidTokenAccount",
       "msg": "Invalid token account"
     },
     {
-      "code": 50004,
+      "code": 50005,
       "name": "invalidVoteSide",
       "msg": "Invalid vote side"
     },
     {
-      "code": 50005,
+      "code": 50006,
       "name": "multipleStakeAccountsDisallowed",
       "msg": "Multiple stake accounts disallowed"
     },
@@ -8955,6 +8296,16 @@ export type GlamProtocol = {
       "code": 51104,
       "name": "vaultNotPriced",
       "msg": "No priced assets found"
+    },
+    {
+      "code": 51105,
+      "name": "positiveAumRequired",
+      "msg": "AUM must be positive"
+    },
+    {
+      "code": 51106,
+      "name": "mathError",
+      "msg": "Math error"
     },
     {
       "code": 52000,
