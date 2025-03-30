@@ -79,7 +79,7 @@ export type GlamProtocol = {
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "transferHookProgram",
+          "name": "policiesProgram",
           "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
@@ -486,10 +486,12 @@ export type GlamProtocol = {
           "writable": true
         },
         {
+          "name": "extraMetasAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
           "name": "metadata",
-          "docs": [
-            "FIXME: close transfer hook extra metas account"
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -514,8 +516,16 @@ export type GlamProtocol = {
           }
         },
         {
+          "name": "policiesProgram",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
+        },
+        {
           "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -7578,7 +7588,7 @@ export type GlamProtocol = {
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "transferHookProgram",
+          "name": "policiesProgram",
           "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],

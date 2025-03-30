@@ -73,7 +73,7 @@
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "transfer_hook_program",
+          "name": "policies_program",
           "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
@@ -480,10 +480,12 @@
           "writable": true
         },
         {
+          "name": "extra_metas_account",
+          "writable": true,
+          "optional": true
+        },
+        {
           "name": "metadata",
-          "docs": [
-            "FIXME: close transfer hook extra metas account"
-          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -508,8 +510,16 @@
           }
         },
         {
+          "name": "policies_program",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
+        },
+        {
           "name": "token_2022_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -7572,7 +7582,7 @@
           "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
         },
         {
-          "name": "transfer_hook_program",
+          "name": "policies_program",
           "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],

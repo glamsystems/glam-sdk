@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/glam_policies.json`.
  */
 export type GlamPolicies = {
-  "address": "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy",
+  "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
   "metadata": {
     "name": "glamPolicies",
     "version": "0.1.0",
@@ -13,6 +13,113 @@ export type GlamPolicies = {
     "description": "Created with Anchor"
   },
   "instructions": [
+    {
+      "name": "closeExtraMetasAccount",
+      "discriminator": [
+        67,
+        72,
+        24,
+        239,
+        222,
+        207,
+        240,
+        177
+      ],
+      "accounts": [
+        {
+          "name": "extraMetasAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closePolicy",
+      "discriminator": [
+        55,
+        42,
+        248,
+        229,
+        222,
+        138,
+        26,
+        252
+      ],
+      "accounts": [
+        {
+          "name": "policyAccount",
+          "docs": [
+            "lamports will be refunded to the owner"
+          ],
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "subject",
+          "writable": true,
+          "relations": [
+            "policyAccount"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
     {
       "name": "createPolicy",
       "discriminator": [
@@ -160,7 +267,7 @@ export type GlamPolicies = {
       ]
     },
     {
-      "name": "initialize",
+      "name": "initializeExtraMetasAccount",
       "discriminator": [
         43,
         34,

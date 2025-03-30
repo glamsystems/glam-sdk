@@ -59,6 +59,7 @@ export class MintClient {
 
   public async closeMintIx(glamState: PublicKey, mintId: number = 0) {
     const glamMint = this.base.getMintPda(glamState, mintId);
+    const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
 
     // @ts-ignore
     return await this.base.program.methods
@@ -66,6 +67,7 @@ export class MintClient {
       .accounts({
         glamState,
         glamMint,
+        extraMetasAccount,
       })
       .instruction();
   }
@@ -77,13 +79,16 @@ export class MintClient {
   ) {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const glamMint = this.base.getMintPda(glamState, mintId);
+    const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .closeMint(mintId)
       .accounts({
         glamState,
         glamSigner,
         glamMint,
+        extraMetasAccount,
       })
       .transaction();
 
