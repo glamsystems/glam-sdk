@@ -75,7 +75,7 @@ export const JUP_VOTE_PROGRAM = new PublicKey(
   "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj",
 );
 export const TRANSFER_HOOK_PROGRAM = new PublicKey(
-  "hookVGUczspowK3A8KX5hqdMFKeZwKGMWDuvPjLvgLy",
+  "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
 );
 
 /**
