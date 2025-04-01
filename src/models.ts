@@ -47,6 +47,8 @@ export class StateIdlModel implements StateModelType {
   driftMarketIndexesPerp: number[] | null;
   driftMarketIndexesSpot: number[] | null;
   driftOrderTypes: number[] | null;
+  baseAsset: PublicKey | null;
+  maxCap: BN | null;
 
   metadata: Metadata | null;
   rawOpenfunds: FundOpenfundsModel | null;
@@ -70,6 +72,8 @@ export class StateIdlModel implements StateModelType {
     this.driftOrderTypes = data.driftOrderTypes ?? null;
     this.metadata = data.metadata ?? null;
     this.rawOpenfunds = data.rawOpenfunds ?? null;
+    this.baseAsset = data.baseAsset ?? null;
+    this.maxCap = data.maxCap ?? null;
   }
 }
 export class StateModel extends StateIdlModel {
@@ -315,6 +319,10 @@ export class MintIdlModel implements MintModelType {
   permanentDelegate: PublicKey | null;
   defaultAccountStateFrozen: boolean | null;
   feeStructure: FeeStructure | null;
+  feeParams: FeeParams | null;
+  valuation: Valuation | null;
+  minSubscription: BN | null;
+  minRedemption: BN | null;
 
   isRawOpenfunds: boolean | null;
   rawOpenfunds: MintOpenfundsModel | null;
@@ -334,6 +342,10 @@ export class MintIdlModel implements MintModelType {
     this.permanentDelegate = data.permanentDelegate ?? null;
     this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
     this.feeStructure = data.feeStructure ?? null;
+    this.feeParams = data.feeParams ?? null;
+    this.valuation = data.valuation ?? null;
+    this.minSubscription = data.minSubscription ?? null;
+    this.minRedemption = data.minRedemption ?? null;
   }
 }
 export class MintModel extends MintIdlModel {
@@ -503,5 +515,7 @@ export class DelegateAcl implements DelegateAclType {
 }
 
 export type Integration = IdlTypes<GlamProtocol>["integration"];
-
 export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
+export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
+export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
+export type Valuation = IdlTypes<GlamProtocol>["valuation"];

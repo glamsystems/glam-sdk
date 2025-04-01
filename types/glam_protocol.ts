@@ -8357,7 +8357,7 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "accumulatedFees",
+      "name": "accruedFees",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8390,20 +8390,8 @@ export type GlamProtocol = {
             "type": "u128"
           },
           {
-            "name": "highWaterMark",
-            "type": "u64"
-          },
-          {
-            "name": "lastPerformanceFeeCrystallized",
-            "type": "i64"
-          },
-          {
-            "name": "lastManagementFeeCrystallized",
-            "type": "i64"
-          },
-          {
-            "name": "lastProtocolBaseFeeCrystallized",
-            "type": "i64"
+            "name": "protocolFlowFee",
+            "type": "u128"
           }
         ]
       }
@@ -8752,10 +8740,28 @@ export type GlamProtocol = {
             "name": "pricedAssets"
           },
           {
+            "name": "baseAsset"
+          },
+          {
+            "name": "maxCap"
+          },
+          {
+            "name": "minSubscription"
+          },
+          {
+            "name": "minRedemption"
+          },
+          {
+            "name": "valuation"
+          },
+          {
             "name": "ledger"
           },
           {
             "name": "feeStructure"
+          },
+          {
+            "name": "feeParams"
           },
           {
             "name": "claimableFees"
@@ -8945,13 +8951,39 @@ export type GlamProtocol = {
             ]
           },
           {
-            "name": "accumulatedFees",
+            "name": "feeParams",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "defined": {
-                    "name": "accumulatedFees"
+                    "name": "feeParams"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "accruedFees",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "accruedFees"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "valuation",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "valuation"
                   }
                 }
               }
@@ -8977,12 +9009,44 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "feeParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "yearInSeconds",
+            "type": "u32"
+          },
+          {
+            "name": "highWaterMark",
+            "type": "i128"
+          },
+          {
+            "name": "lastNav",
+            "type": "i128"
+          },
+          {
+            "name": "lastPerformanceFeeCrystallized",
+            "type": "i64"
+          },
+          {
+            "name": "lastManagementFeeCrystallized",
+            "type": "i64"
+          },
+          {
+            "name": "lastProtocolFeeCrystallized",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "feeStructure",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "vaultFees",
+            "name": "vault",
             "type": {
               "defined": {
                 "name": "entryExitFees"
@@ -8990,7 +9054,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "managerFees",
+            "name": "manager",
             "type": {
               "defined": {
                 "name": "entryExitFees"
@@ -8998,7 +9062,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "managementFee",
+            "name": "management",
             "type": {
               "defined": {
                 "name": "managementFee"
@@ -9006,7 +9070,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "performanceFee",
+            "name": "performance",
             "type": {
               "defined": {
                 "name": "performanceFee"
@@ -9014,7 +9078,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "protocolFees",
+            "name": "protocol",
             "type": {
               "defined": {
                 "name": "protocolFees"
@@ -9327,6 +9391,20 @@ export type GlamProtocol = {
             "type": {
               "option": "string"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "hurdleType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "hard"
+          },
+          {
+            "name": "soft"
           }
         ]
       }
@@ -9691,6 +9769,38 @@ export type GlamProtocol = {
             }
           },
           {
+            "name": "feeParams",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "feeParams"
+                }
+              }
+            }
+          },
+          {
+            "name": "valuation",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "valuation"
+                }
+              }
+            }
+          },
+          {
+            "name": "minSubscription",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "minRedemption",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
             "name": "isRawOpenfunds",
             "type": {
               "option": "bool"
@@ -9727,25 +9837,19 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "currencyOfMinimalSubscription",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "fullShareClassName",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "investmentStatus",
+            "name": "hasPerformanceFee",
             "type": {
-              "option": "string"
+              "option": "bool"
             }
           },
           {
-            "name": "minimalInitialSubscriptionCategory",
+            "name": "investmentStatus",
             "type": {
               "option": "string"
             }
@@ -9763,13 +9867,13 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "shareClassDistributionPolicy",
+            "name": "minimalSubsequentSubscriptionInAmount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "shareClassExtension",
+            "name": "minimalSubsequentSubscriptionInShares",
             "type": {
               "option": "string"
             }
@@ -9805,19 +9909,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "currencyOfMinimalOrMaximumRedemption",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "hasLockUpForRedemption",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "isValidIsin",
             "type": {
               "option": "bool"
             }
@@ -9835,18 +9927,6 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "maximumInitialRedemptionInAmount",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "maximumInitialRedemptionInShares",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "minimalInitialRedemptionInAmount",
             "type": {
               "option": "string"
@@ -9859,13 +9939,19 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "minimalRedemptionCategory",
+            "name": "minimalSubsequentRedemptionInAmount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "shareClassDividendType",
+            "name": "minimalSubsequentRedemptionInShares",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "roundingMethodForPrices",
             "type": {
               "option": "string"
             }
@@ -10208,6 +10294,14 @@ export type GlamProtocol = {
           {
             "name": "hurdleRateBps",
             "type": "u16"
+          },
+          {
+            "name": "hurdleType",
+            "type": {
+              "defined": {
+                "name": "hurdleType"
+              }
+            }
           }
         ]
       }
@@ -10973,6 +11067,18 @@ export type GlamProtocol = {
             }
           },
           {
+            "name": "baseAsset",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "maxCap",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
             "name": "metadata",
             "type": {
               "option": {
@@ -11059,6 +11165,66 @@ export type GlamProtocol = {
           },
           {
             "name": "bidAskImBalanced"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timeUnit",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "slot"
+          },
+          {
+            "name": "second"
+          }
+        ]
+      }
+    },
+    {
+      "name": "valuation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "valuationModel"
+              }
+            }
+          },
+          {
+            "name": "noticePeriod",
+            "type": "u64"
+          },
+          {
+            "name": "settlementPeriod",
+            "type": "u64"
+          },
+          {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "valuationModel",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "continuous"
+          },
+          {
+            "name": "periodic"
           }
         ]
       }

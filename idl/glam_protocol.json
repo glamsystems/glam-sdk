@@ -8351,7 +8351,7 @@
       }
     },
     {
-      "name": "AccumulatedFees",
+      "name": "AccruedFees",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8384,20 +8384,8 @@
             "type": "u128"
           },
           {
-            "name": "high_water_mark",
-            "type": "u64"
-          },
-          {
-            "name": "last_performance_fee_crystallized",
-            "type": "i64"
-          },
-          {
-            "name": "last_management_fee_crystallized",
-            "type": "i64"
-          },
-          {
-            "name": "last_protocol_base_fee_crystallized",
-            "type": "i64"
+            "name": "protocol_flow_fee",
+            "type": "u128"
           }
         ]
       }
@@ -8746,10 +8734,28 @@
             "name": "PricedAssets"
           },
           {
+            "name": "BaseAsset"
+          },
+          {
+            "name": "MaxCap"
+          },
+          {
+            "name": "MinSubscription"
+          },
+          {
+            "name": "MinRedemption"
+          },
+          {
+            "name": "Valuation"
+          },
+          {
             "name": "Ledger"
           },
           {
             "name": "FeeStructure"
+          },
+          {
+            "name": "FeeParams"
           },
           {
             "name": "ClaimableFees"
@@ -8939,13 +8945,39 @@
             ]
           },
           {
-            "name": "AccumulatedFees",
+            "name": "FeeParams",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "defined": {
-                    "name": "AccumulatedFees"
+                    "name": "FeeParams"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "AccruedFees",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "AccruedFees"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "Valuation",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "Valuation"
                   }
                 }
               }
@@ -8971,12 +9003,44 @@
       }
     },
     {
+      "name": "FeeParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "year_in_seconds",
+            "type": "u32"
+          },
+          {
+            "name": "high_water_mark",
+            "type": "i128"
+          },
+          {
+            "name": "last_nav",
+            "type": "i128"
+          },
+          {
+            "name": "last_performance_fee_crystallized",
+            "type": "i64"
+          },
+          {
+            "name": "last_management_fee_crystallized",
+            "type": "i64"
+          },
+          {
+            "name": "last_protocol_fee_crystallized",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "FeeStructure",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "vault_fees",
+            "name": "vault",
             "type": {
               "defined": {
                 "name": "EntryExitFees"
@@ -8984,7 +9048,7 @@
             }
           },
           {
-            "name": "manager_fees",
+            "name": "manager",
             "type": {
               "defined": {
                 "name": "EntryExitFees"
@@ -8992,7 +9056,7 @@
             }
           },
           {
-            "name": "management_fee",
+            "name": "management",
             "type": {
               "defined": {
                 "name": "ManagementFee"
@@ -9000,7 +9064,7 @@
             }
           },
           {
-            "name": "performance_fee",
+            "name": "performance",
             "type": {
               "defined": {
                 "name": "PerformanceFee"
@@ -9008,7 +9072,7 @@
             }
           },
           {
-            "name": "protocol_fees",
+            "name": "protocol",
             "type": {
               "defined": {
                 "name": "ProtocolFees"
@@ -9321,6 +9385,20 @@
             "type": {
               "option": "string"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "HurdleType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Hard"
+          },
+          {
+            "name": "Soft"
           }
         ]
       }
@@ -9685,6 +9763,38 @@
             }
           },
           {
+            "name": "fee_params",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "FeeParams"
+                }
+              }
+            }
+          },
+          {
+            "name": "valuation",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "Valuation"
+                }
+              }
+            }
+          },
+          {
+            "name": "min_subscription",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "min_redemption",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
             "name": "is_raw_openfunds",
             "type": {
               "option": "bool"
@@ -9721,25 +9831,19 @@
             }
           },
           {
-            "name": "currency_of_minimal_subscription",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "full_share_class_name",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "investment_status",
+            "name": "has_performance_fee",
             "type": {
-              "option": "string"
+              "option": "bool"
             }
           },
           {
-            "name": "minimal_initial_subscription_category",
+            "name": "investment_status",
             "type": {
               "option": "string"
             }
@@ -9757,13 +9861,13 @@
             }
           },
           {
-            "name": "share_class_distribution_policy",
+            "name": "minimal_subsequent_subscription_in_amount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_extension",
+            "name": "minimal_subsequent_subscription_in_shares",
             "type": {
               "option": "string"
             }
@@ -9799,19 +9903,7 @@
             }
           },
           {
-            "name": "currency_of_minimal_or_maximum_redemption",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "has_lock_up_for_redemption",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "is_valid_isin",
             "type": {
               "option": "bool"
             }
@@ -9829,18 +9921,6 @@
             }
           },
           {
-            "name": "maximum_initial_redemption_in_amount",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "maximum_initial_redemption_in_shares",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "minimal_initial_redemption_in_amount",
             "type": {
               "option": "string"
@@ -9853,13 +9933,19 @@
             }
           },
           {
-            "name": "minimal_redemption_category",
+            "name": "minimal_subsequent_redemption_in_amount",
             "type": {
               "option": "string"
             }
           },
           {
-            "name": "share_class_dividend_type",
+            "name": "minimal_subsequent_redemption_in_shares",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "rounding_method_for_prices",
             "type": {
               "option": "string"
             }
@@ -10202,6 +10288,14 @@
           {
             "name": "hurdle_rate_bps",
             "type": "u16"
+          },
+          {
+            "name": "hurdle_type",
+            "type": {
+              "defined": {
+                "name": "HurdleType"
+              }
+            }
           }
         ]
       }
@@ -10967,6 +11061,18 @@
             }
           },
           {
+            "name": "base_asset",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "max_cap",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
             "name": "metadata",
             "type": {
               "option": {
@@ -11053,6 +11159,66 @@
           },
           {
             "name": "BidAskImBalanced"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TimeUnit",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Slot"
+          },
+          {
+            "name": "Second"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Valuation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "ValuationModel"
+              }
+            }
+          },
+          {
+            "name": "notice_period",
+            "type": "u64"
+          },
+          {
+            "name": "settlement_period",
+            "type": "u64"
+          },
+          {
+            "name": "time_unit",
+            "type": {
+              "defined": {
+                "name": "TimeUnit"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ValuationModel",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Continuous"
+          },
+          {
+            "name": "Periodic"
           }
         ]
       }
