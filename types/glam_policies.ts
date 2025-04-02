@@ -175,6 +175,11 @@ export type GlamPolicies = {
           "signer": true
         },
         {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "mint"
         },
         {

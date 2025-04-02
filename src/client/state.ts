@@ -313,21 +313,6 @@ export class StateClient {
     return await this.updateState(glamState, { delegateAcls }, txOptions);
   }
 
-  public async setSubscribeRedeemEnabled(
-    glamState: PublicKey,
-    enabled: boolean,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    return await this.base.program.methods
-      .setSubscribeRedeemEnabled(enabled)
-      .accounts({
-        glamState,
-        glamSigner,
-      })
-      .rpc();
-  }
-
   public async closeTokenAccounts(
     glamState: PublicKey,
     tokenAccounts: PublicKey[],

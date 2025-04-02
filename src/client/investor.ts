@@ -25,31 +25,34 @@ import { ASSETS_MAINNET } from "./assets";
 export class InvestorClient {
   public constructor(readonly base: BaseClient) {}
 
-  public async subscribeInstant(
+  public async subscribe(
+    statePda: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    mintId: number = 0,
+    queued: boolean = false,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await (queued
+      ? this.queuedSubscribeTx(statePda, asset, amount, mintId, txOptions)
+      : this.subscribeTx(statePda, asset, amount, mintId, txOptions));
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async queuedRedeem(
     statePda: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.subscribeInstantTx(
+    const tx = await this.queuedRedeemTx(
       statePda,
       asset,
       amount,
       mintId,
       txOptions,
     );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async redeem(
-    statePda: PublicKey,
-    asset: PublicKey,
-    amount: BN,
-    mintId: number = 0,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.redeemTx(statePda, asset, amount, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -69,11 +72,23 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.claimTx(statePda, asset, mintId, txOptions);
-    return await this.base.sendAndConfirm(tx);
+    // Claim WSOL from redeemed shares
+    if (asset.equals(WSOL)) {
+      const tx = await this.claimAssetTx(statePda, asset, mintId, txOptions);
+      return await this.base.sendAndConfirm(tx);
+    }
+
+    // Claim shares after subscription is fulfilled
+    const glamMint = this.base.getMintPda(statePda, mintId);
+    if (glamMint.equals(asset)) {
+      const tx = await this.claimShareTx(statePda, asset, mintId, txOptions);
+      return await this.base.sendAndConfirm(tx);
+    }
+
+    throw new Error(`Invalid asset to claim: ${asset.toBase58()}`);
   }
 
-  public async subscribeInstantTx(
+  public async subscribeTx(
     glamState: PublicKey,
     asset: PublicKey,
     amount: BN,
@@ -144,7 +159,7 @@ export class InvestorClient {
 
     // @ts-ignore
     const tx = await this.base.program.methods
-      .subscribeInstant(0, amount)
+      .subscribe(0, amount)
       .accounts({
         glamState,
         glamMint,
@@ -159,7 +174,71 @@ export class InvestorClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async redeemTx(
+  public async queuedSubscribeTx(
+    glamState: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    if (mintId !== 0 || !asset.equals(WSOL)) {
+      throw new Error("Only WSOL is supported & mintId must be 0");
+    }
+
+    const signer = txOptions.signer || this.base.getSigner();
+
+    // asset token to transfer to escrow
+    const escrow = this.base.getEscrowPda(glamState);
+    const escrowAta = this.base.getAta(asset, escrow);
+    const signerAta = this.base.getAta(asset, signer);
+
+    const wrapSolIxs = asset.equals(WSOL)
+      ? [
+          createAssociatedTokenAccountIdempotentInstruction(
+            signer,
+            signerAta,
+            signer,
+            asset,
+          ),
+          SystemProgram.transfer({
+            fromPubkey: signer,
+            toPubkey: signerAta,
+            lamports: amount.toNumber(),
+          }),
+          createSyncNativeInstruction(signerAta),
+        ]
+      : [];
+    let preInstructions: TransactionInstruction[] = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        signer,
+        escrowAta,
+        escrow,
+        asset,
+      ),
+      ...wrapSolIxs,
+      ...(txOptions.preInstructions || []),
+    ];
+
+    const postInstructions = asset.equals(WSOL)
+      ? [createCloseAccountInstruction(signerAta, signer, signer)]
+      : [];
+
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .queuedSubscribe(0, amount)
+      .accounts({
+        glamState,
+        signer,
+        depositAsset: asset,
+      })
+      .preInstructions(preInstructions)
+      .postInstructions(postInstructions)
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async queuedRedeemTx(
     glamState: PublicKey,
     asset: PublicKey,
     amount: BN,
@@ -201,7 +280,7 @@ export class InvestorClient {
     }
 
     const tx = await this.base.program.methods
-      .redeemQueued(0, amount)
+      .queuedRedeem(0, amount)
       .accounts({
         glamState,
         glamMint,
@@ -231,23 +310,52 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
+    const vault = this.base.getVaultPda(glamState);
+    const vaultAssetAta = this.base.getAta(asset, vault);
+
     const glamMint = this.base.getMintPda(glamState, mintId);
+    const escrow = this.base.getEscrowPda(glamState);
+    const escrowMintAta = this.base.getMintAta(escrow, glamMint);
+    const escrowAssetAta = this.base.getAta(asset, escrow);
+
+    let preInstructions: TransactionInstruction[] = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        signer,
+        escrowMintAta,
+        escrow,
+        glamMint,
+        TOKEN_2022_PROGRAM_ID,
+      ),
+      createAssociatedTokenAccountIdempotentInstruction(
+        signer,
+        escrowAssetAta,
+        escrow,
+        asset,
+      ),
+      createAssociatedTokenAccountIdempotentInstruction(
+        signer,
+        vaultAssetAta,
+        vault,
+        asset,
+      ),
+      ...(txOptions.preInstructions || []),
+    ];
 
     const tx = await this.base.program.methods
-      .fulfill(0)
+      .fulfill(mintId)
       .accounts({
         glamState,
         glamMint,
         signer,
         asset,
       })
-      .preInstructions(txOptions.preInstructions || [])
+      .preInstructions(preInstructions)
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async claimTx(
+  public async claimAssetTx(
     glamState: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
@@ -266,7 +374,7 @@ export class InvestorClient {
       .accounts({
         glamState,
         signer,
-        asset,
+        tokenMint: asset,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .preInstructions([
@@ -280,6 +388,66 @@ export class InvestorClient {
       .postInstructions([
         createCloseAccountInstruction(signerAta, signer, signer),
       ])
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async claimShareTx(
+    glamState: PublicKey,
+    asset: PublicKey,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
+    }
+
+    const signer = txOptions.signer || this.base.getSigner();
+    const glamMint = this.base.getMintPda(glamState, mintId);
+    const signerAta = this.base.getAta(asset, signer, TOKEN_2022_PROGRAM_ID);
+    const escrow = this.base.getEscrowPda(glamState);
+
+    const remainingAccounts: PublicKey[] = [];
+    if (await this.base.isLockupEnabled(glamState)) {
+      const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
+      const signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
+      const escrowPolicy = this.base.getAccountPolicyPda(glamState, escrow);
+      remainingAccounts.push(
+        ...[
+          extraMetasAccount,
+          glamState,
+          escrowPolicy,
+          signerPolicy,
+          TRANSFER_HOOK_PROGRAM,
+        ],
+      );
+    }
+
+    const tx = await this.base.program.methods
+      .claim(0)
+      .accounts({
+        glamState,
+        signer,
+        tokenMint: asset,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .preInstructions([
+        createAssociatedTokenAccountIdempotentInstruction(
+          signer,
+          signerAta,
+          signer,
+          asset,
+          TOKEN_2022_PROGRAM_ID,
+        ),
+      ])
+      .remainingAccounts(
+        remainingAccounts.map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);

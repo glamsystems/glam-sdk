@@ -252,18 +252,20 @@ export class BaseClient {
         signer,
         lookupTables,
       );
+      if (simulate) {
+        tx.recentBlockhash = recentBlockhash;
+        tx.feePayer = signer;
+        console.log(
+          "Tx (base64):",
+          tx.serialize({ verifySignatures: false }).toString("base64"),
+        );
+      }
     } catch (e) {
       // by default, a simulation error doesn't prevent the tx from being sent
       // - when we run tests with failure cases, this RPC call fails with an incorrect error message so we should ignore it by default
       // - gui: wallet apps usually do the simulation themselves, we should ignore the simulation error here by default
       // - cli: we should set simulate=true
       if (simulate) {
-        tx.recentBlockhash = recentBlockhash;
-        tx.feePayer = signer;
-        console.log(
-          "Tx payload:",
-          tx.serialize({ verifySignatures: false }).toString("base64"),
-        );
         console.error("Simulation failed.");
         throw e;
       }
