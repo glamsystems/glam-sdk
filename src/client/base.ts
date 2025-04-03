@@ -38,6 +38,7 @@ import {
   SEED_MINT,
   SEED_ESCROW,
   TRANSFER_HOOK_PROGRAM,
+  JITO_TIP_DEFAULT,
 } from "../constants";
 
 import { GlamProgram, getGlamProgram } from "../glamExports";
@@ -48,10 +49,8 @@ import { GlamError } from "../error";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { BlockhashWithCache } from "../utils/blockhash";
 
-export const JUPITER_API_DEFAULT = "https://quote-api.jup.ag/v6";
-export const JITO_TIP_DEFAULT = new PublicKey(
-  "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
-);
+export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
+
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 
 export const isBrowser =

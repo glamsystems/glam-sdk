@@ -17,7 +17,6 @@ import {
   GOVERNANCE_PROGRAM_ID,
   JUP,
   JUP_VOTE_PROGRAM,
-  JUPITER_PROGRAM_ID,
   WSOL,
 } from "../constants";
 import { ASSETS_MAINNET } from "./assets";
@@ -85,18 +84,14 @@ export class JupiterSwapClient {
 
   public async swap(
     glamState: PublicKey,
-    quoteParams?: QuoteParams,
-    quoteResponse?: QuoteResponse,
-    swapInstructions?: SwapInstructions,
+    options: {
+      quoteParams?: QuoteParams;
+      quoteResponse?: QuoteResponse;
+      swapInstructions?: SwapInstructions;
+    },
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.swapTx(
-      glamState,
-      quoteParams,
-      quoteResponse,
-      swapInstructions,
-      txOptions,
-    );
+    const tx = await this.swapTx(glamState, options, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -113,15 +108,33 @@ export class JupiterSwapClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  public async fetchProgramLabels(): Promise<any> {
+    const res = await fetch(
+      `${this.base.jupiterApi}/swap/v1/program-id-to-label`,
+    );
+    const data = await res.json();
+    return data;
+  }
+
+  public async fetchTokenPrices(pubkeys: string[]): Promise<any> {
+    const res = await fetch(
+      `${this.base.jupiterApi}/price/v2?ids=${pubkeys.join(",")}`,
+    );
+    const data = await res.json();
+    return data;
+  }
+
   /*
    * API methods
    */
 
   async swapTx(
     glamState: PublicKey,
-    quoteParams?: QuoteParams,
-    quoteResponse?: QuoteResponse,
-    swapInstructions?: SwapInstructions,
+    options: {
+      quoteParams?: QuoteParams;
+      quoteResponse?: QuoteResponse;
+      swapInstructions?: SwapInstructions;
+    },
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
@@ -129,29 +142,53 @@ export class JupiterSwapClient {
 
     let swapInstruction: InstructionFromJupiter;
     let addressLookupTableAddresses: string[];
-    const inputMint = new PublicKey(
-      quoteParams?.inputMint || quoteResponse!.inputMint,
-    );
-    const outputMint = new PublicKey(
-      quoteParams?.outputMint || quoteResponse!.outputMint,
-    );
-    const amount = new BN(quoteParams?.amount || quoteResponse!.inAmount);
+    let inputMint: PublicKey;
+    let outputMint: PublicKey;
+    let amount: BN;
+
+    const { quoteParams, quoteResponse, swapInstructions } = options;
 
     if (swapInstructions === undefined) {
-      // Fetch quoteResponse if not specified - quoteParams must be specified in this case
-      if (quoteResponse === undefined) {
+      let resolvedQuoteResponse = quoteResponse;
+      if (resolvedQuoteResponse === undefined) {
         if (quoteParams === undefined) {
           throw new Error(
-            "quoteParams must be specified when quoteResponse and swapInstruction are not specified.",
+            "quoteParams must be specified when quoteResponse and swapInstructions are not specified.",
           );
         }
-        quoteResponse = await this.getQuoteResponse(quoteParams);
+        resolvedQuoteResponse = await this.getQuoteResponse(quoteParams);
       }
 
-      const ins = await this.getSwapInstructions(quoteResponse, glamVault);
+      inputMint = new PublicKey(
+        quoteParams?.inputMint || resolvedQuoteResponse!.inputMint,
+      );
+      outputMint = new PublicKey(
+        quoteParams?.outputMint || resolvedQuoteResponse!.outputMint,
+      );
+      amount = new BN(quoteParams?.amount || resolvedQuoteResponse!.inAmount);
+
+      const ins = await this.getSwapInstructions(
+        resolvedQuoteResponse,
+        glamVault,
+      );
       swapInstruction = ins.swapInstruction;
       addressLookupTableAddresses = ins.addressLookupTableAddresses;
     } else {
+      // If swapInstructions is provided, we need to extract mints and amount from quoteParams or quoteResponse
+      if (quoteParams) {
+        inputMint = new PublicKey(quoteParams.inputMint);
+        outputMint = new PublicKey(quoteParams.outputMint);
+        amount = new BN(quoteParams.amount);
+      } else if (quoteResponse) {
+        inputMint = new PublicKey(quoteResponse.inputMint);
+        outputMint = new PublicKey(quoteResponse.outputMint);
+        amount = new BN(quoteResponse.inAmount);
+      } else {
+        throw new Error(
+          "Either quoteParams or quoteResponse must be specified when using swapInstructions.",
+        );
+      }
+
       swapInstruction = swapInstructions.swapInstruction;
       addressLookupTableAddresses =
         swapInstructions.addressLookupTableAddresses;
@@ -164,6 +201,7 @@ export class JupiterSwapClient {
     const swapIx: { data: any; keys: AccountMeta[] } =
       this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
+    // TODO: Optimize by using batch RPC
     const [inputTokenProgram, outputTokenProgram] = await Promise.all([
       this.getTokenProgram(inputMint),
       this.getTokenProgram(outputMint),
@@ -308,7 +346,7 @@ export class JupiterSwapClient {
 
   public async getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
     const res = await fetch(
-      `${this.base.jupiterApi}/quote?` +
+      `${this.base.jupiterApi}/swap/v1/quote?` +
         new URLSearchParams(
           Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
         ),
@@ -321,17 +359,20 @@ export class JupiterSwapClient {
   }
 
   async getSwapInstructions(quoteResponse: any, from: PublicKey): Promise<any> {
-    const res = await fetch(`${this.base.jupiterApi}/swap-instructions`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+    const res = await fetch(
+      `${this.base.jupiterApi}/swap/v1/swap-instructions`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          quoteResponse,
+          userPublicKey: from.toBase58(),
+        }),
       },
-      body: JSON.stringify({
-        quoteResponse,
-        userPublicKey: from.toBase58(),
-      }),
-    });
+    );
 
     return await res.json();
   }

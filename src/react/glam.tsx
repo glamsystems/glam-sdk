@@ -283,10 +283,8 @@ export function GlamProvider({
         }
       });
 
-      const param = Array.from(tokenMints).join(",");
-      return fetch(`https://api.jup.ag/price/v2?ids=${param}`).then((res) =>
-        res.json(),
-      );
+      const tokens = Array.from(tokenMints);
+      return glamClient.jupiterSwap.fetchTokenPrices(tokens);
     },
   });
   useEffect(() => {

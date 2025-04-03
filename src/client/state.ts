@@ -126,7 +126,6 @@ export class StateClient {
         // FIXME: setting rawOpenfunds to null is a workarond for
         // Access violation in stack frame 5 at address 0x200005ff8 of size 8
         mint.rawOpenfunds = null;
-        console.log("mint model", mint);
         const tx = await this.base.program.methods
           .addMint(mint)
           .accounts({

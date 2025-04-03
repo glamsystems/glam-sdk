@@ -24,6 +24,10 @@ export const SEED_ESCROW = (
 export const MARINADE_TICKET_SIZE = 88;
 export const STAKE_ACCOUNT_SIZE = 200;
 
+export const JITO_TIP_DEFAULT = new PublicKey(
+  "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
+);
+
 /**
  * Token mints. If no devnet version is defined, assume mainnet and devnet addresses are the same.
  *
