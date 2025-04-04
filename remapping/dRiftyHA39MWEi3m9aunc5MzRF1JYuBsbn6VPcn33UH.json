@@ -520,6 +520,120 @@
         6,
         -1
       ]
+    },
+    {
+      "src_ix_name": "settle_pnl",
+      "src_discriminator": [
+        43,
+        61,
+        234,
+        45,
+        15,
+        95,
+        152,
+        153
+      ],
+      "dst_ix_name": "drift_settle_pnl",
+      "dst_discriminator": [
+        161,
+        254,
+        255,
+        100,
+        140,
+        113,
+        169,
+        175
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6
+      ]
+    },
+    {
+      "src_ix_name": "settle_multiple_pnls",
+      "src_discriminator": [
+        127,
+        66,
+        117,
+        57,
+        40,
+        50,
+        152,
+        127
+      ],
+      "dst_ix_name": "drift_settle_multiple_pnls",
+      "dst_discriminator": [
+        100,
+        72,
+        3,
+        45,
+        69,
+        37,
+        10,
+        144
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        5,
+        -1,
+        6
+      ]
     }
   ]
 }
