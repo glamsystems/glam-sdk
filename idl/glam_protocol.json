@@ -9699,8 +9699,20 @@
             "type": "pubkey"
           },
           {
-            "name": "slot",
+            "name": "created_at",
             "type": "u64"
+          },
+          {
+            "name": "fulfilled_at",
+            "type": "u64"
+          },
+          {
+            "name": "time_unit",
+            "type": {
+              "defined": {
+                "name": "TimeUnit"
+              }
+            }
           },
           {
             "name": "kind",
@@ -10300,6 +10312,20 @@
             "type": {
               "option": "u8"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NoticePeriodType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Hard"
+          },
+          {
+            "name": "Soft"
           }
         ]
       }
@@ -11430,7 +11456,23 @@
             "type": "u64"
           },
           {
+            "name": "notice_period_type",
+            "type": {
+              "defined": {
+                "name": "NoticePeriodType"
+              }
+            }
+          },
+          {
+            "name": "permissionless_fulfillment",
+            "type": "bool"
+          },
+          {
             "name": "settlement_period",
+            "type": "u64"
+          },
+          {
+            "name": "cancellation_window",
             "type": "u64"
           },
           {

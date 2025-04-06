@@ -9705,8 +9705,20 @@ export type GlamProtocol = {
             "type": "pubkey"
           },
           {
-            "name": "slot",
+            "name": "createdAt",
             "type": "u64"
+          },
+          {
+            "name": "fulfilledAt",
+            "type": "u64"
+          },
+          {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
           },
           {
             "name": "kind",
@@ -10306,6 +10318,20 @@ export type GlamProtocol = {
             "type": {
               "option": "u8"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "noticePeriodType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "hard"
+          },
+          {
+            "name": "soft"
           }
         ]
       }
@@ -11436,7 +11462,23 @@ export type GlamProtocol = {
             "type": "u64"
           },
           {
+            "name": "noticePeriodType",
+            "type": {
+              "defined": {
+                "name": "noticePeriodType"
+              }
+            }
+          },
+          {
+            "name": "permissionlessFulfillment",
+            "type": "bool"
+          },
+          {
             "name": "settlementPeriod",
+            "type": "u64"
+          },
+          {
+            "name": "cancellationWindow",
             "type": "u64"
           },
           {
