@@ -8412,7 +8412,7 @@ export type GlamProtocol = {
     },
     {
       "code": 51003,
-      "name": "invalidAssetSubscribe",
+      "name": "invalidAsset",
       "msg": "Asset not allowed to subscribe"
     },
     {
@@ -8424,6 +8424,11 @@ export type GlamProtocol = {
       "code": 51005,
       "name": "invalidLedgerEntry",
       "msg": "Invalid ledger entry"
+    },
+    {
+      "code": 51006,
+      "name": "invalidAmount",
+      "msg": "Invalid amount for subscription or redemption"
     },
     {
       "code": 51100,

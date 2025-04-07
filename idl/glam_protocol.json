@@ -8406,7 +8406,7 @@
     },
     {
       "code": 51003,
-      "name": "InvalidAssetSubscribe",
+      "name": "InvalidAsset",
       "msg": "Asset not allowed to subscribe"
     },
     {
@@ -8418,6 +8418,11 @@
       "code": 51005,
       "name": "InvalidLedgerEntry",
       "msg": "Invalid ledger entry"
+    },
+    {
+      "code": 51006,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount for subscription or redemption"
     },
     {
       "code": 51100,
