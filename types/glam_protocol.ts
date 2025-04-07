@@ -4034,92 +4034,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "marinadeLiquidUnstake",
-      "discriminator": [
-        29,
-        146,
-        34,
-        21,
-        26,
-        68,
-        141,
-        161
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
-        },
-        {
-          "name": "state",
-          "writable": true
-        },
-        {
-          "name": "msolMint",
-          "writable": true
-        },
-        {
-          "name": "liqPoolSolLegPda",
-          "writable": true
-        },
-        {
-          "name": "liqPoolMsolLeg",
-          "writable": true
-        },
-        {
-          "name": "treasuryMsolAccount",
-          "writable": true
-        },
-        {
-          "name": "getMsolFrom",
-          "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "tokenProgram"
-        }
-      ],
-      "args": [
-        {
-          "name": "msolAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "marinadeOrderUnstake",
       "discriminator": [
         202,
@@ -10576,7 +10490,7 @@ export type GlamProtocol = {
         "kind": "enum",
         "variants": [
           {
-            "name": "driftInitialize"
+            "name": "driftInit"
           },
           {
             "name": "driftUpdateUser"
@@ -10591,10 +10505,10 @@ export type GlamProtocol = {
             "name": "driftWithdraw"
           },
           {
-            "name": "driftPlaceOrders"
+            "name": "driftOrders"
           },
           {
-            "name": "driftCancelOrders"
+            "name": "driftBorrow"
           },
           {
             "name": "driftPerpMarket"
@@ -10609,7 +10523,7 @@ export type GlamProtocol = {
             "name": "unstake"
           },
           {
-            "name": "liquidUnstake"
+            "name": "deprecatedLiquidUnstake"
           },
           {
             "name": "jupiterSwapAllowlisted"
@@ -10618,10 +10532,10 @@ export type GlamProtocol = {
             "name": "jupiterSwapAny"
           },
           {
-            "name": "wSolWrap"
+            "name": "wSol"
           },
           {
-            "name": "wSolUnwrap"
+            "name": "deprecatedWSolUnwrap"
           },
           {
             "name": "mintTokens"
@@ -10648,6 +10562,9 @@ export type GlamProtocol = {
             "name": "jupiterSwapLst"
           },
           {
+            "name": "jupiterSwapPriceable"
+          },
+          {
             "name": "kaminoInit"
           },
           {
@@ -10657,37 +10574,25 @@ export type GlamProtocol = {
             "name": "kaminoBorrow"
           },
           {
-            "name": "kaminoRepay"
-          },
-          {
             "name": "kaminoWithdraw"
           },
           {
-            "name": "driftModifyOrders"
+            "name": "meteoraDlmmPosition"
           },
           {
-            "name": "meteoraDlmmInitPosition"
+            "name": "meteoraDlmmLiquidity"
           },
           {
-            "name": "meteoraDlmmClosePosition"
-          },
-          {
-            "name": "meteoraDlmmAddLiquidity"
-          },
-          {
-            "name": "meteoraDlmmRemoveLiquidity"
-          },
-          {
-            "name": "meteoraDlmmClaimFee"
-          },
-          {
-            "name": "meteoraDlmmClaimReward"
+            "name": "meteoraDlmmClaim"
           },
           {
             "name": "meteoraDlmmSwap"
           },
           {
             "name": "transferToAllowlisted"
+          },
+          {
+            "name": "withdrawJup"
           }
         ]
       }

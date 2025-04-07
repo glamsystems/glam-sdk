@@ -134,69 +134,6 @@
       ]
     },
     {
-      "src_ix_name": "liquid_unstake",
-      "src_discriminator": [
-        30,
-        30,
-        119,
-        240,
-        191,
-        227,
-        12,
-        16
-      ],
-      "dst_ix_name": "marinade_liquid_unstake",
-      "dst_discriminator": [
-        29,
-        146,
-        34,
-        21,
-        26,
-        68,
-        141,
-        161
-      ],
-      "dynamic_accounts": [
-        {
-          "name": "glam_state",
-          "index": 0,
-          "writable": false,
-          "signer": false
-        },
-        {
-          "name": "glam_vault",
-          "index": 1,
-          "writable": true,
-          "signer": false
-        },
-        {
-          "name": "glam_signer",
-          "index": 2,
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "index": 3,
-          "writable": false,
-          "signer": false
-        }
-      ],
-      "static_accounts": [],
-      "index_map": [
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        -1,
-        -1,
-        10,
-        11
-      ]
-    },
-    {
       "src_ix_name": "order_unstake",
       "src_discriminator": [
         97,

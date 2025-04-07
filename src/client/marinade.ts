@@ -50,14 +50,6 @@ export class MarinadeClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async liquidUnstake(
-    statePda: PublicKey,
-    amount: BN,
-  ): Promise<TransactionSignature> {
-    const tx = await this.liquidUnstakeTx(statePda, amount, {});
-    return await this.base.sendAndConfirm(tx);
-  }
-
   public async orderUnstake(
     statePda: PublicKey,
     amount: BN,
@@ -342,34 +334,6 @@ export class MarinadeClient {
           .slice(1)
           .map((t) => ({ pubkey: t, isSigner: false, isWritable: true })),
       )
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  public async liquidUnstakeTx(
-    glamState: PublicKey,
-    amount: BN,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
-    const marinadeState = this.getMarinadeState();
-    const vaultMsolAta = this.base.getAta(marinadeState.msolMintAddress, vault);
-
-    const tx = await this.base.program.methods
-      .marinadeLiquidUnstake(amount)
-      .accounts({
-        glamState,
-        glamSigner,
-        state: marinadeState.marinadeStateAddress,
-        msolMint: marinadeState.msolMintAddress,
-        liqPoolSolLegPda: marinadeState.solLeg,
-        liqPoolMsolLeg: marinadeState.msolLeg,
-        getMsolFrom: vaultMsolAta,
-        treasuryMsolAccount: marinadeState.treasuryMsolAccount,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);

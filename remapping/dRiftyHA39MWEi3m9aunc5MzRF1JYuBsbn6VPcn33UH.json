@@ -522,6 +522,64 @@
       ]
     },
     {
+      "src_ix_name": "reclaim_rent",
+      "src_discriminator": [
+        218,
+        200,
+        19,
+        197,
+        227,
+        89,
+        192,
+        22
+      ],
+      "dst_ix_name": "drift_reclaim_rent",
+      "dst_discriminator": [
+        211,
+        21,
+        216,
+        236,
+        228,
+        48,
+        49,
+        209
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        5,
+        6,
+        -1,
+        7
+      ]
+    },
+    {
       "src_ix_name": "settle_pnl",
       "src_discriminator": [
         43,
