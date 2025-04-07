@@ -9167,11 +9167,15 @@ export type GlamProtocol = {
             "type": "u32"
           },
           {
-            "name": "highWaterMark",
+            "name": "paHighWaterMark",
             "type": "i128"
           },
           {
-            "name": "lastNav",
+            "name": "paLastNav",
+            "type": "i128"
+          },
+          {
+            "name": "lastAum",
             "type": "i128"
           },
           {

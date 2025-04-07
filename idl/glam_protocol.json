@@ -9161,11 +9161,15 @@
             "type": "u32"
           },
           {
-            "name": "high_water_mark",
+            "name": "pa_high_water_mark",
             "type": "i128"
           },
           {
-            "name": "last_nav",
+            "name": "pa_last_nav",
+            "type": "i128"
+          },
+          {
+            "name": "last_aum",
             "type": "i128"
           },
           {
