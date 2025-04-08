@@ -852,7 +852,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -999,7 +1000,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -4631,7 +4633,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -4706,7 +4709,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -4747,6 +4751,91 @@
           "name": "position",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "lb_pair"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "lower_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "width",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_initialize_position_pda",
+      "discriminator": [
+        206,
+        130,
+        13,
+        156,
+        170,
+        45,
+        96,
+        115
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
         },
         {
           "name": "lb_pair"
@@ -8353,6 +8442,11 @@
       "code": 49012,
       "name": "InvalidTimestamp",
       "msg": "Invalid timestamp"
+    },
+    {
+      "code": 49013,
+      "name": "EngineFieldNotFound",
+      "msg": "Engine field not found"
     },
     {
       "code": 50000,

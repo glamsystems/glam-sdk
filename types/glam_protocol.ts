@@ -858,7 +858,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -1005,7 +1006,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -4637,7 +4639,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -4712,7 +4715,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -4753,6 +4757,91 @@ export type GlamProtocol = {
           "name": "position",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "lbPair"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "lowerBinId",
+          "type": "i32"
+        },
+        {
+          "name": "width",
+          "type": "i32"
+        }
+      ]
+    },
+    {
+      "name": "meteoraDlmmInitializePositionPda",
+      "discriminator": [
+        206,
+        130,
+        13,
+        156,
+        170,
+        45,
+        96,
+        115
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position",
+          "writable": true
         },
         {
           "name": "lbPair"
@@ -8359,6 +8448,11 @@ export type GlamProtocol = {
       "code": 49012,
       "name": "invalidTimestamp",
       "msg": "Invalid timestamp"
+    },
+    {
+      "code": 49013,
+      "name": "engineFieldNotFound",
+      "msg": "Engine field not found"
     },
     {
       "code": 50000,

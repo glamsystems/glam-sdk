@@ -119,6 +119,62 @@
       ]
     },
     {
+      "src_ix_name": "toggle_max_lock",
+      "src_discriminator": [
+        163,
+        157,
+        161,
+        132,
+        179,
+        107,
+        127,
+        143
+      ],
+      "dst_ix_name": "jupiter_vote_toggle_max_lock",
+      "dst_discriminator": [
+        204,
+        158,
+        192,
+        21,
+        219,
+        25,
+        154,
+        87
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        5,
+        -1
+      ]
+    },
+    {
       "src_ix_name": "withdraw",
       "src_discriminator": [
         183,

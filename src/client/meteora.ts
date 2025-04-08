@@ -28,6 +28,8 @@ const METEORA_DLMM = new PublicKey(
 const SOL_USDC_MARKET = new PublicKey(
   "5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6",
 );
+
+// Pubkey::find_program_address(&[b"__event_authority"], &dlmm_interface::ID)
 const EVENT_AUTHORITY = new PublicKey(
   "D1ZN9Wj1fRSUQfCjhvnu1hqDMT7hzjzBBpi12nVniYD6",
 );
@@ -82,6 +84,42 @@ export class MeteoraDlmmClient {
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx, [position]);
+  }
+
+  public async initializePositionPda(
+    statePda: PublicKey | string,
+    pool: PublicKey | string,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamState = new PublicKey(statePda);
+
+    const dlmmPool = await this.getDlmmPool(pool);
+    const activeBin = await dlmmPool.getActiveBin();
+    const minBinId = activeBin.binId - DEFAULT_RANGE_INTERVAL;
+    const maxBinId = activeBin.binId + DEFAULT_RANGE_INTERVAL;
+    const width = maxBinId - minBinId + 1;
+
+    const position = this.getPositionPda(
+      new PublicKey(pool),
+      this.base.getVaultPda(glamState),
+      minBinId,
+      width,
+    );
+
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .meteoraDlmmInitializePositionPda(minBinId, width)
+      .accounts({
+        glamState,
+        lbPair: new PublicKey(pool),
+        position,
+        eventAuthority: EVENT_AUTHORITY,
+        program: METEORA_DLMM,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
   }
 
   public async addLiquidity(
@@ -250,6 +288,10 @@ export class MeteoraDlmmClient {
     );
     const glamState = new PublicKey(statePda);
 
+    console.log(
+      `close position: ${position}, binArrayLower: ${binArrayLower}, binArrayUpper: ${binArrayUpper}`,
+    );
+
     const tx = await this.base.program.methods
       .meteoraDlmmClosePosition()
       .accounts({
@@ -267,6 +309,54 @@ export class MeteoraDlmmClient {
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
 
     return await this.base.sendAndConfirm(vTx);
+  }
+
+  getPositionPda(
+    lbPair: PublicKey,
+    base: PublicKey,
+    lowerBinId: number, // i32
+    width: number, // i32
+  ) {
+    const lowerBinIdBuffer = new Uint8Array(4);
+    const lowerBinIdView = new DataView(lowerBinIdBuffer.buffer);
+    lowerBinIdView.setInt32(0, lowerBinId, true); // true for little-endian
+
+    const widthBuffer = new Uint8Array(4);
+    const widthView = new DataView(widthBuffer.buffer);
+    widthView.setInt32(0, width, true); // true for little-endian
+
+    const [pda, _] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("position"),
+        lbPair.toBuffer(),
+        base.toBuffer(),
+        lowerBinIdBuffer,
+        widthBuffer,
+      ],
+      METEORA_DLMM,
+    );
+    return pda;
+  }
+
+  async fetchPositions(owner: PublicKey) {
+    const accounts =
+      await this.base.provider.connection.getParsedProgramAccounts(
+        METEORA_DLMM,
+        {
+          filters: [
+            {
+              dataSize: 8120,
+            },
+            {
+              memcmp: {
+                offset: 40,
+                bytes: owner.toBase58(),
+              },
+            },
+          ],
+        },
+      );
+    return accounts.map((a) => a.pubkey);
   }
 
   async parsePosition(position: PublicKey) {

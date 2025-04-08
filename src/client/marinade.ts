@@ -7,6 +7,7 @@ import {
   StakeProgram,
   SYSVAR_CLOCK_PUBKEY,
   SystemProgram,
+  Transaction,
 } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -319,22 +320,23 @@ export class MarinadeClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const marinadeState = this.getMarinadeState();
 
-    const tx = await this.base.program.methods
-      .marinadeClaim()
-      .accounts({
-        glamState,
-        glamSigner,
-        ticketAccount: tickets[0],
-        state: marinadeState.marinadeStateAddress,
-        reservePda: marinadeState.reserveAddress,
-        clock: SYSVAR_CLOCK_PUBKEY,
-      })
-      .remainingAccounts(
-        tickets
-          .slice(1)
-          .map((t) => ({ pubkey: t, isSigner: false, isWritable: true })),
-      )
-      .transaction();
+    const instructions = await Promise.all(
+      tickets.map((ticket) =>
+        this.base.program.methods
+          .marinadeClaim()
+          .accounts({
+            glamState,
+            glamSigner,
+            ticketAccount: ticket,
+            state: marinadeState.marinadeStateAddress,
+            reservePda: marinadeState.reserveAddress,
+            clock: SYSVAR_CLOCK_PUBKEY,
+          })
+          .instruction(),
+      ),
+    );
+    const tx = new Transaction();
+    tx.add(...instructions);
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }

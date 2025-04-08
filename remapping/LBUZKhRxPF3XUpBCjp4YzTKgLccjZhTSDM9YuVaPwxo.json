@@ -123,7 +123,7 @@
         {
           "name": "glam_state",
           "index": 0,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
@@ -148,6 +148,68 @@
       "static_accounts": [],
       "index_map": [
         4,
+        5,
+        6,
+        -1,
+        7,
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "src_ix_name": "initialize_position_pda",
+      "src_discriminator": [
+        46,
+        82,
+        125,
+        146,
+        85,
+        141,
+        228,
+        153
+      ],
+      "dst_ix_name": "meteora_dlmm_initialize_position_pda",
+      "dst_discriminator": [
+        206,
+        130,
+        13,
+        156,
+        170,
+        45,
+        96,
+        115
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        -1,
         5,
         6,
         -1,
@@ -383,7 +445,7 @@
         {
           "name": "glam_state",
           "index": 0,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
