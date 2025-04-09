@@ -15,14 +15,22 @@ import DLMM, {
   BinLiquidity,
   deriveBinArray,
   Strategy,
+  RemainingAccountInfo,
+  RemainingAccountsInfoSlice,
 } from "@meteora-ag/dlmm";
 
 import { BaseClient, TxOptions } from "./base";
 import { USDC, WSOL } from "../constants";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 const METEORA_DLMM = new PublicKey(
   "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+);
+const MEMO_PROGRAM_ID = new PublicKey(
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
 );
 
 const SOL_USDC_MARKET = new PublicKey(
@@ -122,35 +130,36 @@ export class MeteoraDlmmClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async addLiquidity(
+  public async addLiquidityByStrategy(
     statePda: PublicKey | string,
     position: PublicKey | string,
     amountX: BN | number,
+    amountY: BN | number,
     strategyType: keyof typeof Strategy,
     txOptions: TxOptions = {},
   ) {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+
     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
       await this.parsePosition(new PublicKey(position));
 
     const dlmmPool = await this.getDlmmPool(lbPair);
-    const { amountY, activeBinId } = await this.getAmounts(
-      dlmmPool,
-      new BN(amountX),
-    );
+    const activeBinId = (await dlmmPool.getActiveBin()).binId;
 
     const glamState = new PublicKey(statePda);
-    const vaultTokenXAta = this.base.getVaultAta(
-      glamState,
+    const glamVault = this.base.getVaultPda(glamState);
+    const vaultTokenXAta = this.base.getAta(
       dlmmPool.tokenX.publicKey,
+      glamVault,
     );
-    const vaultTokenYAta = this.base.getVaultAta(
-      glamState,
+    const vaultTokenYAta = this.base.getAta(
       dlmmPool.tokenY.publicKey,
+      glamVault,
     );
 
-    const strategy = {
+    const liquidityParameter = {
       amountX: new BN(amountX),
-      amountY,
+      amountY: new BN(amountY),
       activeId: activeBinId,
       maxActiveBinSlippage: 20,
       strategyParameters: {
@@ -160,8 +169,26 @@ export class MeteoraDlmmClient {
         parameteres: Array(64).fill(0),
       },
     };
+
+    const preInstructions = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        glamSigner,
+        vaultTokenYAta,
+        glamVault,
+        dlmmPool.tokenY.publicKey,
+      ),
+    ];
+
+    const remainingAccounts = [binArrayLower, binArrayUpper].map((pubkey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: true,
+    }));
+
+    // TODO: if token X or Y program is token2022 we need to properly constrcut the slides
+    // @ts-ignore
     const tx = await this.base.program.methods
-      .meteoraDlmmAddLiquidityByStrategy(strategy)
+      .meteoraDlmmAddLiquidityByStrategy2(liquidityParameter, { slices: [] })
       .accounts({
         glamState,
         position: new PublicKey(position),
@@ -175,19 +202,19 @@ export class MeteoraDlmmClient {
         reserveY: dlmmPool.tokenY.reserve,
         tokenXMint: dlmmPool.tokenX.publicKey,
         tokenYMint: dlmmPool.tokenY.publicKey,
-        binArrayLower,
-        binArrayUpper,
         tokenXProgram: TOKEN_PROGRAM_ID,
         tokenYProgram: TOKEN_PROGRAM_ID,
         eventAuthority: EVENT_AUTHORITY,
         program: METEORA_DLMM,
       })
+      .preInstructions(preInstructions)
+      .remainingAccounts(remainingAccounts)
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return this.base.sendAndConfirm(vTx);
   }
 
-  public async removeLiquidity(
+  public async removeLiquidityByRange(
     statePda: PublicKey | string,
     position: PublicKey | string,
     bpsToRemove: number,
@@ -206,9 +233,16 @@ export class MeteoraDlmmClient {
       glamState,
       dlmmPool.tokenY.publicKey,
     );
+    const remainingAccounts = [binArrayLower, binArrayUpper].map((pubkey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: true,
+    }));
 
     const tx = await this.base.program.methods
-      .meteoraDlmmRemoveLiquidityByRange(lowerBinId, upperBinId, bpsToRemove)
+      .meteoraDlmmRemoveLiquidityByRange2(lowerBinId, upperBinId, bpsToRemove, {
+        slices: [],
+      })
       .accounts({
         glamState,
         position: new PublicKey(position),
@@ -222,13 +256,13 @@ export class MeteoraDlmmClient {
         reserveY: dlmmPool.tokenY.reserve,
         tokenXMint: dlmmPool.tokenX.publicKey,
         tokenYMint: dlmmPool.tokenY.publicKey,
-        binArrayLower,
-        binArrayUpper,
         tokenXProgram: TOKEN_PROGRAM_ID,
         tokenYProgram: TOKEN_PROGRAM_ID,
         eventAuthority: EVENT_AUTHORITY,
+        memoProgram: MEMO_PROGRAM_ID,
         program: METEORA_DLMM,
       })
+      .remainingAccounts(remainingAccounts)
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return this.base.sendAndConfirm(vTx);
@@ -239,9 +273,8 @@ export class MeteoraDlmmClient {
     position: PublicKey | string,
     txOptions: TxOptions = {},
   ) {
-    const { lbPair, binArrayLower, binArrayUpper } = await this.parsePosition(
-      new PublicKey(position),
-    );
+    const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
+      await this.parsePosition(new PublicKey(position));
     const dlmmPool = await this.getDlmmPool(lbPair);
 
     const glamState = new PublicKey(statePda);
@@ -253,25 +286,31 @@ export class MeteoraDlmmClient {
       glamState,
       dlmmPool.tokenY.publicKey,
     );
+    const remainingAccounts = [binArrayLower, binArrayUpper].map((pubkey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: true,
+    }));
 
     const tx = await this.base.program.methods
-      .meteoraDlmmClaimFee()
+      .meteoraDlmmClaimFee2(lowerBinId, upperBinId, { slices: [] })
       .accounts({
         glamState,
         position: new PublicKey(position),
         lbPair,
-        binArrayLower,
-        binArrayUpper,
         reserveX: dlmmPool.tokenX.reserve,
         reserveY: dlmmPool.tokenY.reserve,
         userTokenX: vaultTokenXAta,
         userTokenY: vaultTokenYAta,
         tokenXMint: dlmmPool.tokenX.publicKey,
         tokenYMint: dlmmPool.tokenY.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgramX: TOKEN_PROGRAM_ID,
+        tokenProgramY: TOKEN_PROGRAM_ID,
+        memoProgram: MEMO_PROGRAM_ID,
         eventAuthority: EVENT_AUTHORITY,
         program: METEORA_DLMM,
       })
+      .remainingAccounts(remainingAccounts)
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -397,7 +436,7 @@ export class MeteoraDlmmClient {
     };
   }
 
-  async getAmounts(dlmmPool: DLMM, amountX: BN) {
+  async autoFillY(dlmmPool: DLMM, amountX: BN) {
     const activeBin = await dlmmPool.getActiveBin();
     const activeBinPricePerToken = dlmmPool.fromPricePerLamport(
       Number(activeBin.price),

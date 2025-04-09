@@ -663,42 +663,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "driftBalanceValueUsd",
-      "discriminator": [
-        152,
-        248,
-        238,
-        80,
-        92,
-        122,
-        40,
-        131
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault"
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "state"
-        },
-        {
-          "name": "user"
-        },
-        {
-          "name": "userStats"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "driftCancelOrders",
       "discriminator": [
         98,
@@ -4118,16 +4082,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "meteoraDlmmAddLiquidity",
+      "name": "meteoraDlmmAddLiquidity2",
       "discriminator": [
-        214,
-        108,
-        176,
-        68,
-        92,
-        135,
-        32,
-        35
+        248,
+        123,
+        81,
+        94,
+        137,
+        10,
+        79,
+        81
       ],
       "accounts": [
         {
@@ -4196,14 +4160,6 @@ export type GlamProtocol = {
         },
         {
           "name": "tokenYMint"
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
         },
         {
           "name": "tokenXProgram"
@@ -4226,20 +4182,28 @@ export type GlamProtocol = {
               "name": "liquidityParameter"
             }
           }
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteoraDlmmAddLiquidityByStrategy",
+      "name": "meteoraDlmmAddLiquidityByStrategy2",
       "discriminator": [
-        81,
-        139,
-        59,
-        146,
-        176,
-        196,
-        240,
-        216
+        219,
+        171,
+        159,
+        202,
+        167,
+        192,
+        209,
+        25
       ],
       "accounts": [
         {
@@ -4310,14 +4274,6 @@ export type GlamProtocol = {
           "name": "tokenYMint"
         },
         {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
           "name": "tokenXProgram"
         },
         {
@@ -4338,20 +4294,28 @@ export type GlamProtocol = {
               "name": "liquidityParameterByStrategy"
             }
           }
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteoraDlmmAddLiquidityOneSidePrecise",
+      "name": "meteoraDlmmAddLiquidityOneSidePrecise2",
       "discriminator": [
-        244,
-        187,
-        200,
-        82,
-        30,
-        179,
-        154,
-        224
+        60,
+        137,
+        107,
+        235,
+        107,
+        209,
+        19,
+        106
       ],
       "accounts": [
         {
@@ -4411,14 +4375,6 @@ export type GlamProtocol = {
           "name": "tokenMint"
         },
         {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
           "name": "tokenProgram"
         },
         {
@@ -4433,23 +4389,31 @@ export type GlamProtocol = {
           "name": "parameter",
           "type": {
             "defined": {
-              "name": "addLiquiditySingleSidePreciseParameter"
+              "name": "addLiquiditySingleSidePreciseParameter2"
+            }
+          }
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
             }
           }
         }
       ]
     },
     {
-      "name": "meteoraDlmmClaimFee",
+      "name": "meteoraDlmmClaimFee2",
       "discriminator": [
-        78,
-        116,
-        98,
-        78,
-        50,
-        82,
-        72,
-        37
+        152,
+        214,
+        221,
+        166,
+        191,
+        34,
+        17,
+        189
       ],
       "accounts": [
         {
@@ -4491,14 +4455,6 @@ export type GlamProtocol = {
         },
         {
           "name": "position",
-          "writable": true
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
           "writable": true
         },
         {
@@ -4524,7 +4480,13 @@ export type GlamProtocol = {
           "name": "tokenYMint"
         },
         {
-          "name": "tokenProgram"
+          "name": "tokenProgramX"
+        },
+        {
+          "name": "tokenProgramY"
+        },
+        {
+          "name": "memoProgram"
         },
         {
           "name": "eventAuthority"
@@ -4533,19 +4495,36 @@ export type GlamProtocol = {
           "name": "program"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "minBinId",
+          "type": "i32"
+        },
+        {
+          "name": "maxBinId",
+          "type": "i32"
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
+        }
+      ]
     },
     {
-      "name": "meteoraDlmmClaimReward",
+      "name": "meteoraDlmmClaimReward2",
       "discriminator": [
-        107,
-        160,
-        137,
-        17,
-        162,
-        0,
-        24,
-        234
+        73,
+        232,
+        244,
+        62,
+        123,
+        103,
+        114,
+        39
       ],
       "accounts": [
         {
@@ -4590,14 +4569,6 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
           "name": "rewardVault",
           "writable": true
         },
@@ -4612,6 +4583,9 @@ export type GlamProtocol = {
           "name": "tokenProgram"
         },
         {
+          "name": "memoProgram"
+        },
+        {
           "name": "eventAuthority"
         },
         {
@@ -4622,6 +4596,22 @@ export type GlamProtocol = {
         {
           "name": "rewardIndex",
           "type": "u64"
+        },
+        {
+          "name": "minBinId",
+          "type": "i32"
+        },
+        {
+          "name": "maxBinId",
+          "type": "i32"
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
@@ -4873,16 +4863,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "meteoraDlmmRemoveLiquidity",
+      "name": "meteoraDlmmRemoveLiquidity2",
       "discriminator": [
-        185,
-        228,
-        248,
-        124,
-        57,
-        133,
-        19,
-        192
+        118,
+        111,
+        170,
+        14,
+        224,
+        187,
+        21,
+        119
       ],
       "accounts": [
         {
@@ -4953,18 +4943,13 @@ export type GlamProtocol = {
           "name": "tokenYMint"
         },
         {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
           "name": "tokenXProgram"
         },
         {
           "name": "tokenYProgram"
+        },
+        {
+          "name": "memoProgram"
         },
         {
           "name": "eventAuthority"
@@ -4983,20 +4968,28 @@ export type GlamProtocol = {
               }
             }
           }
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteoraDlmmRemoveLiquidityByRange",
+      "name": "meteoraDlmmRemoveLiquidityByRange2",
       "discriminator": [
-        223,
-        12,
-        177,
-        181,
-        96,
-        109,
-        60,
-        124
+        157,
+        54,
+        138,
+        77,
+        16,
+        239,
+        100,
+        16
       ],
       "accounts": [
         {
@@ -5067,18 +5060,13 @@ export type GlamProtocol = {
           "name": "tokenYMint"
         },
         {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
-          "writable": true
-        },
-        {
           "name": "tokenXProgram"
         },
         {
           "name": "tokenYProgram"
+        },
+        {
+          "name": "memoProgram"
         },
         {
           "name": "eventAuthority"
@@ -5099,20 +5087,28 @@ export type GlamProtocol = {
         {
           "name": "bpsToRemove",
           "type": "u16"
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteoraDlmmSwap",
+      "name": "meteoraDlmmSwap2",
       "discriminator": [
-        127,
-        64,
-        37,
-        138,
-        173,
-        243,
-        207,
-        84
+        95,
+        183,
+        135,
+        4,
+        4,
+        165,
+        65,
+        133
       ],
       "accounts": [
         {
@@ -5192,6 +5188,9 @@ export type GlamProtocol = {
           "name": "tokenYProgram"
         },
         {
+          "name": "memoProgram"
+        },
+        {
           "name": "eventAuthority"
         },
         {
@@ -5206,6 +5205,138 @@ export type GlamProtocol = {
         {
           "name": "minAmountOut",
           "type": "u64"
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meteoraDlmmSwapWithPriceImpact2",
+      "discriminator": [
+        219,
+        33,
+        50,
+        237,
+        37,
+        101,
+        146,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "lbPair",
+          "writable": true
+        },
+        {
+          "name": "binArrayBitmapExtension"
+        },
+        {
+          "name": "reserveX",
+          "writable": true
+        },
+        {
+          "name": "reserveY",
+          "writable": true
+        },
+        {
+          "name": "userTokenIn",
+          "writable": true
+        },
+        {
+          "name": "userTokenOut",
+          "writable": true
+        },
+        {
+          "name": "tokenXMint"
+        },
+        {
+          "name": "tokenYMint"
+        },
+        {
+          "name": "oracle",
+          "writable": true
+        },
+        {
+          "name": "hostFeeIn",
+          "writable": true
+        },
+        {
+          "name": "tokenXProgram"
+        },
+        {
+          "name": "tokenYProgram"
+        },
+        {
+          "name": "memoProgram"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "activeId",
+          "type": {
+            "option": "i32"
+          }
+        },
+        {
+          "name": "maxPriceImpactBps",
+          "type": "u16"
+        },
+        {
+          "name": "remainingAccountsInfo",
+          "type": {
+            "defined": {
+              "name": "remainingAccountsInfo"
+            }
+          }
         }
       ]
     },
@@ -5310,6 +5441,88 @@ export type GlamProtocol = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "priceDrift",
+      "discriminator": [
+        240,
+        91,
+        209,
+        89,
+        155,
+        0,
+        97,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "userStats"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "priceMeteora",
+      "discriminator": [
+        166,
+        250,
+        203,
+        148,
+        67,
+        60,
+        207,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
     },
     {
       "name": "priceStakes",
@@ -8599,6 +8812,23 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "accountsType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "transferHookX"
+          },
+          {
+            "name": "transferHookY"
+          },
+          {
+            "name": "transferHookReward"
+          }
+        ]
+      }
+    },
+    {
       "name": "accruedFees",
       "type": {
         "kind": "struct",
@@ -8639,7 +8869,7 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "addLiquiditySingleSidePreciseParameter",
+      "name": "addLiquiditySingleSidePreciseParameter2",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8655,6 +8885,10 @@ export type GlamProtocol = {
           },
           {
             "name": "decompressMultiplier",
+            "type": "u64"
+          },
+          {
+            "name": "maxAmount",
             "type": "u64"
           }
         ]
@@ -10827,6 +11061,44 @@ export type GlamProtocol = {
           },
           {
             "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "remainingAccountsInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slices",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "remainingAccountsSlice"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "remainingAccountsSlice",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accountsType",
+            "type": {
+              "defined": {
+                "name": "accountsType"
+              }
+            }
+          },
+          {
+            "name": "length",
             "type": "u8"
           }
         ]

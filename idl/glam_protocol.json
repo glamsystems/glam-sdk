@@ -657,42 +657,6 @@
       ]
     },
     {
-      "name": "drift_balance_value_usd",
-      "discriminator": [
-        152,
-        248,
-        238,
-        80,
-        92,
-        122,
-        40,
-        131
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault"
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "state"
-        },
-        {
-          "name": "user"
-        },
-        {
-          "name": "user_stats"
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "drift_cancel_orders",
       "discriminator": [
         98,
@@ -4112,16 +4076,16 @@
       ]
     },
     {
-      "name": "meteora_dlmm_add_liquidity",
+      "name": "meteora_dlmm_add_liquidity2",
       "discriminator": [
-        214,
-        108,
-        176,
-        68,
-        92,
-        135,
-        32,
-        35
+        248,
+        123,
+        81,
+        94,
+        137,
+        10,
+        79,
+        81
       ],
       "accounts": [
         {
@@ -4190,14 +4154,6 @@
         },
         {
           "name": "token_y_mint"
-        },
-        {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
         },
         {
           "name": "token_x_program"
@@ -4220,20 +4176,28 @@
               "name": "LiquidityParameter"
             }
           }
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_add_liquidity_by_strategy",
+      "name": "meteora_dlmm_add_liquidity_by_strategy2",
       "discriminator": [
-        81,
-        139,
-        59,
-        146,
-        176,
-        196,
-        240,
-        216
+        219,
+        171,
+        159,
+        202,
+        167,
+        192,
+        209,
+        25
       ],
       "accounts": [
         {
@@ -4304,14 +4268,6 @@
           "name": "token_y_mint"
         },
         {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
-        },
-        {
           "name": "token_x_program"
         },
         {
@@ -4332,20 +4288,28 @@
               "name": "LiquidityParameterByStrategy"
             }
           }
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_add_liquidity_one_side_precise",
+      "name": "meteora_dlmm_add_liquidity_one_side_precise2",
       "discriminator": [
-        244,
-        187,
-        200,
-        82,
-        30,
-        179,
-        154,
-        224
+        60,
+        137,
+        107,
+        235,
+        107,
+        209,
+        19,
+        106
       ],
       "accounts": [
         {
@@ -4405,14 +4369,6 @@
           "name": "token_mint"
         },
         {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
-        },
-        {
           "name": "token_program"
         },
         {
@@ -4427,23 +4383,31 @@
           "name": "parameter",
           "type": {
             "defined": {
-              "name": "AddLiquiditySingleSidePreciseParameter"
+              "name": "AddLiquiditySingleSidePreciseParameter2"
+            }
+          }
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
             }
           }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_claim_fee",
+      "name": "meteora_dlmm_claim_fee2",
       "discriminator": [
-        78,
-        116,
-        98,
-        78,
-        50,
-        82,
-        72,
-        37
+        152,
+        214,
+        221,
+        166,
+        191,
+        34,
+        17,
+        189
       ],
       "accounts": [
         {
@@ -4485,14 +4449,6 @@
         },
         {
           "name": "position",
-          "writable": true
-        },
-        {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
           "writable": true
         },
         {
@@ -4518,7 +4474,13 @@
           "name": "token_y_mint"
         },
         {
-          "name": "token_program"
+          "name": "token_program_x"
+        },
+        {
+          "name": "token_program_y"
+        },
+        {
+          "name": "memo_program"
         },
         {
           "name": "event_authority"
@@ -4527,19 +4489,36 @@
           "name": "program"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "min_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "max_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
+        }
+      ]
     },
     {
-      "name": "meteora_dlmm_claim_reward",
+      "name": "meteora_dlmm_claim_reward2",
       "discriminator": [
-        107,
-        160,
-        137,
-        17,
-        162,
-        0,
-        24,
-        234
+        73,
+        232,
+        244,
+        62,
+        123,
+        103,
+        114,
+        39
       ],
       "accounts": [
         {
@@ -4584,14 +4563,6 @@
           "writable": true
         },
         {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
-        },
-        {
           "name": "reward_vault",
           "writable": true
         },
@@ -4606,6 +4577,9 @@
           "name": "token_program"
         },
         {
+          "name": "memo_program"
+        },
+        {
           "name": "event_authority"
         },
         {
@@ -4616,6 +4590,22 @@
         {
           "name": "reward_index",
           "type": "u64"
+        },
+        {
+          "name": "min_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "max_bin_id",
+          "type": "i32"
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
@@ -4867,16 +4857,16 @@
       ]
     },
     {
-      "name": "meteora_dlmm_remove_liquidity",
+      "name": "meteora_dlmm_remove_liquidity2",
       "discriminator": [
-        185,
-        228,
-        248,
-        124,
-        57,
-        133,
-        19,
-        192
+        118,
+        111,
+        170,
+        14,
+        224,
+        187,
+        21,
+        119
       ],
       "accounts": [
         {
@@ -4947,18 +4937,13 @@
           "name": "token_y_mint"
         },
         {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
-        },
-        {
           "name": "token_x_program"
         },
         {
           "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
         },
         {
           "name": "event_authority"
@@ -4977,20 +4962,28 @@
               }
             }
           }
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_remove_liquidity_by_range",
+      "name": "meteora_dlmm_remove_liquidity_by_range2",
       "discriminator": [
-        223,
-        12,
-        177,
-        181,
-        96,
-        109,
-        60,
-        124
+        157,
+        54,
+        138,
+        77,
+        16,
+        239,
+        100,
+        16
       ],
       "accounts": [
         {
@@ -5061,18 +5054,13 @@
           "name": "token_y_mint"
         },
         {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
-          "writable": true
-        },
-        {
           "name": "token_x_program"
         },
         {
           "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
         },
         {
           "name": "event_authority"
@@ -5093,20 +5081,28 @@
         {
           "name": "bps_to_remove",
           "type": "u16"
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
     {
-      "name": "meteora_dlmm_swap",
+      "name": "meteora_dlmm_swap2",
       "discriminator": [
-        127,
-        64,
-        37,
-        138,
-        173,
-        243,
-        207,
-        84
+        95,
+        183,
+        135,
+        4,
+        4,
+        165,
+        65,
+        133
       ],
       "accounts": [
         {
@@ -5186,6 +5182,9 @@
           "name": "token_y_program"
         },
         {
+          "name": "memo_program"
+        },
+        {
           "name": "event_authority"
         },
         {
@@ -5200,6 +5199,138 @@
         {
           "name": "min_amount_out",
           "type": "u64"
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "meteora_dlmm_swap_with_price_impact2",
+      "discriminator": [
+        219,
+        33,
+        50,
+        237,
+        37,
+        101,
+        146,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
+        },
+        {
+          "name": "lb_pair",
+          "writable": true
+        },
+        {
+          "name": "bin_array_bitmap_extension"
+        },
+        {
+          "name": "reserve_x",
+          "writable": true
+        },
+        {
+          "name": "reserve_y",
+          "writable": true
+        },
+        {
+          "name": "user_token_in",
+          "writable": true
+        },
+        {
+          "name": "user_token_out",
+          "writable": true
+        },
+        {
+          "name": "token_x_mint"
+        },
+        {
+          "name": "token_y_mint"
+        },
+        {
+          "name": "oracle",
+          "writable": true
+        },
+        {
+          "name": "host_fee_in",
+          "writable": true
+        },
+        {
+          "name": "token_x_program"
+        },
+        {
+          "name": "token_y_program"
+        },
+        {
+          "name": "memo_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_in",
+          "type": "u64"
+        },
+        {
+          "name": "active_id",
+          "type": {
+            "option": "i32"
+          }
+        },
+        {
+          "name": "max_price_impact_bps",
+          "type": "u16"
+        },
+        {
+          "name": "remaining_accounts_info",
+          "type": {
+            "defined": {
+              "name": "RemainingAccountsInfo"
+            }
+          }
         }
       ]
     },
@@ -5304,6 +5435,88 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "price_drift",
+      "discriminator": [
+        240,
+        91,
+        209,
+        89,
+        155,
+        0,
+        97,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "user_stats"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "price_meteora",
+      "discriminator": [
+        166,
+        250,
+        203,
+        148,
+        67,
+        60,
+        207,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
     },
     {
       "name": "price_stakes",
@@ -8593,6 +8806,23 @@
       }
     },
     {
+      "name": "AccountsType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "TransferHookX"
+          },
+          {
+            "name": "TransferHookY"
+          },
+          {
+            "name": "TransferHookReward"
+          }
+        ]
+      }
+    },
+    {
       "name": "AccruedFees",
       "type": {
         "kind": "struct",
@@ -8633,7 +8863,7 @@
       }
     },
     {
-      "name": "AddLiquiditySingleSidePreciseParameter",
+      "name": "AddLiquiditySingleSidePreciseParameter2",
       "type": {
         "kind": "struct",
         "fields": [
@@ -8649,6 +8879,10 @@
           },
           {
             "name": "decompress_multiplier",
+            "type": "u64"
+          },
+          {
+            "name": "max_amount",
             "type": "u64"
           }
         ]
@@ -10821,6 +11055,44 @@
           },
           {
             "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemainingAccountsInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "slices",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "RemainingAccountsSlice"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RemainingAccountsSlice",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accounts_type",
+            "type": {
+              "defined": {
+                "name": "AccountsType"
+              }
+            }
+          },
+          {
+            "name": "length",
             "type": "u8"
           }
         ]
