@@ -4082,6 +4082,109 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "merkleDistributorNewClaimAndStake",
+      "discriminator": [
+        203,
+        167,
+        65,
+        87,
+        208,
+        161,
+        91,
+        207
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
+        },
+        {
+          "name": "distributor",
+          "writable": true
+        },
+        {
+          "name": "claimStatus",
+          "writable": true
+        },
+        {
+          "name": "from",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "voterProgram"
+        },
+        {
+          "name": "locker",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true
+        },
+        {
+          "name": "escrowTokens",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amountUnlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amountLocked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "meteoraDlmmAddLiquidity2",
       "discriminator": [
         248,
@@ -10930,6 +11033,9 @@ export type GlamProtocol = {
           },
           {
             "name": "withdrawJup"
+          },
+          {
+            "name": "claimJup"
           }
         ]
       }

@@ -4076,6 +4076,109 @@
       ]
     },
     {
+      "name": "merkle_distributor_new_claim_and_stake",
+      "discriminator": [
+        203,
+        167,
+        65,
+        87,
+        208,
+        161,
+        91,
+        207
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
+        },
+        {
+          "name": "distributor",
+          "writable": true
+        },
+        {
+          "name": "claim_status",
+          "writable": true
+        },
+        {
+          "name": "from",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "voter_program"
+        },
+        {
+          "name": "locker",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true
+        },
+        {
+          "name": "escrow_tokens",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_unlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amount_locked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "meteora_dlmm_add_liquidity2",
       "discriminator": [
         248,
@@ -10924,6 +11027,9 @@
           },
           {
             "name": "WithdrawJup"
+          },
+          {
+            "name": "ClaimJup"
           }
         ]
       }
