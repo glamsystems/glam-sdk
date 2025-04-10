@@ -62,6 +62,7 @@ export class StateClient {
 
     // No share class, only need to initialize the state
     if (mints && mints.length === 0) {
+      // @ts-ignore
       const tx = await this.base.program.methods
         .initializeState(stateModel)
         .accountsPartial({ glamState, glamSigner, glamVault })
@@ -86,9 +87,6 @@ export class StateClient {
         .accountsPartial({ glamState, glamSigner, glamVault })
         .instruction();
 
-      // FIXME: setting rawOpenfunds to null is a workarond for
-      // Access violation in stack frame 5 at address 0x200005ff8 of size 8
-      mints[0].rawOpenfunds = null;
       const newMint = this.base.getMintPda(glamState, 0);
       const tx = await this.base.program.methods
         .addMint(mints[0])
@@ -123,9 +121,6 @@ export class StateClient {
       (mints || []).map(async (mint, j: number) => {
         const newMint = this.base.getMintPda(glamState, j);
 
-        // FIXME: setting rawOpenfunds to null is a workarond for
-        // Access violation in stack frame 5 at address 0x200005ff8 of size 8
-        mint.rawOpenfunds = null;
         const tx = await this.base.program.methods
           .addMint(mint)
           .accounts({

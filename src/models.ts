@@ -375,70 +375,71 @@ export type MintOpenfundsModelType =
 export class MintOpenfundsModel implements MintOpenfundsModelType {
   isin: string | null;
   shareClassCurrency: string | null;
-  currencyOfMinimalSubscription: string | null;
+  // currencyOfMinimalSubscription: string | null;
   fullShareClassName: string | null;
+  hasPerformanceFee: boolean | null;
   investmentStatus: string | null;
-  minimalInitialSubscriptionCategory: string | null;
+  // investmentStatus: string | null;
+  // minimalInitialSubscriptionCategory: string | null;
   minimalInitialSubscriptionInAmount: string | null;
   minimalInitialSubscriptionInShares: string | null;
-  shareClassDistributionPolicy: string | null;
-  shareClassExtension: string | null;
+  minimalSubsequentSubscriptionInAmount: string | null;
+  minimalSubsequentSubscriptionInShares: string | null;
+  // shareClassDistributionPolicy: string | null;
+  // shareClassExtension: string | null;
   shareClassLaunchDate: string | null;
   shareClassLifecycle: string | null;
   launchPrice: string | null;
   launchPriceCurrency: string | null;
   launchPriceDate: string | null;
-  currencyOfMinimalOrMaximumRedemption: string | null;
+  // currencyOfMinimalOrMaximumRedemption: string | null;
   hasLockUpForRedemption: boolean | null;
-  isValidIsin: boolean | null;
+  // isValidIsin: boolean | null;
   lockUpComment: string | null;
   lockUpPeriodInDays: string | null;
-  maximumInitialRedemptionInAmount: string | null;
-  maximumInitialRedemptionInShares: string | null;
+  // maximumInitialRedemptionInAmount: string | null;
+  // maximumInitialRedemptionInShares: string | null;
   minimalInitialRedemptionInAmount: string | null;
   minimalInitialRedemptionInShares: string | null;
-  minimalRedemptionCategory: string | null;
-  shareClassDividendType: string | null;
+  minimalSubsequentRedemptionInAmount: string | null;
+  minimalSubsequentRedemptionInShares: string | null;
+  // minimalRedemptionCategory: string | null;
+  // shareClassDividendType: string | null;
+  roundingMethodForPrices: string | null;
   cusip: string | null;
   valor: string | null;
 
   constructor(obj: Partial<MintOpenfundsModelType>) {
     this.isin = obj.isin ?? null;
     this.shareClassCurrency = obj.shareClassCurrency ?? null;
-    this.currencyOfMinimalSubscription =
-      obj.currencyOfMinimalSubscription ?? null;
     this.fullShareClassName = obj.fullShareClassName ?? null;
+    this.hasPerformanceFee = obj.hasPerformanceFee ?? null;
     this.investmentStatus = obj.investmentStatus ?? null;
-    this.minimalInitialSubscriptionCategory =
-      obj.minimalInitialSubscriptionCategory ?? null;
     this.minimalInitialSubscriptionInAmount =
       obj.minimalInitialSubscriptionInAmount ?? null;
     this.minimalInitialSubscriptionInShares =
       obj.minimalInitialSubscriptionInShares ?? null;
-    this.shareClassDistributionPolicy =
-      obj.shareClassDistributionPolicy ?? null;
-    this.shareClassExtension = obj.shareClassExtension ?? null;
+    this.minimalSubsequentSubscriptionInAmount =
+      obj.minimalSubsequentSubscriptionInAmount ?? null;
+    this.minimalSubsequentSubscriptionInShares =
+      obj.minimalSubsequentSubscriptionInShares ?? null;
     this.shareClassLaunchDate = obj.shareClassLaunchDate ?? null;
     this.shareClassLifecycle = obj.shareClassLifecycle ?? null;
     this.launchPrice = obj.launchPrice ?? null;
     this.launchPriceCurrency = obj.launchPriceCurrency ?? null;
     this.launchPriceDate = obj.launchPriceDate ?? null;
-    this.currencyOfMinimalOrMaximumRedemption =
-      obj.currencyOfMinimalOrMaximumRedemption ?? null;
     this.hasLockUpForRedemption = obj.hasLockUpForRedemption ?? null;
-    this.isValidIsin = obj.isValidIsin ?? null;
     this.lockUpComment = obj.lockUpComment ?? null;
     this.lockUpPeriodInDays = obj.lockUpPeriodInDays ?? null;
-    this.maximumInitialRedemptionInAmount =
-      obj.maximumInitialRedemptionInAmount ?? null;
-    this.maximumInitialRedemptionInShares =
-      obj.maximumInitialRedemptionInShares ?? null;
     this.minimalInitialRedemptionInAmount =
       obj.minimalInitialRedemptionInAmount ?? null;
     this.minimalInitialRedemptionInShares =
       obj.minimalInitialRedemptionInShares ?? null;
-    this.minimalRedemptionCategory = obj.minimalRedemptionCategory ?? null;
-    this.shareClassDividendType = obj.shareClassDividendType ?? null;
+    this.minimalSubsequentRedemptionInAmount =
+      obj.minimalSubsequentRedemptionInAmount ?? null;
+    this.minimalSubsequentRedemptionInShares =
+      obj.minimalSubsequentRedemptionInShares ?? null;
+    this.roundingMethodForPrices = obj.roundingMethodForPrices ?? null;
     this.cusip = obj.cusip ?? null;
     this.valor = obj.valor ?? null;
   }
