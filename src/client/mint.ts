@@ -11,6 +11,46 @@ import {
 export class MintClient {
   public constructor(readonly base: BaseClient) {}
 
+  // `getTokenAccounts` is a helius only RPC endpoint, we have to hardcode the URL here
+  // We cannot use NEXT_PUBLIC_SOLANA_RPC because users may choose to use a non-helius RPC
+  public async fetchTokenHolders(state: PublicKey): Promise<TokenAccount[]> {
+    const mint = this.base.getMintPda(state, 0);
+    const response = await fetch(
+      `https://${this.base.cluster}.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "1",
+          method: "getTokenAccounts",
+          params: {
+            mint: mint.toBase58(),
+            options: { showZeroBalance: true },
+          },
+        }),
+      },
+    );
+
+    const data = await response.json();
+    console.log("Fetched token holders:", data.result);
+
+    const { token_accounts: tokenAccounts } = data.result;
+
+    return tokenAccounts.map((ta: any) => ({
+      owner: new PublicKey(ta.owner),
+      pubkey: new PublicKey(ta.address),
+      mint,
+      programId: TOKEN_2022_PROGRAM_ID,
+      decimals: 9,
+      amount: ta.amount,
+      uiAmount: Number(ta.amount) / 10 ** 9,
+      frozen: ta.frozen,
+    }));
+  }
+
+  // Much slower than fetchTokenHolders.
+  // Use fetchTokenHolders instead when possible.
   public async getHolders(state: PublicKey, mintId: number = 0) {
     const mintPda = this.base.getMintPda(state, mintId);
     const connection = this.base.provider.connection;
