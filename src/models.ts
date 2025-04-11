@@ -172,6 +172,7 @@ export class StateModel extends StateIdlModel {
     };
 
     // All fields in fund params[0] should be available on the StateModel
+    // @ts-ignore
     stateAccount.params[0].forEach((param) => {
       const name = Object.keys(param.name)[0];
       // @ts-ignore
@@ -193,6 +194,16 @@ export class StateModel extends StateIdlModel {
       fundOpenfundsFields[name] = value;
     });
     stateModel.rawOpenfunds = new FundOpenfundsModel(fundOpenfundsFields);
+
+    // Build stateModel.company from openfunds account
+    const company = {};
+    openfundsMetadataAccount?.company.forEach((param) => {
+      const name = Object.keys(param.name)[0];
+      const value = param.value;
+      // @ts-ignore
+      company[name] = value;
+    });
+    stateModel.company = new CompanyModel(company);
 
     // Build the array of ShareClassModel
     stateAccount.mints.forEach((_, i) => {
@@ -242,6 +253,17 @@ export class StateModel extends StateIdlModel {
         if (extPermDelegate) {
           const permanentDelegate = new PublicKey(extPermDelegate);
           mintIdlModel["permanentDelegate"] = permanentDelegate;
+        }
+
+        // default account state
+        const extDefaultState = getExtensionData(
+          ExtensionType.DefaultAccountState,
+          glamMint.tlvData,
+        );
+        if (extDefaultState) {
+          // @ts-ignore
+          mintIdlModel["defaultAccountStateFrozen"] =
+            extDefaultState.readUInt8() === 2;
         }
       }
 
