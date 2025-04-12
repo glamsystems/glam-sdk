@@ -78,6 +78,9 @@ export const GOVERNANCE_PROGRAM_ID = new PublicKey(
 export const JUP_VOTE_PROGRAM = new PublicKey(
   "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj",
 );
+export const MERKLE_DISTRIBUTOR_PROGRAM = new PublicKey(
+  "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R",
+);
 export const TRANSFER_HOOK_PROGRAM = new PublicKey(
   "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
 );

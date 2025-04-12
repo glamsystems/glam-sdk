@@ -17,6 +17,7 @@ import {
   GOVERNANCE_PROGRAM_ID,
   JUP,
   JUP_VOTE_PROGRAM,
+  MERKLE_DISTRIBUTOR_PROGRAM,
   WSOL,
 } from "../constants";
 import { ASSETS_MAINNET } from "./assets";
@@ -513,6 +514,40 @@ export class JupiterVoteClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
+  public async claimAndStake(
+    statePda: PublicKey,
+    distributor: PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN,
+    proof: number[][],
+    txOptions: TxOptions = {},
+  ) {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vault = this.base.getVaultPda(statePda);
+    const escrow = this.getEscrowPda(vault);
+    const escrowJupAta = this.base.getAta(JUP, escrow);
+    const distributorJupAta = this.base.getAta(JUP, distributor);
+
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
+      .accounts({
+        glamState: statePda,
+        glamSigner,
+        distributor,
+        from: distributorJupAta,
+        claimStatus: this.getClaimStatus(vault, distributor),
+        voterProgram: JUP_VOTE_PROGRAM,
+        locker: this.stakeLocker,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        escrow,
+        escrowTokens: escrowJupAta,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+    return await this.base.sendAndConfirm(vTx);
+  }
+
   public async cancelUnstake(statePda: PublicKey, txOptions: TxOptions = {}) {
     const vault = this.base.getVaultPda(statePda);
     const escrow = this.getEscrowPda(vault);
@@ -618,6 +653,14 @@ export class JupiterVoteClient {
       JUP_VOTE_PROGRAM,
     );
     return locker;
+  }
+
+  getClaimStatus(claimant: PublicKey, distributor: PublicKey): PublicKey {
+    const [claimStatus] = PublicKey.findProgramAddressSync(
+      [Buffer.from("ClaimStatus"), claimant.toBuffer(), distributor.toBuffer()],
+      MERKLE_DISTRIBUTOR_PROGRAM,
+    );
+    return claimStatus;
   }
 
   getEscrowPda(owner: PublicKey): PublicKey {
