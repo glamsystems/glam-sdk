@@ -1675,8 +1675,21 @@ export type GlamProtocol = {
           "name": "to"
         },
         {
+          "name": "toPolicyAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "policiesProgram",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [
@@ -5528,11 +5541,25 @@ export type GlamProtocol = {
           }
         },
         {
-          "name": "recipient"
+          "name": "recipient",
+          "writable": true
+        },
+        {
+          "name": "policyAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "policiesProgram",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [

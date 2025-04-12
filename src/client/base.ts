@@ -608,7 +608,7 @@ export class BaseClient {
       // @ts-ignore
       const value = Object.values(param.value)[0].val;
       if (name === "lockUp") {
-        return new BN(value).toNumber() > 0;
+        return new BN(value).toNumber() >= 0;
       }
     }
     return false;

@@ -166,13 +166,14 @@ export type GlamPolicies = {
         },
         {
           "name": "authority",
+          "docs": [
+            "Must be the mint authority or permanent delegate"
+          ],
           "writable": true,
           "signer": true
         },
         {
-          "name": "subject",
-          "writable": true,
-          "signer": true
+          "name": "subject"
         },
         {
           "name": "payer",
@@ -377,6 +378,11 @@ export type GlamPolicies = {
       "code": 6001,
       "name": "lockUp",
       "msg": "Policy violation: lock-up has not expired"
+    },
+    {
+      "code": 6002,
+      "name": "notAuthorized",
+      "msg": "Not authorized"
     }
   ],
   "types": [

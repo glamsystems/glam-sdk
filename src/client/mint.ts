@@ -7,6 +7,8 @@ import {
   TOKEN_2022_PROGRAM_ID,
   unpackAccount,
 } from "@solana/spl-token";
+import { MintIdlModel, MintModel } from "../models";
+import { TRANSFER_HOOK_PROGRAM } from "../constants";
 
 export class MintClient {
   public constructor(readonly base: BaseClient) {}
@@ -95,6 +97,25 @@ export class MintClient {
         frozen: tokenAccount.isFrozen,
       } as TokenAccount;
     });
+  }
+
+  public async update(
+    glamState: PublicKey,
+    mintId: number,
+    mintModel: Partial<MintModel>,
+  ) {
+    const glamMint = this.base.getMintPda(glamState, mintId);
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .updateMint(mintId, new MintIdlModel(mintModel))
+      .accounts({
+        glamState,
+        glamMint,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, {});
+    return await this.base.sendAndConfirm(vTx);
   }
 
   public async closeMintIx(glamState: PublicKey, mintId: number = 0) {
@@ -248,6 +269,7 @@ export class MintClient {
     );
     if (forceThaw) {
       preInstructions.push(
+        // @ts-ignore
         await this.base.program.methods
           .setTokenAccountsStates(mintId, false)
           .accounts({
@@ -262,6 +284,11 @@ export class MintClient {
       );
     }
 
+    let policyAccount = (await this.base.isLockupEnabled(glamState))
+      ? this.base.getAccountPolicyPda(glamState, recipient)
+      : null;
+
+    // @ts-ignore
     const tx = await this.base.program.methods
       .mintTokens(0, amount)
       .accounts({
@@ -269,6 +296,7 @@ export class MintClient {
         glamSigner,
         glamMint,
         recipient,
+        policyAccount,
       })
       .preInstructions(preInstructions)
       .transaction();
@@ -292,6 +320,7 @@ export class MintClient {
     const preInstructions = [];
     if (forceThaw) {
       preInstructions.push(
+        // @ts-ignore
         await this.base.program.methods
           .setTokenAccountsStates(mintId, false)
           .accounts({
@@ -347,6 +376,7 @@ export class MintClient {
     );
     if (forceThaw) {
       preInstructions.push(
+        // @ts-ignore
         await this.base.program.methods
           .setTokenAccountsStates(mintId, false)
           .accounts({
@@ -363,6 +393,18 @@ export class MintClient {
       );
     }
 
+    const remainingAccounts: PublicKey[] = [];
+    let toPolicyAccount = null;
+    if (await this.base.isLockupEnabled(glamState)) {
+      const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
+      const fromPolicy = this.base.getAccountPolicyPda(glamState, from);
+      const toPolicy = this.base.getAccountPolicyPda(glamState, to);
+      toPolicyAccount = toPolicy;
+      remainingAccounts.push(
+        ...[extraMetasAccount, fromPolicy, toPolicy, TRANSFER_HOOK_PROGRAM],
+      );
+    }
+    // @ts-ignore
     const tx = await this.base.program.methods
       .forceTransferTokens(mintId, amount)
       .accounts({
@@ -371,7 +413,15 @@ export class MintClient {
         glamMint,
         from,
         to,
+        toPolicyAccount,
       })
+      .remainingAccounts(
+        remainingAccounts.map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
       .preInstructions(preInstructions)
       .transaction();
 

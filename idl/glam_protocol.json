@@ -1669,8 +1669,21 @@
           "name": "to"
         },
         {
+          "name": "to_policy_account",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "token_2022_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "policies_program",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [
@@ -5522,11 +5535,25 @@
           }
         },
         {
-          "name": "recipient"
+          "name": "recipient",
+          "writable": true
+        },
+        {
+          "name": "policy_account",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_2022_program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "policies_program",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         }
       ],
       "args": [

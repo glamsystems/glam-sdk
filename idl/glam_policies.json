@@ -160,13 +160,14 @@
         },
         {
           "name": "authority",
+          "docs": [
+            "Must be the mint authority or permanent delegate"
+          ],
           "writable": true,
           "signer": true
         },
         {
-          "name": "subject",
-          "writable": true,
-          "signer": true
+          "name": "subject"
         },
         {
           "name": "payer",
@@ -371,6 +372,11 @@
       "code": 6001,
       "name": "LockUp",
       "msg": "Policy violation: lock-up has not expired"
+    },
+    {
+      "code": 6002,
+      "name": "NotAuthorized",
+      "msg": "Not authorized"
     }
   ],
   "types": [
