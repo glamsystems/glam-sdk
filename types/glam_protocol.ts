@@ -11006,25 +11006,25 @@ export type GlamProtocol = {
             "name": "deprecatedWSolUnwrap"
           },
           {
-            "name": "mintTokens"
+            "name": "mintMintTokens"
           },
           {
-            "name": "burnTokens"
+            "name": "mintBurnTokens"
           },
           {
-            "name": "forceTransferTokens"
+            "name": "mintForceTransferTokens"
           },
           {
-            "name": "setTokenAccountState"
+            "name": "mintSetTokenAccountState"
           },
           {
-            "name": "stakeJup"
+            "name": "jupiterGovStake"
           },
           {
-            "name": "voteOnProposal"
+            "name": "jupiterGovVoteOnProposal"
           },
           {
-            "name": "unstakeJup"
+            "name": "jupiterGovUnstake"
           },
           {
             "name": "jupiterSwapLst"
@@ -11060,10 +11060,10 @@ export type GlamProtocol = {
             "name": "transferToAllowlisted"
           },
           {
-            "name": "withdrawJup"
+            "name": "jupiterGovWithdraw"
           },
           {
-            "name": "claimJup"
+            "name": "jupiterGovClaim"
           }
         ]
       }

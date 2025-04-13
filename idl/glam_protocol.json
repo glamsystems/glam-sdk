@@ -11000,25 +11000,25 @@
             "name": "__DeprecatedWSolUnwrap"
           },
           {
-            "name": "MintTokens"
+            "name": "MintMintTokens"
           },
           {
-            "name": "BurnTokens"
+            "name": "MintBurnTokens"
           },
           {
-            "name": "ForceTransferTokens"
+            "name": "MintForceTransferTokens"
           },
           {
-            "name": "SetTokenAccountState"
+            "name": "MintSetTokenAccountState"
           },
           {
-            "name": "StakeJup"
+            "name": "JupiterGovStake"
           },
           {
-            "name": "VoteOnProposal"
+            "name": "JupiterGovVoteOnProposal"
           },
           {
-            "name": "UnstakeJup"
+            "name": "JupiterGovUnstake"
           },
           {
             "name": "JupiterSwapLst"
@@ -11054,10 +11054,10 @@
             "name": "TransferToAllowlisted"
           },
           {
-            "name": "WithdrawJup"
+            "name": "JupiterGovWithdraw"
           },
           {
-            "name": "ClaimJup"
+            "name": "JupiterGovClaim"
           }
         ]
       }
