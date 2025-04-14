@@ -15,8 +15,11 @@ export class MintClient {
 
   // `getTokenAccounts` is a helius only RPC endpoint, we have to hardcode the URL here
   // We cannot use NEXT_PUBLIC_SOLANA_RPC because users may choose to use a non-helius RPC
-  public async fetchTokenHolders(state: PublicKey): Promise<TokenAccount[]> {
-    const mint = this.base.getMintPda(state, 0);
+  public async fetchTokenHolders(
+    state: PublicKey,
+    mintId: number = 0,
+  ): Promise<TokenAccount[]> {
+    const mint = this.base.getMintPda(state, mintId);
     const response = await fetch(
       `https://${this.base.cluster}.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`,
       {
@@ -69,12 +72,12 @@ export class MintClient {
     }
 
     // Size of a glam mint with perment delegate extension enabled
-    const dataSize = 175;
+    // const dataSize = 175;
     const accounts = await connection.getProgramAccounts(
       TOKEN_2022_PROGRAM_ID,
       {
         filters: [
-          { dataSize },
+          // { dataSize },
           { memcmp: { offset: 0, bytes: mintPda.toBase58() } },
         ],
       },
@@ -158,13 +161,14 @@ export class MintClient {
   }
 
   /**
-   * Create a share class token account for a specific user
+   * Create a glam mint token account for a specific user
    *
    * @param glamState
-   * @param owner
-   * @param mintId
+   * @param owner Owner of the token account
+   * @param mintId ID of the mint (only 0 is supported)
+   * @param setFrozen If true, the token account will be frozen
    * @param txOptions
-   * @returns
+   * @returns Transaction signature
    */
   public async createTokenAccount(
     glamState: PublicKey,
@@ -196,13 +200,14 @@ export class MintClient {
   }
 
   /**
-   * Freeze or thaw token accounts of a share class
+   * Freeze or unfreeze token accounts of a glam mint
    *
    * @param glamState
-   * @param mintId
-   * @param frozen
+   * @param mintId ID of the mint (only 0 is supported)
+   * @param tokenAccounts List of token accounts to freeze or unfreeze
+   * @param frozen If true, the token accounts will be frozen; otherwise, they will be unfrozen
    * @param txOptions
-   * @returns
+   * @returns Transaction signature
    */
   public async setTokenAccountsStates(
     glamState: PublicKey,
@@ -235,13 +240,13 @@ export class MintClient {
   }
 
   /**
-   * Mint share to recipient
+   * Mint tokens to recipient. Token account will be created if it does not exist.
    *
    * @param glamState
-   * @param mintId
-   * @param recipient Recipient's wallet address
-   * @param amount Amount of shares to mint
-   * @param forceThaw If true, force unfreezing token account before minting
+   * @param mintId ID of the mint (only 0 is supported)
+   * @param recipient Recipient public key
+   * @param amount Amount of tokens to mint
+   * @param forceThaw If true, automatically unfreeze the token account before minting
    * @param txOptions
    * @returns Transaction signature
    */
@@ -305,6 +310,17 @@ export class MintClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
+  /**
+   * Burn tokens from a token account
+   *
+   * @param glamState
+   * @param mintId ID of the mint (only 0 is supported)
+   * @param amount Amount of tokens to burn
+   * @param from Owner of the token account
+   * @param forceThaw If true, automatically unfree the token account before burning
+   * @param txOptions
+   * @returns Transaction signature
+   */
   public async burn(
     glamState: PublicKey,
     mintId: number,
@@ -350,6 +366,18 @@ export class MintClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
+  /**
+   * Transfer tokens from one token account to another
+   *
+   * @param glamState
+   * @param mintId ID of the mint (only 0 is supported)
+   * @param amount Amount of tokens to transfer
+   * @param from Owner of the sender token account
+   * @param to Owner of the recipient token account
+   * @param forceThaw If true, automatically unfree the token accounts before transfer
+   * @param txOptions
+   * @returns
+   */
   public async forceTransfer(
     glamState: PublicKey,
     mintId: number,

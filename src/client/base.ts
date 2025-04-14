@@ -202,9 +202,12 @@ export class BaseClient {
         }
       } catch (e) {}
     }
-    console.log(
-      `Final priority fee to use: ${priorityFeeMicroLamports} microLamports`,
-    );
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `Final priority fee to use: ${priorityFeeMicroLamports} microLamports`,
+      );
+    }
 
     return [
       ComputeBudgetProgram.setComputeUnitPrice({
@@ -263,7 +266,9 @@ export class BaseClient {
           "Tx (base64):",
           tx.serialize({ verifySignatures: false }).toString("base64"),
         );
-        console.error("Simulation failed.");
+        console.error(
+          "Simulation failed. If error message is too obscure, inspect the tx in explorer (https://explorer.solana.com/tx/inspector)",
+        );
         throw e;
       }
     }
@@ -341,8 +346,10 @@ export class BaseClient {
       skipPreflight: true,
     });
 
-    // await confirmation
-    console.log("Confirming tx:", txSig);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Confirming tx:", txSig);
+    }
+
     const latestBlockhash = await this.blockhashWithCache.get();
     const res = await connection.confirmTransaction({
       ...latestBlockhash,

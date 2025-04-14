@@ -134,7 +134,6 @@ export class StateClient {
         return await this.base.sendAndConfirm(vTx);
       }),
     );
-    console.log("addMintTxs", addMintTxs);
     return [txSig, glamState];
   }
 
@@ -143,9 +142,11 @@ export class StateClient {
     updated: Partial<StateModel>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    console.log(
-      `await glam.state.updateState("${glamState.toString()}", ${JSON.stringify(updated)}, ${JSON.stringify(txOptions)});`,
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `await glam.state.updateState("${glamState.toString()}", ${JSON.stringify(updated)}, ${JSON.stringify(txOptions)});`,
+      );
+    }
     const tx = await this.updateStateTx(
       getPublicKey(glamState),
       updated,

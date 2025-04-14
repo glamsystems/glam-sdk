@@ -1,13 +1,13 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "0.1.7",
+  "version": "0.1.16",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
   "homepage": "https://www.glam.systems",
   "repository": {
     "type": "git",
-    "url": "git@github.com:glamsystems/glam.git"
+    "url": "git@github.com:glamsystems/glam-sdk.git"
   },
   "keywords": [
     "glam",
@@ -20,15 +20,16 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.0",
     "@coral-xyz/borsh": "^0.31.0",
-    "@drift-labs/sdk": "2.114.0-beta.3",
+    "@drift-labs/sdk": "2.118.0-beta.7",
     "@marinade.finance/marinade-ts-sdk": "^5.0.15",
-    "@pythnetwork/client": "^2.21.1",
     "@solana/spl-stake-pool": "^1.1.5",
     "@solana/spl-token": "^0.4.9",
     "@solana/spl-token-metadata": "^0.1.4",
     "@solana/web3.js": "^1.98.0",
+    "@meteora-ag/dlmm": "^1.4.11",
     "bs58": "^5.0.0",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "@switchboard-xyz/common": "^3.0.0"
   },
   "engines": {
     "node": ">=20.18.0"
@@ -37,13 +38,20 @@
     "@rollup/plugin-terser": "^0.4.4",
     "rollup-plugin-javascript-obfuscator": "^1.0.4"
   },
+  "peerDependencies": {
+    "solana-bankrun": "^0.4.0",
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana/web3.js": "^1.98.0"
+  },
   "pnpm": {
     "overrides": {
-      "@solana/web3.js@>=0.0.1": "^1.98.0",
-      "@solana/spl-token@>=0.0.1": "^0.4.6",
-      "@solana/spl-stake-pool@>=0.0.1": "^1.1.5",
-      "typescript@>=0.0.1": "^5.5.3",
-      "solana-bankrun@>=0.0.1": "^0.3.0"
+      "anchor-bankrun": "^0.4.0",
+      "solana-bankrun": "^0.4.0",
+      "@coral-xyz/anchor": "^0.31.0",
+      "@solana/web3.js": "^1.98.0",
+      "@solana/spl-token": "^0.4.6",
+      "@solana/spl-stake-pool": "^1.1.5",
+      "typescript": "^5.5.3"
     }
   }
 }
