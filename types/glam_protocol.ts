@@ -5610,16 +5610,16 @@ export type GlamProtocol = {
       "args": []
     },
     {
-      "name": "priceMeteora",
+      "name": "priceMeteoraPositions",
       "discriminator": [
-        166,
-        250,
-        203,
-        148,
-        67,
-        60,
-        207,
-        51
+        186,
+        22,
+        157,
+        249,
+        185,
+        176,
+        253,
+        133
       ],
       "accounts": [
         {

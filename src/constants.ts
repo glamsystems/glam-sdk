@@ -23,6 +23,7 @@ export const SEED_ESCROW = (
 
 export const MARINADE_TICKET_SIZE = 88;
 export const STAKE_ACCOUNT_SIZE = 200;
+export const METEORA_POSITION_SIZE = 8120;
 
 export const JITO_TIP_DEFAULT = new PublicKey(
   "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
@@ -83,6 +84,12 @@ export const MERKLE_DISTRIBUTOR_PROGRAM = new PublicKey(
 );
 export const TRANSFER_HOOK_PROGRAM = new PublicKey(
   "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
+);
+export const METEORA_DLMM_PROGRAM = new PublicKey(
+  "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+);
+export const MEMO_PROGRAM = new PublicKey(
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
 );
 
 /**

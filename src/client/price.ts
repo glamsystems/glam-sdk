@@ -7,6 +7,8 @@ import { ASSETS_MAINNET } from "./assets";
 import {
   fetchStakeAccounts,
   fetchMarinadeTicketAccounts,
+  fetchMeteoraPositions,
+  parseMeteoraPosition,
 } from "../utils/helpers";
 
 export class PriceClient {
@@ -14,7 +16,8 @@ export class PriceClient {
 
   /**
    * !! This is a convenience method that calculates the AUM of the vault based on priced assets.
-   * !! It doesn't reflect the actual AUM of the vault. If the vault has not been priced or pricing data is outdated, the number is NOT meaningful.
+   * !! It doesn't reflect the actual AUM of the vault.
+   * !! If the vault has not been priced or pricing data is outdated, the number is NOT meaningful.
    */
   public async getAum(glamState: PublicKey) {
     // @ts-ignore
@@ -42,6 +45,7 @@ export class PriceClient {
       this.base.provider.connection,
       vault,
     );
+    // @ts-ignore
     const priceTicketsIx = await this.base.program.methods
       .priceTickets()
       .accounts({
@@ -79,12 +83,54 @@ export class PriceClient {
       .accounts({
         glamState,
       })
-      .remainingAccounts(await this.remainingAccountsForPricing(glamState))
+      .remainingAccounts(
+        await this.remainingAccountsForPricingVaultAssets(glamState),
+      )
       .instruction();
-    return [priceTicketsIx, priceStakesIx, priceVaultIx];
+
+    const priceMeteoraIx = await this.base.program.methods
+      .priceMeteoraPositions()
+      .accounts({
+        glamState,
+      })
+      .remainingAccounts(
+        await this.remainingAccountsForPricingMeteora(glamState),
+      )
+      .instruction();
+
+    return [priceTicketsIx, priceStakesIx, priceVaultIx, priceMeteoraIx];
   }
 
-  remainingAccountsForPricing = async (glamState: PublicKey) => {
+  remainingAccountsForPricingMeteora = async (glamState: PublicKey) => {
+    const glamVault = this.base.getVaultPda(glamState);
+    const positions = await fetchMeteoraPositions(
+      this.base.provider.connection,
+      glamVault,
+    );
+
+    let chunks = await Promise.all(
+      positions.map(async (pubkey) => {
+        const { lbPair, binArrayLower, binArrayUpper } =
+          await parseMeteoraPosition(this.base.provider.connection, pubkey);
+
+        return [
+          pubkey,
+          lbPair,
+          binArrayLower,
+          binArrayUpper,
+          new PublicKey("3m6i4RFWEDw2Ft4tFHPJtYgmpPe21k56M3FHeWYrgGBz"),
+          new PublicKey("9VCioxmni2gDLv11qufWzT3RDERhQE4iY5Gf7NTfYyAV"),
+        ].map((k) => ({
+          pubkey: k,
+          isSigner: false,
+          isWritable: false,
+        }));
+      }),
+    );
+    return chunks.flat();
+  };
+
+  remainingAccountsForPricingVaultAssets = async (glamState: PublicKey) => {
     const glamStateAccount = await this.base.fetchStateAccount(glamState);
     return glamStateAccount.assets
       .map((asset) => [

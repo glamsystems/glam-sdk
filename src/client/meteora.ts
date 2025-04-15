@@ -1,41 +1,18 @@
 import { BN } from "@coral-xyz/anchor";
-import {
-  PublicKey,
-  VersionedTransaction,
-  TransactionSignature,
-  TransactionInstruction,
-  AccountMeta,
-  SYSVAR_RENT_PUBKEY,
-  SystemProgram,
-  SYSVAR_INSTRUCTIONS_PUBKEY,
-  Keypair,
-} from "@solana/web3.js";
+import { PublicKey, TransactionSignature, Keypair } from "@solana/web3.js";
 import DLMM, {
   binIdToBinArrayIndex,
-  BinLiquidity,
   deriveBinArray,
   Strategy,
-  RemainingAccountInfo,
-  RemainingAccountsInfoSlice,
 } from "@meteora-ag/dlmm";
 
 import { BaseClient, TxOptions } from "./base";
-import { USDC, WSOL } from "../constants";
+import { MEMO_PROGRAM, METEORA_DLMM_PROGRAM } from "../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-
-const METEORA_DLMM = new PublicKey(
-  "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
-);
-const MEMO_PROGRAM_ID = new PublicKey(
-  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
-);
-
-const SOL_USDC_MARKET = new PublicKey(
-  "5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6",
-);
+import { parseMeteoraPosition } from "../utils/helpers";
 
 // Pubkey::find_program_address(&[b"__event_authority"], &dlmm_interface::ID)
 const EVENT_AUTHORITY = new PublicKey(
@@ -86,7 +63,7 @@ export class MeteoraDlmmClient {
         lbPair: new PublicKey(pool),
         position: position.publicKey,
         eventAuthority: EVENT_AUTHORITY,
-        program: METEORA_DLMM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .transaction();
 
@@ -122,7 +99,7 @@ export class MeteoraDlmmClient {
         lbPair: new PublicKey(pool),
         position,
         eventAuthority: EVENT_AUTHORITY,
-        program: METEORA_DLMM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .transaction();
 
@@ -141,7 +118,10 @@ export class MeteoraDlmmClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
-      await this.parsePosition(new PublicKey(position));
+      await parseMeteoraPosition(
+        this.base.provider.connection,
+        new PublicKey(position),
+      );
 
     const dlmmPool = await this.getDlmmPool(lbPair);
     const activeBinId = (await dlmmPool.getActiveBin()).binId;
@@ -195,7 +175,7 @@ export class MeteoraDlmmClient {
         lbPair,
         binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
           ? dlmmPool.binArrayBitmapExtension.publicKey
-          : METEORA_DLMM,
+          : METEORA_DLMM_PROGRAM,
         userTokenX: vaultTokenXAta,
         userTokenY: vaultTokenYAta,
         reserveX: dlmmPool.tokenX.reserve,
@@ -205,7 +185,7 @@ export class MeteoraDlmmClient {
         tokenXProgram: TOKEN_PROGRAM_ID,
         tokenYProgram: TOKEN_PROGRAM_ID,
         eventAuthority: EVENT_AUTHORITY,
-        program: METEORA_DLMM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .preInstructions(preInstructions)
       .remainingAccounts(remainingAccounts)
@@ -221,7 +201,10 @@ export class MeteoraDlmmClient {
     txOptions: TxOptions = {},
   ) {
     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
-      await this.parsePosition(new PublicKey(position));
+      await parseMeteoraPosition(
+        this.base.provider.connection,
+        new PublicKey(position),
+      );
     const dlmmPool = await this.getDlmmPool(lbPair);
 
     const glamState = new PublicKey(statePda);
@@ -239,6 +222,7 @@ export class MeteoraDlmmClient {
       isWritable: true,
     }));
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .meteoraDlmmRemoveLiquidityByRange2(lowerBinId, upperBinId, bpsToRemove, {
         slices: [],
@@ -249,7 +233,7 @@ export class MeteoraDlmmClient {
         lbPair,
         binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
           ? dlmmPool.binArrayBitmapExtension.publicKey
-          : METEORA_DLMM,
+          : METEORA_DLMM_PROGRAM,
         userTokenX: vaultTokenXAta,
         userTokenY: vaultTokenYAta,
         reserveX: dlmmPool.tokenX.reserve,
@@ -259,8 +243,8 @@ export class MeteoraDlmmClient {
         tokenXProgram: TOKEN_PROGRAM_ID,
         tokenYProgram: TOKEN_PROGRAM_ID,
         eventAuthority: EVENT_AUTHORITY,
-        memoProgram: MEMO_PROGRAM_ID,
-        program: METEORA_DLMM,
+        memoProgram: MEMO_PROGRAM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();
@@ -274,7 +258,10 @@ export class MeteoraDlmmClient {
     txOptions: TxOptions = {},
   ) {
     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
-      await this.parsePosition(new PublicKey(position));
+      await parseMeteoraPosition(
+        this.base.provider.connection,
+        new PublicKey(position),
+      );
     const dlmmPool = await this.getDlmmPool(lbPair);
 
     const glamState = new PublicKey(statePda);
@@ -292,6 +279,7 @@ export class MeteoraDlmmClient {
       isWritable: true,
     }));
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .meteoraDlmmClaimFee2(lowerBinId, upperBinId, { slices: [] })
       .accounts({
@@ -306,9 +294,9 @@ export class MeteoraDlmmClient {
         tokenYMint: dlmmPool.tokenY.publicKey,
         tokenProgramX: TOKEN_PROGRAM_ID,
         tokenProgramY: TOKEN_PROGRAM_ID,
-        memoProgram: MEMO_PROGRAM_ID,
+        memoProgram: MEMO_PROGRAM,
         eventAuthority: EVENT_AUTHORITY,
-        program: METEORA_DLMM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();
@@ -322,7 +310,8 @@ export class MeteoraDlmmClient {
     position: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const { lbPair, binArrayLower, binArrayUpper } = await this.parsePosition(
+    const { lbPair, binArrayLower, binArrayUpper } = await parseMeteoraPosition(
+      this.base.provider.connection,
       new PublicKey(position),
     );
     const glamState = new PublicKey(statePda);
@@ -331,6 +320,7 @@ export class MeteoraDlmmClient {
       `close position: ${position}, binArrayLower: ${binArrayLower}, binArrayUpper: ${binArrayUpper}`,
     );
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .meteoraDlmmClosePosition()
       .accounts({
@@ -341,13 +331,20 @@ export class MeteoraDlmmClient {
         binArrayUpper,
         rentReceiver: this.base.getSigner(),
         eventAuthority: EVENT_AUTHORITY,
-        program: METEORA_DLMM,
+        program: METEORA_DLMM_PROGRAM,
       })
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
 
     return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async pricePosition(position: PublicKey | string) {
+    const { lbPair, binArrayLower, binArrayUpper } = await parseMeteoraPosition(
+      this.base.provider.connection,
+      new PublicKey(position),
+    );
   }
 
   getPositionPda(
@@ -372,68 +369,9 @@ export class MeteoraDlmmClient {
         lowerBinIdBuffer,
         widthBuffer,
       ],
-      METEORA_DLMM,
+      METEORA_DLMM_PROGRAM,
     );
     return pda;
-  }
-
-  async fetchPositions(owner: PublicKey) {
-    const accounts =
-      await this.base.provider.connection.getParsedProgramAccounts(
-        METEORA_DLMM,
-        {
-          filters: [
-            {
-              dataSize: 8120,
-            },
-            {
-              memcmp: {
-                offset: 40,
-                bytes: owner.toBase58(),
-              },
-            },
-          ],
-        },
-      );
-    return accounts.map((a) => a.pubkey);
-  }
-
-  async parsePosition(position: PublicKey) {
-    const positionAccountInfo =
-      await this.base.provider.connection.getAccountInfo(position);
-    if (!positionAccountInfo) {
-      throw new Error("Position not found");
-    }
-    const positionData = positionAccountInfo.data;
-
-    const lbPair = new PublicKey(positionData.subarray(8, 40));
-    const lowerBinId = positionData.subarray(7912, 7916).readInt32LE();
-    const upperBinId = positionData.subarray(7916, 7920).readInt32LE();
-
-    const lowerBinArrayIndex = binIdToBinArrayIndex(new BN(lowerBinId));
-    const [binArrayLower] = deriveBinArray(
-      lbPair,
-      lowerBinArrayIndex,
-      METEORA_DLMM,
-    );
-
-    const upperBinArrayIndex = BN.max(
-      lowerBinArrayIndex.add(new BN(1)),
-      binIdToBinArrayIndex(new BN(upperBinId)),
-    );
-    const [binArrayUpper] = deriveBinArray(
-      lbPair,
-      upperBinArrayIndex,
-      METEORA_DLMM,
-    );
-
-    return {
-      lowerBinId,
-      upperBinId,
-      binArrayLower,
-      binArrayUpper,
-      lbPair,
-    };
   }
 
   async autoFillY(dlmmPool: DLMM, amountX: BN) {
