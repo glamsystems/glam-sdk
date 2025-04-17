@@ -3,13 +3,14 @@ import { BN } from "@coral-xyz/anchor";
 
 import { BaseClient } from "./base";
 
-import { ASSETS_MAINNET } from "./assets";
+import { ASSETS_MAINNET, SOL_ORACLE } from "./assets";
 import {
   fetchStakeAccounts,
   fetchMarinadeTicketAccounts,
   fetchMeteoraPositions,
   parseMeteoraPosition,
 } from "../utils/helpers";
+import { PriceDenom } from "../models";
 
 export class PriceClient {
   public constructor(readonly base: BaseClient) {}
@@ -38,6 +39,7 @@ export class PriceClient {
 
   public async priceVaultIxs(
     glamState: PublicKey,
+    priceDenom: PriceDenom,
   ): Promise<TransactionInstruction[]> {
     const vault = this.base.getVaultPda(glamState);
 
@@ -47,9 +49,10 @@ export class PriceClient {
     );
     // @ts-ignore
     const priceTicketsIx = await this.base.program.methods
-      .priceTickets()
+      .priceTickets(priceDenom)
       .accounts({
         glamState,
+        solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
         tickets.map((t) => ({
@@ -65,9 +68,10 @@ export class PriceClient {
       vault,
     );
     const priceStakesIx = await this.base.program.methods
-      .priceStakes()
+      .priceStakes(priceDenom)
       .accounts({
         glamState,
+        solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
         stakes.map((s) => ({
@@ -79,9 +83,10 @@ export class PriceClient {
       .instruction();
 
     const priceVaultIx = await this.base.program.methods
-      .priceVault()
+      .priceVault(priceDenom)
       .accounts({
         glamState,
+        solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
         await this.remainingAccountsForPricingVaultAssets(glamState),
@@ -89,9 +94,10 @@ export class PriceClient {
       .instruction();
 
     const priceMeteoraIx = await this.base.program.methods
-      .priceMeteoraPositions()
+      .priceMeteoraPositions(priceDenom)
       .accounts({
         glamState,
+        solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
         await this.remainingAccountsForPricingMeteora(glamState),
@@ -136,7 +142,8 @@ export class PriceClient {
       .map((asset) => [
         this.base.getVaultAta(glamState, asset),
         asset,
-        ASSETS_MAINNET.get(asset.toBase58())?.stateAccount || new PublicKey(0),
+        // FIXME: check oracle vs LST state?
+        ASSETS_MAINNET.get(asset.toBase58())?.oracle || new PublicKey(0),
       ])
       .flat()
       .map((a) => ({

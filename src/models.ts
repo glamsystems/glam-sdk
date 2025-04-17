@@ -542,3 +542,8 @@ export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
 export type Valuation = IdlTypes<GlamProtocol>["valuation"];
+
+export class PriceDenom {
+  static readonly SOL = { sol: {} };
+  static readonly USD = { usd: {} };
+}

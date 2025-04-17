@@ -5581,7 +5581,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault"
@@ -5590,6 +5591,9 @@
           "name": "signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "sol_oracle"
         },
         {
           "name": "state"
@@ -5601,7 +5605,16 @@
           "name": "user_stats"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "price_meteora_positions",
@@ -5645,9 +5658,21 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "sol_oracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "price_stakes",
@@ -5691,9 +5716,21 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "sol_oracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "price_tickets",
@@ -5737,9 +5774,21 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "sol_oracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "price_vault",
@@ -5783,9 +5832,21 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "sol_oracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "queued_redeem",
@@ -8879,21 +8940,26 @@
     },
     {
       "code": 51103,
-      "name": "UnpricedExternalAccounts",
+      "name": "ExternalAccountsNotPriced",
       "msg": "Not all external vault accounts are priced"
     },
     {
       "code": 51104,
+      "name": "VaultAssetsNotPriced",
+      "msg": "Not all vault assets are priced"
+    },
+    {
+      "code": 51105,
       "name": "VaultNotPriced",
       "msg": "No priced assets found"
     },
     {
-      "code": 51105,
+      "code": 51106,
       "name": "PositiveAumRequired",
       "msg": "AUM must be positive"
     },
     {
-      "code": 51106,
+      "code": 51107,
       "name": "MathError",
       "msg": "Math error"
     },
@@ -11106,6 +11172,9 @@
           },
           {
             "name": "USD"
+          },
+          {
+            "name": "ASSET6"
           }
         ]
       }

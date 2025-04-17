@@ -9,3 +9,4 @@ export * from "./utils/helpers";
 export * from "./utils/priorityfee";
 export * from "./constants";
 export * from "./error";
+export * from "./client/assets";

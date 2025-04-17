@@ -5587,7 +5587,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault"
@@ -5596,6 +5597,9 @@ export type GlamProtocol = {
           "name": "signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "solOracle"
         },
         {
           "name": "state"
@@ -5607,7 +5611,16 @@ export type GlamProtocol = {
           "name": "userStats"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "priceMeteoraPositions",
@@ -5651,9 +5664,21 @@ export type GlamProtocol = {
           "name": "glamSigner",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "solOracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "priceStakes",
@@ -5697,9 +5722,21 @@ export type GlamProtocol = {
           "name": "glamSigner",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "solOracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "priceTickets",
@@ -5743,9 +5780,21 @@ export type GlamProtocol = {
           "name": "glamSigner",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "solOracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "priceVault",
@@ -5789,9 +5838,21 @@ export type GlamProtocol = {
           "name": "glamSigner",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "solOracle"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "queuedRedeem",
@@ -8885,21 +8946,26 @@ export type GlamProtocol = {
     },
     {
       "code": 51103,
-      "name": "unpricedExternalAccounts",
+      "name": "externalAccountsNotPriced",
       "msg": "Not all external vault accounts are priced"
     },
     {
       "code": 51104,
+      "name": "vaultAssetsNotPriced",
+      "msg": "Not all vault assets are priced"
+    },
+    {
+      "code": 51105,
       "name": "vaultNotPriced",
       "msg": "No priced assets found"
     },
     {
-      "code": 51105,
+      "code": 51106,
       "name": "positiveAumRequired",
       "msg": "AUM must be positive"
     },
     {
-      "code": 51106,
+      "code": 51107,
       "name": "mathError",
       "msg": "Math error"
     },
@@ -11112,6 +11178,9 @@ export type GlamProtocol = {
           },
           {
             "name": "usd"
+          },
+          {
+            "name": "asset6"
           }
         ]
       }
