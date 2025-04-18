@@ -27,6 +27,22 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
+    // cbBTC
+    "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+    {
+      decimals: 8,
+      oracle: new PublicKey("9jPy6EHpLkXaMdvfkoVnRnSdJoQysQDKKj3bW5Amz4Ci"),
+    },
+  ],
+  [
+    // wETH
+    "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
+    {
+      decimals: 8,
+      oracle: new PublicKey("6bEp2MiyoiiiDxcVqE8rUHQWwHirXUXtKfAEATTVqNzT"),
+    },
+  ],
+  [
     // JUP
     "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
     {
@@ -48,6 +64,14 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 6,
       oracle: new PublicKey("9VCioxmni2gDLv11qufWzT3RDERhQE4iY5Gf7NTfYyAV"),
+    },
+  ],
+  [
+    // USDT
+    "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    {
+      decimals: 6,
+      oracle: new PublicKey("JDKJSkxjasBGL3ce1pkrN6tqDzuVUZPWzzkGuyX8m9yN"),
     },
   ],
   [

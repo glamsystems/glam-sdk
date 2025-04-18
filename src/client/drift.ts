@@ -270,11 +270,13 @@ export class DriftClient {
   public async priceDrift(
     statePda: PublicKey | string,
     marketConfigs: DriftMarketConfigs,
+    priceDenom: PriceDenom,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.priceDriftTx(
       new PublicKey(statePda),
       marketConfigs,
+      priceDenom,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -861,8 +863,8 @@ export class DriftClient {
       marketIndex,
     );
 
+    // @ts-ignore
     const tx = await this.base.program.methods
-      // @ts-ignore
       .driftCancelOrders(marketType, marketIndex, direction)
       .accounts({
         glamState,
@@ -910,6 +912,7 @@ export class DriftClient {
   public async priceDriftTx(
     glamState: PublicKey,
     marketConfigs: DriftMarketConfigs,
+    priceDenom: PriceDenom,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.getSigner();
@@ -923,7 +926,7 @@ export class DriftClient {
     );
 
     const tx = await this.base.program.methods
-      .priceDrift(PriceDenom.SOL)
+      .priceDrift(priceDenom)
       .accounts({
         glamState,
         signer,
