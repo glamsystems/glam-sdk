@@ -9,6 +9,7 @@ import {
   fetchMarinadeTicketAccounts,
   fetchMeteoraPositions,
   parseMeteoraPosition,
+  fetchKaminoObligations,
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
 
@@ -104,8 +105,38 @@ export class PriceClient {
       )
       .instruction();
 
-    return [priceTicketsIx, priceStakesIx, priceVaultIx, priceMeteoraIx];
+    const priceKaminoIx = await this.base.program.methods
+      .priceKaminoObligations(priceDenom)
+      .accounts({
+        glamState,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(
+        await this.remainingAccountsForPricingKamino(glamState),
+      )
+      .instruction();
+
+    return [
+      priceTicketsIx,
+      priceStakesIx,
+      priceVaultIx,
+      priceMeteoraIx,
+      priceKaminoIx,
+    ];
   }
+
+  remainingAccountsForPricingKamino = async (glamState: PublicKey) => {
+    const glamVault = this.base.getVaultPda(glamState);
+    const obligationAccounts = await fetchKaminoObligations(
+      this.base.provider.connection,
+      glamVault,
+    );
+    return obligationAccounts.map((a) => ({
+      pubkey: a,
+      isSigner: false,
+      isWritable: false,
+    }));
+  };
 
   remainingAccountsForPricingMeteora = async (glamState: PublicKey) => {
     const glamVault = this.base.getVaultPda(glamState);

@@ -26,7 +26,8 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { StateModel } from "../models";
+import { PriceDenom, StateModel } from "../models";
+import { SOL_ORACLE } from "./assets";
 
 interface OrderConstants {
   perpBaseScale: number;
@@ -922,13 +923,14 @@ export class DriftClient {
     );
 
     const tx = await this.base.program.methods
-      .priceDrift()
+      .priceDrift(PriceDenom.SOL)
       .accounts({
         glamState,
         signer,
         glamVault,
         user,
         userStats,
+        solOracle: SOL_ORACLE,
         state: driftState,
       })
       .remainingAccounts(remainingAccounts)

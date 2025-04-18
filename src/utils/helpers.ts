@@ -17,6 +17,8 @@ import {
   STAKE_ACCOUNT_SIZE,
   METEORA_DLMM_PROGRAM,
   METEORA_POSITION_SIZE,
+  KAMINO_LENDING_PROGRAM,
+  KAMINO_OBTRIGATION_SIZE,
 } from "../constants";
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
@@ -64,6 +66,29 @@ export const fetchMarinadeTicketAccounts = async (
       },
     ],
   });
+
+export const fetchKaminoObligations = async (
+  connection: Connection,
+  owner: PublicKey,
+) => {
+  const accounts = await connection.getParsedProgramAccounts(
+    KAMINO_LENDING_PROGRAM,
+    {
+      filters: [
+        {
+          dataSize: KAMINO_OBTRIGATION_SIZE,
+        },
+        {
+          memcmp: {
+            offset: 64,
+            bytes: owner.toBase58(),
+          },
+        },
+      ],
+    },
+  );
+  return accounts.map((a) => a.pubkey);
+};
 
 export const fetchMeteoraPositions = async (
   connection: Connection,

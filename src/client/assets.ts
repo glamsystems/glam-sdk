@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 /**
  * Metadata for an asset for pricing
  */
-export class AssetMeta {
+export interface AssetMeta {
   decimals: number;
   oracle: PublicKey;
   programId?: PublicKey;
@@ -65,7 +65,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 9,
       // oracle: new PublicKey("9QE1P5EfzthYDgoQ9oPeTByCEKaRJeZbVVqKJfgU9iau"), // drift pyth
-      oracle: new PublicKey("Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb"),
+      oracle: new PublicKey("Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb"), // state
     },
   ],
   [
@@ -73,7 +73,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     "BonK1YhkXEGLZzwtcvRTip3gAL9nCeQD7ppZBLXhtTs",
     {
       decimals: 9,
-      oracle: new PublicKey("ArAQfbzsdotoKB5jJcZa3ajQrrPcWr2YQoDAEAiFxJAC"),
+      oracle: new PublicKey("ArAQfbzsdotoKB5jJcZa3ajQrrPcWr2YQoDAEAiFxJAC"), // state
     },
   ],
   [
@@ -81,7 +81,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     "Dso1bDeDjCQxTrWHqUUi63oBvV7Mdm6WaobLbQ7gnPQ",
     {
       decimals: 9,
-      oracle: new PublicKey("4YstsHafLyDbYFxmJbgoEr33iJJEp6rNPgLTQRgXDkG2"),
+      oracle: new PublicKey("9mhGNSPArRMHpLDMSmxAvuoizBqtBGqYdT8WGuqgxNdn"), // state
     },
   ],
 ]);

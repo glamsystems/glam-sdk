@@ -152,12 +152,14 @@ export class BaseClient {
    * @returns Metadata of the asset
    */
   getAssetMeta(assetMint: string): AssetMeta {
-    return (
-      (this.isMainnet()
-        ? ASSETS_MAINNET.get(assetMint)
-        : ASSETS_MAINNET.get(assetMint) || ASSETS_TESTS.get(assetMint)) ||
-      new AssetMeta()
-    );
+    let assetMeta = ASSETS_MAINNET.get(assetMint);
+    if (!assetMeta && !this.isMainnet()) {
+      assetMeta = ASSETS_TESTS.get(assetMint);
+    }
+    if (!assetMeta) {
+      throw new Error("Invalid asset: " + assetMint);
+    }
+    return assetMeta;
   }
 
   private async getComputeBudgetIxs(

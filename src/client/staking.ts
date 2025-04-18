@@ -63,12 +63,12 @@ export class StakingClient {
 
     // Other LSTs
     const assetMeta = this.base.getAssetMeta(assetStr);
-    if (!assetMeta || !assetMeta.stateAccount) {
+    if (!assetMeta || !assetMeta.oracle) {
       throw new Error("Invalid LST: " + asset);
     }
     const tx = await this.stakePoolWithdrawStakeTx(
       glamState,
-      assetMeta.stateAccount,
+      assetMeta.oracle,
       new BN(amount),
       true,
       txOptions,

@@ -209,9 +209,9 @@ export class JupiterSwapClient {
     ]);
 
     const inputStakePool =
-      ASSETS_MAINNET.get(inputMint.toBase58())?.stateAccount || null;
+      ASSETS_MAINNET.get(inputMint.toBase58())?.oracle || null;
     const outputStakePool =
-      ASSETS_MAINNET.get(outputMint.toBase58())?.stateAccount || null;
+      ASSETS_MAINNET.get(outputMint.toBase58())?.oracle || null;
 
     const preInstructions = await this.getPreInstructions(
       glamState,

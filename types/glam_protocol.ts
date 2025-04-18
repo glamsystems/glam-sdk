@@ -3299,7 +3299,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -5609,6 +5610,64 @@ export type GlamProtocol = {
         },
         {
           "name": "userStats"
+        }
+      ],
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "priceKaminoObligations",
+      "discriminator": [
+        166,
+        110,
+        234,
+        179,
+        240,
+        179,
+        69,
+        246
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "solOracle"
         }
       ],
       "args": [

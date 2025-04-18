@@ -3293,7 +3293,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -5603,6 +5604,64 @@
         },
         {
           "name": "user_stats"
+        }
+      ],
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "price_kamino_obligations",
+      "discriminator": [
+        166,
+        110,
+        234,
+        179,
+        240,
+        179,
+        69,
+        246
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "sol_oracle"
         }
       ],
       "args": [
