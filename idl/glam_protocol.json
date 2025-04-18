@@ -3064,6 +3064,95 @@
       "args": []
     },
     {
+      "name": "kamino_farm_harvest_reward",
+      "discriminator": [
+        64,
+        132,
+        133,
+        175,
+        224,
+        147,
+        145,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr"
+        },
+        {
+          "name": "user_state",
+          "writable": true
+        },
+        {
+          "name": "farm_state",
+          "writable": true
+        },
+        {
+          "name": "global_config"
+        },
+        {
+          "name": "reward_mint"
+        },
+        {
+          "name": "user_reward_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "rewards_treasury_vault",
+          "writable": true
+        },
+        {
+          "name": "farm_vaults_authority"
+        },
+        {
+          "name": "scope_prices"
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "reward_index",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "kamino_lending_borrow_obligation_liquidity_v2",
       "discriminator": [
         175,
@@ -11162,6 +11251,9 @@
           },
           {
             "name": "KaminoWithdraw"
+          },
+          {
+            "name": "KaminoClaim"
           },
           {
             "name": "MeteoraDlmmPosition"

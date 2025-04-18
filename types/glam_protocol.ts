@@ -3070,6 +3070,95 @@ export type GlamProtocol = {
       "args": []
     },
     {
+      "name": "kaminoFarmHarvestReward",
+      "discriminator": [
+        64,
+        132,
+        133,
+        175,
+        224,
+        147,
+        145,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr"
+        },
+        {
+          "name": "userState",
+          "writable": true
+        },
+        {
+          "name": "farmState",
+          "writable": true
+        },
+        {
+          "name": "globalConfig"
+        },
+        {
+          "name": "rewardMint"
+        },
+        {
+          "name": "userRewardAta",
+          "writable": true
+        },
+        {
+          "name": "rewardsVault",
+          "writable": true
+        },
+        {
+          "name": "rewardsTreasuryVault",
+          "writable": true
+        },
+        {
+          "name": "farmVaultsAuthority"
+        },
+        {
+          "name": "scopePrices"
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "rewardIndex",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "kaminoLendingBorrowObligationLiquidityV2",
       "discriminator": [
         175,
@@ -11168,6 +11257,9 @@ export type GlamProtocol = {
           },
           {
             "name": "kaminoWithdraw"
+          },
+          {
+            "name": "kaminoClaim"
           },
           {
             "name": "meteoraDlmmPosition"
