@@ -3145,7 +3145,8 @@ export type GlamProtocol = {
           "name": "farmVaultsAuthority"
         },
         {
-          "name": "scopePrices"
+          "name": "scopePrices",
+          "optional": true
         },
         {
           "name": "tokenProgram"
@@ -3236,7 +3237,8 @@ export type GlamProtocol = {
         },
         {
           "name": "referrerTokenState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "tokenProgram"
@@ -3246,11 +3248,13 @@ export type GlamProtocol = {
         },
         {
           "name": "obligationFarmUserState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "reserveFarmState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "farmsProgram"
@@ -3344,7 +3348,8 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "placeholderUserDestinationCollateral"
+          "name": "placeholderUserDestinationCollateral",
+          "optional": true
         },
         {
           "name": "collateralTokenProgram"
@@ -3357,11 +3362,13 @@ export type GlamProtocol = {
         },
         {
           "name": "obligationFarmUserState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "reserveFarmState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "farmsProgram"
@@ -3610,7 +3617,8 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "referrerUserMetadata"
+          "name": "referrerUserMetadata",
+          "optional": true
         },
         {
           "name": "rent",
@@ -3705,11 +3713,13 @@ export type GlamProtocol = {
         },
         {
           "name": "obligationFarmUserState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "reserveFarmState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "lendingMarketAuthority"
@@ -3806,7 +3816,8 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "placeholderUserDestinationCollateral"
+          "name": "placeholderUserDestinationCollateral",
+          "optional": true
         },
         {
           "name": "collateralTokenProgram"
@@ -3819,11 +3830,13 @@ export type GlamProtocol = {
         },
         {
           "name": "obligationFarmUserState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "reserveFarmState",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "farmsProgram"
@@ -4344,7 +4357,8 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayBitmapExtension",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "userTokenX",
@@ -4456,7 +4470,8 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayBitmapExtension",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "userTokenX",
@@ -4568,7 +4583,8 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayBitmapExtension",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "userToken",
@@ -5125,7 +5141,8 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayBitmapExtension",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "userTokenX",
@@ -5242,7 +5259,8 @@ export type GlamProtocol = {
         },
         {
           "name": "binArrayBitmapExtension",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "userTokenX",
@@ -5356,7 +5374,8 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "binArrayBitmapExtension"
+          "name": "binArrayBitmapExtension",
+          "optional": true
         },
         {
           "name": "reserveX",
@@ -5386,7 +5405,8 @@ export type GlamProtocol = {
         },
         {
           "name": "hostFeeIn",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "tokenXProgram"
@@ -5474,7 +5494,8 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "binArrayBitmapExtension"
+          "name": "binArrayBitmapExtension",
+          "optional": true
         },
         {
           "name": "reserveX",
@@ -5504,7 +5525,8 @@ export type GlamProtocol = {
         },
         {
           "name": "hostFeeIn",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "tokenXProgram"
