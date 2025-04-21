@@ -70,6 +70,7 @@ export const fetchMarinadeTicketAccounts = async (
 export const fetchKaminoObligations = async (
   connection: Connection,
   owner: PublicKey,
+  market?: PublicKey,
 ) => {
   const accounts = await connection.getParsedProgramAccounts(
     KAMINO_LENDING_PROGRAM,
@@ -84,6 +85,9 @@ export const fetchKaminoObligations = async (
             bytes: owner.toBase58(),
           },
         },
+        ...(market
+          ? [{ memcmp: { offset: 32, bytes: market.toBase58() } }]
+          : []),
       ],
     },
   );

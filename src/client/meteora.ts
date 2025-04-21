@@ -340,13 +340,6 @@ export class MeteoraDlmmClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async pricePosition(position: PublicKey | string) {
-    const { lbPair, binArrayLower, binArrayUpper } = await parseMeteoraPosition(
-      this.base.provider.connection,
-      new PublicKey(position),
-    );
-  }
-
   getPositionPda(
     lbPair: PublicKey,
     base: PublicKey,

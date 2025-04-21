@@ -92,6 +92,9 @@ export const METEORA_DLMM_PROGRAM = new PublicKey(
 export const KAMINO_LENDING_PROGRAM = new PublicKey(
   "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
 );
+export const KAMINO_FARM_PROGRAM = new PublicKey(
+  "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr",
+);
 export const MEMO_PROGRAM = new PublicKey(
   "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
 );

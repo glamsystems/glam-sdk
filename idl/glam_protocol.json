@@ -2,7 +2,7 @@
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glam_protocol",
-    "version": "0.4.15",
+    "version": "0.4.16",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -1245,6 +1245,144 @@
               }
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "drift_settle_multiple_pnls",
+      "discriminator": [
+        100,
+        72,
+        3,
+        45,
+        69,
+        37,
+        10,
+        144
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "spot_market_vault"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_indexes",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "mode",
+          "type": {
+            "defined": {
+              "name": "SettlePnlMode"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "drift_settle_pnl",
+      "discriminator": [
+        161,
+        254,
+        255,
+        100,
+        140,
+        113,
+        169,
+        175
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "spot_market_vault"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_index",
+          "type": "u16"
         }
       ]
     },
@@ -11470,6 +11608,20 @@
           {
             "name": "length",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SettlePnlMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "MustSettle"
+          },
+          {
+            "name": "TrySettle"
           }
         ]
       }

@@ -95,11 +95,15 @@ export class DriftClient {
    */
 
   public async initialize(
-    statePda: PublicKey,
+    statePda: PublicKey | string,
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.initializeTx(statePda, subAccountId, txOptions);
+    const tx = await this.initializeTx(
+      new PublicKey(statePda),
+      subAccountId,
+      txOptions,
+    );
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -260,6 +264,23 @@ export class DriftClient {
     const tx = await this.cancelOrdersByIdsTx(
       new PublicKey(statePda),
       orderIds,
+      subAccountId,
+      marketConfigs,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async settlePnl(
+    statePda: PublicKey | string,
+    marketIndex: number,
+    subAccountId: number = 0,
+    marketConfigs: DriftMarketConfigs,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.settlePnlTx(
+      new PublicKey(statePda),
+      marketIndex,
       subAccountId,
       marketConfigs,
       txOptions,
@@ -471,6 +492,7 @@ export class DriftClient {
         state,
         glamSigner,
       })
+      // We should only try to add referrer if it is the first user (subAccountId == 0)
       // .remainingAccounts([]) TODO: set glam referral account
       .instruction();
   }
@@ -483,11 +505,15 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tx = new Transaction();
 
-    // Create userStats account first if subAccountId is 0
-    // If subAccountId > 0, we assume userStats account is already created
-    if (subAccountId === 0) {
+    // Create userStats account if it doesn't exist
+    const [_, userStats] = this.getUser(glamState);
+    const userStatsInfo =
+      await this.base.provider.connection.getAccountInfo(userStats);
+    if (!userStatsInfo) {
       tx.add(await this.initializeUserStatsIx(glamState, glamSigner));
     }
+
+    // Initialize user (aka sub-account)
     tx.add(await this.initializeUserIx(glamState, glamSigner, subAccountId));
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
@@ -904,6 +930,33 @@ export class DriftClient {
         state: driftState,
       })
       .remainingAccounts(remainingAccounts)
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async settlePnlTx(
+    glamState: PublicKey,
+    marketIndex: number,
+    subAccountId: number = 0,
+    marketConfigs: DriftMarketConfigs,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const [user] = this.getUser(glamState, subAccountId);
+    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+
+    const { vaultPDA } = marketConfigs.spot[marketIndex];
+
+    const tx = await this.base.program.methods
+      .driftSettlePnl(marketIndex)
+      .accounts({
+        glamState,
+        glamSigner,
+        user,
+        state: driftState,
+        spotMarketVault: new PublicKey(vaultPDA),
+      })
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);

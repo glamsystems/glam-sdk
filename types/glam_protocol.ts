@@ -8,7 +8,7 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.15",
+    "version": "0.4.16",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -1251,6 +1251,144 @@ export type GlamProtocol = {
               }
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "driftSettleMultiplePnls",
+      "discriminator": [
+        100,
+        72,
+        3,
+        45,
+        69,
+        37,
+        10,
+        144
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "spotMarketVault"
+        }
+      ],
+      "args": [
+        {
+          "name": "marketIndexes",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "mode",
+          "type": {
+            "defined": {
+              "name": "settlePnlMode"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "driftSettlePnl",
+      "discriminator": [
+        161,
+        254,
+        255,
+        100,
+        140,
+        113,
+        169,
+        175
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "state"
+        },
+        {
+          "name": "user",
+          "writable": true
+        },
+        {
+          "name": "spotMarketVault"
+        }
+      ],
+      "args": [
+        {
+          "name": "marketIndex",
+          "type": "u16"
         }
       ]
     },
@@ -11476,6 +11614,20 @@ export type GlamProtocol = {
           {
             "name": "length",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "settlePnlMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "mustSettle"
+          },
+          {
+            "name": "trySettle"
           }
         ]
       }

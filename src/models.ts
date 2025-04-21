@@ -160,6 +160,7 @@ export class StateModel extends StateIdlModel {
     let stateModel: Partial<StateIdlModel> = {
       id: statePda,
       name: stateAccount.name,
+      enabled: stateAccount.enabled,
       uri: stateAccount.uri,
       accountType: stateAccount.accountType,
       metadata: stateAccount.metadata,
@@ -180,7 +181,7 @@ export class StateModel extends StateIdlModel {
       if (new StateIdlModel({}).hasOwnProperty(name)) {
         // @ts-ignore
         stateModel[name] = value;
-      } else {
+      } else if (process.env.NODE_ENV === "development") {
         console.warn(`State param ${name} not found in StateIdlModel`);
       }
     });

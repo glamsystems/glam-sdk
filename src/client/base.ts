@@ -387,7 +387,7 @@ export class BaseClient {
   }
 
   async getAdressLookupTableAccounts(
-    keys?: string[],
+    keys?: string[] | PublicKey[],
   ): Promise<AddressLookupTableAccount[]> {
     if (!keys) {
       throw new Error("addressLookupTableAddresses is undefined");
@@ -675,7 +675,7 @@ export class BaseClient {
     const delta = new BN(lamports).sub(wsolBalance); // wSOL amount needed
     if (solBalance.lt(delta)) {
       throw new Error(
-        "Insufficient funds in vault to complete the transaction",
+        `Insufficient funds in vault to complete the transaction. SOL balance (lamports): ${solBalance}, lamports needed: ${lamports}`,
       );
     }
     if (delta.gt(new BN(0)) && solBalance.gte(delta)) {
