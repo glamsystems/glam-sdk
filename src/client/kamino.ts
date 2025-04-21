@@ -166,8 +166,8 @@ function refreshObligationFarmsForReserve(
 
 interface ParsedReserve {
   address: PublicKey;
-  farmCollateral?: PublicKey;
-  farmDebt?: PublicKey;
+  farmCollateral: PublicKey | null;
+  farmDebt: PublicKey | null;
   liquidityMint: PublicKey;
   liquiditySupplyVault: PublicKey;
   collateralMint: PublicKey;
@@ -590,9 +590,9 @@ export class KaminoLendingClient {
         const parsed = {
           address: reserves[i],
           farmCollateral: farmCollateral.equals(PublicKey.default)
-            ? undefined
+            ? null
             : farmCollateral,
-          farmDebt: farmDebt.equals(PublicKey.default) ? undefined : farmDebt,
+          farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
           liquidityMint,
           ...this.reservePdas(market, liquidityMint),
         };
@@ -636,9 +636,9 @@ export class KaminoLendingClient {
     const parsed = {
       address: account.pubkey,
       farmCollateral: farmCollateral.equals(PublicKey.default)
-        ? undefined
+        ? null
         : farmCollateral,
-      farmDebt: farmDebt.equals(PublicKey.default) ? undefined : farmDebt,
+      farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
       liquidityMint: asset,
       ...this.reservePdas(market, asset),
     };
@@ -786,7 +786,6 @@ export class KaminoLendingClient {
         liquidityTokenProgram: TOKEN_PROGRAM_ID,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         obligationFarmUserState: obligationFarm,
-        // @ts-ignore
         reserveFarmState: depositReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -913,7 +912,6 @@ export class KaminoLendingClient {
         liquidityTokenProgram: TOKEN_PROGRAM_ID,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         obligationFarmUserState: obligationFarm,
-        // @ts-ignore
         reserveFarmState: withdrawReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -1046,7 +1044,6 @@ export class KaminoLendingClient {
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
         obligationFarmUserState: obligationFarm,
-        // @ts-ignore
         reserveFarmState: borrowReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -1153,7 +1150,6 @@ export class KaminoLendingClient {
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
         obligationFarmUserState: obligationFarm,
-        // @ts-ignore
         reserveFarmState: repayReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })

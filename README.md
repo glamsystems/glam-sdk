@@ -1,5 +1,7 @@
 # GLAM SDK
 
+![NPM Version](https://img.shields.io/npm/v/%40glamsystems%2Fglam-sdk)
+
 A TypeScript SDK for interacting with the GLAM Protocol.
 
 ## Installation

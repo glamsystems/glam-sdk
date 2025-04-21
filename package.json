@@ -1,6 +1,6 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "0.1.7",
+  "version": "0.1.19",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
@@ -23,6 +23,7 @@
     "@drift-labs/sdk": "2.114.0-beta.3",
     "@marinade.finance/marinade-ts-sdk": "^5.0.15",
     "@pythnetwork/client": "^2.21.1",
+    "@meteora-ag/dlmm": "^1.4.11",
     "@solana/spl-stake-pool": "^1.1.5",
     "@solana/spl-token": "^0.4.9",
     "@solana/spl-token-metadata": "^0.1.4",
