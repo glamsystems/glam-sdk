@@ -89,7 +89,7 @@ export class GlamClient extends BaseClient {
 
   get price(): PriceClient {
     if (!this._price) {
-      this._price = new PriceClient(this);
+      this._price = new PriceClient(this, this.kaminoLending);
     }
     return this._price;
   }

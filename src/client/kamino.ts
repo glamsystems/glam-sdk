@@ -67,7 +67,7 @@ interface RefreshObligationFarmsForReserveAccounts {
 
 function refreshObligation(
   accounts: RefreshObligationAccounts,
-  programId: PublicKey,
+  programId: PublicKey = KAMINO_LENDING_PROGRAM,
 ) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.lendingMarket, isSigner: false, isWritable: false },
@@ -85,7 +85,7 @@ function refreshObligation(
 
 function refreshReserve(
   accounts: RefreshReserveAccounts,
-  programId: PublicKey,
+  programId: PublicKey = KAMINO_LENDING_PROGRAM,
 ) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.reserve, isSigner: false, isWritable: true },
@@ -112,7 +112,7 @@ function refreshReserve(
 function refreshObligationFarmsForReserve(
   args: RefreshObligationFarmsForReserveArgs,
   accounts: RefreshObligationFarmsForReserveAccounts,
-  programId: PublicKey,
+  programId: PublicKey = KAMINO_LENDING_PROGRAM,
 ) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.crank, isSigner: true, isWritable: false },
@@ -176,6 +176,8 @@ interface ParsedReserve {
 }
 
 interface ParsedObligation {
+  address: PublicKey;
+  lendingMarket: PublicKey | null;
   deposits: { reserve: PublicKey }[];
   borrows: { reserve: PublicKey }[];
 }
@@ -202,7 +204,7 @@ export class KaminoLendingClient {
   ): Promise<TransactionSignature> {
     const tx = await this.initUserMetadataTx(
       new PublicKey(statePda),
-      referrer ? new PublicKey(referrer) : PublicKey.default,
+      referrer ? new PublicKey(referrer) : null,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -354,16 +356,13 @@ export class KaminoLendingClient {
 
   public async initUserMetadataTx(
     glamState: PublicKey,
-    referrer: PublicKey,
-    txOptions: TxOptions,
+    referrer: PublicKey | null,
+    txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const vault = this.base.getVaultPda(glamState);
     const userMetadata = this.getUserMetadataPda(vault);
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
-    const referrerUserMetadata = referrer.equals(PublicKey.default)
-      ? KAMINO_LENDING_PROGRAM
-      : referrer;
 
     // @ts-ignore
     const tx = await this.base.program.methods
@@ -372,7 +371,7 @@ export class KaminoLendingClient {
         glamState,
         glamSigner,
         userMetadata,
-        referrerUserMetadata,
+        referrerUserMetadata: referrer,
       })
       .transaction();
 
@@ -382,17 +381,14 @@ export class KaminoLendingClient {
 
   refreshReserveIxs(lendingMarket: PublicKey, reserves: PublicKey[]) {
     return reserves.map((reserve) =>
-      refreshReserve(
-        {
-          reserve,
-          lendingMarket,
-          pythOracle: KAMINO_LENDING_PROGRAM,
-          switchboardPriceOracle: KAMINO_LENDING_PROGRAM,
-          switchboardTwapOracle: KAMINO_LENDING_PROGRAM,
-          scopePrices: SCOPE_PRICES,
-        },
-        KAMINO_LENDING_PROGRAM,
-      ),
+      refreshReserve({
+        reserve,
+        lendingMarket,
+        pythOracle: KAMINO_LENDING_PROGRAM,
+        switchboardPriceOracle: KAMINO_LENDING_PROGRAM,
+        switchboardTwapOracle: KAMINO_LENDING_PROGRAM,
+        scopePrices: SCOPE_PRICES,
+      }),
     );
   }
 
@@ -428,36 +424,39 @@ export class KaminoLendingClient {
                 rent: SYSVAR_RENT_PUBKEY,
                 systemProgram: SystemProgram.programId,
               },
-              KAMINO_LENDING_PROGRAM,
             );
           });
       })
       .flat();
   }
 
-  /**
-   * Returns an array of instructions for refreshing an existing obligation and reserves it depends on.
-   */
-  public async getRefreshIxs(obligation: PublicKey, lendingMarket: PublicKey) {
-    // If obligation has deposits or borrows, we need the following refresh ixs:
-    // - refreshReserve x N_reserves
-    // - refreshObligation
-    // - refreshObligationFarmsForReserve x M_farms
-    const { deposits, borrows } =
+  // If obligation has deposits or borrows, we need the following refresh ixs:
+  // - refreshReserve x N_reserves
+  // - refreshObligation
+  // - refreshObligationFarmsForReserve x M_farms
+  //
+  // For pricing purpose, we don't need to refresh farm states
+  public async getRefreshIxs(
+    obligation: PublicKey,
+    refreshFarms: boolean = true,
+  ) {
+    const { lendingMarket, deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
+    if (!lendingMarket) {
+      throw new Error("Lending market not found");
+    }
     const reserves = deposits.concat(borrows).map((d) => d.reserve);
     const parsedReserves = await this.fetchAndParseReserves(reserves);
     return [
       ...this.refreshReserveIxs(lendingMarket, reserves),
-      refreshObligation(
-        { lendingMarket, obligation, reserves },
-        KAMINO_LENDING_PROGRAM,
-      ),
-      ...this.refreshObligationFarmsForReserveIxs(
-        obligation,
-        lendingMarket,
-        parsedReserves,
-      ),
+      refreshObligation({ lendingMarket, obligation, reserves }),
+      ...(refreshFarms
+        ? this.refreshObligationFarmsForReserveIxs(
+            obligation,
+            lendingMarket,
+            parsedReserves,
+          )
+        : []),
     ];
   }
 
@@ -511,10 +510,17 @@ export class KaminoLendingClient {
     const obligationAccount =
       await this.base.provider.connection.getAccountInfo(obligation);
     if (!obligationAccount) {
-      return { deposits: [], borrows: [] };
+      return {
+        address: obligation,
+        lendingMarket: null,
+        deposits: [],
+        borrows: [],
+      };
     }
 
     const data = obligationAccount.data;
+
+    const lendingMarket = new PublicKey(data.subarray(32, 64));
 
     // read deposits
     let depositsOffset = 96;
@@ -529,7 +535,8 @@ export class KaminoLendingClient {
         i * depositSize,
         (i + 1) * depositSize,
       );
-      return { reserve: new PublicKey(depositData.subarray(0, 32)) };
+      const reserve = new PublicKey(depositData.subarray(0, 32));
+      return { reserve };
     }).filter((d) => !d.reserve.equals(PublicKey.default));
 
     // read borrows
@@ -545,10 +552,16 @@ export class KaminoLendingClient {
         i * borrowSize,
         (i + 1) * borrowSize,
       );
-      return { reserve: new PublicKey(borrowData.subarray(0, 32)) };
+      const reserve = new PublicKey(borrowData.subarray(0, 32));
+      return { reserve };
     }).filter((d) => !d.reserve.equals(PublicKey.default));
 
-    const parsedObligation = { deposits, borrows };
+    const parsedObligation = {
+      address: obligation,
+      lendingMarket,
+      deposits,
+      borrows,
+    };
     this.obligations.set(obligation, parsedObligation);
     return parsedObligation;
   }
@@ -560,13 +573,22 @@ export class KaminoLendingClient {
     return a.every((p, i) => p.equals(b[i]));
   };
 
-  /**
-   * We only need pubkeys that don't change over time. No need to fetch them every time.
-   *
-   * @param market
-   * @param asset
-   * @returns
-   */
+  _parseReserveAccount(data: Buffer) {
+    const market = new PublicKey(data.subarray(32, 64));
+    const farmCollateral = new PublicKey(data.subarray(64, 96));
+    const farmDebt = new PublicKey(data.subarray(96, 128));
+    const liquidityMint = new PublicKey(data.subarray(128, 160));
+
+    return {
+      farmCollateral: farmCollateral.equals(PublicKey.default)
+        ? null
+        : farmCollateral,
+      farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
+      liquidityMint,
+      ...this.reservePdas(market, liquidityMint),
+    };
+  }
+
   async fetchAndParseReserves(reserves: PublicKey[]): Promise<ParsedReserve[]> {
     if (this.pubkeyArraysEqual(reserves, Array.from(this.reserves.keys()))) {
       return Array.from(this.reserves.values());
@@ -581,24 +603,13 @@ export class KaminoLendingClient {
     return reserveAccounts
       .filter((a) => !!a)
       .map((account, i) => {
-        const data = account.data;
-        const market = new PublicKey(data.subarray(32, 64));
-        const farmCollateral = new PublicKey(data.subarray(64, 96));
-        const farmDebt = new PublicKey(data.subarray(96, 128));
-        const liquidityMint = new PublicKey(data.subarray(128, 160));
-
-        const parsed = {
+        const parsedReserve = {
           address: reserves[i],
-          farmCollateral: farmCollateral.equals(PublicKey.default)
-            ? null
-            : farmCollateral,
-          farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
-          liquidityMint,
-          ...this.reservePdas(market, liquidityMint),
+          ...this._parseReserveAccount(account.data),
         };
 
-        this.reserves.set(reserves[i], parsed);
-        return parsed;
+        this.reserves.set(reserves[i], parsedReserve);
+        return parsedReserve;
       });
   }
 
@@ -611,18 +622,8 @@ export class KaminoLendingClient {
       {
         filters: [
           { dataSize: 8624 },
-          {
-            memcmp: {
-              offset: 32,
-              bytes: market.toBase58(),
-            },
-          },
-          {
-            memcmp: {
-              offset: 128,
-              bytes: asset.toBase58(),
-            },
-          },
+          { memcmp: { offset: 32, bytes: market.toBase58() } },
+          { memcmp: { offset: 128, bytes: asset.toBase58() } },
         ],
       },
     );
@@ -630,20 +631,12 @@ export class KaminoLendingClient {
       throw new Error("Reserve not found");
     }
     const account = accounts[0];
-    const data = account.account.data;
-    const farmCollateral = new PublicKey(data.subarray(64, 96));
-    const farmDebt = new PublicKey(data.subarray(96, 128));
-    const parsed = {
+    const parsedReserve = {
       address: account.pubkey,
-      farmCollateral: farmCollateral.equals(PublicKey.default)
-        ? null
-        : farmCollateral,
-      farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
-      liquidityMint: asset,
-      ...this.reservePdas(market, asset),
+      ...this._parseReserveAccount(account.account.data),
     };
-    this.reserves.set(account.pubkey, parsed);
-    return parsed;
+    this.reserves.set(account.pubkey, parsedReserve);
+    return parsedReserve;
   }
 
   public async depositTx(
@@ -730,10 +723,11 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation(
-        { lendingMarket: market, obligation, reserves: reservesInUse },
-        KAMINO_LENDING_PROGRAM,
-      ),
+      refreshObligation({
+        lendingMarket: market,
+        obligation,
+        reserves: reservesInUse,
+      }),
     );
 
     if (depositReserve.farmCollateral) {
@@ -867,10 +861,11 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation(
-        { lendingMarket: market, obligation, reserves: reservesInUse },
-        KAMINO_LENDING_PROGRAM,
-      ),
+      refreshObligation({
+        lendingMarket: market,
+        obligation,
+        reserves: reservesInUse,
+      }),
     );
 
     if (withdrawReserve.farmCollateral) {
@@ -1000,10 +995,11 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation(
-        { lendingMarket: market, obligation, reserves: reservesInUse },
-        KAMINO_LENDING_PROGRAM,
-      ),
+      refreshObligation({
+        lendingMarket: market,
+        obligation,
+        reserves: reservesInUse,
+      }),
     );
 
     // Don't need to refresh debt farm for borrow
@@ -1129,10 +1125,11 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation(
-        { lendingMarket: market, obligation, reserves: reservesInUse },
-        KAMINO_LENDING_PROGRAM,
-      ),
+      refreshObligation({
+        lendingMarket: market,
+        obligation,
+        reserves: reservesInUse,
+      }),
     );
 
     const repayIx = await this.base.program.methods

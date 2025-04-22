@@ -1,5 +1,6 @@
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
+import { KaminoLendingClient } from "./kamino";
 
 import { BaseClient } from "./base";
 
@@ -14,7 +15,10 @@ import {
 import { PriceDenom } from "../models";
 
 export class PriceClient {
-  public constructor(readonly base: BaseClient) {}
+  public constructor(
+    readonly base: BaseClient,
+    readonly klend: KaminoLendingClient,
+  ) {}
 
   /**
    * !! This is a convenience method that calculates the AUM of the vault based on priced assets.
@@ -36,6 +40,38 @@ export class PriceClient {
       (sum, p) => new BN(p.amount).add(sum),
       new BN(0),
     ) as BN;
+  }
+
+  async priceKaminoIxs(glamState: PublicKey, priceDenom: PriceDenom) {
+    const glamVault = this.base.getVaultPda(glamState);
+    const obligations = await fetchKaminoObligations(
+      this.base.provider.connection,
+      glamVault,
+    );
+
+    const refreshIxs = [];
+    for (const obligation of obligations) {
+      const ixs = await this.klend.getRefreshIxs(obligation, false); // skip farms
+      refreshIxs.push(...ixs);
+    }
+
+    // @ts-ignore
+    const priceIx = await this.base.program.methods
+      .priceKaminoObligations(priceDenom)
+      .accounts({
+        glamState,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(
+        obligations.map((o) => ({
+          pubkey: o,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
+      .instruction();
+
+    return [...refreshIxs, priceIx];
   }
 
   public async priceVaultIxs(
@@ -105,38 +141,16 @@ export class PriceClient {
       )
       .instruction();
 
-    const priceKaminoIx = await this.base.program.methods
-      .priceKaminoObligations(priceDenom)
-      .accounts({
-        glamState,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(
-        await this.remainingAccountsForPricingKamino(glamState),
-      )
-      .instruction();
+    const priceKaminoIxs = await this.priceKaminoIxs(glamState, priceDenom);
 
     return [
       priceTicketsIx,
       priceStakesIx,
       priceVaultIx,
       priceMeteoraIx,
-      priceKaminoIx,
+      ...priceKaminoIxs,
     ];
   }
-
-  remainingAccountsForPricingKamino = async (glamState: PublicKey) => {
-    const glamVault = this.base.getVaultPda(glamState);
-    const obligationAccounts = await fetchKaminoObligations(
-      this.base.provider.connection,
-      glamVault,
-    );
-    return obligationAccounts.map((a) => ({
-      pubkey: a,
-      isSigner: false,
-      isWritable: false,
-    }));
-  };
 
   remainingAccountsForPricingMeteora = async (glamState: PublicKey) => {
     const glamVault = this.base.getVaultPda(glamState);
