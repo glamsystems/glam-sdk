@@ -8,7 +8,7 @@ import { WSolClient } from "./client/wsol";
 import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
 import { MintClient } from "./client/mint";
-import { KaminoLendingClient } from "./client/kamino";
+import { KaminoFarmClient, KaminoLendingClient } from "./client/kamino";
 import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestorClient } from "./client/investor";
 import { PriceClient } from "./client/price";
@@ -32,6 +32,7 @@ export class GlamClient extends BaseClient {
   private _state?: StateClient;
   private _mint?: MintClient;
   private _kaminoLending?: KaminoLendingClient;
+  private _kaminoFarm?: KaminoFarmClient;
   private _meteoraDlmm?: MeteoraDlmmClient;
 
   public constructor(config?: GlamClientConfig) {
@@ -113,6 +114,13 @@ export class GlamClient extends BaseClient {
       this._kaminoLending = new KaminoLendingClient(this);
     }
     return this._kaminoLending;
+  }
+
+  get kaminoFarm(): KaminoFarmClient {
+    if (!this._kaminoFarm) {
+      this._kaminoFarm = new KaminoFarmClient(this);
+    }
+    return this._kaminoFarm;
   }
 
   get meteoraDlmm(): MeteoraDlmmClient {

@@ -3219,6 +3219,7 @@
         },
         {
           "name": "glam_vault",
+          "writable": true,
           "pda": {
             "seeds": [
               {

@@ -3225,6 +3225,7 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
+          "writable": true,
           "pda": {
             "seeds": [
               {

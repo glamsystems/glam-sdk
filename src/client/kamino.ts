@@ -1169,3 +1169,171 @@ export class KaminoLendingClient {
     return vTx;
   }
 }
+
+export class KaminoFarmClient {
+  public constructor(readonly base: BaseClient) {}
+
+  async findAndParseFarmStates(owner: PublicKey) {
+    const accounts = await this.base.provider.connection.getProgramAccounts(
+      KAMINO_FARM_PROGRAM,
+      {
+        filters: [
+          { dataSize: 920 },
+          { memcmp: { offset: 48, bytes: owner.toBase58() } },
+        ],
+      },
+    );
+    return accounts.map((account) => {
+      const data = account.account.data;
+      const farmState = new PublicKey(data.subarray(16, 48));
+      return {
+        userFarmState: account.pubkey,
+        farmState,
+      };
+    });
+  }
+
+  async parseFarm(data: Buffer) {
+    const globalConfig = new PublicKey(data.subarray(40, 72));
+    const rewardsOffset = 192;
+    const numRewards = 10;
+    const rewardSize = 704;
+
+    const rewardsData = data.subarray(
+      rewardsOffset,
+      rewardsOffset + numRewards * rewardSize,
+    );
+    const rewards = Array.from({ length: numRewards }, (_, i) => {
+      const rewardData = rewardsData.subarray(
+        i * rewardSize,
+        (i + 1) * rewardSize,
+      );
+      const mint = new PublicKey(rewardData.subarray(0, 32));
+      const tokenProgram = new PublicKey(rewardData.subarray(40, 72));
+      const rewardsVault = new PublicKey(rewardData.subarray(120, 152));
+      const minClaimDurationSeconds = new BN(
+        rewardData.subarray(480, 488),
+        "le",
+      );
+
+      return {
+        index: i,
+        mint,
+        minClaimDurationSeconds,
+        tokenProgram,
+        rewardsVault,
+      };
+    }).filter((r) => {
+      if (r.mint.equals(PublicKey.default)) {
+        return false;
+      }
+      // Filter out rewards with minClaimDurationSeconds > 1 year, they are considered disabled
+      if (
+        r.minClaimDurationSeconds.div(new BN(365 * 24 * 60 * 60)).gt(new BN(1))
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    return { globalConfig, rewards };
+  }
+
+  async fetchAndParseFarms(farms: PublicKey[]) {
+    const farmAccounts =
+      await this.base.provider.connection.getMultipleAccountsInfo(farms);
+
+    const map = new Map();
+
+    for (let i = 0; i < farmAccounts.length; i++) {
+      const account = farmAccounts[i];
+      if (!account) {
+        continue;
+      }
+
+      const data = account.data;
+      const parsedFarm = await this.parseFarm(data);
+      map.set(farms[i].toBase58(), parsedFarm);
+    }
+
+    return map;
+  }
+
+  farmVaultsAuthority = (farm: PublicKey) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("authority"), farm.toBuffer()],
+      KAMINO_FARM_PROGRAM,
+    )[0];
+  rewardsTreasuryVault = (globalConfig: PublicKey, mint: PublicKey) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("tvault"), globalConfig.toBuffer(), mint.toBuffer()],
+      KAMINO_FARM_PROGRAM,
+    )[0];
+
+  public async harvest(
+    statePda: PublicKey | string,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.harvestTx(new PublicKey(statePda), txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async harvestTx(
+    glamState: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vault = this.base.getVaultPda(glamState);
+    const farmStates = await this.findAndParseFarmStates(vault);
+    const parsedFarms = await this.fetchAndParseFarms(
+      farmStates.map((f) => f.farmState),
+    );
+
+    const tx = new Transaction();
+    for (const { userFarmState, farmState } of farmStates) {
+      const { globalConfig, rewards } = parsedFarms.get(farmState.toBase58());
+
+      for (const { index, mint, tokenProgram, rewardsVault } of rewards) {
+        console.log("Reward token:", mint.toBase58());
+
+        const vaultAta = this.base.getVaultAta(glamState, mint, tokenProgram);
+
+        const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+          glamSigner,
+          vaultAta,
+          vault,
+          mint,
+          tokenProgram,
+        );
+
+        const harvestIx = await this.base.program.methods
+          .kaminoFarmHarvestReward(new BN(index))
+          .accounts({
+            glamState,
+            glamSigner,
+            userState: userFarmState,
+            farmState,
+            globalConfig,
+            rewardMint: mint,
+            userRewardAta: vaultAta,
+            rewardsVault,
+            rewardsTreasuryVault: this.rewardsTreasuryVault(globalConfig, mint),
+            farmVaultsAuthority: this.farmVaultsAuthority(farmState),
+            scopePrices: null,
+            tokenProgram,
+          })
+          .instruction();
+        tx.add(createAtaIx, harvestIx);
+      }
+    }
+
+    const lookupTables =
+      txOptions.lookupTables ||
+      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+    const vTx = await this.base.intoVersionedTransaction(tx, {
+      ...txOptions,
+      lookupTables,
+    });
+    return vTx;
+  }
+}
