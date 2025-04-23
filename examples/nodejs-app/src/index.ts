@@ -10,7 +10,7 @@ dotenv.config();
 const glamStatePda = new PublicKey(process.env.GLAM_STATE!);
 const glamClient = new GlamClient();
 
-const txOptions = { simulate: true };
+const txOptions = { simulate: true, maxFeeLamports: 10_000, useMaxFee: true };
 
 async function main() {
   const glamVaultPda = glamClient.getVaultPda(glamStatePda);
