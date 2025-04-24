@@ -14,7 +14,8 @@ export const GlamIntegrations =
 export const GlamPermissions =
   GlamProtocolIdlJson?.types
     ?.find((t) => t.name === "Permission")
-    ?.type?.variants?.map((v) => v.name) ?? [];
+    ?.type?.variants?.map((v) => v.name)
+    .filter((v) => !v.startsWith("__")) ?? [];
 
 const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamProtocolIdlJson.address);
 

@@ -109,3 +109,10 @@ export const JITO_STAKE_POOL = new PublicKey(
 export const JUPSOL_STAKE_POOL = new PublicKey(
   "8VpRhuxa7sUUepdY3kQiTmX9rS5vx4WgaXiAnXq4KCtr",
 );
+
+/**
+ * Referrers
+ */
+export const GLAM_REFERRER = new PublicKey(
+  "GLAMrG37ZqioqvzBNQGCfCUueDz3tsr7MwMFyRk9PS89",
+);

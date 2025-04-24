@@ -21,7 +21,7 @@ import {
 
 import { BaseClient, TxOptions } from "./base";
 import { AccountMeta } from "@solana/web3.js";
-import { DRIFT_PROGRAM_ID, WSOL } from "../constants";
+import { DRIFT_PROGRAM_ID, GLAM_REFERRER, WSOL } from "../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
@@ -318,6 +318,13 @@ export class DriftClient {
     ];
   }
 
+  getGlamReferrer(): PublicKey[] {
+    return [
+      getUserAccountPublicKeySync(DRIFT_PROGRAM_ID, GLAM_REFERRER, 0),
+      getUserStatsAccountPublicKey(DRIFT_PROGRAM_ID, GLAM_REFERRER),
+    ];
+  }
+
   public async fetchMarketConfigs(): Promise<DriftMarketConfigs> {
     const response = await fetch(
       "https://api.glam.systems/v0/drift/market_configs/",
@@ -482,6 +489,11 @@ export class DriftClient {
 
     const [user, userStats] = this.getUser(glamState, subAccountId);
     const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const remainingAccounts = this.getGlamReferrer().map((p) => ({
+      pubkey: p,
+      isWritable: true,
+      isSigner: false,
+    }));
 
     return await this.base.program.methods
       .driftInitializeUser(subAccountId, name)
@@ -492,8 +504,7 @@ export class DriftClient {
         state,
         glamSigner,
       })
-      // We should only try to add referrer if it is the first user (subAccountId == 0)
-      // .remainingAccounts([]) TODO: set glam referral account
+      .remainingAccounts(remainingAccounts)
       .instruction();
   }
 
@@ -806,12 +817,20 @@ export class DriftClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const { marketIndex, marketType } = orderParams;
-    const remainingAccounts = await this.composeRemainingAccounts(
-      glamState,
-      subAccountId,
-      marketConfigs,
-      marketType,
-      marketIndex,
+    const remainingAccounts = (
+      await this.composeRemainingAccounts(
+        glamState,
+        subAccountId,
+        marketConfigs,
+        marketType,
+        marketIndex,
+      )
+    ).concat(
+      this.getGlamReferrer().map((p) => ({
+        pubkey: p,
+        isWritable: true,
+        isSigner: false,
+      })),
     );
 
     const glamSigner = txOptions.signer || this.base.getSigner();

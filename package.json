@@ -1,13 +1,13 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
   "homepage": "https://www.glam.systems",
   "repository": {
     "type": "git",
-    "url": "git@github.com:glamsystems/glam.git"
+    "url": "git@github.com:glamsystems/glam-sdk.git"
   },
   "keywords": [
     "glam",

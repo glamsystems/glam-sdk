@@ -3,6 +3,7 @@ import { VersionedTransaction } from "@solana/web3.js";
 
 // https://docs.helius.dev/guides/priority-fee-api
 export type PriorityLevel =
+  | "Recommended"
   | "Min"
   | "Low"
   | "Medium"
@@ -21,7 +22,11 @@ export const getPriorityFeeEstimate = async (
     throw new Error("Either tx or accountKeys must be provided");
   }
 
-  const options = priorityLevel ? { priorityLevel } : { recommended: true };
+  const options =
+    priorityLevel && priorityLevel !== "Recommended"
+      ? { priorityLevel }
+      : { recommended: true };
+
   const param = tx
     ? { transaction: bs58.encode(tx.serialize()) }
     : { accountKeys };

@@ -13,7 +13,6 @@ npm i @glamsystems/glam-sdk
 ## Getting Started
 
 - [GLAM docs](https://docs.glam.systems)
-- [TypeScript API docs](#)
 
 ## Examples
 
