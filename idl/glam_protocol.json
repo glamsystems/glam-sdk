@@ -9184,16 +9184,21 @@
     },
     {
       "code": 50004,
+      "name": "InvalidPlatformFeeForSwap",
+      "msg": "Invalid platform fee"
+    },
+    {
+      "code": 50005,
       "name": "InvalidTokenAccount",
       "msg": "Invalid token account"
     },
     {
-      "code": 50005,
+      "code": 50006,
       "name": "InvalidVoteSide",
       "msg": "Invalid vote side"
     },
     {
-      "code": 50006,
+      "code": 50007,
       "name": "MultipleStakeAccountsDisallowed",
       "msg": "Multiple stake accounts disallowed"
     },

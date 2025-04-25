@@ -9190,16 +9190,21 @@ export type GlamProtocol = {
     },
     {
       "code": 50004,
+      "name": "invalidPlatformFeeForSwap",
+      "msg": "Invalid platform fee"
+    },
+    {
+      "code": 50005,
       "name": "invalidTokenAccount",
       "msg": "Invalid token account"
     },
     {
-      "code": 50005,
+      "code": 50006,
       "name": "invalidVoteSide",
       "msg": "Invalid vote side"
     },
     {
-      "code": 50006,
+      "code": 50007,
       "name": "multipleStakeAccountsDisallowed",
       "msg": "Multiple stake accounts disallowed"
     },
