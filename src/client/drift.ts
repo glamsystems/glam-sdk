@@ -7,87 +7,92 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import {
-  getDriftStateAccountPublicKey,
-  getUserAccountPublicKeySync,
-  getUserStatsAccountPublicKey,
   MarketType,
   OrderParams,
   PositionDirection,
-  decodeUser,
   SpotPosition,
   PerpPosition,
   ModifyOrderParams,
-} from "@drift-labs/sdk";
+  OracleSource,
+  SpotBalanceType,
+  MarginMode,
+  Order,
+} from "../utils/driftTypes";
+import { decodeUser } from "../utils/driftUser";
 
 import { BaseClient, TxOptions } from "./base";
 import { AccountMeta } from "@solana/web3.js";
 import { DRIFT_PROGRAM_ID, GLAM_REFERRER, WSOL } from "../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
+  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { PriceDenom, StateModel } from "../models";
 import { SOL_ORACLE } from "./assets";
+import { BN } from "@coral-xyz/anchor";
 
 interface OrderConstants {
   perpBaseScale: number;
   quoteScale: number;
 }
 
-export interface PerpMarketConfig {
-  fullName: string;
-  categories: string[];
-  symbol: string;
-  baseAsset: string;
+export interface SpotMarket {
+  name: string;
   marketIndex: number;
-  launchTs: string;
-  oracle: string;
-  oracleSource: string;
-  pythPullOraclePDA: string;
-  pythFeedId: string;
-  marketPDA: string;
+  marketPda: PublicKey;
+  vault: PublicKey;
+  oracle: PublicKey;
+  oracleSource: OracleSource;
+  mint: PublicKey;
+  decimals: number;
+  tokenProgram: PublicKey;
+  cumulativeDepositInterest: BN;
+  cumulativeBorrowInterest: BN;
 }
 
-export interface SpotMarketConfig {
-  symbol: string;
-  decimals: number;
+export interface PerpMarket {
+  name: string;
   marketIndex: number;
-  launchTs?: string;
-  oracle: string;
-  oracleSource: string;
-  pythPullOraclePDA: string;
-  pythFeedId: string;
-  marketPDA: string;
-  mint: string;
-  serumMarket?: string;
-  phoenixMarket?: string;
-  openBookMarket?: string;
-  vaultPDA: string;
+  marketPda: PublicKey;
+  oracle: PublicKey;
+  oracleSource: OracleSource;
 }
 
 export interface DriftMarketConfigs {
   orderConstants: OrderConstants;
-  perp: PerpMarketConfig[];
-  spot: SpotMarketConfig[];
+  perpMarkets: PerpMarket[];
+  spotMarkets: SpotMarket[];
 }
 
-export interface GlamDriftUser {
-  delegate: string;
+export interface DriftUser {
+  delegate: PublicKey;
   name: string;
-  spotPositions: (SpotPosition & { balance: string })[]; // balance is added by glam api
+  spotPositions: (SpotPosition & {
+    amount: number;
+    uiAmount: number;
+    mint: PublicKey;
+    decimals: number;
+    marketName: string;
+  })[]; // extra fields amount and uiAmount
   perpPositions: PerpPosition[];
-  marginMode: string;
+  marginMode: MarginMode;
   subAccountId: number;
   isMarginTradingEnabled: boolean;
   maxMarginRatio: number;
+  orders: Order[];
 }
 
-const DRIFT_VAULT = new PublicKey(
+const DRIFT_SIGNER = new PublicKey(
   "JCNCMFXo5M5qwUPg2Utu1u6YWp3MbygxqBsBeXXJfrw",
 );
 const DRIFT_MARGIN_PRECISION = 10_000;
 
 export class DriftClient {
+  private spotMarkets = new Map<number, SpotMarket>();
+  private perpMarkets = new Map<number, PerpMarket>();
+  private marketConfigs: DriftMarketConfigs | null = null;
+
   public constructor(readonly base: BaseClient) {}
 
   /*
@@ -166,7 +171,6 @@ export class DriftClient {
     amount: anchor.BN,
     marketIndex: number = 1,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.depositTx(
@@ -174,7 +178,6 @@ export class DriftClient {
       amount,
       marketIndex,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -185,7 +188,6 @@ export class DriftClient {
     amount: anchor.BN,
     marketIndex: number = 1,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.withdrawTx(
@@ -193,7 +195,6 @@ export class DriftClient {
       amount,
       marketIndex,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -203,14 +204,12 @@ export class DriftClient {
     statePda: PublicKey | string,
     orderParams: OrderParams,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.placeOrderTx(
       new PublicKey(statePda),
       orderParams,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -220,14 +219,12 @@ export class DriftClient {
     statePda: PublicKey | string,
     modifyOrderParams: ModifyOrderParams,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.modifyOrderTx(
       new PublicKey(statePda),
       modifyOrderParams,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -239,7 +236,6 @@ export class DriftClient {
     marketIndex: number,
     direction: PositionDirection,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.cancelOrdersTx(
@@ -248,7 +244,6 @@ export class DriftClient {
       marketIndex,
       direction,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -258,14 +253,12 @@ export class DriftClient {
     statePda: PublicKey | string,
     orderIds: number[],
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.cancelOrdersByIdsTx(
       new PublicKey(statePda),
       orderIds,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -275,14 +268,12 @@ export class DriftClient {
     statePda: PublicKey | string,
     marketIndex: number,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.settlePnlTx(
       new PublicKey(statePda),
       marketIndex,
       subAccountId,
-      marketConfigs,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -290,13 +281,11 @@ export class DriftClient {
 
   public async priceDrift(
     statePda: PublicKey | string,
-    marketConfigs: DriftMarketConfigs,
     priceDenom: PriceDenom,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.priceDriftTx(
       new PublicKey(statePda),
-      marketConfigs,
       priceDenom,
       txOptions,
     );
@@ -307,75 +296,363 @@ export class DriftClient {
    * Utils
    */
 
-  public getUser(
-    statePda: PublicKey | string,
-    subAccountId: number = 0,
-  ): PublicKey[] {
-    const vault = this.base.getVaultPda(new PublicKey(statePda));
-    return [
-      getUserAccountPublicKeySync(DRIFT_PROGRAM_ID, vault, subAccountId),
-      getUserStatsAccountPublicKey(DRIFT_PROGRAM_ID, vault),
-    ];
+  getMarketPda = (marketType: MarketType, marketIndex: number) =>
+    PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(
+          `${marketType === MarketType.PERP ? "perp" : "spot"}_market`,
+        ),
+        new anchor.BN(marketIndex).toArrayLike(Buffer, "le", 2),
+      ],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getUserPda = (authority: PublicKey, subAccountId = 0) =>
+    PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("user"),
+        authority.toBuffer(),
+        new anchor.BN(subAccountId).toArrayLike(Buffer, "le", 2),
+      ],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getUserStatsPda = (authority: PublicKey): PublicKey =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("user_stats"), authority.toBuffer()],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getGlamReferrerPdas(): { user: PublicKey; userStats: PublicKey } {
+    return {
+      user: this.getUserPda(GLAM_REFERRER, 0),
+      userStats: this.getUserStatsPda(GLAM_REFERRER),
+    };
   }
 
-  getGlamReferrer(): PublicKey[] {
-    return [
-      getUserAccountPublicKeySync(DRIFT_PROGRAM_ID, GLAM_REFERRER, 0),
-      getUserStatsAccountPublicKey(DRIFT_PROGRAM_ID, GLAM_REFERRER),
-    ];
+  parsePerpMarket(data: Buffer): PerpMarket {
+    const marketPda = new PublicKey(data.subarray(8, 40));
+    const oracle = new PublicKey(data.subarray(40, 72));
+
+    const name = this.charsToName(data.subarray(1000, 1032));
+
+    const oralceEnum = data.subarray(926, 927).readUint8();
+    const oracleSource = OracleSource.get(oralceEnum);
+
+    const marketIndex = data.subarray(1160, 1162).readUint16LE();
+
+    return {
+      name,
+      marketPda,
+      marketIndex,
+      oracle,
+      oracleSource,
+    };
+  }
+
+  parseSpotMarket(data: Buffer): SpotMarket {
+    const marketPda = new PublicKey(data.subarray(8, 40));
+    const oracle = new PublicKey(data.subarray(40, 72));
+    const mint = new PublicKey(data.subarray(72, 104));
+    const vault = new PublicKey(data.subarray(104, 136));
+
+    const name = this.charsToName(data.subarray(136, 168));
+
+    const cumulativeDepositInterest = new BN(data.subarray(464, 480), "le");
+    const cumulativeBorrowInterest = new BN(data.subarray(480, 496), "le");
+
+    const decimals = data.subarray(680, 684).readUint32LE();
+    const marketIndex = data.subarray(684, 686).readUint16LE();
+    const oralceEnum = data.subarray(687, 688).readUint8();
+    const oracleSource = OracleSource.get(oralceEnum);
+
+    const tokenProgram =
+      data.subarray(734, 735).readUint8() == 0
+        ? TOKEN_PROGRAM_ID
+        : TOKEN_2022_PROGRAM_ID;
+
+    return {
+      name,
+      marketIndex,
+      marketPda,
+      oracle,
+      oracleSource,
+      vault,
+      mint,
+      decimals,
+      tokenProgram,
+      cumulativeDepositInterest,
+      cumulativeBorrowInterest,
+    };
+  }
+
+  async calcSpotBalance(
+    marketIndex: number,
+    scaledBalance: BN,
+    scaledBalanceType: SpotBalanceType,
+  ): Promise<{ amount: number; uiAmount: number }> {
+    const { decimals, cumulativeDepositInterest, cumulativeBorrowInterest } =
+      await this.fetchAndParseSpotMarket(marketIndex);
+    const precisionAdjustment = new BN(10 ** (19 - decimals));
+
+    let interest = cumulativeDepositInterest;
+    if (scaledBalanceType === SpotBalanceType.BORROW) {
+      interest = cumulativeBorrowInterest;
+    }
+
+    const balance = scaledBalance.mul(interest).div(precisionAdjustment);
+    const amount =
+      scaledBalanceType === SpotBalanceType.BORROW
+        ? balance.neg().toNumber()
+        : balance.toNumber();
+
+    const uiAmount = amount / 10 ** decimals;
+    return { amount, uiAmount };
+  }
+
+  public getDriftUserPdas(
+    statePda: PublicKey | string,
+    subAccountId: number = 0,
+  ): { user: PublicKey; userStats: PublicKey } {
+    const vault = this.base.getVaultPda(new PublicKey(statePda));
+    return {
+      user: this.getUserPda(vault, subAccountId),
+      userStats: this.getUserStatsPda(vault),
+    };
+  }
+
+  get driftStatePda(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("drift_state")],
+      DRIFT_PROGRAM_ID,
+    )[0];
+  }
+
+  public async fetchAndParseSpotMarket(
+    marketIndex: number,
+  ): Promise<SpotMarket> {
+    const markets = await this.fetchAndParseSpotMarkets([marketIndex]);
+    if (!markets || markets.length === 0) {
+      throw new Error(`Spot market not found at index ${marketIndex}`);
+    }
+    return markets[0];
+  }
+
+  public async fetchAndParseSpotMarkets(
+    marketIndexes: number[],
+  ): Promise<SpotMarket[]> {
+    const indexesToFetch = marketIndexes.filter(
+      (marketIndex) => !this.spotMarkets.has(marketIndex),
+    );
+
+    if (indexesToFetch.length > 0) {
+      console.log("Fetching spot markets:", indexesToFetch);
+
+      const marketPdas = indexesToFetch.map((marketIndex) =>
+        this.getMarketPda(MarketType.SPOT, marketIndex),
+      );
+      const accounts =
+        await this.base.provider.connection.getMultipleAccountsInfo(marketPdas);
+      accounts.forEach((account) => {
+        if (account) {
+          const spotMarket = this.parseSpotMarket(account.data);
+          this.spotMarkets.set(spotMarket.marketIndex, spotMarket);
+        }
+      });
+    }
+
+    // At this point this.spotMarkets has all the requested markets
+    return marketIndexes
+      .map((marketIndex) => this.spotMarkets.get(marketIndex)!)
+      .filter((m) => m);
+  }
+
+  public async fetchAndParsePerpMarket(
+    marketIndex: number,
+  ): Promise<PerpMarket> {
+    const markets = await this.fetchAndParsePerpMarkets([marketIndex]);
+    if (!markets || markets.length === 0) {
+      throw new Error(`Perp market not found at index ${marketIndex}`);
+    }
+    return markets[0];
+  }
+
+  public async fetchAndParsePerpMarkets(
+    marketIndexes: number[],
+  ): Promise<PerpMarket[]> {
+    const indexesToFetch = marketIndexes.filter(
+      (marketIndex) => !this.perpMarkets.has(marketIndex),
+    );
+
+    if (indexesToFetch.length > 0) {
+      console.log("Fetching perp markets:", indexesToFetch);
+
+      const marketPdas = marketIndexes.map((marketIndex) =>
+        this.getMarketPda(MarketType.PERP, marketIndex),
+      );
+      const accounts =
+        await this.base.provider.connection.getMultipleAccountsInfo(marketPdas);
+      accounts.forEach((account) => {
+        if (account) {
+          const perpMarket = this.parsePerpMarket(account.data);
+          this.perpMarkets.set(perpMarket.marketIndex, perpMarket);
+        }
+      });
+    } else {
+      console.log("Requested perp markets already cached:", marketIndexes);
+    }
+
+    return marketIndexes
+      .map((marketIndex) => this.perpMarkets.get(marketIndex)!)
+      .filter((m) => m);
   }
 
   public async fetchMarketConfigs(): Promise<DriftMarketConfigs> {
-    const response = await fetch(
-      "https://api.glam.systems/v0/drift/market_configs/",
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to fetch market configs: ${response.status}`);
+    // const response = await fetch(
+    //   "https://api.glam.systems/v0/drift/market_configs/",
+    // );
+    // if (!response.ok) {
+    //   throw new Error(`Failed to fetch market configs: ${response.status}`);
+    // }
+    // const data = await response.json();
+    // const { orderConstants, perp, spot } = data;
+
+    // // Transform perp market from API to `PerpMarket` type
+    // const perpMarkets = perp.map((m: any) => ({
+    //   marketIndex: m.marketIndex,
+    //   marketPda: m.marketPDA,
+    //   oracle: new PublicKey(m.oracle),
+    // }));
+    // // Transform spot market from API to `SpotMarket` type
+    // const spotMarkets = spot.map((m: any) => ({
+    //   marketIndex: m.marketIndex,
+    //   marketPda: m.marketPDA,
+    //   oracle: new PublicKey(m.oracle),
+    //   mint: new PublicKey(m.mint),
+    //   vault: new PublicKey(m.vaultPDA),
+    //   decimals: m.decimals,
+    // }));
+    if (!this.marketConfigs) {
+      const perpMarkets = await this.fetchAndParsePerpMarkets(
+        Array.from(Array(100).keys()),
+      );
+      const spotMarkets = await this.fetchAndParseSpotMarkets(
+        Array.from(Array(100).keys()),
+      );
+
+      this.marketConfigs = {
+        orderConstants: { perpBaseScale: 9, quoteScale: 6 },
+        perpMarkets,
+        spotMarkets,
+      };
     }
-    const data = await response.json();
-    return data as DriftMarketConfigs;
+    return this.marketConfigs;
   }
 
-  public async fetchGlamDriftUser(
-    glamState: PublicKey | string,
+  // public async fetchGlamDriftUser(
+  //   glamState: PublicKey | string,
+  //   subAccountId: number = 0,
+  // ): Promise<GlamDriftUser> {
+  //   const vault = this.base.getVaultPda(new PublicKey(glamState));
+  //   const response = await fetch(
+  //     `https://api.glam.systems/v0/drift/user?authority=${vault.toBase58()}&accountId=${subAccountId}`,
+  //   );
+
+  //   const data = await response.json();
+  //   if (!data) {
+  //     throw new Error("Failed to fetch drift user.");
+  //   }
+  //   return data as GlamDriftUser;
+  // }
+
+  charsToName(chars: number[] | Buffer): string {
+    return String.fromCharCode(...chars)
+      .replace(/\0/g, "")
+      .trim();
+  }
+
+  public async fetchDriftUser(
+    statePda: PublicKey | string,
     subAccountId: number = 0,
-  ): Promise<GlamDriftUser> {
-    const vault = this.base.getVaultPda(new PublicKey(glamState));
-    const response = await fetch(
-      `https://api.glam.systems/v0/drift/user?authority=${vault.toBase58()}&accountId=${subAccountId}`,
-    );
-
-    const data = await response.json();
-    if (!data) {
-      throw new Error("Failed to fetch drift user.");
-    }
-    return data as GlamDriftUser;
-  }
-
-  async getPositions(statePda: PublicKey | string, subAccountId: number = 0) {
-    const { spotPositions, perpPositions } = await this.fetchGlamDriftUser(
+  ): Promise<DriftUser | null> {
+    const { user } = this.getDriftUserPdas(
       new PublicKey(statePda),
       subAccountId,
     );
+    const accountInfo =
+      await this.base.provider.connection.getAccountInfo(user);
+    if (!accountInfo) {
+      return null;
+    }
+    const {
+      delegate,
+      name,
+      spotPositions,
+      marginMode,
+      perpPositions,
+      isMarginTradingEnabled,
+      maxMarginRatio,
+      orders,
+    } = decodeUser(accountInfo.data);
 
-    return { spotPositions, perpPositions };
+    // Prefetch market configs
+    const marketConfigs = await this.fetchMarketConfigs();
+
+    const spotPositionsExt = await Promise.all(
+      spotPositions.map(async (p) => {
+        const { amount, uiAmount } = await this.calcSpotBalance(
+          p.marketIndex,
+          p.scaledBalance,
+          p.balanceType,
+        );
+        const spotMarket = marketConfigs.spotMarkets.find(
+          (m) => m.marketIndex === p.marketIndex,
+        );
+        return {
+          ...p,
+          amount,
+          uiAmount,
+          mint: spotMarket!.mint,
+          decimals: spotMarket!.decimals,
+          marketName: spotMarket!.name,
+        };
+      }),
+    );
+
+    return {
+      delegate,
+      name: this.charsToName(name),
+      spotPositions: spotPositionsExt,
+      perpPositions,
+      orders,
+      marginMode,
+      subAccountId,
+      isMarginTradingEnabled,
+      maxMarginRatio,
+    };
   }
 
+  // async getPositions(statePda: PublicKey | string, subAccountId: number = 0) {
+  //   const driftUser = await this.fetchDriftUser(
+  //     new PublicKey(statePda),
+  //     subAccountId,
+  //   );
+  //   if (!driftUser) {
+  //     return { spotPositions: [], perpPositions: [] };
+  //   }
+
+  //   const marketConfigs = await this.fetchMarketConfigs();
+
+  //   const { spotPositions, perpPositions } = driftUser;
+  //   return { spotPositions, perpPositions };
+  // }
+
   async fetchPolicyConfig(glamState: StateModel) {
-    let driftUserAccount;
-    if (glamState && glamState.id) {
-      const [driftUserAddress] = this.getUser(glamState.id);
-      const connection = this.base.provider.connection;
-      const info = await connection.getAccountInfo(
-        driftUserAddress,
-        connection.commitment,
-      );
-      if (info) {
-        driftUserAccount = decodeUser(info.data);
-      }
-    }
+    const driftUserAccount =
+      glamState && glamState.id && (await this.fetchDriftUser(glamState.id));
+
     let delegate = driftUserAccount?.delegate;
-    if (delegate && delegate.equals(new PublicKey(0))) {
+    if (delegate && delegate.equals(PublicKey.default)) {
       delegate = undefined;
     }
     return {
@@ -397,14 +674,14 @@ export class DriftClient {
   async composeRemainingAccounts(
     glamState: PublicKey,
     subAccountId: number,
-    marketConfigs: DriftMarketConfigs,
     marketType?: MarketType,
     marketIndex?: number,
   ): Promise<AccountMeta[]> {
-    const { spotPositions, perpPositions } = await this.getPositions(
-      glamState,
-      subAccountId,
-    );
+    const driftUser = await this.fetchDriftUser(glamState, subAccountId);
+    if (!driftUser) {
+      throw new Error("Drift user not found");
+    }
+    const { spotPositions, perpPositions } = driftUser;
     const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
     const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
 
@@ -433,15 +710,26 @@ export class DriftClient {
       }
     }
 
-    const oracles = spotMarketIndexes
-      .map((i) => marketConfigs.spot[i].oracle)
-      .concat(perpMarketIndexes.map((i) => marketConfigs.perp[i].oracle));
-    const markets = spotMarketIndexes
-      .map((i) => marketConfigs.spot[i].marketPDA)
-      .concat(perpMarketIndexes.map((i) => marketConfigs.perp[i].marketPDA));
+    const spotMarkets = await this.fetchAndParseSpotMarkets(spotMarketIndexes);
+    const perpMarkets = await this.fetchAndParsePerpMarkets(perpMarketIndexes);
 
-    console.log("[composeRemainingAccounts] markets:", markets);
-    console.log("[composeRemainingAccounts] oracles:", oracles);
+    console.log("[composeRemainingAccounts] perpMarkets:", perpMarkets);
+
+    const oracles = spotMarkets
+      .map((m) => m.oracle)
+      .concat(perpMarkets.map((m) => m.oracle));
+    const markets = spotMarkets
+      .map((m) => m.marketPda)
+      .concat(perpMarkets.map((m) => m.marketPda));
+
+    console.log(
+      "[composeRemainingAccounts] markets:",
+      markets.map((m) => m.toBase58()),
+    );
+    console.log(
+      "[composeRemainingAccounts] oracles:",
+      oracles.map((o) => o.toBase58()),
+    );
 
     return oracles
       .map((o) => ({
@@ -462,8 +750,7 @@ export class DriftClient {
     glamState: PublicKey,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const [_, userStats] = this.getUser(glamState);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { userStats } = this.getDriftUserPdas(glamState);
 
     // @ts-ignore
     return await this.base.program.methods
@@ -471,7 +758,7 @@ export class DriftClient {
       .accounts({
         glamState,
         glamSigner,
-        state,
+        state: this.driftStatePda,
         userStats,
       })
       .instruction();
@@ -487,13 +774,14 @@ export class DriftClient {
       .map((char) => char.charCodeAt(0))
       .concat(Array(24).fill(0));
 
-    const [user, userStats] = this.getUser(glamState, subAccountId);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
-    const remainingAccounts = this.getGlamReferrer().map((p) => ({
-      pubkey: p,
-      isWritable: true,
-      isSigner: false,
-    }));
+    const { user, userStats } = this.getDriftUserPdas(glamState, subAccountId);
+
+    const { user: referrer, userStats: referrerStats } =
+      this.getGlamReferrerPdas();
+    const remainingAccounts = [
+      { pubkey: referrer, isWritable: true, isSigner: false },
+      { pubkey: referrerStats, isWritable: true, isSigner: false },
+    ];
 
     return await this.base.program.methods
       .driftInitializeUser(subAccountId, name)
@@ -501,7 +789,7 @@ export class DriftClient {
         glamState,
         user,
         userStats,
-        state,
+        state: this.driftStatePda,
         glamSigner,
       })
       .remainingAccounts(remainingAccounts)
@@ -517,7 +805,7 @@ export class DriftClient {
     const tx = new Transaction();
 
     // Create userStats account if it doesn't exist
-    const [_, userStats] = this.getUser(glamState);
+    const { userStats } = this.getDriftUserPdas(glamState);
     const userStatsInfo =
       await this.base.provider.connection.getAccountInfo(userStats);
     if (!userStatsInfo) {
@@ -537,7 +825,7 @@ export class DriftClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
     // https://github.com/drift-labs/protocol-v2/blob/babed162b08b1fe34e49a81c5aa3e4ec0a88ecdf/programs/drift/src/math/constants.rs#L183-L184
     const marginRatio = DRIFT_MARGIN_PRECISION / maxLeverage;
@@ -576,7 +864,7 @@ export class DriftClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
     return await this.base.program.methods
       .driftUpdateUserMarginTradingEnabled(subAccountId, marginTradingEnabled)
@@ -614,7 +902,7 @@ export class DriftClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
     return await this.base.program.methods
       .driftUpdateUserDelegate(subAccountId, new PublicKey(delegate))
@@ -650,14 +938,13 @@ export class DriftClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user, userStats] = this.getUser(glamState, subAccountId);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user, userStats } = this.getDriftUserPdas(glamState, subAccountId);
 
     const tx = await this.base.program.methods
       .driftDeleteUser()
       .accounts({
         glamState,
-        state,
+        state: this.driftStatePda,
         user,
         userStats,
         glamSigner,
@@ -672,38 +959,34 @@ export class DriftClient {
     amount: anchor.BN,
     marketIndex: number = 1,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user, userStats] = this.getUser(glamState, subAccountId);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user, userStats } = this.getDriftUserPdas(glamState, subAccountId);
 
-    const { mint, oracle, marketPDA, vaultPDA } =
-      marketConfigs.spot[marketIndex];
-
-    console.log(
-      "mint, oracle, marketPDA, vaultPDA",
+    const {
       mint,
       oracle,
-      marketPDA,
-      vaultPDA,
+      tokenProgram,
+      marketPda,
+      vault: driftVault,
+    } = await this.fetchAndParseSpotMarket(marketIndex);
+    console.log(
+      `Spot market ${marketIndex} mint ${mint}, oracle: ${oracle}, marketPda: ${marketPda}, vault: ${driftVault}`,
     );
 
     const preInstructions = [];
     const postInstructions = [];
 
     // If drift user doesn't exist, prepend initializeUserStats and initializeUser instructions
-    try {
-      await this.fetchGlamDriftUser(glamState, subAccountId);
-    } catch (_) {
+    if (!(await this.fetchDriftUser(glamState, subAccountId))) {
       preInstructions.push(
         await this.initializeUserStatsIx(glamState, glamSigner),
         await this.initializeUserIx(glamState, glamSigner, subAccountId),
       );
     }
 
-    if (mint === WSOL.toBase58()) {
+    if (mint.equals(WSOL)) {
       const wrapSolIxs = await this.base.maybeWrapSol(
         glamState,
         amount,
@@ -726,22 +1009,31 @@ export class DriftClient {
       postInstructions.push(closeTokenAccountIx);
     }
 
+    const remainingAccounts = [
+      { pubkey: new PublicKey(oracle), isSigner: false, isWritable: false },
+      { pubkey: new PublicKey(marketPda), isSigner: false, isWritable: true },
+    ];
+    if (tokenProgram.equals(TOKEN_2022_PROGRAM_ID)) {
+      remainingAccounts.push({
+        pubkey: mint,
+        isSigner: false,
+        isWritable: false,
+      });
+    }
+
     const tx = await this.base.program.methods
       .driftDeposit(marketIndex, amount, false)
       .accounts({
         glamState,
-        state,
+        state: this.driftStatePda,
         user,
         userStats,
-        spotMarketVault: new PublicKey(vaultPDA),
-        userTokenAccount: this.base.getVaultAta(glamState, new PublicKey(mint)),
+        spotMarketVault: driftVault,
+        userTokenAccount: this.base.getVaultAta(glamState, mint, tokenProgram),
         glamSigner,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram,
       })
-      .remainingAccounts([
-        { pubkey: new PublicKey(oracle), isSigner: false, isWritable: false },
-        { pubkey: new PublicKey(marketPDA), isSigner: false, isWritable: true },
-      ])
+      .remainingAccounts(remainingAccounts)
       .preInstructions(preInstructions)
       .postInstructions(postInstructions)
       .transaction();
@@ -754,36 +1046,41 @@ export class DriftClient {
     amount: anchor.BN,
     marketIndex: number = 1,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
-    const [user, userStats] = this.getUser(statePda, subAccountId);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user, userStats } = this.getDriftUserPdas(statePda, subAccountId);
+    const {
+      mint,
+      tokenProgram,
+      vault: driftVault,
+    } = await this.fetchAndParseSpotMarket(marketIndex);
 
-    const { mint: m, vaultPDA: d } = marketConfigs.spot[marketIndex];
-    const mint = new PublicKey(m);
-    const driftAta = new PublicKey(d); // drift vault ata
-    const vault = this.base.getVaultPda(statePda);
-    const vaultAta = this.base.getVaultAta(statePda, mint); // glam vault ata
+    const glamVault = this.base.getVaultPda(statePda);
+    const glamVaultAta = this.base.getVaultAta(statePda, mint, tokenProgram);
 
     const remainingAccounts = await this.composeRemainingAccounts(
       statePda,
       subAccountId,
-      marketConfigs,
       MarketType.SPOT,
       marketIndex,
     );
 
-    const { tokenProgram } = await this.base.fetchMintWithOwner(mint);
+    if (tokenProgram.equals(TOKEN_2022_PROGRAM_ID)) {
+      remainingAccounts.push({
+        pubkey: mint,
+        isSigner: false,
+        isWritable: false,
+      });
+    }
 
     // Create vault ata in case it doesn't exist
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
         glamSigner,
-        vaultAta,
-        vault,
+        glamVaultAta,
+        glamVault,
         mint,
         tokenProgram,
       ),
@@ -793,14 +1090,14 @@ export class DriftClient {
       .driftWithdraw(marketIndex, amount, false)
       .accounts({
         glamState: statePda,
-        state,
+        state: this.driftStatePda,
         user,
         userStats,
         glamSigner,
-        spotMarketVault: driftAta,
-        userTokenAccount: vaultAta,
-        driftSigner: DRIFT_VAULT,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        spotMarketVault: driftVault,
+        userTokenAccount: glamVaultAta,
+        driftSigner: DRIFT_SIGNER,
+        tokenProgram,
       })
       .remainingAccounts(remainingAccounts)
       .preInstructions(preInstructions)
@@ -813,37 +1110,35 @@ export class DriftClient {
     glamState: PublicKey,
     orderParams: OrderParams,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const { marketIndex, marketType } = orderParams;
+
+    const { user: referrer, userStats: referrerStats } =
+      this.getGlamReferrerPdas();
+
     const remainingAccounts = (
       await this.composeRemainingAccounts(
         glamState,
         subAccountId,
-        marketConfigs,
         marketType,
         marketIndex,
       )
-    ).concat(
-      this.getGlamReferrer().map((p) => ({
-        pubkey: p,
-        isWritable: true,
-        isSigner: false,
-      })),
-    );
+    ).concat([
+      { pubkey: referrer, isWritable: true, isSigner: false },
+      { pubkey: referrerStats, isWritable: true, isSigner: false },
+    ]);
 
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
-    const state = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
+    // @ts-ignore
     const tx = await this.base.program.methods
-      // @ts-ignore
       .driftPlaceOrders([orderParams])
       .accounts({
         glamState,
         user,
-        state,
+        state: this.driftStatePda,
         glamSigner,
       })
       .remainingAccounts(remainingAccounts)
@@ -856,7 +1151,6 @@ export class DriftClient {
     statePda: PublicKey,
     modifyOrderParams: ModifyOrderParams,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     // const { marketIndex, marketType } = orderParams;
@@ -869,8 +1163,7 @@ export class DriftClient {
     // );
 
     const signer = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(statePda, subAccountId);
-    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user } = this.getDriftUserPdas(statePda, subAccountId);
 
     const tx = await this.base.program.methods
       // @ts-ignore
@@ -879,7 +1172,7 @@ export class DriftClient {
         glamState: statePda,
         glamSigner: signer,
         user,
-        state: driftState,
+        state: this.driftStatePda,
       })
       // .remainingAccounts(remainingAccounts)
       .transaction();
@@ -893,17 +1186,14 @@ export class DriftClient {
     marketIndex: number,
     direction: PositionDirection,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
-    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
     const remainingAccounts = await this.composeRemainingAccounts(
       glamState,
       subAccountId,
-      marketConfigs,
       marketType,
       marketIndex,
     );
@@ -915,7 +1205,7 @@ export class DriftClient {
         glamState,
         glamSigner,
         user,
-        state: driftState,
+        state: this.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();
@@ -927,26 +1217,24 @@ export class DriftClient {
     glamState: PublicKey,
     orderIds: number[],
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
-    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
     const remainingAccounts = await this.composeRemainingAccounts(
       glamState,
       subAccountId,
-      marketConfigs,
     );
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .driftCancelOrdersByIds(orderIds)
       .accounts({
         glamState,
         glamSigner,
         user,
-        state: driftState,
+        state: this.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();
@@ -958,23 +1246,23 @@ export class DriftClient {
     glamState: PublicKey,
     marketIndex: number,
     subAccountId: number = 0,
-    marketConfigs: DriftMarketConfigs,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const [user] = this.getUser(glamState, subAccountId);
-    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
+    const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
-    const { vaultPDA } = marketConfigs.spot[marketIndex];
+    const { vault: driftVault } =
+      await this.fetchAndParseSpotMarket(marketIndex);
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .driftSettlePnl(marketIndex)
       .accounts({
         glamState,
         glamSigner,
         user,
-        state: driftState,
-        spotMarketVault: new PublicKey(vaultPDA),
+        state: this.driftStatePda,
+        spotMarketVault: driftVault,
       })
       .transaction();
 
@@ -983,19 +1271,13 @@ export class DriftClient {
 
   public async priceDriftTx(
     glamState: PublicKey,
-    marketConfigs: DriftMarketConfigs,
     priceDenom: PriceDenom,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.getSigner();
     const glamVault = this.base.getVaultPda(glamState);
-    const [user, userStats] = this.getUser(glamState);
-    const driftState = await getDriftStateAccountPublicKey(DRIFT_PROGRAM_ID);
-    const remainingAccounts = await this.composeRemainingAccounts(
-      glamState,
-      0,
-      marketConfigs,
-    );
+    const { user, userStats } = this.getDriftUserPdas(glamState);
+    const remainingAccounts = await this.composeRemainingAccounts(glamState, 0);
 
     const tx = await this.base.program.methods
       .priceDrift(priceDenom)
@@ -1006,7 +1288,7 @@ export class DriftClient {
         user,
         userStats,
         solOracle: SOL_ORACLE,
-        state: driftState,
+        state: this.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();

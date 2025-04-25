@@ -16,7 +16,7 @@ import { GlamClient } from "../client";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { WSOL } from "../constants";
-import { DriftMarketConfigs, GlamDriftUser } from "../client/drift";
+import { DriftMarketConfigs, DriftUser } from "../client/drift";
 import { TokenAccount } from "../client/base";
 import { useCluster } from "./cluster-provider";
 
@@ -53,7 +53,7 @@ interface GlamProviderContext {
   prices: TokenPrice[];
   jupTokenList?: JupTokenListItem[];
   driftMarketConfigs: DriftMarketConfigs;
-  driftUser: GlamDriftUser;
+  driftUser: DriftUser;
   setActiveGlamState: (f: GlamStateCache) => void;
   refresh: () => Promise<void>;
 }
@@ -169,7 +169,7 @@ export function GlamProvider({
   const [driftMarketConfigs, setDriftMarketConfigs] = useState(
     {} as DriftMarketConfigs,
   );
-  const [driftUser, setDriftUser] = useState({} as GlamDriftUser);
+  const [driftUser, setDriftUser] = useState({} as DriftUser);
 
   const activeGlamState = deserializeGlamStateCache(
     useAtomValue(activeGlamStateAtom),
@@ -275,11 +275,11 @@ export function GlamProvider({
 
       // Drift spot positions
       (driftUser.spotPositions || []).forEach((position) => {
-        const marketConfig = driftMarketConfigs.spot.find(
+        const marketConfig = driftMarketConfigs.spotMarkets.find(
           (m) => position.marketIndex === m.marketIndex,
         );
         if (marketConfig) {
-          tokenMints.add(marketConfig.mint);
+          tokenMints.add(marketConfig.mint.toBase58());
         }
       });
 
@@ -368,13 +368,13 @@ export function GlamProvider({
     queryKey: ["/drift-user", activeGlamState?.pubkey],
     enabled: !!activeGlamState,
     refetchInterval: 30 * 1000,
-    queryFn: () => glamClient.drift.fetchGlamDriftUser(activeGlamState?.pubkey),
+    queryFn: () => glamClient.drift.fetchDriftUser(activeGlamState?.pubkey),
   });
   useEffect(() => {
     if (!driftUserError && driftUserData) {
       setDriftUser(driftUserData);
     } else {
-      setDriftUser({} as GlamDriftUser);
+      setDriftUser({} as DriftUser);
     }
   }, [driftUserData, driftUserError]);
 

@@ -228,3 +228,11 @@ const getErrorFromRPCResponse = (
     throw Error(error.toString());
   }
 };
+
+export const setsAreEqual = (a: Set<any>, b: Set<any>) => {
+  if (a.size !== b.size) return false;
+  for (let item of a) {
+    if (!b.has(item)) return false;
+  }
+  return true;
+};
