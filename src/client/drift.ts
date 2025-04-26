@@ -446,7 +446,9 @@ export class DriftClient {
     );
 
     if (indexesToFetch.length > 0) {
-      console.log("Fetching spot markets:", indexesToFetch);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Fetching spot markets:", indexesToFetch);
+      }
 
       const marketPdas = indexesToFetch.map((marketIndex) =>
         this.getMarketPda(MarketType.SPOT, marketIndex),
@@ -485,7 +487,9 @@ export class DriftClient {
     );
 
     if (indexesToFetch.length > 0) {
-      console.log("Fetching perp markets:", indexesToFetch);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Fetching perp markets:", indexesToFetch);
+      }
 
       const marketPdas = marketIndexes.map((marketIndex) =>
         this.getMarketPda(MarketType.PERP, marketIndex),
@@ -499,7 +503,9 @@ export class DriftClient {
         }
       });
     } else {
-      console.log("Requested perp markets already cached:", marketIndexes);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Requested perp markets already cached:", marketIndexes);
+      }
     }
 
     return marketIndexes
@@ -713,7 +719,9 @@ export class DriftClient {
     const spotMarkets = await this.fetchAndParseSpotMarkets(spotMarketIndexes);
     const perpMarkets = await this.fetchAndParsePerpMarkets(perpMarketIndexes);
 
-    console.log("[composeRemainingAccounts] perpMarkets:", perpMarkets);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[composeRemainingAccounts] perpMarkets:", perpMarkets);
+    }
 
     const oracles = spotMarkets
       .map((m) => m.oracle)
@@ -722,14 +730,16 @@ export class DriftClient {
       .map((m) => m.marketPda)
       .concat(perpMarkets.map((m) => m.marketPda));
 
-    console.log(
-      "[composeRemainingAccounts] markets:",
-      markets.map((m) => m.toBase58()),
-    );
-    console.log(
-      "[composeRemainingAccounts] oracles:",
-      oracles.map((o) => o.toBase58()),
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "[composeRemainingAccounts] markets:",
+        markets.map((m) => m.toBase58()),
+      );
+      console.log(
+        "[composeRemainingAccounts] oracles:",
+        oracles.map((o) => o.toBase58()),
+      );
+    }
 
     return oracles
       .map((o) => ({
