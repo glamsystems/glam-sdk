@@ -5911,7 +5911,27 @@
           "signer": true
         },
         {
+          "name": "kamino_lending_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
           "name": "sol_oracle"
+        },
+        {
+          "name": "pyth_oracle",
+          "optional": true
+        },
+        {
+          "name": "switchboard_price_oracle",
+          "optional": true
+        },
+        {
+          "name": "switchboard_twap_oracle",
+          "optional": true
+        },
+        {
+          "name": "scope_prices",
+          "optional": true
         }
       ],
       "args": [
@@ -9084,8 +9104,8 @@
     },
     {
       "code": 48002,
-      "name": "StateAccountDisabled",
-      "msg": "State account is disabled"
+      "name": "GlamStateDisabled",
+      "msg": "GLAM state is disabled"
     },
     {
       "code": 48003,

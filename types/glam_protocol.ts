@@ -5917,7 +5917,27 @@ export type GlamProtocol = {
           "signer": true
         },
         {
+          "name": "kaminoLendingProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
           "name": "solOracle"
+        },
+        {
+          "name": "pythOracle",
+          "optional": true
+        },
+        {
+          "name": "switchboardPriceOracle",
+          "optional": true
+        },
+        {
+          "name": "switchboardTwapOracle",
+          "optional": true
+        },
+        {
+          "name": "scopePrices",
+          "optional": true
         }
       ],
       "args": [
@@ -9090,8 +9110,8 @@ export type GlamProtocol = {
     },
     {
       "code": 48002,
-      "name": "stateAccountDisabled",
-      "msg": "State account is disabled"
+      "name": "glamStateDisabled",
+      "msg": "GLAM state is disabled"
     },
     {
       "code": 48003,

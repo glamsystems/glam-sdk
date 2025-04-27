@@ -20,6 +20,7 @@ import {
 import {
   KAMINO_FARM_PROGRAM,
   KAMINO_LENDING_PROGRAM,
+  KAMINO_SCOPE_PRICES,
   WSOL,
 } from "../constants";
 
@@ -27,9 +28,6 @@ const LOOKUP_TABLE = new PublicKey(
   "284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2",
 );
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
-const SCOPE_PRICES = new PublicKey(
-  "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C",
-);
 
 interface RefreshObligationAccounts {
   lendingMarket: PublicKey;
@@ -387,7 +385,7 @@ export class KaminoLendingClient {
         pythOracle: KAMINO_LENDING_PROGRAM,
         switchboardPriceOracle: KAMINO_LENDING_PROGRAM,
         switchboardTwapOracle: KAMINO_LENDING_PROGRAM,
-        scopePrices: SCOPE_PRICES,
+        scopePrices: KAMINO_SCOPE_PRICES,
       }),
     );
   }

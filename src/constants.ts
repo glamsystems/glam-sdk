@@ -29,6 +29,9 @@ export const KAMINO_OBTRIGATION_SIZE = 3344;
 export const JITO_TIP_DEFAULT = new PublicKey(
   "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
 );
+export const KAMINO_SCOPE_PRICES = new PublicKey(
+  "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C",
+);
 
 /**
  * Token mints. If no devnet version is defined, assume mainnet and devnet addresses are the same.

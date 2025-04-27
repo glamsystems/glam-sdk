@@ -13,6 +13,7 @@ import {
   fetchKaminoObligations,
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
+import { KAMINO_SCOPE_PRICES } from "../constants";
 
 export class PriceClient {
   public constructor(
@@ -42,6 +43,7 @@ export class PriceClient {
     ) as BN;
   }
 
+  // FIXME: This method needs to be fixed
   async priceKaminoIxs(glamState: PublicKey, priceDenom: PriceDenom) {
     const glamVault = this.base.getVaultPda(glamState);
     const obligations = await fetchKaminoObligations(
@@ -61,6 +63,10 @@ export class PriceClient {
       .accounts({
         glamState,
         solOracle: SOL_ORACLE,
+        pythOracle: null,
+        switchboardPriceOracle: null,
+        switchboardTwapOracle: null,
+        scopePrices: KAMINO_SCOPE_PRICES,
       })
       .remainingAccounts(
         obligations.map((o) => ({

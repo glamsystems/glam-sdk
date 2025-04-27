@@ -34,7 +34,7 @@
         {
           "name": "glam_vault",
           "index": 1,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
