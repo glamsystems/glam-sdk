@@ -8,7 +8,7 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.16",
+    "version": "0.4.17",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -6621,16 +6621,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "setRedemptionPaused",
+      "name": "setMintPaused",
       "discriminator": [
-        226,
-        152,
-        104,
-        42,
-        1,
-        53,
-        196,
-        240
+        122,
+        112,
+        56,
+        49,
+        172,
+        101,
+        49,
+        228
       ],
       "accounts": [
         {
@@ -6652,41 +6652,12 @@ export type GlamProtocol = {
           "type": "u8"
         },
         {
-          "name": "paused",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "setSubscriptionPaused",
-      "discriminator": [
-        220,
-        144,
-        129,
-        4,
-        136,
-        251,
-        85,
-        234
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamMint"
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "mintId",
-          "type": "u8"
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "investorAction"
+            }
+          }
         },
         {
           "name": "paused",
@@ -10473,6 +10444,20 @@ export type GlamProtocol = {
           },
           {
             "name": "meteoraDlmm"
+          }
+        ]
+      }
+    },
+    {
+      "name": "investorAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "subscribe"
+          },
+          {
+            "name": "redeem"
           }
         ]
       }

@@ -14,11 +14,13 @@ import {
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
+import { DriftClient } from "./drift";
 
 export class PriceClient {
   public constructor(
     readonly base: BaseClient,
     readonly klend: KaminoLendingClient,
+    readonly drift: DriftClient,
   ) {}
 
   /**
@@ -43,19 +45,29 @@ export class PriceClient {
     ) as BN;
   }
 
-  // FIXME: This method needs to be fixed
-  async priceKaminoIxs(glamState: PublicKey, priceDenom: PriceDenom) {
+  async priceKaminoIx(glamState: PublicKey, priceDenom: PriceDenom) {
     const glamVault = this.base.getVaultPda(glamState);
     const obligations = await fetchKaminoObligations(
       this.base.provider.connection,
       glamVault,
     );
-
-    const refreshIxs = [];
-    for (const obligation of obligations) {
-      const ixs = await this.klend.getRefreshIxs(obligation, false); // skip farms
-      refreshIxs.push(...ixs);
-    }
+    const parsedObligations = await Promise.all(
+      obligations.map((o) => this.klend.fetchAndParseObligation(o)),
+    );
+    const pubkeySet = new Set<string>([]);
+    parsedObligations
+      .filter((o) => o.lendingMarket !== null)
+      .map((o) => {
+        pubkeySet.add(o.address.toBase58());
+        pubkeySet.add(o.lendingMarket!.toBase58());
+        o.deposits.forEach((d) => pubkeySet.add(d.reserve.toBase58()));
+        o.borrows.forEach((b) => pubkeySet.add(b.reserve.toBase58()));
+      });
+    const remainingAccounts = Array.from(pubkeySet).map((k) => ({
+      pubkey: new PublicKey(k),
+      isSigner: false,
+      isWritable: true,
+    }));
 
     // @ts-ignore
     const priceIx = await this.base.program.methods
@@ -68,16 +80,10 @@ export class PriceClient {
         switchboardTwapOracle: null,
         scopePrices: KAMINO_SCOPE_PRICES,
       })
-      .remainingAccounts(
-        obligations.map((o) => ({
-          pubkey: o,
-          isSigner: false,
-          isWritable: false,
-        })),
-      )
+      .remainingAccounts(remainingAccounts)
       .instruction();
 
-    return [...refreshIxs, priceIx];
+    return priceIx;
   }
 
   public async priceVaultIxs(
@@ -147,14 +153,35 @@ export class PriceClient {
       )
       .instruction();
 
-    const priceKaminoIxs = await this.priceKaminoIxs(glamState, priceDenom);
+    const priceKaminoIx = await this.priceKaminoIx(glamState, priceDenom);
+
+    const { user, userStats } = this.drift.getDriftUserPdas(glamState);
+    const remainingAccounts = await this.drift.composeRemainingAccounts(
+      glamState,
+      0,
+    );
+
+    const glamVault = this.base.getVaultPda(glamState);
+    const priceDriftIx = await this.base.program.methods
+      .priceDrift(priceDenom)
+      .accounts({
+        glamState,
+        glamVault,
+        solOracle: SOL_ORACLE,
+        user,
+        userStats,
+        state: this.drift.driftStatePda,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
 
     return [
       priceTicketsIx,
       priceStakesIx,
       priceVaultIx,
       priceMeteoraIx,
-      ...priceKaminoIxs,
+      priceKaminoIx,
+      priceDriftIx,
     ];
   }
 

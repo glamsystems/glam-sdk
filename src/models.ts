@@ -549,3 +549,8 @@ export class PriceDenom {
   static readonly SOL = { sol: {} };
   static readonly USD = { usd: {} };
 }
+
+export class InvestorAction {
+  static readonly Subscribe = { subscribe: {} };
+  static readonly Redeem = { redeem: {} };
+}

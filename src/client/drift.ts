@@ -28,8 +28,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { PriceDenom, StateModel } from "../models";
-import { SOL_ORACLE } from "./assets";
+import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
 
 interface OrderConstants {
@@ -274,19 +273,6 @@ export class DriftClient {
       new PublicKey(statePda),
       marketIndex,
       subAccountId,
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async priceDrift(
-    statePda: PublicKey | string,
-    priceDenom: PriceDenom,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.priceDriftTx(
-      new PublicKey(statePda),
-      priceDenom,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -1261,8 +1247,13 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { user } = this.getDriftUserPdas(glamState, subAccountId);
 
-    const { vault: driftVault } =
-      await this.fetchAndParseSpotMarket(marketIndex);
+    const { vault: driftVault } = await this.fetchAndParseSpotMarket(0);
+    const remainingAccounts = await this.composeRemainingAccounts(
+      glamState,
+      subAccountId,
+      MarketType.PERP,
+      marketIndex,
+    );
 
     // @ts-ignore
     const tx = await this.base.program.methods
@@ -1273,32 +1264,6 @@ export class DriftClient {
         user,
         state: this.driftStatePda,
         spotMarketVault: driftVault,
-      })
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  public async priceDriftTx(
-    glamState: PublicKey,
-    priceDenom: PriceDenom,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
-    const glamVault = this.base.getVaultPda(glamState);
-    const { user, userStats } = this.getDriftUserPdas(glamState);
-    const remainingAccounts = await this.composeRemainingAccounts(glamState, 0);
-
-    const tx = await this.base.program.methods
-      .priceDrift(priceDenom)
-      .accounts({
-        glamState,
-        signer,
-        glamVault,
-        user,
-        userStats,
-        solOracle: SOL_ORACLE,
-        state: this.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();

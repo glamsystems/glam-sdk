@@ -2,7 +2,7 @@
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glam_protocol",
-    "version": "0.4.16",
+    "version": "0.4.17",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -6615,16 +6615,16 @@
       ]
     },
     {
-      "name": "set_redemption_paused",
+      "name": "set_mint_paused",
       "discriminator": [
-        226,
-        152,
-        104,
-        42,
-        1,
-        53,
-        196,
-        240
+        122,
+        112,
+        56,
+        49,
+        172,
+        101,
+        49,
+        228
       ],
       "accounts": [
         {
@@ -6646,41 +6646,12 @@
           "type": "u8"
         },
         {
-          "name": "paused",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "set_subscription_paused",
-      "discriminator": [
-        220,
-        144,
-        129,
-        4,
-        136,
-        251,
-        85,
-        234
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_mint"
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "mint_id",
-          "type": "u8"
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "InvestorAction"
+            }
+          }
         },
         {
           "name": "paused",
@@ -10467,6 +10438,20 @@
           },
           {
             "name": "MeteoraDlmm"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorAction",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Subscribe"
+          },
+          {
+            "name": "Redeem"
           }
         ]
       }
