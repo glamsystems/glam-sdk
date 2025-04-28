@@ -157,6 +157,32 @@ export const parseMeteoraPosition = async (
   };
 };
 
+export async function fetchLookupTables(
+  connection: Connection,
+  authority: PublicKey,
+  firstEntry: PublicKey,
+): Promise<AddressLookupTableAccount[]> {
+  const ALT_PROGRAM_ID = new PublicKey(
+    "AddressLookupTab1e1111111111111111111111111",
+  );
+
+  // Fetch all accounts owned by the ALT program
+  const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
+    filters: [
+      { memcmp: { offset: 22, bytes: authority.toBase58() } },
+      { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
+    ],
+  });
+
+  return accounts.map(
+    ({ pubkey, account }) =>
+      new AddressLookupTableAccount({
+        key: pubkey,
+        state: AddressLookupTableAccount.deserialize(account.data),
+      }),
+  );
+}
+
 export const getSimulationComputeUnits = async (
   connection: Connection,
   instructions: Array<TransactionInstruction>,

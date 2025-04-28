@@ -53,6 +53,12 @@ export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
 
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 
+const LOOKUP_TABLES = [
+  new PublicKey("284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2"), // kamino
+  new PublicKey("D9cnvzswDikQDf53k4HpQ3KJ9y1Fv3HGGDFYMXnK5T6c"), // drift
+  new PublicKey("EiWSskK5HXnBTptiS5DH6gpAJRVNQ3cAhTKBGaiaysAb"), // drift
+];
+
 export const isBrowser =
   process.env.ANCHOR_BROWSER ||
   (typeof window !== "undefined" && !window.process?.hasOwnProperty("type"));
@@ -219,10 +225,10 @@ export class BaseClient {
     ];
   }
 
-  async intoVersionedTransaction(
+  public async intoVersionedTransaction(
     tx: Transaction,
     {
-      lookupTables,
+      lookupTables = [],
       signer,
       computeUnitLimit,
       getPriorityFeeMicroLamports,
@@ -246,6 +252,10 @@ export class BaseClient {
         }),
       );
     }
+
+    lookupTables.push(
+      ...(await this.getAdressLookupTableAccounts(LOOKUP_TABLES)),
+    );
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
@@ -395,19 +405,18 @@ export class BaseClient {
 
     const addressLookupTableAccountInfos =
       await this.provider.connection.getMultipleAccountsInfo(
-        keys.map((key) => new PublicKey(key)),
+        keys.map((key: string | PublicKey) => new PublicKey(key)),
       );
 
     return addressLookupTableAccountInfos.reduce((acc, accountInfo, index) => {
-      const addressLookupTableAddress = keys[index];
+      const tableAddress = keys[index];
       if (accountInfo) {
-        const addressLookupTableAccount = new AddressLookupTableAccount({
-          key: new PublicKey(addressLookupTableAddress),
+        const tableAccount = new AddressLookupTableAccount({
+          key: new PublicKey(tableAddress),
           state: AddressLookupTableAccount.deserialize(accountInfo.data),
         });
-        acc.push(addressLookupTableAccount);
+        acc.push(tableAccount);
       }
-
       return acc;
     }, new Array<AddressLookupTableAccount>());
   }
@@ -519,17 +528,25 @@ export class BaseClient {
 
   async getVaultTokenBalance(
     glamState: PublicKey,
-    mint: PublicKey,
-    programId?: PublicKey,
-  ): Promise<number> {
-    const ata = this.getVaultAta(glamState, mint);
-    const _mint = await getMint(this.provider.connection, mint);
+    mintPubkey: PublicKey,
+  ): Promise<{ amount: BN; uiAmount: number }> {
+    const { mint, tokenProgram } = await this.fetchMintWithOwner(mintPubkey);
+    const ata = this.getVaultAta(glamState, mintPubkey, tokenProgram);
+
     try {
-      const account = await getAccount(this.provider.connection, ata);
-      return Number(account.amount) / Math.pow(10, _mint.decimals);
+      const account = await getAccount(
+        this.provider.connection,
+        ata,
+        "confirmed",
+        tokenProgram,
+      );
+      return {
+        amount: new BN(account.amount),
+        uiAmount: Number(account.amount) / Math.pow(10, mint.decimals),
+      };
     } catch (e) {
       if (e instanceof TokenAccountNotFoundError) {
-        return 0;
+        return { amount: new BN(0), uiAmount: 0 };
       }
       throw e;
     }

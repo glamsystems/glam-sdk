@@ -90,11 +90,11 @@ export class PriceClient {
     glamState: PublicKey,
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction[]> {
-    const vault = this.base.getVaultPda(glamState);
+    const glamVault = this.base.getVaultPda(glamState);
 
     const tickets = await fetchMarinadeTicketAccounts(
       this.base.provider.connection,
-      vault,
+      glamVault,
     );
     // @ts-ignore
     const priceTicketsIx = await this.base.program.methods
@@ -114,7 +114,7 @@ export class PriceClient {
 
     const stakes = await fetchStakeAccounts(
       this.base.provider.connection,
-      vault,
+      glamVault,
     );
     const priceStakesIx = await this.base.program.methods
       .priceStakes(priceDenom)
@@ -155,34 +155,43 @@ export class PriceClient {
 
     const priceKaminoIx = await this.priceKaminoIx(glamState, priceDenom);
 
-    const { user, userStats } = this.drift.getDriftUserPdas(glamState);
-    const remainingAccounts = await this.drift.composeRemainingAccounts(
-      glamState,
-      0,
-    );
-
-    const glamVault = this.base.getVaultPda(glamState);
-    const priceDriftIx = await this.base.program.methods
-      .priceDrift(priceDenom)
-      .accounts({
+    try {
+      const { user, userStats } = this.drift.getDriftUserPdas(glamState);
+      const remainingAccounts = await this.drift.composeRemainingAccounts(
         glamState,
-        glamVault,
-        solOracle: SOL_ORACLE,
-        user,
-        userStats,
-        state: this.drift.driftStatePda,
-      })
-      .remainingAccounts(remainingAccounts)
-      .instruction();
+        0,
+      );
+      const priceDriftIx = await this.base.program.methods
+        .priceDrift(priceDenom)
+        .accounts({
+          glamState,
+          glamVault,
+          solOracle: SOL_ORACLE,
+          user,
+          userStats,
+          state: this.drift.driftStatePda,
+        })
+        .remainingAccounts(remainingAccounts)
+        .instruction();
 
-    return [
-      priceTicketsIx,
-      priceStakesIx,
-      priceVaultIx,
-      priceMeteoraIx,
-      priceKaminoIx,
-      priceDriftIx,
-    ];
+      return [
+        priceTicketsIx,
+        priceStakesIx,
+        priceVaultIx,
+        priceMeteoraIx,
+        priceKaminoIx,
+        priceDriftIx,
+      ];
+    } catch (error) {
+      // Drift user not found, skip priceDriftIx
+      return [
+        priceTicketsIx,
+        priceStakesIx,
+        priceVaultIx,
+        priceMeteoraIx,
+        priceKaminoIx,
+      ];
+    }
   }
 
   remainingAccountsForPricingMeteora = async (glamState: PublicKey) => {
