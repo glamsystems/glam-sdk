@@ -50,6 +50,7 @@ export class StateIdlModel implements StateModelType {
   driftOrderTypes: number[] | null;
   baseAsset: PublicKey | null;
   maxCap: BN | null;
+  updateTimelock: BN | null;
 
   metadata: Metadata | null;
   rawOpenfunds: FundOpenfundsModel | null;
@@ -75,6 +76,7 @@ export class StateIdlModel implements StateModelType {
     this.rawOpenfunds = data.rawOpenfunds ?? null;
     this.baseAsset = data.baseAsset ?? null;
     this.maxCap = data.maxCap ?? null;
+    this.updateTimelock = data.updateTimelock ?? null;
   }
 }
 export class StateModel extends StateIdlModel {

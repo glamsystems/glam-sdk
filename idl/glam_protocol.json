@@ -1661,6 +1661,40 @@
       ]
     },
     {
+      "name": "emergency_update_state",
+      "discriminator": [
+        156,
+        211,
+        55,
+        70,
+        92,
+        37,
+        190,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "state",
+          "type": {
+            "defined": {
+              "name": "StateModel"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "force_transfer_tokens",
       "discriminator": [
         185,
@@ -8862,6 +8896,31 @@
       ]
     },
     {
+      "name": "update_state_apply_timelock",
+      "discriminator": [
+        66,
+        12,
+        138,
+        80,
+        133,
+        85,
+        46,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "withdraw",
       "discriminator": [
         183,
@@ -9082,6 +9141,16 @@
       "code": 48003,
       "name": "InvalidSignerAccount",
       "msg": "Invalid signer token account"
+    },
+    {
+      "code": 48004,
+      "name": "EmergencyUpdateDenied",
+      "msg": "Emergency update denied"
+    },
+    {
+      "code": 48005,
+      "name": "TimelockStillActive",
+      "msg": "Timelock still active"
     },
     {
       "code": 49000,
@@ -9746,6 +9815,33 @@
           },
           {
             "name": "RedemptionPaused"
+          },
+          {
+            "name": "Owner"
+          },
+          {
+            "name": "Enabled"
+          },
+          {
+            "name": "Name"
+          },
+          {
+            "name": "Uri"
+          },
+          {
+            "name": "Assets"
+          },
+          {
+            "name": "DelegateAcls"
+          },
+          {
+            "name": "Integrations"
+          },
+          {
+            "name": "UpdateTimelock"
+          },
+          {
+            "name": "TimelockExpiresAt"
           }
         ]
       }
@@ -9962,6 +10058,36 @@
                 "type": {
                   "defined": {
                     "name": "Valuation"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "VecDelegateAcl",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "DelegateAcl"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "VecIntegration",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "Integration"
+                    }
                   }
                 }
               }
@@ -12150,6 +12276,12 @@
             "name": "max_cap",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "update_timelock",
+            "type": {
+              "option": "i64"
             }
           },
           {

@@ -1667,6 +1667,40 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "emergencyUpdateState",
+      "discriminator": [
+        156,
+        211,
+        55,
+        70,
+        92,
+        37,
+        190,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "state",
+          "type": {
+            "defined": {
+              "name": "stateModel"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "forceTransferTokens",
       "discriminator": [
         185,
@@ -8868,6 +8902,31 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "updateStateApplyTimelock",
+      "discriminator": [
+        66,
+        12,
+        138,
+        80,
+        133,
+        85,
+        46,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "withdraw",
       "discriminator": [
         183,
@@ -9088,6 +9147,16 @@ export type GlamProtocol = {
       "code": 48003,
       "name": "invalidSignerAccount",
       "msg": "Invalid signer token account"
+    },
+    {
+      "code": 48004,
+      "name": "emergencyUpdateDenied",
+      "msg": "Emergency update denied"
+    },
+    {
+      "code": 48005,
+      "name": "timelockStillActive",
+      "msg": "Timelock still active"
     },
     {
       "code": 49000,
@@ -9752,6 +9821,33 @@ export type GlamProtocol = {
           },
           {
             "name": "redemptionPaused"
+          },
+          {
+            "name": "owner"
+          },
+          {
+            "name": "enabled"
+          },
+          {
+            "name": "name"
+          },
+          {
+            "name": "uri"
+          },
+          {
+            "name": "assets"
+          },
+          {
+            "name": "delegateAcls"
+          },
+          {
+            "name": "integrations"
+          },
+          {
+            "name": "updateTimelock"
+          },
+          {
+            "name": "timelockExpiresAt"
           }
         ]
       }
@@ -9968,6 +10064,36 @@ export type GlamProtocol = {
                 "type": {
                   "defined": {
                     "name": "valuation"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "vecDelegateAcl",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "delegateAcl"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "vecIntegration",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "integration"
+                    }
                   }
                 }
               }
@@ -12156,6 +12282,12 @@ export type GlamProtocol = {
             "name": "maxCap",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "updateTimelock",
+            "type": {
+              "option": "i64"
             }
           },
           {
