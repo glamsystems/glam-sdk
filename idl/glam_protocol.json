@@ -8862,6 +8862,44 @@
       ]
     },
     {
+      "name": "update_mint_apply_timelock",
+      "discriminator": [
+        223,
+        241,
+        80,
+        24,
+        120,
+        25,
+        82,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glam_mint",
+          "writable": true
+        },
+        {
+          "name": "token_2022_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mint_id",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "update_state",
       "discriminator": [
         135,
@@ -9842,6 +9880,12 @@
           },
           {
             "name": "TimelockExpiresAt"
+          },
+          {
+            "name": "DefaultAccountStateFrozen"
+          },
+          {
+            "name": "PermanentDelegate"
           }
         ]
       }

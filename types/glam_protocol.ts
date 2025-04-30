@@ -8868,6 +8868,44 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "updateMintApplyTimelock",
+      "discriminator": [
+        223,
+        241,
+        80,
+        24,
+        120,
+        25,
+        82,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glamMint",
+          "writable": true
+        },
+        {
+          "name": "token2022Program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mintId",
+          "type": "u8"
+        }
+      ]
+    },
+    {
       "name": "updateState",
       "discriminator": [
         135,
@@ -9848,6 +9886,12 @@ export type GlamProtocol = {
           },
           {
             "name": "timelockExpiresAt"
+          },
+          {
+            "name": "defaultAccountStateFrozen"
+          },
+          {
+            "name": "permanentDelegate"
           }
         ]
       }

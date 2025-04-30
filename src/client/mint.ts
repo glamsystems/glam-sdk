@@ -106,9 +106,9 @@ export class MintClient {
     glamState: PublicKey,
     mintId: number,
     mintModel: Partial<MintModel>,
+    txOptions: TxOptions = {},
   ) {
     const glamMint = this.base.getMintPda(glamState, mintId);
-    // @ts-ignore
     const tx = await this.base.program.methods
       .updateMint(mintId, new MintIdlModel(mintModel))
       .accounts({
@@ -117,7 +117,25 @@ export class MintClient {
       })
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, {});
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async updateApplyTimelock(
+    glamState: PublicKey,
+    mintId: number,
+    txOptions: TxOptions = {},
+  ) {
+    const glamMint = this.base.getMintPda(glamState, mintId);
+    const tx = await this.base.program.methods
+      .updateMintApplyTimelock(0)
+      .accounts({
+        glamState,
+        glamMint,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -145,7 +163,6 @@ export class MintClient {
     const glamMint = this.base.getMintPda(glamState, mintId);
     const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .closeMint(mintId)
       .accounts({

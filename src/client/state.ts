@@ -31,12 +31,6 @@ import {
 } from "../models";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 
-type PublicKeyOrString = PublicKey | string;
-
-function getPublicKey(input: PublicKeyOrString) {
-  return typeof input === "string" ? new PublicKey(input) : input;
-}
-
 export class StateClient {
   public constructor(readonly base: BaseClient) {}
 
@@ -137,8 +131,8 @@ export class StateClient {
     return [txSig, glamState];
   }
 
-  public async updateState(
-    glamState: PublicKeyOrString,
+  public async update(
+    glamState: PublicKey | string,
     updated: Partial<StateModel>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
@@ -148,8 +142,19 @@ export class StateClient {
       );
     }
     const tx = await this.updateStateTx(
-      getPublicKey(glamState),
+      new PublicKey(glamState),
       updated,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async updateApplyTimelock(
+    glamState: PublicKey | string,
+    txOptions: TxOptions = {},
+  ) {
+    const tx = await this.updateStateApplyTimelockTx(
+      new PublicKey(glamState),
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -163,6 +168,22 @@ export class StateClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tx = await this.base.program.methods
       .updateState(new StateIdlModel(updated))
+      .accounts({
+        glamState,
+        glamSigner,
+      })
+      .preInstructions(txOptions.preInstructions || [])
+      .transaction();
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async updateStateApplyTimelockTx(
+    glamState: PublicKey,
+    txOptions: TxOptions,
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const tx = await this.base.program.methods
+      .updateStateApplyTimelock()
       .accounts({
         glamState,
         glamSigner,
@@ -297,7 +318,7 @@ export class StateClient {
         expiresAt: new BN(0),
       })),
     });
-    return await this.updateState(statePda, updated, txOptions);
+    return await this.update(statePda, updated, txOptions);
   }
 
   public async upsertDelegateAcls(
@@ -305,7 +326,7 @@ export class StateClient {
     delegateAcls: DelegateAcl[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    return await this.updateState(glamState, { delegateAcls }, txOptions);
+    return await this.update(glamState, { delegateAcls }, txOptions);
   }
 
   public async closeTokenAccounts(
