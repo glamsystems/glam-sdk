@@ -9336,6 +9336,11 @@
       "msg": "Invalid amount for subscription or redemption"
     },
     {
+      "code": 51007,
+      "name": "MaxCapExceeded",
+      "msg": "Max cap exceeded"
+    },
+    {
       "code": 51100,
       "name": "InvalidPricingOracle",
       "msg": "Invalid oracle for asset price"

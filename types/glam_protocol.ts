@@ -9342,6 +9342,11 @@ export type GlamProtocol = {
       "msg": "Invalid amount for subscription or redemption"
     },
     {
+      "code": 51007,
+      "name": "maxCapExceeded",
+      "msg": "Max cap exceeded"
+    },
+    {
       "code": 51100,
       "name": "invalidPricingOracle",
       "msg": "Invalid oracle for asset price"
