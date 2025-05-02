@@ -1667,6 +1667,48 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "emergencyUpdateMint",
+      "discriminator": [
+        141,
+        210,
+        26,
+        160,
+        120,
+        140,
+        28,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glamMint",
+          "writable": true
+        },
+        {
+          "name": "token2022Program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mintModel",
+          "type": {
+            "defined": {
+              "name": "mintModel"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "emergencyUpdateState",
       "discriminator": [
         156,
@@ -6655,51 +6697,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "setMintPaused",
-      "discriminator": [
-        122,
-        112,
-        56,
-        49,
-        172,
-        101,
-        49,
-        228
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamMint"
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "mintId",
-          "type": "u8"
-        },
-        {
-          "name": "action",
-          "type": {
-            "defined": {
-              "name": "investorAction"
-            }
-          }
-        },
-        {
-          "name": "paused",
-          "type": "bool"
-        }
-      ]
-    },
-    {
       "name": "setTokenAccountsStates",
       "discriminator": [
         50,
@@ -10624,20 +10621,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "investorAction",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "subscribe"
-          },
-          {
-            "name": "redeem"
-          }
-        ]
-      }
-    },
-    {
       "name": "ledgerEntry",
       "type": {
         "kind": "struct",
@@ -10987,6 +10970,18 @@ export type GlamProtocol = {
             "name": "minRedemption",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "subscriptionPaused",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "redemptionPaused",
+            "type": {
+              "option": "bool"
             }
           },
           {

@@ -1661,6 +1661,48 @@
       ]
     },
     {
+      "name": "emergency_update_mint",
+      "discriminator": [
+        141,
+        210,
+        26,
+        160,
+        120,
+        140,
+        28,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glam_mint",
+          "writable": true
+        },
+        {
+          "name": "token_2022_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": [
+        {
+          "name": "mint_model",
+          "type": {
+            "defined": {
+              "name": "MintModel"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "emergency_update_state",
       "discriminator": [
         156,
@@ -6649,51 +6691,6 @@
       ]
     },
     {
-      "name": "set_mint_paused",
-      "discriminator": [
-        122,
-        112,
-        56,
-        49,
-        172,
-        101,
-        49,
-        228
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_mint"
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "mint_id",
-          "type": "u8"
-        },
-        {
-          "name": "action",
-          "type": {
-            "defined": {
-              "name": "InvestorAction"
-            }
-          }
-        },
-        {
-          "name": "paused",
-          "type": "bool"
-        }
-      ]
-    },
-    {
       "name": "set_token_accounts_states",
       "discriminator": [
         50,
@@ -10618,20 +10615,6 @@
       }
     },
     {
-      "name": "InvestorAction",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Subscribe"
-          },
-          {
-            "name": "Redeem"
-          }
-        ]
-      }
-    },
-    {
       "name": "LedgerEntry",
       "type": {
         "kind": "struct",
@@ -10981,6 +10964,18 @@
             "name": "min_redemption",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "subscription_paused",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "redemption_paused",
+            "type": {
+              "option": "bool"
             }
           },
           {

@@ -349,6 +349,8 @@ export class MintIdlModel implements MintModelType {
   valuation: Valuation | null;
   minSubscription: BN | null;
   minRedemption: BN | null;
+  subscriptionPaused: boolean | null;
+  redemptionPaused: boolean | null;
 
   isRawOpenfunds: boolean | null;
   rawOpenfunds: MintOpenfundsModel | null;
@@ -372,6 +374,8 @@ export class MintIdlModel implements MintModelType {
     this.valuation = data.valuation ?? null;
     this.minSubscription = data.minSubscription ?? null;
     this.minRedemption = data.minRedemption ?? null;
+    this.subscriptionPaused = data.subscriptionPaused ?? null;
+    this.redemptionPaused = data.redemptionPaused ?? null;
   }
 }
 export class MintModel extends MintIdlModel {
@@ -550,9 +554,4 @@ export type Valuation = IdlTypes<GlamProtocol>["valuation"];
 export class PriceDenom {
   static readonly SOL = { sol: {} };
   static readonly USD = { usd: {} };
-}
-
-export class InvestorAction {
-  static readonly Subscribe = { subscribe: {} };
-  static readonly Redeem = { redeem: {} };
 }
