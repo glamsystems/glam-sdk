@@ -84,7 +84,6 @@ export class JupiterSwapClient {
    */
 
   public async swap(
-    glamState: PublicKey,
     options: {
       quoteParams?: QuoteParams;
       quoteResponse?: QuoteResponse;
@@ -92,20 +91,15 @@ export class JupiterSwapClient {
     },
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.swapTx(glamState, options, txOptions);
+    const tx = await this.swapTx(options, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async setMaxSwapSlippage(
-    statePda: PublicKey,
     slippageBps: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.setMaxSwapSlippageTx(
-      statePda,
-      slippageBps,
-      txOptions,
-    );
+    const tx = await this.setMaxSwapSlippageTx(slippageBps, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -130,7 +124,6 @@ export class JupiterSwapClient {
    */
 
   async swapTx(
-    glamState: PublicKey,
     options: {
       quoteParams?: QuoteParams;
       quoteResponse?: QuoteResponse;
@@ -139,7 +132,7 @@ export class JupiterSwapClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const glamVault = this.base.getVaultPda(glamState);
+    const glamVault = this.base.vaultPda;
 
     let swapInstruction: InstructionFromJupiter;
     let addressLookupTableAddresses: string[];
@@ -214,7 +207,6 @@ export class JupiterSwapClient {
       ASSETS_MAINNET.get(outputMint.toBase58())?.oracle || null;
 
     const preInstructions = await this.getPreInstructions(
-      glamState,
       glamSigner,
       inputMint,
       outputMint,
@@ -226,7 +218,7 @@ export class JupiterSwapClient {
     const tx = await this.base.program.methods
       .jupiterSwap(swapIx.data)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         inputMint,
         outputMint,
@@ -246,7 +238,6 @@ export class JupiterSwapClient {
   }
 
   public async setMaxSwapSlippageTx(
-    glamState: PublicKey,
     slippageBps: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
@@ -254,7 +245,7 @@ export class JupiterSwapClient {
     const tx = await this.base.program.methods
       .jupiterSetMaxSwapSlippage(new BN(slippageBps))
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
       })
       .transaction();
@@ -262,7 +253,6 @@ export class JupiterSwapClient {
   }
 
   public async setMaxSwapSlippageIx(
-    glamState: PublicKey,
     slippageBps: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
@@ -270,7 +260,7 @@ export class JupiterSwapClient {
     return await this.base.program.methods
       .jupiterSetMaxSwapSlippage(new BN(slippageBps))
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
       })
       .instruction();
@@ -281,7 +271,6 @@ export class JupiterSwapClient {
    */
 
   getPreInstructions = async (
-    statePda: PublicKey,
     signer: PublicKey,
     inputMint: PublicKey,
     outputMint: PublicKey,
@@ -289,8 +278,8 @@ export class JupiterSwapClient {
     inputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
     outputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
   ): Promise<TransactionInstruction[]> => {
-    const vault = this.base.getVaultPda(statePda);
-    const ata = this.base.getAta(outputMint, vault, outputTokenProgram);
+    const vault = this.base.vaultPda;
+    const ata = this.base.getVaultAta(outputMint, outputTokenProgram);
 
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
@@ -304,7 +293,7 @@ export class JupiterSwapClient {
 
     // Transfer SOL to wSOL ATA if needed for the vault
     if (inputMint.equals(WSOL)) {
-      const wrapSolIxs = await this.base.maybeWrapSol(statePda, amount, signer);
+      const wrapSolIxs = await this.base.maybeWrapSol(amount, signer);
       preInstructions.push(...wrapSolIxs);
     }
 
@@ -395,11 +384,10 @@ export class JupiterVoteClient {
    * @returns
    */
   public async stakeJup(
-    statePda: PublicKey,
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vault = this.base.getVaultPda(statePda);
+    const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
     const escrowJupAta = this.base.getAta(JUP, escrow);
     const vaultJupAta = this.base.getAta(JUP, vault);
@@ -414,7 +402,7 @@ export class JupiterVoteClient {
         await this.base.program.methods
           .jupiterVoteNewEscrow()
           .accounts({
-            glamState: statePda,
+            glamState: this.base.statePda,
             locker: this.stakeLocker,
             escrow,
           })
@@ -424,7 +412,7 @@ export class JupiterVoteClient {
         await this.base.program.methods
           .jupiterVoteToggleMaxLock(true)
           .accounts({
-            glamState: statePda,
+            glamState: this.base.statePda,
             locker: this.stakeLocker,
             escrow,
           })
@@ -443,7 +431,7 @@ export class JupiterVoteClient {
     const tx = await this.base.program.methods
       .jupiterVoteIncreaseLockedAmount(amount)
       .accounts({
-        glamState: statePda,
+        glamState: this.base.statePda,
         locker: this.stakeLocker,
         escrow,
         escrowTokens: escrowJupAta,
@@ -466,14 +454,14 @@ export class JupiterVoteClient {
    * @returns
    */
   // TODO: support partial unstake
-  public async unstakeJup(statePda: PublicKey, txOptions: TxOptions = {}) {
-    const vault = this.base.getVaultPda(statePda);
+  public async unstakeJup(txOptions: TxOptions = {}) {
+    const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
 
     const tx = await this.base.program.methods
       .jupiterVoteToggleMaxLock(false)
       .accounts({
-        glamState: statePda,
+        glamState: this.base.statePda,
         locker: this.stakeLocker,
         escrow,
       })
@@ -483,8 +471,8 @@ export class JupiterVoteClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async withdrawJup(statePda: PublicKey, txOptions: TxOptions = {}) {
-    const vault = this.base.getVaultPda(statePda);
+  public async withdrawJup(txOptions: TxOptions = {}) {
+    const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
     const escrowJupAta = this.base.getAta(JUP, escrow);
     const vaultJupAta = this.base.getAta(JUP, vault);
@@ -492,7 +480,7 @@ export class JupiterVoteClient {
     const tx = await this.base.program.methods
       .jupiterVoteWithdraw()
       .accounts({
-        glamState: statePda,
+        glamState: this.base.statePda,
         locker: this.stakeLocker,
         escrow,
         escrowTokens: escrowJupAta,
@@ -515,7 +503,6 @@ export class JupiterVoteClient {
   }
 
   public async claimAndStake(
-    statePda: PublicKey,
     distributor: PublicKey,
     amountUnlocked: BN,
     amountLocked: BN,
@@ -523,7 +510,7 @@ export class JupiterVoteClient {
     txOptions: TxOptions = {},
   ) {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(statePda);
+    const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
     const escrowJupAta = this.base.getAta(JUP, escrow);
     const distributorJupAta = this.base.getAta(JUP, distributor);
@@ -532,7 +519,7 @@ export class JupiterVoteClient {
     const tx = await this.base.program.methods
       .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
       .accounts({
-        glamState: statePda,
+        glamState: this.base.statePda,
         glamSigner,
         distributor,
         from: distributorJupAta,
@@ -548,14 +535,14 @@ export class JupiterVoteClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async cancelUnstake(statePda: PublicKey, txOptions: TxOptions = {}) {
-    const vault = this.base.getVaultPda(statePda);
+  public async cancelUnstake(txOptions: TxOptions = {}) {
+    const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
 
     const tx = await this.base.program.methods
       .jupiterVoteToggleMaxLock(true)
       .accounts({
-        glamState: statePda,
+        glamState: this.base.statePda,
         locker: this.stakeLocker,
         escrow,
       })
@@ -569,19 +556,17 @@ export class JupiterVoteClient {
   /**
    * Vote on a proposal. The vote account will be created if it doesn't exist.
    *
-   * @param statePda
    * @param proposal
    * @param side
    * @param txOptions
    * @returns
    */
   public async voteOnProposal(
-    glamState: PublicKey,
     proposal: PublicKey,
     side: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamVault = this.base.getVaultPda(glamState);
+    const glamVault = this.base.vaultPda;
     const vote = this.getVotePda(proposal, glamVault);
     const governor = this.getGovernorPda();
 
@@ -595,7 +580,7 @@ export class JupiterVoteClient {
         await this.base.program.methods
           .jupiterGovNewVote(glamVault)
           .accountsPartial({
-            glamState,
+            glamState: this.base.statePda,
             proposal,
             vote,
           })
@@ -607,7 +592,7 @@ export class JupiterVoteClient {
     const tx = await this.base.program.methods
       .jupiterVoteCastVote(side)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         escrow,
         proposal,
         vote,
@@ -624,8 +609,8 @@ export class JupiterVoteClient {
   /*
    * Utils
    */
-  async fetchVotes(glamState: PublicKey, proposals: PublicKey[] | string[]) {
-    const glamVault = this.base.getVaultPda(glamState);
+  async fetchVotes(proposals: PublicKey[] | string[]) {
+    const glamVault = this.base.vaultPda;
     const votes = proposals.map((proposal) =>
       this.getVotePda(new PublicKey(proposal), glamVault),
     );

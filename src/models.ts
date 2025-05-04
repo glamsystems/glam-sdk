@@ -147,7 +147,7 @@ export class StateModel extends StateIdlModel {
   }
 
   /**
-   * Build a StateModel from onchain accounts
+   * Build a StateModel from onchain data
    *
    * @param stateAccount provides core fund data
    * @param openfundsMetadataAccount includes fund rawOpenfunds data and share class rawOpenfunds data
@@ -218,7 +218,7 @@ export class StateModel extends StateIdlModel {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
-        if (name == "lockUp") {
+        if (name === "lockUp") {
           mintIdlModel["lockUpPeriodInSeconds"] = Number(value);
         } else {
           mintIdlModel[name] = value;

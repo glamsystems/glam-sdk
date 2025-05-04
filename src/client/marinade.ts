@@ -35,37 +35,33 @@ export class MarinadeClient {
    */
 
   public async deposit(
-    statePda: PublicKey,
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(statePda, amount, txOptions);
+    const tx = await this.depositTx(amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async depositStakeAccount(
-    statePda: PublicKey,
     stakeAccount: PublicKey,
   ): Promise<TransactionSignature> {
-    const tx = await this.depositStakeAccountTx(statePda, stakeAccount, {});
+    const tx = await this.depositStakeAccountTx(stakeAccount, {});
     return await this.base.sendAndConfirm(tx);
   }
 
   public async orderUnstake(
-    statePda: PublicKey,
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.orderUnstakeTx(statePda, amount, txOptions);
+    const tx = await this.orderUnstakeTx(amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async claim(
-    statePda: PublicKey,
     tickets: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.claimTx(statePda, tickets, txOptions);
+    const tx = await this.claimTx(tickets, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -73,8 +69,8 @@ export class MarinadeClient {
    * Utils
    */
 
-  async getTickets(state: PublicKey): Promise<PublicKey[]> {
-    const vault = this.base.getVaultPda(state);
+  async getTickets(): Promise<PublicKey[]> {
+    const vault = this.base.vaultPda;
     const accounts = await fetchMarinadeTicketAccounts(
       this.base.provider.connection,
       vault,
@@ -82,8 +78,8 @@ export class MarinadeClient {
     return accounts.map((a) => a.pubkey);
   }
 
-  async getParsedTickets(state: PublicKey): Promise<Ticket[]> {
-    const vault = this.base.getVaultPda(state);
+  async getParsedTickets(): Promise<Ticket[]> {
+    const vault = this.base.vaultPda;
     const accounts = await fetchMarinadeTicketAccounts(
       this.base.provider.connection,
       vault,
@@ -174,14 +170,13 @@ export class MarinadeClient {
    */
 
   public async depositTx(
-    glamState: PublicKey,
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const marinadeState = this.getMarinadeState();
-    const vaultMsolAta = this.base.getAta(marinadeState.msolMintAddress, vault);
+    const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
 
     const createMsolAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
@@ -194,7 +189,7 @@ export class MarinadeClient {
     const tx = await this.base.program.methods
       .marinadeDeposit(amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         reservePda: marinadeState.reserveAddress,
         state: marinadeState.marinadeStateAddress,
@@ -213,7 +208,6 @@ export class MarinadeClient {
   }
 
   public async depositStakeAccountTx(
-    glamState: PublicKey,
     stakeAccount: PublicKey,
     txOptions: TxOptions,
   ): Promise<any> {
@@ -239,7 +233,7 @@ export class MarinadeClient {
     const tx = await this.base.program.methods
       .marinadeDepositStakeAccount(validatorIndex)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         state: marinadeState.marinadeStateAddress,
         validatorList:
@@ -249,7 +243,7 @@ export class MarinadeClient {
         duplicationFlag,
         msolMint: MSOL,
         msolMintAuthority: await marinadeState.mSolMintAuthority(),
-        mintTo: this.base.getVaultAta(glamState, MSOL),
+        mintTo: this.base.getVaultAta(MSOL),
         clock: SYSVAR_CLOCK_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
         stakeProgram: StakeProgram.programId,
@@ -260,16 +254,12 @@ export class MarinadeClient {
   }
 
   public async orderUnstakeTx(
-    glamState: PublicKey,
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const marinadeState = this.getMarinadeState();
-    const vaultMsolAta = this.base.getVaultAta(
-      glamState,
-      marinadeState.msolMintAddress,
-    );
+    const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
 
     const ticketSeed = Date.now().toString();
     const ticket = await PublicKey.createWithSeed(
@@ -293,7 +283,7 @@ export class MarinadeClient {
     const tx = await this.base.program.methods
       .marinadeOrderUnstake(amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         newTicketAccount: ticket,
         msolMint: marinadeState.msolMintAddress,
@@ -309,7 +299,6 @@ export class MarinadeClient {
   }
 
   public async claimTx(
-    glamState: PublicKey,
     tickets: PublicKey[],
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
@@ -325,7 +314,7 @@ export class MarinadeClient {
         this.base.program.methods
           .marinadeClaim()
           .accounts({
-            glamState,
+            glamState: this.base.statePda,
             glamSigner,
             ticketAccount: ticket,
             state: marinadeState.marinadeStateAddress,

@@ -189,29 +189,21 @@ export class KaminoLendingClient {
   /**
    * Initializes Kamino user metadata
    *
-   * @param statePda
    * @param market Lending market
    * @param referrer Referrer user metadata
    * @param txOptions
    * @returns
    */
   public async initUserMetadata(
-    statePda: PublicKey | string,
-    referrer?: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.initUserMetadataTx(
-      new PublicKey(statePda),
-      referrer ? new PublicKey(referrer) : null,
-      txOptions,
-    );
+    const tx = await this.initUserMetadataTx(txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   /**
    * Deposits asset to the lending market.
    *
-   * @param statePda
    * @param market Lending market
    * @param asset Asset mint
    * @param amount Amount to deposit
@@ -219,14 +211,12 @@ export class KaminoLendingClient {
    * @returns
    */
   public async deposit(
-    statePda: PublicKey | string,
     market: PublicKey | string,
     asset: PublicKey | string,
     amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.depositTx(
-      new PublicKey(statePda),
       new PublicKey(market),
       new PublicKey(asset),
       new BN(amount),
@@ -238,7 +228,6 @@ export class KaminoLendingClient {
   /**
    * Withdraws asset from the lending market.
    *
-   * @param statePda
    * @param market Lending market
    * @param asset Asset mint
    * @param amount Amount to deposit
@@ -246,14 +235,12 @@ export class KaminoLendingClient {
    * @returns
    */
   public async withdraw(
-    statePda: PublicKey | string,
     market: PublicKey | string,
     asset: PublicKey | string,
     amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.withdrawTx(
-      new PublicKey(statePda),
       new PublicKey(market),
       new PublicKey(asset),
       new BN(amount),
@@ -265,7 +252,6 @@ export class KaminoLendingClient {
   /**
    * Borrows asset from the lending market.
    *
-   * @param statePda GLAM state
    * @param market Lending market
    * @param asset Asset mint
    * @param amount Amount to borrow
@@ -273,14 +259,12 @@ export class KaminoLendingClient {
    * @returns
    */
   public async borrow(
-    statePda: PublicKey | string,
     market: PublicKey | string,
     asset: PublicKey | string,
     amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.borrowTx(
-      new PublicKey(statePda),
       new PublicKey(market),
       new PublicKey(asset),
       new BN(amount),
@@ -292,7 +276,6 @@ export class KaminoLendingClient {
   /**
    * Repays asset to the lending market.
    *
-   * @param statePda
    * @param market
    * @param asset
    * @param amount
@@ -300,14 +283,12 @@ export class KaminoLendingClient {
    * @returns
    */
   public async repay(
-    statePda: PublicKey | string,
     market: PublicKey | string,
     asset: PublicKey | string,
     amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.repayTx(
-      new PublicKey(statePda),
       new PublicKey(market),
       new PublicKey(asset),
       new BN(amount),
@@ -353,12 +334,10 @@ export class KaminoLendingClient {
   }
 
   public async initUserMetadataTx(
-    glamState: PublicKey,
-    referrer: PublicKey | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const userMetadata = this.getUserMetadataPda(vault);
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
 
@@ -366,10 +345,10 @@ export class KaminoLendingClient {
     const tx = await this.base.program.methods
       .kaminoLendingInitUserMetadata(lookupTable)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         userMetadata,
-        referrerUserMetadata: referrer,
+        referrerUserMetadata: null,
       })
       .transaction();
 
@@ -638,14 +617,13 @@ export class KaminoLendingClient {
   }
 
   public async depositTx(
-    glamState: PublicKey,
     market: PublicKey,
     asset: PublicKey,
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const userMetadata = this.getUserMetadataPda(vault);
 
     const preInstructions = [];
@@ -665,7 +643,7 @@ export class KaminoLendingClient {
         await this.base.program.methods
           .kaminoLendingInitObligation(DEFAULT_OBLIGATION_ARGS)
           .accounts({
-            glamState,
+            glamState: this.base.statePda,
             glamSigner,
             obligation,
             lendingMarket: market,
@@ -691,7 +669,7 @@ export class KaminoLendingClient {
           await this.base.program.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
-              glamState,
+              glamState: this.base.statePda,
               glamSigner,
               obligation,
               lendingMarketAuthority: this.getMarketAuthority(market),
@@ -737,9 +715,9 @@ export class KaminoLendingClient {
     }
 
     // If deposit asset is WSOL, wrap SOL first in case vault doesn't have enough wSOL
-    const userSourceLiquidity = this.base.getVaultAta(glamState, asset);
+    const userSourceLiquidity = this.base.getVaultAta(asset);
     if (asset.equals(WSOL)) {
-      const wrapSolIxs = await this.base.maybeWrapSol(glamState, amount);
+      const wrapSolIxs = await this.base.maybeWrapSol(amount);
       preInstructions.unshift(...wrapSolIxs);
 
       // Close wSOL ata automatically after deposit
@@ -747,7 +725,7 @@ export class KaminoLendingClient {
         const closeIx = await this.base.program.methods
           .tokenCloseAccount()
           .accounts({
-            glamState,
+            glamState: this.base.statePda,
             glamSigner,
             tokenAccount: userSourceLiquidity,
             cpiProgram: TOKEN_PROGRAM_ID,
@@ -761,7 +739,7 @@ export class KaminoLendingClient {
     const tx = await this.base.program.methods
       .kaminoLendingDepositReserveLiquidityAndObligationCollateralV2(amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         obligation,
         lendingMarket: market,
@@ -796,14 +774,13 @@ export class KaminoLendingClient {
   }
 
   public async withdrawTx(
-    glamState: PublicKey,
     market: PublicKey,
     asset: PublicKey,
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
 
     const preInstructions = [];
     const postInstructions = [];
@@ -829,7 +806,7 @@ export class KaminoLendingClient {
           await this.base.program.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
-              glamState,
+              glamState: this.base.statePda,
               glamSigner,
               obligation,
               lendingMarketAuthority: this.getMarketAuthority(market),
@@ -875,7 +852,7 @@ export class KaminoLendingClient {
     }
 
     // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const userDestinationLiquidity = this.base.getVaultAta(glamState, asset);
+    const userDestinationLiquidity = this.base.getVaultAta(asset);
     const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
       userDestinationLiquidity,
@@ -889,7 +866,7 @@ export class KaminoLendingClient {
         amount,
       )
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         obligation,
         lendingMarket: market,
@@ -899,7 +876,7 @@ export class KaminoLendingClient {
         reserveSourceCollateral: withdrawReserve.collateralSupplyVault,
         reserveCollateralMint: withdrawReserve.collateralMint,
         reserveLiquiditySupply: withdrawReserve.liquiditySupplyVault,
-        userDestinationLiquidity: this.base.getVaultAta(glamState, asset),
+        userDestinationLiquidity,
         placeholderUserDestinationCollateral: null,
         collateralTokenProgram: TOKEN_PROGRAM_ID,
         liquidityTokenProgram: TOKEN_PROGRAM_ID,
@@ -930,14 +907,13 @@ export class KaminoLendingClient {
   }
 
   public async borrowTx(
-    glamState: PublicKey,
     market: PublicKey,
     asset: PublicKey,
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
 
     const preInstructions = [];
     const postInstructions = [];
@@ -963,7 +939,7 @@ export class KaminoLendingClient {
           await this.base.program.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
-              glamState,
+              glamState: this.base.statePda,
               glamSigner,
               obligation,
               lendingMarketAuthority: this.getMarketAuthority(market),
@@ -1012,7 +988,7 @@ export class KaminoLendingClient {
     */
 
     // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const userDestinationLiquidity = this.base.getVaultAta(glamState, asset);
+    const userDestinationLiquidity = this.base.getVaultAta(asset);
     const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
       userDestinationLiquidity,
@@ -1024,7 +1000,7 @@ export class KaminoLendingClient {
     const borrowIx = await this.base.program.methods
       .kaminoLendingBorrowObligationLiquidityV2(amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         obligation,
         lendingMarket: market,
@@ -1033,7 +1009,7 @@ export class KaminoLendingClient {
         borrowReserveLiquidityMint: asset,
         reserveSourceLiquidity: borrowReserve.liquiditySupplyVault,
         borrowReserveLiquidityFeeReceiver: borrowReserve.feeVault,
-        userDestinationLiquidity: this.base.getVaultAta(glamState, asset),
+        userDestinationLiquidity,
         referrerTokenState: null,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -1061,14 +1037,13 @@ export class KaminoLendingClient {
   }
 
   public async repayTx(
-    glamState: PublicKey,
     market: PublicKey,
     asset: PublicKey,
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
 
     const preInstructions = [];
     const repayReserve = await this.findAndParseReserve(market, asset);
@@ -1093,7 +1068,7 @@ export class KaminoLendingClient {
           await this.base.program.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
-              glamState,
+              glamState: this.base.statePda,
               glamSigner,
               obligation,
               lendingMarketAuthority: this.getMarketAuthority(market),
@@ -1133,7 +1108,7 @@ export class KaminoLendingClient {
     const repayIx = await this.base.program.methods
       .kaminoLendingRepayObligationLiquidityV2(amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         obligation,
         lendingMarket: market,
@@ -1141,7 +1116,7 @@ export class KaminoLendingClient {
         repayReserve: repayReserve.address,
         reserveLiquidityMint: asset,
         reserveDestinationLiquidity: repayReserve.liquiditySupplyVault,
-        userSourceLiquidity: this.base.getVaultAta(glamState, asset),
+        userSourceLiquidity: this.base.getVaultAta(asset),
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
         obligationFarmUserState: obligationFarm,
@@ -1269,19 +1244,17 @@ export class KaminoFarmClient {
     )[0];
 
   public async harvest(
-    statePda: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.harvestTx(new PublicKey(statePda), txOptions);
+    const tx = await this.harvestTx(txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async harvestTx(
-    glamState: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const farmStates = await this.findAndParseFarmStates(vault);
     const parsedFarms = await this.fetchAndParseFarms(
       farmStates.map((f) => f.farmState),
@@ -1294,7 +1267,7 @@ export class KaminoFarmClient {
       for (const { index, mint, tokenProgram, rewardsVault } of rewards) {
         console.log("Reward token:", mint.toBase58());
 
-        const vaultAta = this.base.getVaultAta(glamState, mint, tokenProgram);
+        const vaultAta = this.base.getVaultAta(mint, tokenProgram);
 
         const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
           glamSigner,
@@ -1307,7 +1280,7 @@ export class KaminoFarmClient {
         const harvestIx = await this.base.program.methods
           .kaminoFarmHarvestReward(new BN(index))
           .accounts({
-            glamState,
+            glamState: this.base.statePda,
             glamSigner,
             userState: userFarmState,
             farmState,

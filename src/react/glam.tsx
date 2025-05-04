@@ -114,25 +114,12 @@ const deserializeGlamStateCache = (s: any) => {
 const toStateCache = (s: StateModel) => {
   return {
     pubkey: s.id,
-    owner: s.owner?.pubkey || new PublicKey(0),
+    owner: s.owner?.pubkey || PublicKey.default,
     sparkleKey: s.sparkleKey,
     address: s.idStr,
     name: s.name,
     product: s.productType,
   } as GlamStateCache;
-};
-
-const fetchBalances = async (glamClient: GlamClient, owner: PublicKey) => {
-  const balanceLamports =
-    await glamClient.provider.connection.getBalance(owner);
-  const tokenAccounts = await glamClient.getTokenAccountsByOwner(owner);
-  const uiAmount = balanceLamports / LAMPORTS_PER_SOL;
-
-  return {
-    balanceLamports,
-    tokenAccounts,
-    uiAmount,
-  };
 };
 
 export function GlamProvider({
@@ -148,21 +135,6 @@ export function GlamProvider({
   const { connection } = useConnection();
   const { cluster } = useCluster();
 
-  const glamClient = useMemo(() => {
-    const glamClient = new GlamClient({
-      provider: new AnchorProvider(connection, wallet as AnchorWallet, {
-        commitment: "confirmed",
-      }),
-      cluster: cluster.network,
-    });
-    if (typeof window !== "undefined") {
-      window.glam = glamClient;
-      window.PublicKey = PublicKey;
-      window.BN = BN;
-    }
-    return glamClient;
-  }, [connection, wallet, cluster]);
-
   const [allGlamStates, setAllGlamStates] = useState([] as StateModel[]);
   const [jupTokenList, setJupTokenList] = useState([] as JupTokenListItem[]);
   const [tokenPrices, setTokenPrices] = useState([] as TokenPrice[]);
@@ -175,6 +147,22 @@ export function GlamProvider({
     useAtomValue(activeGlamStateAtom),
   ) as GlamStateCache;
 
+  const glamClient = useMemo(() => {
+    const glamClient = new GlamClient({
+      provider: new AnchorProvider(connection, wallet as AnchorWallet, {
+        commitment: "confirmed",
+      }),
+      cluster: cluster.network,
+      statePda: activeGlamState?.pubkey,
+    });
+    if (typeof window !== "undefined") {
+      window.glam = glamClient;
+      window.PublicKey = PublicKey;
+      window.BN = BN;
+    }
+    return glamClient;
+  }, [connection, wallet, cluster, activeGlamState]);
+
   //
   // Fetch all glam states
   //
@@ -184,12 +172,13 @@ export function GlamProvider({
         "fetching vault data for active glam state:",
         activeGlamState.address,
       );
-      const vault = glamClient.getVaultPda(activeGlamState.pubkey);
-      const balances = await fetchBalances(glamClient, vault);
+      const balances = await glamClient.getSolAndTokenBalances(
+        glamClient.vaultPda,
+      );
       setVault({
         ...balances,
-        pubkey: vault,
-      } as Vault);
+        pubkey: glamClient.vaultPda,
+      });
     }
   };
 
@@ -198,7 +187,7 @@ export function GlamProvider({
     queryFn: () => glamClient.fetchGlamStates(),
   });
   useEffect(() => {
-    if (!glamStateModels) return;
+    if (!glamStateModels || !wallet?.publicKey) return;
 
     if (process.env.NODE_ENV === "development") {
       console.log(`[${cluster.network}] all glam states:`, glamStateModels);
@@ -243,12 +232,16 @@ export function GlamProvider({
 
   const refreshDelegateAcls = async () => {
     if (activeGlamState?.pubkey) {
-      const glamState = await glamClient.fetchState(activeGlamState?.pubkey);
-      console.log(
-        `${activeGlamState.address} delegate acls:`,
-        glamState.delegateAcls,
-      );
-      setDelegateAcls(glamState.delegateAcls || []);
+      try {
+        const glamState = await glamClient.fetchStateModel();
+        console.log(
+          `${activeGlamState.address} delegate acls:`,
+          glamState.delegateAcls,
+        );
+        setDelegateAcls(glamState.delegateAcls || []);
+      } catch (error) {
+        setDelegateAcls([]);
+      }
     }
   };
 
@@ -308,7 +301,7 @@ export function GlamProvider({
   const { data: walletBalances, refetch: refetchWalletBalances } = useQuery({
     queryKey: walletBalancesQueryKey,
     enabled: !!wallet?.publicKey,
-    queryFn: () => fetchBalances(glamClient, wallet?.publicKey!),
+    queryFn: () => glamClient.getSolAndTokenBalances(wallet?.publicKey!),
   });
   useEffect(() => {
     setUserWallet({
@@ -366,9 +359,9 @@ export function GlamProvider({
     refetch: refetchDriftUser,
   } = useQuery({
     queryKey: ["/drift-user", activeGlamState?.pubkey],
-    enabled: !!activeGlamState,
+    enabled: !!activeGlamState?.pubkey,
     refetchInterval: 30 * 1000,
-    queryFn: () => glamClient.drift.fetchDriftUser(activeGlamState?.pubkey),
+    queryFn: () => glamClient.drift.fetchDriftUser(),
   });
   useEffect(() => {
     if (!driftUserError && driftUserData) {

@@ -1,10 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey, TransactionSignature, Keypair } from "@solana/web3.js";
-import DLMM, {
-  binIdToBinArrayIndex,
-  deriveBinArray,
-  Strategy,
-} from "@meteora-ag/dlmm";
+import DLMM, { Strategy } from "@meteora-ag/dlmm";
 
 import { BaseClient, TxOptions } from "./base";
 import { MEMO_PROGRAM, METEORA_DLMM_PROGRAM } from "../constants";
@@ -42,12 +38,9 @@ export class MeteoraDlmmClient {
   }
 
   public async initializePosition(
-    statePda: PublicKey | string,
     pool: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamState = new PublicKey(statePda);
-
     const dlmmPool = await this.getDlmmPool(pool);
     const activeBin = await dlmmPool.getActiveBin();
     const minBinId = activeBin.binId - DEFAULT_RANGE_INTERVAL;
@@ -59,7 +52,7 @@ export class MeteoraDlmmClient {
     const tx = await this.base.program.methods
       .meteoraDlmmInitializePosition(minBinId, maxBinId - minBinId + 1)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         lbPair: new PublicKey(pool),
         position: position.publicKey,
         eventAuthority: EVENT_AUTHORITY,
@@ -72,12 +65,9 @@ export class MeteoraDlmmClient {
   }
 
   public async initializePositionPda(
-    statePda: PublicKey | string,
     pool: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamState = new PublicKey(statePda);
-
     const dlmmPool = await this.getDlmmPool(pool);
     const activeBin = await dlmmPool.getActiveBin();
     const minBinId = activeBin.binId - DEFAULT_RANGE_INTERVAL;
@@ -86,7 +76,7 @@ export class MeteoraDlmmClient {
 
     const position = this.getPositionPda(
       new PublicKey(pool),
-      this.base.getVaultPda(glamState),
+      this.base.vaultPda,
       minBinId,
       width,
     );
@@ -95,7 +85,7 @@ export class MeteoraDlmmClient {
     const tx = await this.base.program.methods
       .meteoraDlmmInitializePositionPda(minBinId, width)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         lbPair: new PublicKey(pool),
         position,
         eventAuthority: EVENT_AUTHORITY,
@@ -108,7 +98,6 @@ export class MeteoraDlmmClient {
   }
 
   public async addLiquidityByStrategy(
-    statePda: PublicKey | string,
     position: PublicKey | string,
     amountX: BN | number,
     amountY: BN | number,
@@ -126,8 +115,7 @@ export class MeteoraDlmmClient {
     const dlmmPool = await this.getDlmmPool(lbPair);
     const activeBinId = (await dlmmPool.getActiveBin()).binId;
 
-    const glamState = new PublicKey(statePda);
-    const glamVault = this.base.getVaultPda(glamState);
+    const glamVault = this.base.vaultPda;
     const vaultTokenXAta = this.base.getAta(
       dlmmPool.tokenX.publicKey,
       glamVault,
@@ -170,7 +158,7 @@ export class MeteoraDlmmClient {
     const tx = await this.base.program.methods
       .meteoraDlmmAddLiquidityByStrategy2(liquidityParameter, { slices: [] })
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
         binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
@@ -195,7 +183,6 @@ export class MeteoraDlmmClient {
   }
 
   public async removeLiquidityByRange(
-    statePda: PublicKey | string,
     position: PublicKey | string,
     bpsToRemove: number,
     txOptions: TxOptions = {},
@@ -207,15 +194,8 @@ export class MeteoraDlmmClient {
       );
     const dlmmPool = await this.getDlmmPool(lbPair);
 
-    const glamState = new PublicKey(statePda);
-    const vaultTokenXAta = this.base.getVaultAta(
-      glamState,
-      dlmmPool.tokenX.publicKey,
-    );
-    const vaultTokenYAta = this.base.getVaultAta(
-      glamState,
-      dlmmPool.tokenY.publicKey,
-    );
+    const vaultTokenXAta = this.base.getVaultAta(dlmmPool.tokenX.publicKey);
+    const vaultTokenYAta = this.base.getVaultAta(dlmmPool.tokenY.publicKey);
     const remainingAccounts = [binArrayLower, binArrayUpper].map((pubkey) => ({
       pubkey,
       isSigner: false,
@@ -228,7 +208,7 @@ export class MeteoraDlmmClient {
         slices: [],
       })
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
         binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
@@ -253,7 +233,6 @@ export class MeteoraDlmmClient {
   }
 
   public async claimFee(
-    statePda: PublicKey | string,
     position: PublicKey | string,
     txOptions: TxOptions = {},
   ) {
@@ -264,15 +243,8 @@ export class MeteoraDlmmClient {
       );
     const dlmmPool = await this.getDlmmPool(lbPair);
 
-    const glamState = new PublicKey(statePda);
-    const vaultTokenXAta = this.base.getVaultAta(
-      glamState,
-      dlmmPool.tokenX.publicKey,
-    );
-    const vaultTokenYAta = this.base.getVaultAta(
-      glamState,
-      dlmmPool.tokenY.publicKey,
-    );
+    const vaultTokenXAta = this.base.getVaultAta(dlmmPool.tokenX.publicKey);
+    const vaultTokenYAta = this.base.getVaultAta(dlmmPool.tokenY.publicKey);
     const remainingAccounts = [binArrayLower, binArrayUpper].map((pubkey) => ({
       pubkey,
       isSigner: false,
@@ -283,7 +255,7 @@ export class MeteoraDlmmClient {
     const tx = await this.base.program.methods
       .meteoraDlmmClaimFee2(lowerBinId, upperBinId, { slices: [] })
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
         reserveX: dlmmPool.tokenX.reserve,
@@ -306,7 +278,6 @@ export class MeteoraDlmmClient {
   }
 
   public async closePosition(
-    statePda: PublicKey | string,
     position: PublicKey | string,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
@@ -314,7 +285,6 @@ export class MeteoraDlmmClient {
       this.base.provider.connection,
       new PublicKey(position),
     );
-    const glamState = new PublicKey(statePda);
 
     console.log(
       `close position: ${position}, binArrayLower: ${binArrayLower}, binArrayUpper: ${binArrayUpper}`,
@@ -324,7 +294,7 @@ export class MeteoraDlmmClient {
     const tx = await this.base.program.methods
       .meteoraDlmmClosePosition()
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
         binArrayLower,

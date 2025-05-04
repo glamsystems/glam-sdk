@@ -29,12 +29,13 @@ import {
   Metadata,
   StateIdlModel,
 } from "../models";
-import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
+import { WSOL } from "../constants";
+import { getMintPda, getStatePda } from "../utils/glamPDAs";
 
 export class StateClient {
   public constructor(readonly base: BaseClient) {}
 
-  public async createState(
+  public async create(
     partialStateModel: Partial<StateModel>,
     singleTx: boolean = false,
     txOptions: TxOptions = {},
@@ -42,52 +43,58 @@ export class StateClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     let stateModel = this.enrichStateModel(partialStateModel);
 
-    // @ts-ignore
-    const glamState = this.base.getStatePda(stateModel);
-    const glamVault = this.base.getVaultPda(glamState);
-    const openfunds = this.base.getOpenfundsPda(glamState);
+    const statePda = getStatePda(stateModel, this.base.program.programId);
+    this.base.statePda = statePda;
+    console.log(`State PDA set to GlamClient: ${statePda}`);
 
     const mints = stateModel.mints;
     stateModel.mints = [];
 
     if (mints && mints.length > 1) {
-      throw new Error("Multiple mints not supported");
+      throw new Error("Multiple mints not supported. Only 1 mint is allowed.");
     }
 
-    // No share class, only need to initialize the state
+    // No mint, only need to initialize the state
     if (mints && mints.length === 0) {
       // @ts-ignore
       const tx = await this.base.program.methods
         .initializeState(stateModel)
-        .accountsPartial({ glamState, glamSigner, glamVault })
+        .accountsPartial({
+          glamState: statePda,
+          glamSigner,
+          glamVault: this.base.vaultPda,
+        })
         .transaction();
       const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
       const txSig = await this.base.sendAndConfirm(vTx);
 
-      return [txSig, glamState];
+      return [txSig, statePda];
     }
 
     let extraMetasAccount =
       mints &&
       mints[0].lockUpPeriodInSeconds &&
       mints[0].lockUpPeriodInSeconds > 0
-        ? this.base.getExtraMetasPda(glamState)
+        ? this.base.extraMetasPda
         : null;
 
     // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
       const initStateIx = await this.base.program.methods
         .initializeState(stateModel)
-        .accountsPartial({ glamState, glamSigner, glamVault })
+        .accountsPartial({
+          glamState: statePda,
+          glamSigner,
+          glamVault: this.base.vaultPda,
+        })
         .instruction();
 
-      const newMint = this.base.getMintPda(glamState, 0);
       const tx = await this.base.program.methods
         .addMint(mints[0])
         .accounts({
-          glamState,
+          glamState: statePda,
           glamSigner,
-          newMint,
+          newMint: this.base.mintPda,
           extraMetasAccount,
         })
         .preInstructions([initStateIx])
@@ -95,32 +102,30 @@ export class StateClient {
       const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
       const txSig = await this.base.sendAndConfirm(vTx);
 
-      return [txSig, glamState];
+      return [txSig, statePda];
     }
 
     // Initialize state and add mints in separate transactions
     const tx = await this.base.program.methods
       .initializeState(stateModel)
       .accountsPartial({
-        glamState,
-        glamVault,
+        glamState: statePda,
+        glamVault: this.base.vaultPda,
         glamSigner,
-        openfundsMetadata: openfunds,
+        openfundsMetadata: this.base.openfundsPda,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     const txSig = await this.base.sendAndConfirm(vTx);
 
-    const addMintTxs = await Promise.all(
+    await Promise.all(
       (mints || []).map(async (mint, j: number) => {
-        const newMint = this.base.getMintPda(glamState, j);
-
         const tx = await this.base.program.methods
           .addMint(mint)
           .accounts({
-            glamState,
+            glamState: statePda,
             glamSigner,
-            newMint,
+            newMint: this.base.mintPda,
             extraMetasAccount,
           })
           .transaction();
@@ -128,40 +133,23 @@ export class StateClient {
         return await this.base.sendAndConfirm(vTx);
       }),
     );
-    return [txSig, glamState];
+    return [txSig, statePda];
   }
 
   public async update(
-    glamState: PublicKey | string,
     updated: Partial<StateModel>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `await glam.state.updateState("${glamState.toString()}", ${JSON.stringify(updated)}, ${JSON.stringify(txOptions)});`,
-      );
-    }
-    const tx = await this.updateStateTx(
-      new PublicKey(glamState),
-      updated,
-      txOptions,
-    );
+    const tx = await this.updateStateTx(updated, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async updateApplyTimelock(
-    glamState: PublicKey | string,
-    txOptions: TxOptions = {},
-  ) {
-    const tx = await this.updateStateApplyTimelockTx(
-      new PublicKey(glamState),
-      txOptions,
-    );
+  public async updateApplyTimelock(txOptions: TxOptions = {}) {
+    const tx = await this.updateStateApplyTimelockTx(txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async updateStateTx(
-    glamState: PublicKey,
     updated: Partial<StateModel>,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
@@ -169,7 +157,7 @@ export class StateClient {
     const tx = await this.base.program.methods
       .updateState(new StateIdlModel(updated))
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
       })
       .preInstructions(txOptions.preInstructions || [])
@@ -178,14 +166,13 @@ export class StateClient {
   }
 
   public async updateStateApplyTimelockTx(
-    glamState: PublicKey,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tx = await this.base.program.methods
       .updateStateApplyTimelock()
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
       })
       .preInstructions(txOptions.preInstructions || [])
@@ -193,16 +180,13 @@ export class StateClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async closeState(
-    glamState: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
+  public async close(txOptions: TxOptions = {}): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const tx = await this.base.program.methods
       .closeState()
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
       })
       .preInstructions(txOptions.preInstructions || [])
@@ -219,7 +203,9 @@ export class StateClient {
     const owner = this.base.getSigner();
     const defaultDate = new Date().toISOString().split("T")[0];
 
-    partialStateModel.name = this.base.getName(partialStateModel);
+    if (!partialStateModel?.name) {
+      throw new Error("Name must be specified in partial state model");
+    }
 
     // createdKey = hash state name and get first 8 bytes
     // useful for computing state account PDA in the future
@@ -254,7 +240,9 @@ export class StateClient {
       partialStateModel.mints?.length &&
       partialStateModel.mints.length > 1
     ) {
-      throw new Error("Fund with more than 1 share class is not supported");
+      throw new Error(
+        "Multiple mints are not supported. Only 1 mint is allowed.",
+      );
     }
 
     if (partialStateModel.enabled) {
@@ -263,7 +251,10 @@ export class StateClient {
     }
 
     // fields containing fund id / pda
-    const statePda = this.base.getStatePda(partialStateModel);
+    const statePda = getStatePda(
+      partialStateModel,
+      this.base.program.programId,
+    );
     partialStateModel.uri =
       partialStateModel.uri || `https://gui.glam.systems/products/${statePda}`;
     partialStateModel.metadata = new Metadata({
@@ -285,10 +276,10 @@ export class StateClient {
         mint.isRawOpenfunds = false;
       }
 
-      const sharePda = this.base.getMintPda(statePda, i);
-      mint.uri = `https://api.glam.systems/metadata/${sharePda}`;
+      const mintPda = getMintPda(statePda, i, this.base.program.programId);
+      mint.uri = `https://api.glam.systems/metadata/${mintPda}`;
       mint.statePubkey = statePda;
-      mint.imageUri = `https://api.glam.systems/v0/sparkle?key=${sharePda}&format=png`;
+      mint.imageUri = `https://api.glam.systems/v0/sparkle?key=${mintPda}&format=png`;
     });
 
     // convert partial share class models to full share class models
@@ -307,38 +298,33 @@ export class StateClient {
    * @returns
    */
   public async deleteDelegateAcls(
-    statePda: PublicKey,
     delegates: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const updated = new StateModel({
-      delegateAcls: delegates.map((pubkey) => ({
-        pubkey,
-        permissions: [],
-        expiresAt: new BN(0),
-      })),
-    });
-    return await this.update(statePda, updated, txOptions);
+    return await this.update(
+      {
+        delegateAcls: delegates.map((pubkey) => ({
+          pubkey,
+          permissions: [],
+          expiresAt: new BN(0),
+        })),
+      },
+      txOptions,
+    );
   }
 
   public async upsertDelegateAcls(
-    glamState: PublicKey,
     delegateAcls: DelegateAcl[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    return await this.update(glamState, { delegateAcls }, txOptions);
+    return await this.update({ delegateAcls }, txOptions);
   }
 
   public async closeTokenAccounts(
-    glamState: PublicKey,
     tokenAccounts: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.closeTokenAccountsTx(
-      glamState,
-      tokenAccounts,
-      txOptions,
-    );
+    const tx = await this.closeTokenAccountsTx(tokenAccounts, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -346,7 +332,6 @@ export class StateClient {
    * Close vault's token accounts, all token accounts must use the same token program
    */
   public async closeTokenAccountIx(
-    glamState: PublicKey,
     tokenAccounts: PublicKey[],
     tokenProgram: PublicKey = TOKEN_PROGRAM_ID,
     txOptions: TxOptions = {},
@@ -355,7 +340,7 @@ export class StateClient {
     return await this.base.program.methods
       .tokenCloseAccount()
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         tokenAccount: tokenAccounts[0],
         cpiProgram: tokenProgram,
@@ -371,7 +356,6 @@ export class StateClient {
   }
 
   public async closeTokenAccountsTx(
-    glamState: PublicKey,
     accounts: PublicKey[],
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
@@ -400,7 +384,6 @@ export class StateClient {
           async ([programId, accounts]) => {
             if (accounts.length === 0) return null;
             return this.closeTokenAccountIx(
-              glamState,
               accounts,
               new PublicKey(programId),
               txOptions,
@@ -423,38 +406,29 @@ export class StateClient {
   /* Deposit & Withdraw */
 
   public async deposit(
-    glamState: PublicKey | string,
     asset: PublicKey | string,
     amount: number | BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(
-      new PublicKey(glamState),
-      new PublicKey(asset),
-      amount,
-      txOptions,
-    );
+    const tx = await this.depositTx(new PublicKey(asset), amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async depositSol(
-    glamState: PublicKey,
     lamports: number | BN,
     wrap = true,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositSolTx(glamState, lamports, wrap, txOptions);
+    const tx = await this.depositSolTx(lamports, wrap, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async depositSolTx(
-    glamState: PublicKey,
     lamports: number | BN,
     wrap = true,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
 
     const _lamports =
       lamports instanceof BN ? BigInt(lamports.toString()) : lamports;
@@ -462,19 +436,19 @@ export class StateClient {
       const tx = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: signer,
-          toPubkey: vault,
+          toPubkey: this.base.vaultPda,
           lamports: _lamports,
         }),
       );
       return await this.base.intoVersionedTransaction(tx, txOptions);
     }
 
-    const vaultAta = this.base.getAta(WSOL, vault);
+    const vaultAta = this.base.getAta(WSOL, this.base.vaultPda);
     const tx = new Transaction().add(
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
         vaultAta,
-        vault,
+        this.base.vaultPda,
         WSOL,
       ),
       SystemProgram.transfer({
@@ -488,39 +462,32 @@ export class StateClient {
   }
 
   public async withdraw(
-    glamState: PublicKey,
     asset: PublicKey | string,
     amount: number | BN,
     txOptions: TxOptions = {} as TxOptions,
   ): Promise<TransactionSignature> {
-    const tx = await this.withdrawTx(
-      glamState,
-      new PublicKey(asset),
-      amount,
-      txOptions,
-    );
+    const tx = await this.withdrawTx(new PublicKey(asset), amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async depositTx(
-    statePda: PublicKey,
     asset: PublicKey,
     amount: number | BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(statePda);
 
-    const { mint, tokenProgram } = await this.base.fetchMintWithOwner(asset);
+    const { mint, tokenProgram } =
+      await this.base.fetchMintAndTokenProgram(asset);
 
     const signerAta = this.base.getAta(asset, signer, tokenProgram);
-    const vaultAta = this.base.getVaultAta(statePda, asset, tokenProgram);
+    const vaultAta = this.base.getAta(asset, this.base.vaultPda, tokenProgram);
 
     const tx = new Transaction().add(
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
         vaultAta,
-        vault,
+        this.base.vaultPda,
         asset,
         tokenProgram,
       ),
@@ -540,13 +507,12 @@ export class StateClient {
   }
 
   public async withdrawIxs(
-    glamState: PublicKey,
     asset: PublicKey,
     amount: number | BN,
     txOptions: TxOptions,
   ): Promise<TransactionInstruction[]> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const { tokenProgram } = await this.base.fetchMintWithOwner(asset);
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
     const signerAta = this.base.getAta(asset, glamSigner, tokenProgram);
 
     return [
@@ -560,7 +526,7 @@ export class StateClient {
       await this.base.program.methods
         .withdraw(new BN(amount))
         .accounts({
-          glamState,
+          glamState: this.base.statePda,
           glamSigner,
           asset,
           tokenProgram,
@@ -570,13 +536,12 @@ export class StateClient {
   }
 
   public async withdrawTx(
-    glamState: PublicKey,
     asset: PublicKey,
     amount: number | BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const { tokenProgram } = await this.base.fetchMintWithOwner(asset);
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
     const signerAta = this.base.getAta(asset, glamSigner, tokenProgram);
 
     const preInstructions = [
@@ -591,17 +556,13 @@ export class StateClient {
     const postInstructions = [];
 
     if (asset.equals(WSOL)) {
-      const wrapSolIxs = await this.base.maybeWrapSol(
-        glamState,
-        amount,
-        glamSigner,
-      );
+      const wrapSolIxs = await this.base.maybeWrapSol(amount, glamSigner);
       preInstructions.push(...wrapSolIxs);
       // If we need to wrap SOL, it means the wSOL balance will be drained,
       // and we close the wSOL token account for convenience
       postInstructions.push(
-        await this.closeTokenAccountIx(glamState, [
-          this.base.getVaultAta(glamState, WSOL),
+        await this.closeTokenAccountIx([
+          this.base.getAta(WSOL, this.base.vaultPda),
         ]),
       );
     }
@@ -609,7 +570,7 @@ export class StateClient {
     const tx = await this.base.program.methods
       .withdraw(new BN(amount))
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamSigner,
         asset,
         tokenProgram,

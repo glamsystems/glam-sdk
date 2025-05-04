@@ -7,26 +7,21 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddressSync,
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
   TOKEN_2022_PROGRAM_ID,
-  closeAccount,
   createCloseAccountInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
-import { StateModel } from "../models";
-import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
-import { ASSETS_MAINNET } from "./assets";
+import { getAccountPolicyPda } from "../utils/glamPDAs";
 
 export class InvestorClient {
   public constructor(readonly base: BaseClient) {}
 
   public async subscribe(
-    statePda: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
@@ -34,54 +29,45 @@ export class InvestorClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await (queued
-      ? this.queuedSubscribeTx(statePda, asset, amount, mintId, txOptions)
-      : this.subscribeTx(statePda, asset, amount, mintId, txOptions));
+      ? this.queuedSubscribeTx(asset, amount, mintId, txOptions)
+      : this.subscribeTx(asset, amount, mintId, txOptions));
     return await this.base.sendAndConfirm(tx);
   }
 
   public async queuedRedeem(
-    statePda: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.queuedRedeemTx(
-      statePda,
-      asset,
-      amount,
-      mintId,
-      txOptions,
-    );
+    const tx = await this.queuedRedeemTx(asset, amount, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async fulfill(
-    statePda: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.fulfillTx(statePda, asset, mintId, txOptions);
+    const tx = await this.fulfillTx(asset, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async claim(
-    statePda: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     // Claim WSOL from redeemed shares
     if (asset.equals(WSOL)) {
-      const tx = await this.claimAssetTx(statePda, asset, mintId, txOptions);
+      const tx = await this.claimAssetTx(asset, mintId, txOptions);
       return await this.base.sendAndConfirm(tx);
     }
 
     // Claim shares after subscription is fulfilled
-    const glamMint = this.base.getMintPda(statePda, mintId);
+    const glamMint = this.base.mintPda;
     if (glamMint.equals(asset)) {
-      const tx = await this.claimShareTx(statePda, asset, mintId, txOptions);
+      const tx = await this.claimShareTx(asset, mintId, txOptions);
       return await this.base.sendAndConfirm(tx);
     }
 
@@ -89,7 +75,6 @@ export class InvestorClient {
   }
 
   public async subscribeTx(
-    glamState: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
@@ -102,11 +87,11 @@ export class InvestorClient {
     const signer = txOptions.signer || this.base.getSigner();
 
     // glam mint token to receive
-    const glamMint = this.base.getMintPda(glamState, mintId);
-    const mintTo = this.base.getMintAta(signer, glamMint);
+    const glamMint = this.base.mintPda;
+    const mintTo = this.base.getMintAta(signer);
 
     // asset token to transfer to vault
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const vaultInput = this.base.getAta(asset, vault);
     const signerInput = this.base.getAta(asset, signer);
 
@@ -150,8 +135,8 @@ export class InvestorClient {
 
     // Check if lockup is enabled on the fund, if so, add signerPolicy
     let signerPolicy = null;
-    if (await this.base.isLockupEnabled(glamState)) {
-      signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
+    if (await this.base.isLockupEnabled()) {
+      signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
       console.log(
         `signerPolicy: ${signerPolicy} for signer ${signer} and token account ${mintTo}`,
       );
@@ -161,7 +146,7 @@ export class InvestorClient {
     const tx = await this.base.program.methods
       .subscribe(0, amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamMint,
         signer,
         depositAsset: asset,
@@ -175,7 +160,6 @@ export class InvestorClient {
   }
 
   public async queuedSubscribeTx(
-    glamState: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
@@ -188,7 +172,7 @@ export class InvestorClient {
     const signer = txOptions.signer || this.base.getSigner();
 
     // asset token to transfer to escrow
-    const escrow = this.base.getEscrowPda(glamState);
+    const escrow = this.base.escrowPda;
     const escrowAta = this.base.getAta(asset, escrow);
     const signerAta = this.base.getAta(asset, signer);
 
@@ -227,7 +211,7 @@ export class InvestorClient {
     const tx = await this.base.program.methods
       .queuedSubscribe(0, amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         signer,
         depositAsset: asset,
       })
@@ -239,7 +223,6 @@ export class InvestorClient {
   }
 
   public async queuedRedeemTx(
-    glamState: PublicKey,
     asset: PublicKey,
     amount: BN,
     mintId: number = 0,
@@ -250,12 +233,12 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.getMintPda(glamState, mintId);
+    const glamMint = this.base.mintPda;
 
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        this.base.getMintAta(signer, glamMint),
+        this.base.getMintAta(signer),
         signer,
         glamMint,
         TOKEN_2022_PROGRAM_ID,
@@ -263,15 +246,14 @@ export class InvestorClient {
     ];
 
     const remainingAccounts: PublicKey[] = [];
-    if (await this.base.isLockupEnabled(glamState)) {
-      const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
-      const signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
-      const escrow = this.base.getEscrowPda(glamState);
-      const escrowPolicy = this.base.getAccountPolicyPda(glamState, escrow);
+    if (await this.base.isLockupEnabled()) {
+      const extraMetasAccount = this.base.extraMetasPda;
+      const signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
+      const escrow = this.base.escrowPda;
+      const escrowPolicy = getAccountPolicyPda(this.base.getMintAta(escrow));
       remainingAccounts.push(
         ...[
           extraMetasAccount,
-          glamState,
           signerPolicy,
           escrowPolicy,
           TRANSFER_HOOK_PROGRAM,
@@ -282,7 +264,7 @@ export class InvestorClient {
     const tx = await this.base.program.methods
       .queuedRedeem(0, amount)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamMint,
         signer,
       })
@@ -300,7 +282,6 @@ export class InvestorClient {
   }
 
   public async fulfillTx(
-    glamState: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
@@ -310,12 +291,12 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
-    const vault = this.base.getVaultPda(glamState);
+    const vault = this.base.vaultPda;
     const vaultAssetAta = this.base.getAta(asset, vault);
 
-    const glamMint = this.base.getMintPda(glamState, mintId);
-    const escrow = this.base.getEscrowPda(glamState);
-    const escrowMintAta = this.base.getMintAta(escrow, glamMint);
+    const glamMint = this.base.mintPda;
+    const escrow = this.base.escrowPda;
+    const escrowMintAta = this.base.getMintAta(escrow);
     const escrowAssetAta = this.base.getAta(asset, escrow);
 
     let preInstructions: TransactionInstruction[] = [
@@ -344,7 +325,7 @@ export class InvestorClient {
     const tx = await this.base.program.methods
       .fulfill(mintId)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         glamMint,
         signer,
         asset,
@@ -356,7 +337,6 @@ export class InvestorClient {
   }
 
   public async claimAssetTx(
-    glamState: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
@@ -366,13 +346,13 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.getMintPda(glamState, mintId);
+    const glamMint = this.base.mintPda;
     const signerAta = this.base.getAta(asset, signer);
 
     const tx = await this.base.program.methods
       .claim(0)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         signer,
         tokenMint: asset,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -394,7 +374,6 @@ export class InvestorClient {
   }
 
   public async claimShareTx(
-    glamState: PublicKey,
     asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
@@ -404,19 +383,18 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.getMintPda(glamState, mintId);
+    const glamMint = this.base.mintPda;
     const signerAta = this.base.getAta(asset, signer, TOKEN_2022_PROGRAM_ID);
-    const escrow = this.base.getEscrowPda(glamState);
+    const escrow = this.base.escrowPda;
 
     const remainingAccounts: PublicKey[] = [];
-    if (await this.base.isLockupEnabled(glamState)) {
-      const extraMetasAccount = this.base.getExtraMetasPda(glamState, mintId);
-      const signerPolicy = this.base.getAccountPolicyPda(glamState, signer);
-      const escrowPolicy = this.base.getAccountPolicyPda(glamState, escrow);
+    if (await this.base.isLockupEnabled()) {
+      const extraMetasAccount = this.base.extraMetasPda;
+      const signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
+      const escrowPolicy = getAccountPolicyPda(this.base.getMintAta(escrow));
       remainingAccounts.push(
         ...[
           extraMetasAccount,
-          glamState,
           escrowPolicy,
           signerPolicy,
           TRANSFER_HOOK_PROGRAM,
@@ -427,7 +405,7 @@ export class InvestorClient {
     const tx = await this.base.program.methods
       .claim(0)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         signer,
         tokenMint: asset,
         tokenProgram: TOKEN_2022_PROGRAM_ID,

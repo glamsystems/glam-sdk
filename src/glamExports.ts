@@ -6,7 +6,7 @@ import type { GlamProtocol } from "../target/types/glam_protocol";
 import GlamProtocolIdlJson from "../target/idl/glam_protocol.json";
 
 const GlamIdl = GlamProtocolIdlJson as GlamProtocol;
-export { GlamProtocol, GlamIdl, GlamProtocolIdlJson};
+export { GlamProtocol, GlamIdl, GlamProtocolIdlJson };
 export type GlamProgram = Program<GlamProtocol>;
 
 export function getGlamProgramId(cluster?: ClusterNetwork) {
@@ -23,13 +23,7 @@ export function getGlamProgram(
   cluster: ClusterNetwork,
   provider: Provider,
 ): GlamProgram {
-  switch (cluster) {
-    case "mainnet-beta":
-      return new Program(GlamIdl, provider) as GlamProgram;
-
-    default:
-      const idl = { ...GlamProtocolIdlJson };
-      idl.address = getGlamProgramId(cluster).toBase58();
-      return new Program(idl as GlamProtocol, provider) as GlamProgram;
-  }
+  const idl = { ...GlamProtocolIdlJson };
+  idl.address = getGlamProgramId(cluster).toBase58(); // Override program address for the specified cluster
+  return new Program(idl as GlamProtocol, provider) as GlamProgram;
 }

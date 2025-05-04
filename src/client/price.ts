@@ -28,9 +28,13 @@ export class PriceClient {
    * !! It doesn't reflect the actual AUM of the vault.
    * !! If the vault has not been priced or pricing data is outdated, the number is NOT meaningful.
    */
-  public async getAum(glamState: PublicKey) {
+  public async getAum() {
+    console.warn(
+      "getAum() should only be used for testing. It doesn't reflect the actual AUM of the vault in production.",
+    );
+
     // @ts-ignore
-    const glamStateAccount = await this.base.fetchStateAccount(glamState);
+    const glamStateAccount = await this.base.fetchStateAccount();
     let pricedAssets = [] as any[];
     glamStateAccount.params[0].forEach((param) => {
       const name = Object.keys(param.name)[0];
@@ -45,8 +49,8 @@ export class PriceClient {
     ) as BN;
   }
 
-  async priceKaminoIx(glamState: PublicKey, priceDenom: PriceDenom) {
-    const glamVault = this.base.getVaultPda(glamState);
+  async priceKaminoIx(priceDenom: PriceDenom) {
+    const glamVault = this.base.vaultPda;
     const obligations = await fetchKaminoObligations(
       this.base.provider.connection,
       glamVault,
@@ -73,7 +77,7 @@ export class PriceClient {
     const priceIx = await this.base.program.methods
       .priceKaminoObligations(priceDenom)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
         pythOracle: null,
         switchboardPriceOracle: null,
@@ -87,10 +91,9 @@ export class PriceClient {
   }
 
   public async priceVaultIxs(
-    glamState: PublicKey,
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction[]> {
-    const glamVault = this.base.getVaultPda(glamState);
+    const glamVault = this.base.vaultPda;
 
     const tickets = await fetchMarinadeTicketAccounts(
       this.base.provider.connection,
@@ -100,7 +103,7 @@ export class PriceClient {
     const priceTicketsIx = await this.base.program.methods
       .priceTickets(priceDenom)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
@@ -119,7 +122,7 @@ export class PriceClient {
     const priceStakesIx = await this.base.program.methods
       .priceStakes(priceDenom)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
       })
       .remainingAccounts(
@@ -134,37 +137,30 @@ export class PriceClient {
     const priceVaultIx = await this.base.program.methods
       .priceVault(priceDenom)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
       })
-      .remainingAccounts(
-        await this.remainingAccountsForPricingVaultAssets(glamState),
-      )
+      .remainingAccounts(await this.remainingAccountsForPricingVaultAssets())
       .instruction();
 
     const priceMeteoraIx = await this.base.program.methods
       .priceMeteoraPositions(priceDenom)
       .accounts({
-        glamState,
+        glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
       })
-      .remainingAccounts(
-        await this.remainingAccountsForPricingMeteora(glamState),
-      )
+      .remainingAccounts(await this.remainingAccountsForPricingMeteora())
       .instruction();
 
-    const priceKaminoIx = await this.priceKaminoIx(glamState, priceDenom);
+    const priceKaminoIx = await this.priceKaminoIx(priceDenom);
 
     try {
-      const { user, userStats } = this.drift.getDriftUserPdas(glamState);
-      const remainingAccounts = await this.drift.composeRemainingAccounts(
-        glamState,
-        0,
-      );
+      const { user, userStats } = this.drift.getDriftUserPdas();
+      const remainingAccounts = await this.drift.composeRemainingAccounts(0);
       const priceDriftIx = await this.base.program.methods
         .priceDrift(priceDenom)
         .accounts({
-          glamState,
+          glamState: this.base.statePda,
           glamVault,
           solOracle: SOL_ORACLE,
           user,
@@ -194,8 +190,8 @@ export class PriceClient {
     }
   }
 
-  remainingAccountsForPricingMeteora = async (glamState: PublicKey) => {
-    const glamVault = this.base.getVaultPda(glamState);
+  remainingAccountsForPricingMeteora = async () => {
+    const glamVault = this.base.vaultPda;
     const positions = await fetchMeteoraPositions(
       this.base.provider.connection,
       glamVault,
@@ -223,11 +219,11 @@ export class PriceClient {
     return chunks.flat();
   };
 
-  remainingAccountsForPricingVaultAssets = async (glamState: PublicKey) => {
-    const glamStateAccount = await this.base.fetchStateAccount(glamState);
+  remainingAccountsForPricingVaultAssets = async () => {
+    const glamStateAccount = await this.base.fetchStateAccount();
     return glamStateAccount.assets
       .map((asset) => [
-        this.base.getVaultAta(glamState, asset),
+        this.base.getVaultAta(asset),
         asset,
         // FIXME: check oracle vs LST state?
         ASSETS_MAINNET.get(asset.toBase58())?.oracle || new PublicKey(0),
