@@ -1699,6 +1699,10 @@ export type GlamProtocol = {
       ],
       "args": [
         {
+          "name": "mintId",
+          "type": "u8"
+        },
+        {
           "name": "mintModel",
           "type": {
             "defined": {

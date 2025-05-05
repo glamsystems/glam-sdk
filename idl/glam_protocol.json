@@ -1693,6 +1693,10 @@
       ],
       "args": [
         {
+          "name": "mint_id",
+          "type": "u8"
+        },
+        {
           "name": "mint_model",
           "type": {
             "defined": {

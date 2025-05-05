@@ -122,6 +122,22 @@ export class MintClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
+  public async emergencyUpdate(
+    mintModel: Partial<MintModel>,
+    txOptions: TxOptions = {},
+  ) {
+    const tx = await this.base.program.methods
+      .emergencyUpdateMint(0, new MintIdlModel(mintModel))
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
   public async closeMintIx() {
     return await this.base.program.methods
       .closeMint(0)

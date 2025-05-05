@@ -147,6 +147,14 @@ export class StateClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  public async emergencyUpdate(
+    updated: Partial<StateModel>,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const vTx = await this.emergencyUpdateStateTx(updated, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
   public async updateStateTx(
     updated: Partial<StateModel>,
     txOptions: TxOptions,
@@ -169,6 +177,22 @@ export class StateClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tx = await this.base.program.methods
       .updateStateApplyTimelock()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+      })
+      .preInstructions(txOptions.preInstructions || [])
+      .transaction();
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async emergencyUpdateStateTx(
+    updated: Partial<StateModel>,
+    txOptions: TxOptions,
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const tx = await this.base.program.methods
+      .emergencyUpdateState(new StateIdlModel(updated))
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
