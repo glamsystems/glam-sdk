@@ -2873,67 +2873,6 @@
       ]
     },
     {
-      "name": "jupiter_vote_merge_partial_unstaking",
-      "discriminator": [
-        93,
-        226,
-        122,
-        120,
-        130,
-        35,
-        189,
-        208
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partial_unstake",
-          "writable": true
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "jupiter_vote_new_escrow",
       "discriminator": [
         255,
@@ -2998,81 +2937,6 @@
         }
       ],
       "args": []
-    },
-    {
-      "name": "jupiter_vote_open_partial_unstaking",
-      "discriminator": [
-        84,
-        7,
-        113,
-        220,
-        212,
-        63,
-        237,
-        218
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partial_unstake",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        },
-        {
-          "name": "memo",
-          "type": "string"
-        }
-      ]
     },
     {
       "name": "jupiter_vote_toggle_max_lock",
@@ -3188,79 +3052,6 @@
         },
         {
           "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "escrow_tokens",
-          "writable": true
-        },
-        {
-          "name": "destination_tokens",
-          "writable": true
-        },
-        {
-          "name": "token_program"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "jupiter_vote_withdraw_partial_unstaking",
-      "discriminator": [
-        109,
-        98,
-        65,
-        252,
-        184,
-        0,
-        216,
-        240
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partial_unstake",
           "writable": true
         },
         {
@@ -4142,7 +3933,8 @@
       ],
       "accounts": [
         {
-          "name": "glam_state"
+          "name": "glam_state",
+          "writable": true
         },
         {
           "name": "glam_vault",
@@ -9800,7 +9592,7 @@
             "name": "ExternalVaultAccounts"
           },
           {
-            "name": "LockUp"
+            "name": "LockUpPeriod"
           },
           {
             "name": "DriftMarketIndexesPerp"
@@ -9833,7 +9625,7 @@
             "name": "MinRedemption"
           },
           {
-            "name": "Valuation"
+            "name": "NotifyAndSettle"
           },
           {
             "name": "Ledger"
@@ -9888,6 +9680,9 @@
           },
           {
             "name": "PermanentDelegate"
+          },
+          {
+            "name": "TimeUnit"
           }
         ]
       }
@@ -9979,7 +9774,7 @@
             ]
           },
           {
-            "name": "Percentage",
+            "name": "U32",
             "fields": [
               {
                 "name": "val",
@@ -10097,13 +9892,13 @@
             ]
           },
           {
-            "name": "Valuation",
+            "name": "NotifyAndSettle",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "defined": {
-                    "name": "Valuation"
+                    "name": "NotifyAndSettle"
                   }
                 }
               }
@@ -10134,6 +9929,19 @@
                     "defined": {
                       "name": "Integration"
                     }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "TimeUnit",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "TimeUnit"
                   }
                 }
               }
@@ -10907,9 +10715,15 @@
             }
           },
           {
-            "name": "lock_up_period_in_seconds",
+            "name": "lock_up_period",
             "type": {
-              "option": "i32"
+              "option": "u32"
+            }
+          },
+          {
+            "name": "year_in_seconds",
+            "type": {
+              "option": "u32"
             }
           },
           {
@@ -10935,23 +10749,19 @@
             }
           },
           {
-            "name": "fee_params",
+            "name": "notify_and_settle",
             "type": {
               "option": {
                 "defined": {
-                  "name": "FeeParams"
+                  "name": "NotifyAndSettle"
                 }
               }
             }
           },
           {
-            "name": "valuation",
+            "name": "max_cap",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "Valuation"
-                }
-              }
+              "option": "u64"
             }
           },
           {
@@ -11263,6 +11073,46 @@
           },
           {
             "name": "Soft"
+          }
+        ]
+      }
+    },
+    {
+      "name": "NotifyAndSettle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "ValuationModel"
+              }
+            }
+          },
+          {
+            "name": "notice_period",
+            "type": "u64"
+          },
+          {
+            "name": "notice_period_type",
+            "type": {
+              "defined": {
+                "name": "NoticePeriodType"
+              }
+            }
+          },
+          {
+            "name": "permissionless_fulfillment",
+            "type": "bool"
+          },
+          {
+            "name": "settlement_period",
+            "type": "u64"
+          },
+          {
+            "name": "cancellation_window",
+            "type": "u64"
           }
         ]
       }
@@ -11616,6 +11466,9 @@
           },
           {
             "name": "JupiterGovClaim"
+          },
+          {
+            "name": "EmergencyUpdate"
           }
         ]
       }
@@ -12317,15 +12170,19 @@
             }
           },
           {
-            "name": "max_cap",
+            "name": "update_timelock",
             "type": {
-              "option": "u64"
+              "option": "u32"
             }
           },
           {
-            "name": "update_timelock",
+            "name": "time_unit",
             "type": {
-              "option": "i64"
+              "option": {
+                "defined": {
+                  "name": "TimeUnit"
+                }
+              }
             }
           },
           {
@@ -12425,58 +12282,10 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "Slot"
-          },
-          {
             "name": "Second"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Valuation",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "model",
-            "type": {
-              "defined": {
-                "name": "ValuationModel"
-              }
-            }
           },
           {
-            "name": "notice_period",
-            "type": "u64"
-          },
-          {
-            "name": "notice_period_type",
-            "type": {
-              "defined": {
-                "name": "NoticePeriodType"
-              }
-            }
-          },
-          {
-            "name": "permissionless_fulfillment",
-            "type": "bool"
-          },
-          {
-            "name": "settlement_period",
-            "type": "u64"
-          },
-          {
-            "name": "cancellation_window",
-            "type": "u64"
-          },
-          {
-            "name": "time_unit",
-            "type": {
-              "defined": {
-                "name": "TimeUnit"
-              }
-            }
+            "name": "Slot"
           }
         ]
       }

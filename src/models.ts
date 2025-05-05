@@ -49,8 +49,8 @@ export class StateIdlModel implements StateModelType {
   driftMarketIndexesSpot: number[] | null;
   driftOrderTypes: number[] | null;
   baseAsset: PublicKey | null;
-  maxCap: BN | null;
-  updateTimelock: BN | null;
+  updateTimelock: number | null;
+  timeUnit: { slot: {} } | { second: {} } | null;
 
   metadata: Metadata | null;
   rawOpenfunds: FundOpenfundsModel | null;
@@ -75,8 +75,8 @@ export class StateIdlModel implements StateModelType {
     this.metadata = data.metadata ?? null;
     this.rawOpenfunds = data.rawOpenfunds ?? null;
     this.baseAsset = data.baseAsset ?? null;
-    this.maxCap = data.maxCap ?? null;
     this.updateTimelock = data.updateTimelock ?? null;
+    this.timeUnit = data.timeUnit ?? null;
   }
 }
 export class StateModel extends StateIdlModel {
@@ -218,11 +218,7 @@ export class StateModel extends StateIdlModel {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
-        if (name === "lockUp") {
-          mintIdlModel["lockUpPeriodInSeconds"] = Number(value);
-        } else {
-          mintIdlModel[name] = value;
-        }
+        mintIdlModel[name] = value;
       });
 
       if (openfundsMetadataAccount) {
@@ -341,12 +337,14 @@ export class MintIdlModel implements MintModelType {
   allowlist: PublicKey[] | null;
   blocklist: PublicKey[] | null;
 
-  lockUpPeriodInSeconds: number | null;
+  lockUpPeriod: number | null;
+  yearInSeconds: number | null;
   permanentDelegate: PublicKey | null;
   defaultAccountStateFrozen: boolean | null;
   feeStructure: FeeStructure | null;
   feeParams: FeeParams | null;
-  valuation: Valuation | null;
+  notifyAndSettle: NotifyAndSettle | null;
+  maxCap: BN | null;
   minSubscription: BN | null;
   minRedemption: BN | null;
   subscriptionPaused: boolean | null;
@@ -366,12 +364,14 @@ export class MintIdlModel implements MintModelType {
     this.rawOpenfunds = data.rawOpenfunds ?? null;
     this.allowlist = data.allowlist ?? null;
     this.blocklist = data.blocklist ?? null;
-    this.lockUpPeriodInSeconds = data.lockUpPeriodInSeconds ?? null;
+    this.lockUpPeriod = data.lockUpPeriod ?? null;
+    this.yearInSeconds = data.yearInSeconds ?? null;
     this.permanentDelegate = data.permanentDelegate ?? null;
     this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
     this.feeStructure = data.feeStructure ?? null;
     this.feeParams = data.feeParams ?? null;
-    this.valuation = data.valuation ?? null;
+    this.notifyAndSettle = data.notifyAndSettle ?? null;
+    this.maxCap = data.maxCap ?? null;
     this.minSubscription = data.minSubscription ?? null;
     this.minRedemption = data.minRedemption ?? null;
     this.subscriptionPaused = data.subscriptionPaused ?? null;
@@ -383,6 +383,9 @@ export class MintModel extends MintIdlModel {
     super(data);
   }
 
+  /**
+   * @deprecated
+   */
   static mintAddress(
     statePda: PublicKey,
     idx: number = 0,
@@ -549,9 +552,14 @@ export type Integration = IdlTypes<GlamProtocol>["integration"];
 export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
-export type Valuation = IdlTypes<GlamProtocol>["valuation"];
+export type NotifyAndSettle = IdlTypes<GlamProtocol>["notifyAndSettle"];
 
 export class PriceDenom {
   static readonly SOL = { sol: {} };
   static readonly USD = { usd: {} };
+}
+
+export class TimeUnit {
+  static readonly Slot = { slot: {} };
+  static readonly Second = { second: {} };
 }

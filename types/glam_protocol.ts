@@ -2879,67 +2879,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "jupiterVoteMergePartialUnstaking",
-      "discriminator": [
-        93,
-        226,
-        122,
-        120,
-        130,
-        35,
-        189,
-        208
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partialUnstake",
-          "writable": true
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "jupiterVoteNewEscrow",
       "discriminator": [
         255,
@@ -3004,81 +2943,6 @@ export type GlamProtocol = {
         }
       ],
       "args": []
-    },
-    {
-      "name": "jupiterVoteOpenPartialUnstaking",
-      "discriminator": [
-        84,
-        7,
-        113,
-        220,
-        212,
-        63,
-        237,
-        218
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partialUnstake",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        },
-        {
-          "name": "memo",
-          "type": "string"
-        }
-      ]
     },
     {
       "name": "jupiterVoteToggleMaxLock",
@@ -3194,79 +3058,6 @@ export type GlamProtocol = {
         },
         {
           "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "escrowTokens",
-          "writable": true
-        },
-        {
-          "name": "destinationTokens",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "jupiterVoteWithdrawPartialUnstaking",
-      "discriminator": [
-        109,
-        98,
-        65,
-        252,
-        184,
-        0,
-        216,
-        240
-      ],
-      "accounts": [
-        {
-          "name": "glamState"
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpiProgram",
-          "address": "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
-        },
-        {
-          "name": "locker",
-          "writable": true
-        },
-        {
-          "name": "escrow",
-          "writable": true
-        },
-        {
-          "name": "partialUnstake",
           "writable": true
         },
         {
@@ -4148,7 +3939,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -9806,7 +9598,7 @@ export type GlamProtocol = {
             "name": "externalVaultAccounts"
           },
           {
-            "name": "lockUp"
+            "name": "lockUpPeriod"
           },
           {
             "name": "driftMarketIndexesPerp"
@@ -9839,7 +9631,7 @@ export type GlamProtocol = {
             "name": "minRedemption"
           },
           {
-            "name": "valuation"
+            "name": "notifyAndSettle"
           },
           {
             "name": "ledger"
@@ -9894,6 +9686,9 @@ export type GlamProtocol = {
           },
           {
             "name": "permanentDelegate"
+          },
+          {
+            "name": "timeUnit"
           }
         ]
       }
@@ -9985,7 +9780,7 @@ export type GlamProtocol = {
             ]
           },
           {
-            "name": "percentage",
+            "name": "u32",
             "fields": [
               {
                 "name": "val",
@@ -10103,13 +9898,13 @@ export type GlamProtocol = {
             ]
           },
           {
-            "name": "valuation",
+            "name": "notifyAndSettle",
             "fields": [
               {
                 "name": "val",
                 "type": {
                   "defined": {
-                    "name": "valuation"
+                    "name": "notifyAndSettle"
                   }
                 }
               }
@@ -10140,6 +9935,19 @@ export type GlamProtocol = {
                     "defined": {
                       "name": "integration"
                     }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "timeUnit",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "timeUnit"
                   }
                 }
               }
@@ -10913,9 +10721,15 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "lockUpPeriodInSeconds",
+            "name": "lockUpPeriod",
             "type": {
-              "option": "i32"
+              "option": "u32"
+            }
+          },
+          {
+            "name": "yearInSeconds",
+            "type": {
+              "option": "u32"
             }
           },
           {
@@ -10941,23 +10755,19 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "feeParams",
+            "name": "notifyAndSettle",
             "type": {
               "option": {
                 "defined": {
-                  "name": "feeParams"
+                  "name": "notifyAndSettle"
                 }
               }
             }
           },
           {
-            "name": "valuation",
+            "name": "maxCap",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "valuation"
-                }
-              }
+              "option": "u64"
             }
           },
           {
@@ -11269,6 +11079,46 @@ export type GlamProtocol = {
           },
           {
             "name": "soft"
+          }
+        ]
+      }
+    },
+    {
+      "name": "notifyAndSettle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "valuationModel"
+              }
+            }
+          },
+          {
+            "name": "noticePeriod",
+            "type": "u64"
+          },
+          {
+            "name": "noticePeriodType",
+            "type": {
+              "defined": {
+                "name": "noticePeriodType"
+              }
+            }
+          },
+          {
+            "name": "permissionlessFulfillment",
+            "type": "bool"
+          },
+          {
+            "name": "settlementPeriod",
+            "type": "u64"
+          },
+          {
+            "name": "cancellationWindow",
+            "type": "u64"
           }
         ]
       }
@@ -11622,6 +11472,9 @@ export type GlamProtocol = {
           },
           {
             "name": "jupiterGovClaim"
+          },
+          {
+            "name": "emergencyUpdate"
           }
         ]
       }
@@ -12323,15 +12176,19 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "maxCap",
+            "name": "updateTimelock",
             "type": {
-              "option": "u64"
+              "option": "u32"
             }
           },
           {
-            "name": "updateTimelock",
+            "name": "timeUnit",
             "type": {
-              "option": "i64"
+              "option": {
+                "defined": {
+                  "name": "timeUnit"
+                }
+              }
             }
           },
           {
@@ -12431,58 +12288,10 @@ export type GlamProtocol = {
         "kind": "enum",
         "variants": [
           {
-            "name": "slot"
-          },
-          {
             "name": "second"
-          }
-        ]
-      }
-    },
-    {
-      "name": "valuation",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "model",
-            "type": {
-              "defined": {
-                "name": "valuationModel"
-              }
-            }
           },
           {
-            "name": "noticePeriod",
-            "type": "u64"
-          },
-          {
-            "name": "noticePeriodType",
-            "type": {
-              "defined": {
-                "name": "noticePeriodType"
-              }
-            }
-          },
-          {
-            "name": "permissionlessFulfillment",
-            "type": "bool"
-          },
-          {
-            "name": "settlementPeriod",
-            "type": "u64"
-          },
-          {
-            "name": "cancellationWindow",
-            "type": "u64"
-          },
-          {
-            "name": "timeUnit",
-            "type": {
-              "defined": {
-                "name": "timeUnit"
-              }
-            }
+            "name": "slot"
           }
         ]
       }

@@ -459,6 +459,14 @@ export class BaseClient {
     return publicKey;
   }
 
+  get signer(): PublicKey {
+    return this.getSigner();
+  }
+
+  get wallet(): Wallet {
+    return this.getWallet();
+  }
+
   get vaultPda(): PublicKey {
     return getVaultPda(this.statePda, this.program.programId);
   }
@@ -624,7 +632,7 @@ export class BaseClient {
       const name = Object.keys(param.name)[0];
       // @ts-ignore
       const value = Object.values(param.value)[0].val;
-      if (name === "lockUp") {
+      if (name === "lockUpPeriod") {
         return new BN(value).toNumber() >= 0;
       }
     }

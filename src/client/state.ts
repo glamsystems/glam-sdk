@@ -71,12 +71,10 @@ export class StateClient {
       return [txSig, statePda];
     }
 
-    let extraMetasAccount =
-      mints &&
-      mints[0].lockUpPeriodInSeconds &&
-      mints[0].lockUpPeriodInSeconds > 0
-        ? this.base.extraMetasPda
-        : null;
+    // let extraMetasAccount =
+    //   mints && mints[0].lockUpPeriod && mints[0].lockUpPeriod > 0
+    //     ? this.base.extraMetasPda
+    //     : null;
 
     // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
@@ -95,7 +93,7 @@ export class StateClient {
           glamState: statePda,
           glamSigner,
           newMint: this.base.mintPda,
-          extraMetasAccount,
+          extraMetasAccount: this.base.extraMetasPda,
         })
         .preInstructions([initStateIx])
         .transaction();
@@ -126,7 +124,7 @@ export class StateClient {
             glamState: statePda,
             glamSigner,
             newMint: this.base.mintPda,
-            extraMetasAccount,
+            extraMetasAccount: this.base.extraMetasPda,
           })
           .transaction();
         const vTx = await this.base.intoVersionedTransaction(tx, txOptions);

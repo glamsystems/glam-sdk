@@ -193,8 +193,16 @@ export type GlamPolicies = {
       ],
       "args": [
         {
-          "name": "lockedUntilTs",
-          "type": "i64"
+          "name": "lockedUntil",
+          "type": "u64"
+        },
+        {
+          "name": "timeUnit",
+          "type": {
+            "defined": {
+              "name": "timeUnit"
+            }
+          }
         }
       ]
     },
@@ -437,8 +445,30 @@ export type GlamPolicies = {
             "type": "pubkey"
           },
           {
-            "name": "lockedUntilTs",
-            "type": "i64"
+            "name": "lockedUntil",
+            "type": "u64"
+          },
+          {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "timeUnit",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "second"
+          },
+          {
+            "name": "slot"
           }
         ]
       }

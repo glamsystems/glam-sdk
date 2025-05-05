@@ -187,8 +187,16 @@
       ],
       "args": [
         {
-          "name": "locked_until_ts",
-          "type": "i64"
+          "name": "locked_until",
+          "type": "u64"
+        },
+        {
+          "name": "time_unit",
+          "type": {
+            "defined": {
+              "name": "TimeUnit"
+            }
+          }
         }
       ]
     },
@@ -431,8 +439,30 @@
             "type": "pubkey"
           },
           {
-            "name": "locked_until_ts",
-            "type": "i64"
+            "name": "locked_until",
+            "type": "u64"
+          },
+          {
+            "name": "time_unit",
+            "type": {
+              "defined": {
+                "name": "TimeUnit"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TimeUnit",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Second"
+          },
+          {
+            "name": "Slot"
           }
         ]
       }
