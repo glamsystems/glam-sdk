@@ -8,7 +8,7 @@ export type GlamPolicies = {
   "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
   "metadata": {
     "name": "glamPolicies",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
