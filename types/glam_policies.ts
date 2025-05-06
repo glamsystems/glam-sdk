@@ -10,7 +10,7 @@ export type GlamPolicies = {
     "name": "glamPolicies",
     "version": "0.1.1",
     "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "description": "Policies program for GLAM protocol"
   },
   "instructions": [
     {
