@@ -620,6 +620,12 @@ export type GlamConfig = {
           },
           {
             "name": "pythLazerStableCoin"
+          },
+          {
+            "name": "lstPoolState"
+          },
+          {
+            "name": "marinadeState"
           }
         ]
       }

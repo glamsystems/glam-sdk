@@ -5,6 +5,7 @@ import {
   TransactionSignature,
   VersionedTransaction,
   AccountMeta,
+  Transaction,
 } from "@solana/web3.js";
 import {
   TOKEN_2022_PROGRAM_ID,
@@ -242,13 +243,8 @@ export class JupiterSwapClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.program.methods
-      .jupiterSetMaxSwapSlippage(new BN(slippageBps))
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .transaction();
+    // FIXME: interface has changed, fix this place holder
+    const tx = new Transaction();
     return this.base.intoVersionedTransaction(tx, { ...txOptions });
   }
 
@@ -257,13 +253,9 @@ export class JupiterSwapClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    return await this.base.program.methods
-      .jupiterSetMaxSwapSlippage(new BN(slippageBps))
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .instruction();
+    // FIXME: interface has changed, fix this place holder
+    const tx = new Transaction();
+    return tx.instructions[0];
   }
 
   /*

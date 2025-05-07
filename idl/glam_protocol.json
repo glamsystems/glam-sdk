@@ -2427,36 +2427,6 @@
       ]
     },
     {
-      "name": "jupiter_set_max_swap_slippage",
-      "discriminator": [
-        110,
-        79,
-        13,
-        71,
-        208,
-        111,
-        56,
-        66
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "slippage",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "jupiter_swap",
       "discriminator": [
         116,
@@ -5790,6 +5760,68 @@
           "name": "sol_oracle"
         },
         {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
+        },
+        {
           "name": "pyth_oracle",
           "optional": true
         },
@@ -5862,6 +5894,68 @@
         },
         {
           "name": "sol_oracle"
+        },
+        {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -5920,6 +6014,68 @@
         },
         {
           "name": "sol_oracle"
+        },
+        {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -5978,6 +6134,68 @@
         },
         {
           "name": "sol_oracle"
+        },
+        {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -6036,6 +6254,68 @@
         },
         {
           "name": "sol_oracle"
+        },
+        {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -8926,6 +9206,19 @@
   ],
   "accounts": [
     {
+      "name": "GlobalConfig",
+      "discriminator": [
+        149,
+        8,
+        156,
+        202,
+        160,
+        252,
+        176,
+        217
+      ]
+    },
+    {
       "name": "OpenfundsMetadataAccount",
       "discriminator": [
         5,
@@ -9291,6 +9584,34 @@
           {
             "name": "max_amount",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AssetMeta",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          },
+          {
+            "name": "oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle_source",
+            "type": {
+              "defined": {
+                "name": "OracleSource"
+              }
+            }
           }
         ]
       }
@@ -10362,6 +10683,51 @@
       }
     },
     {
+      "name": "GlobalConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "The authority that can modify the config"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_authority",
+            "docs": [
+              "The authority that can modify fee structure of individual glam state",
+              "and claim protocol fees"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "referrer",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "flow_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "asset_metas",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "AssetMeta"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "HurdleType",
       "type": {
         "kind": "enum",
@@ -11173,6 +11539,68 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleSource",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
+          },
+          {
+            "name": "QuoteAsset"
+          },
+          {
+            "name": "Pyth1K"
+          },
+          {
+            "name": "Pyth1M"
+          },
+          {
+            "name": "PythStableCoin"
+          },
+          {
+            "name": "Prelaunch"
+          },
+          {
+            "name": "PythPull"
+          },
+          {
+            "name": "Pyth1KPull"
+          },
+          {
+            "name": "Pyth1MPull"
+          },
+          {
+            "name": "PythStableCoinPull"
+          },
+          {
+            "name": "SwitchboardOnDemand"
+          },
+          {
+            "name": "PythLazer"
+          },
+          {
+            "name": "PythLazer1K"
+          },
+          {
+            "name": "PythLazer1M"
+          },
+          {
+            "name": "PythLazerStableCoin"
+          },
+          {
+            "name": "LstPoolState"
+          },
+          {
+            "name": "MarinadeState"
           }
         ]
       }

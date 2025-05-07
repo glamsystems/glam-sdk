@@ -614,6 +614,12 @@
           },
           {
             "name": "PythLazerStableCoin"
+          },
+          {
+            "name": "LstPoolState"
+          },
+          {
+            "name": "MarinadeState"
           }
         ]
       }

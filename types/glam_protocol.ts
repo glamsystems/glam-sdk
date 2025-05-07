@@ -2433,36 +2433,6 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "jupiterSetMaxSwapSlippage",
-      "discriminator": [
-        110,
-        79,
-        13,
-        71,
-        208,
-        111,
-        56,
-        66
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "slippage",
-          "type": "u64"
-        }
-      ]
-    },
-    {
       "name": "jupiterSwap",
       "discriminator": [
         116,
@@ -5796,6 +5766,68 @@ export type GlamProtocol = {
           "name": "solOracle"
         },
         {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
+        },
+        {
           "name": "pythOracle",
           "optional": true
         },
@@ -5868,6 +5900,68 @@ export type GlamProtocol = {
         },
         {
           "name": "solOracle"
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -5926,6 +6020,68 @@ export type GlamProtocol = {
         },
         {
           "name": "solOracle"
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -5984,6 +6140,68 @@ export type GlamProtocol = {
         },
         {
           "name": "solOracle"
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -6042,6 +6260,68 @@ export type GlamProtocol = {
         },
         {
           "name": "solOracle"
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         }
       ],
       "args": [
@@ -8932,6 +9212,19 @@ export type GlamProtocol = {
   ],
   "accounts": [
     {
+      "name": "globalConfig",
+      "discriminator": [
+        149,
+        8,
+        156,
+        202,
+        160,
+        252,
+        176,
+        217
+      ]
+    },
+    {
       "name": "openfundsMetadataAccount",
       "discriminator": [
         5,
@@ -9297,6 +9590,34 @@ export type GlamProtocol = {
           {
             "name": "maxAmount",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "assetMeta",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "asset",
+            "type": "pubkey"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          },
+          {
+            "name": "oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracleSource",
+            "type": {
+              "defined": {
+                "name": "oracleSource"
+              }
+            }
           }
         ]
       }
@@ -10368,6 +10689,51 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "globalConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "The authority that can modify the config"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "feeAuthority",
+            "docs": [
+              "The authority that can modify fee structure of individual glam state",
+              "and claim protocol fees"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "referrer",
+            "type": "pubkey"
+          },
+          {
+            "name": "baseFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "flowFeeBps",
+            "type": "u16"
+          },
+          {
+            "name": "assetMetas",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "assetMeta"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "hurdleType",
       "type": {
         "kind": "enum",
@@ -11179,6 +11545,68 @@ export type GlamProtocol = {
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "oracleSource",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "pyth"
+          },
+          {
+            "name": "switchboard"
+          },
+          {
+            "name": "quoteAsset"
+          },
+          {
+            "name": "pyth1K"
+          },
+          {
+            "name": "pyth1M"
+          },
+          {
+            "name": "pythStableCoin"
+          },
+          {
+            "name": "prelaunch"
+          },
+          {
+            "name": "pythPull"
+          },
+          {
+            "name": "pyth1KPull"
+          },
+          {
+            "name": "pyth1MPull"
+          },
+          {
+            "name": "pythStableCoinPull"
+          },
+          {
+            "name": "switchboardOnDemand"
+          },
+          {
+            "name": "pythLazer"
+          },
+          {
+            "name": "pythLazer1K"
+          },
+          {
+            "name": "pythLazer1M"
+          },
+          {
+            "name": "pythLazerStableCoin"
+          },
+          {
+            "name": "lstPoolState"
+          },
+          {
+            "name": "marinadeState"
           }
         ]
       }
