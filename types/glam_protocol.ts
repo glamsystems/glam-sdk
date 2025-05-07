@@ -11489,6 +11489,10 @@ export type GlamProtocol = {
           {
             "name": "cancellationWindow",
             "type": "u64"
+          },
+          {
+            "name": "padding",
+            "type": "u8"
           }
         ]
       }

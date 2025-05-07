@@ -11483,6 +11483,10 @@
           {
             "name": "cancellation_window",
             "type": "u64"
+          },
+          {
+            "name": "_padding",
+            "type": "u8"
           }
         ]
       }
