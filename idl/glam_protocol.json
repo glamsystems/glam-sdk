@@ -10008,6 +10008,12 @@
           },
           {
             "name": "TimeUnit"
+          },
+          {
+            "name": "KaminoLendingMarkets"
+          },
+          {
+            "name": "MeteoraDlmmPools"
           }
         ]
       }
@@ -12552,6 +12558,28 @@
             }
           },
           {
+            "name": "base_asset",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "update_timelock",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "time_unit",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "TimeUnit"
+                }
+              }
+            }
+          },
+          {
             "name": "delegate_acls",
             "type": {
               "option": {
@@ -12600,25 +12628,25 @@
             }
           },
           {
-            "name": "base_asset",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "update_timelock",
-            "type": {
-              "option": "u32"
-            }
-          },
-          {
-            "name": "time_unit",
+            "name": "kamino_lending_markets",
             "type": {
               "option": {
-                "defined": {
-                  "name": "TimeUnit"
-                }
+                "vec": "pubkey"
               }
+            }
+          },
+          {
+            "name": "meteora_dlmm_pools",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "max_swap_slippage_bps",
+            "type": {
+              "option": "u32"
             }
           },
           {

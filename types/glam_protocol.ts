@@ -10014,6 +10014,12 @@ export type GlamProtocol = {
           },
           {
             "name": "timeUnit"
+          },
+          {
+            "name": "kaminoLendingMarkets"
+          },
+          {
+            "name": "meteoraDlmmPools"
           }
         ]
       }
@@ -12558,6 +12564,28 @@ export type GlamProtocol = {
             }
           },
           {
+            "name": "baseAsset",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "updateTimelock",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "timeUnit",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "timeUnit"
+                }
+              }
+            }
+          },
+          {
             "name": "delegateAcls",
             "type": {
               "option": {
@@ -12606,25 +12634,25 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "baseAsset",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "updateTimelock",
-            "type": {
-              "option": "u32"
-            }
-          },
-          {
-            "name": "timeUnit",
+            "name": "kaminoLendingMarkets",
             "type": {
               "option": {
-                "defined": {
-                  "name": "timeUnit"
-                }
+                "vec": "pubkey"
               }
+            }
+          },
+          {
+            "name": "meteoraDlmmPools",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "maxSwapSlippageBps",
+            "type": {
+              "option": "u32"
             }
           },
           {

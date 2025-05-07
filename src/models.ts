@@ -43,15 +43,23 @@ export class StateIdlModel implements StateModelType {
   owner: ManagerModel | null;
   created: CreatedModel | null;
 
-  delegateAcls: DelegateAcl[] | null;
-  integrations: Integration[] | null;
-  driftMarketIndexesPerp: number[] | null;
-  driftMarketIndexesSpot: number[] | null;
-  driftOrderTypes: number[] | null;
   baseAsset: PublicKey | null;
   updateTimelock: number | null;
   timeUnit: { slot: {} } | { second: {} } | null;
 
+  // ACLs
+  delegateAcls: DelegateAcl[] | null;
+  integrations: Integration[] | null;
+
+  // Integration specific configs
+  driftMarketIndexesPerp: number[] | null;
+  driftMarketIndexesSpot: number[] | null;
+  driftOrderTypes: number[] | null;
+  kaminoLendingMarkets: PublicKey[] | null;
+  meteoraDlmmPools: PublicKey[] | null;
+  maxSwapSlippageBps: number | null;
+
+  // Metadata
   metadata: Metadata | null;
   rawOpenfunds: FundOpenfundsModel | null;
 
@@ -61,22 +69,34 @@ export class StateIdlModel implements StateModelType {
     this.name = data.name ?? null;
     this.uri = data.uri ?? null;
     this.enabled = data.enabled ?? null;
+
     this.assets = data.assets ?? null;
     this.externalVaultAccounts = data.externalVaultAccounts ?? null;
+
     this.mints = data.mints ?? null;
     this.company = data.company ?? null;
     this.owner = data.owner ?? null;
     this.created = data.created ?? null;
-    this.delegateAcls = data.delegateAcls ?? null;
-    this.integrations = data.integrations ?? null;
-    this.driftMarketIndexesPerp = data.driftMarketIndexesPerp ?? null;
-    this.driftMarketIndexesSpot = data.driftMarketIndexesSpot ?? null;
-    this.driftOrderTypes = data.driftOrderTypes ?? null;
-    this.metadata = data.metadata ?? null;
-    this.rawOpenfunds = data.rawOpenfunds ?? null;
+
+    // Configs
     this.baseAsset = data.baseAsset ?? null;
     this.updateTimelock = data.updateTimelock ?? null;
     this.timeUnit = data.timeUnit ?? null;
+
+    // ACLs
+    this.delegateAcls = data.delegateAcls ?? null;
+    this.integrations = data.integrations ?? null;
+
+    // Integration specific configs
+    this.driftMarketIndexesPerp = data.driftMarketIndexesPerp ?? null;
+    this.driftMarketIndexesSpot = data.driftMarketIndexesSpot ?? null;
+    this.driftOrderTypes = data.driftOrderTypes ?? null;
+    this.kaminoLendingMarkets = data.kaminoLendingMarkets ?? null;
+    this.meteoraDlmmPools = data.meteoraDlmmPools ?? null;
+    this.maxSwapSlippageBps = data.maxSwapSlippageBps ?? null;
+
+    this.metadata = data.metadata ?? null;
+    this.rawOpenfunds = data.rawOpenfunds ?? null;
   }
 }
 export class StateModel extends StateIdlModel {
