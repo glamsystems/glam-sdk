@@ -23,23 +23,12 @@ import {
   TokenAccountNotFoundError,
   getAccount,
   getAssociatedTokenAddressSync,
-  getMint,
   unpackMint,
   Mint,
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
 } from "@solana/spl-token";
-import {
-  WSOL,
-  USDC,
-  SEED_STATE,
-  SEED_VAULT,
-  SEED_METADATA,
-  SEED_MINT,
-  SEED_ESCROW,
-  TRANSFER_HOOK_PROGRAM,
-  JITO_TIP_DEFAULT,
-} from "../constants";
+import { WSOL, USDC, JITO_TIP_DEFAULT } from "../constants";
 
 import { GlamProgram, getGlamProgram } from "../glamExports";
 import { ClusterNetwork, GlamClientConfig } from "../clientConfig";

@@ -2,7 +2,7 @@
   "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
   "metadata": {
     "name": "glam_policies",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "spec": "0.1.0",
     "description": "Policies program for GLAM protocol"
   },
