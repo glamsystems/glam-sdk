@@ -6870,7 +6870,7 @@
           "type": "pubkey"
         },
         {
-          "name": "staker_with_withdrawer",
+          "name": "staker_or_withdrawer",
           "type": "u32"
         }
       ]

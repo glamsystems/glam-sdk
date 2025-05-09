@@ -285,11 +285,16 @@ export class BaseClient {
       // - gui: wallet apps usually do the simulation themselves, we should ignore the simulation error here by default
       // - cli: we should set simulate=true
       if (simulate) {
-        tx.recentBlockhash = recentBlockhash;
-        tx.feePayer = signer;
+        const vTx = new VersionedTransaction(
+          new TransactionMessage({
+            instructions,
+            payerKey: signer,
+            recentBlockhash: PublicKey.default.toString(),
+          }).compileToV0Message(lookupTables),
+        );
         console.log(
           "Tx (base64):",
-          tx.serialize({ verifySignatures: false }).toString("base64"),
+          Buffer.from(vTx.serialize()).toString("base64"),
         );
         console.error(
           "Simulation failed. If error message is too obscure, inspect the tx in explorer (https://explorer.solana.com/tx/inspector)",
@@ -714,11 +719,14 @@ export class BaseClient {
     return "";
   }
 
+  /**
+   * @deprecated
+   */
   public async listGlamStates(): Promise<PublicKey[]> {
     const bytes = Uint8Array.from([
       0x31, 0x68, 0xa8, 0xd6, 0x86, 0xb4, 0xad, 0x9a,
     ]);
-    const accounts = await this.provider.connection.getParsedProgramAccounts(
+    const accounts = await this.provider.connection.getProgramAccounts(
       this.program.programId,
       {
         filters: [{ memcmp: { offset: 0, bytes: bs58.encode(bytes) } }],

@@ -53,7 +53,7 @@ export const fetchMarinadeTicketAccounts = async (
   connection: Connection,
   beneficiary: PublicKey,
 ) =>
-  await connection.getParsedProgramAccounts(MARINADE_PROGRAM_ID, {
+  await connection.getProgramAccounts(MARINADE_PROGRAM_ID, {
     filters: [
       {
         dataSize: MARINADE_TICKET_SIZE,
@@ -72,25 +72,20 @@ export const fetchKaminoObligations = async (
   owner: PublicKey,
   market?: PublicKey,
 ) => {
-  const accounts = await connection.getParsedProgramAccounts(
-    KAMINO_LENDING_PROGRAM,
-    {
-      filters: [
-        {
-          dataSize: KAMINO_OBTRIGATION_SIZE,
+  const accounts = await connection.getProgramAccounts(KAMINO_LENDING_PROGRAM, {
+    filters: [
+      {
+        dataSize: KAMINO_OBTRIGATION_SIZE,
+      },
+      {
+        memcmp: {
+          offset: 64,
+          bytes: owner.toBase58(),
         },
-        {
-          memcmp: {
-            offset: 64,
-            bytes: owner.toBase58(),
-          },
-        },
-        ...(market
-          ? [{ memcmp: { offset: 32, bytes: market.toBase58() } }]
-          : []),
-      ],
-    },
-  );
+      },
+      ...(market ? [{ memcmp: { offset: 32, bytes: market.toBase58() } }] : []),
+    ],
+  });
   return accounts.map((a) => a.pubkey);
 };
 
@@ -98,22 +93,19 @@ export const fetchMeteoraPositions = async (
   connection: Connection,
   owner: PublicKey,
 ) => {
-  const accounts = await connection.getParsedProgramAccounts(
-    METEORA_DLMM_PROGRAM,
-    {
-      filters: [
-        {
-          dataSize: METEORA_POSITION_SIZE,
+  const accounts = await connection.getProgramAccounts(METEORA_DLMM_PROGRAM, {
+    filters: [
+      {
+        dataSize: METEORA_POSITION_SIZE,
+      },
+      {
+        memcmp: {
+          offset: 40,
+          bytes: owner.toBase58(),
         },
-        {
-          memcmp: {
-            offset: 40,
-            bytes: owner.toBase58(),
-          },
-        },
-      ],
-    },
-  );
+      },
+    ],
+  });
   return accounts.map((a) => a.pubkey);
 };
 

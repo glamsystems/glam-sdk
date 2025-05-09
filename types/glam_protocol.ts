@@ -6876,7 +6876,7 @@ export type GlamProtocol = {
           "type": "pubkey"
         },
         {
-          "name": "stakerWithWithdrawer",
+          "name": "stakerOrWithdrawer",
           "type": "u32"
         }
       ]
