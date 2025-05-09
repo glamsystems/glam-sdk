@@ -7,6 +7,7 @@ export interface AssetMeta {
   decimals: number;
   oracle: PublicKey;
   programId?: PublicKey;
+  isLst?: boolean;
 }
 
 export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
@@ -79,7 +80,6 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
     {
       decimals: 9,
-      // oracle: new PublicKey("FAq7hqjn7FWGXKDwJHzsXGgBcydGTcK4kziJpAGWXjDb"), // drift pyth
       oracle: new PublicKey("8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC"),
     },
   ],
@@ -88,8 +88,8 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
     {
       decimals: 9,
-      // oracle: new PublicKey("9QE1P5EfzthYDgoQ9oPeTByCEKaRJeZbVVqKJfgU9iau"), // drift pyth
       oracle: new PublicKey("Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb"), // state
+      isLst: true,
     },
   ],
   [
@@ -98,6 +98,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 9,
       oracle: new PublicKey("ArAQfbzsdotoKB5jJcZa3ajQrrPcWr2YQoDAEAiFxJAC"), // state
+      isLst: true,
     },
   ],
   [
@@ -106,6 +107,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 9,
       oracle: new PublicKey("9mhGNSPArRMHpLDMSmxAvuoizBqtBGqYdT8WGuqgxNdn"), // state
+      isLst: true,
     },
   ],
 ]);
