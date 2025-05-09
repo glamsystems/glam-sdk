@@ -12508,14 +12508,6 @@
             }
           },
           {
-            "name": "external_vault_accounts",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
             "name": "mints",
             "type": {
               "option": {

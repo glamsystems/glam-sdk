@@ -12514,14 +12514,6 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "externalVaultAccounts",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
             "name": "mints",
             "type": {
               "option": {

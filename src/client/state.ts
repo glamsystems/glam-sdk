@@ -58,7 +58,7 @@ export class StateClient {
     if (mints && mints.length === 0) {
       // @ts-ignore
       const tx = await this.base.program.methods
-        .initializeState(stateModel)
+        .initializeState(new StateIdlModel(stateModel))
         .accountsPartial({
           glamState: statePda,
           glamSigner,
@@ -79,7 +79,7 @@ export class StateClient {
     // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
       const initStateIx = await this.base.program.methods
-        .initializeState(stateModel)
+        .initializeState(new StateIdlModel(stateModel))
         .accountsPartial({
           glamState: statePda,
           glamSigner,
@@ -105,7 +105,7 @@ export class StateClient {
 
     // Initialize state and add mints in separate transactions
     const tx = await this.base.program.methods
-      .initializeState(stateModel)
+      .initializeState(new StateIdlModel(stateModel))
       .accountsPartial({
         glamState: statePda,
         glamVault: this.base.vaultPda,

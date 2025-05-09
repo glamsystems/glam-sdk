@@ -12,8 +12,6 @@ import { KaminoFarmClient, KaminoLendingClient } from "./client/kamino";
 import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestorClient } from "./client/investor";
 import { PriceClient } from "./client/price";
-import { PublicKey } from "@solana/web3.js";
-import { StateModel } from "./models";
 
 export { JUPITER_API_DEFAULT } from "./client/base";
 

@@ -206,8 +206,9 @@ export class StakingClient {
   async getStakeAccountsWithStates(
     withdrawAuthority?: PublicKey,
   ): Promise<StakeAccountInfo[]> {
+    // stake authority offset: 12
+    // withdraw authority offset: 44
     const authority = withdrawAuthority || this.base.vaultPda;
-
     const accounts =
       await this.base.provider.connection.getParsedProgramAccounts(
         StakeProgram.programId,
@@ -218,7 +219,7 @@ export class StakingClient {
             },
             {
               memcmp: {
-                offset: 12,
+                offset: 44,
                 bytes: authority.toBase58(),
               },
             },

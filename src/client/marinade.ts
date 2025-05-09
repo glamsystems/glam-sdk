@@ -8,6 +8,7 @@ import {
   SYSVAR_CLOCK_PUBKEY,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -16,7 +17,13 @@ import {
 import { Marinade } from "@marinade.finance/marinade-ts-sdk";
 
 import { BaseClient, TxOptions } from "./base";
-import { MARINADE_PROGRAM_ID, MARINADE_TICKET_SIZE, MSOL } from "../constants";
+import {
+  MARINADE_NATIVE_STAKE_AUTHORITY,
+  MARINADE_PROGRAM_ID,
+  MARINADE_TICKET_SIZE,
+  MSOL,
+  STAKE_ACCOUNT_SIZE,
+} from "../constants";
 import { fetchMarinadeTicketAccounts } from "../utils/helpers";
 
 export type Ticket = {
@@ -39,6 +46,14 @@ export class MarinadeClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.depositTx(amount, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async depositNative(
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.depositNativeTx(amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -204,6 +219,68 @@ export class MarinadeClient {
       .preInstructions([createMsolAtaIx])
       .transaction();
 
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  async createStakeAccount(
+    signer: PublicKey,
+  ): Promise<[PublicKey, TransactionInstruction]> {
+    const seed = Date.now().toString();
+    const stakeAccount = await PublicKey.createWithSeed(
+      signer,
+      seed,
+      StakeProgram.programId,
+    );
+    const lamports =
+      await this.base.provider.connection.getMinimumBalanceForRentExemption(
+        STAKE_ACCOUNT_SIZE,
+      );
+    const createStakeAccountIx = SystemProgram.createAccountWithSeed({
+      fromPubkey: signer,
+      newAccountPubkey: stakeAccount,
+      basePubkey: signer,
+      seed,
+      lamports,
+      space: STAKE_ACCOUNT_SIZE,
+      programId: StakeProgram.programId,
+    });
+
+    return [stakeAccount, createStakeAccountIx];
+  }
+
+  public async depositNativeTx(amount: BN, txOptions: TxOptions): Promise<any> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    // Create and fund the stake account
+    const [stakeAccount, createStakeAccountIx] =
+      await this.createStakeAccount(glamSigner);
+
+    const initStakeIx = await this.base.program.methods
+      .stakeInitialize()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        stake: stakeAccount,
+      })
+      .instruction();
+    const fundStakeIx = await this.base.program.methods
+      .systemTransfer(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        to: stakeAccount,
+      })
+      .instruction();
+
+    // Then set stake authority to the marinade key
+    const tx = await this.base.program.methods
+      .stakeAuthorize(MARINADE_NATIVE_STAKE_AUTHORITY, 0)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        stake: stakeAccount,
+      })
+      .preInstructions([createStakeAccountIx, initStakeIx, fundStakeIx])
+      .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 

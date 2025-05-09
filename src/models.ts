@@ -36,7 +36,6 @@ export class StateIdlModel implements StateModelType {
   enabled: boolean | null;
 
   assets: PublicKey[] | null;
-  externalVaultAccounts: PublicKey[] | null;
 
   mints: MintModel[] | null;
   company: CompanyModel | null;
@@ -71,7 +70,6 @@ export class StateIdlModel implements StateModelType {
     this.enabled = data.enabled ?? null;
 
     this.assets = data.assets ?? null;
-    this.externalVaultAccounts = data.externalVaultAccounts ?? null;
 
     this.mints = data.mints ?? null;
     this.company = data.company ?? null;
@@ -102,12 +100,19 @@ export class StateIdlModel implements StateModelType {
 export class StateModel extends StateIdlModel {
   readonly glamProgramId: PublicKey;
 
+  externalVaultAccounts: PublicKey[] | null;
+  pricedAssets: any[] | null;
+
   constructor(
-    data: Partial<StateIdlModel>,
+    data: Partial<StateModel>,
     glamProgramId = GLAM_PROGRAM_ID_DEFAULT,
   ) {
     super(data);
     this.glamProgramId = glamProgramId;
+
+    // Will be set from state params
+    this.externalVaultAccounts = data.externalVaultAccounts ?? null;
+    this.pricedAssets = data.pricedAssets ?? null;
   }
 
   get idStr() {
@@ -180,7 +185,7 @@ export class StateModel extends StateIdlModel {
     glamMint?: Mint,
     glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
   ) {
-    let stateModel: Partial<StateIdlModel> = {
+    let stateModel: Partial<StateModel> = {
       id: statePda,
       name: stateAccount.name,
       enabled: stateAccount.enabled,
@@ -201,7 +206,7 @@ export class StateModel extends StateIdlModel {
       const name = Object.keys(param.name)[0];
       // @ts-ignore
       const value = Object.values(param.value)[0].val;
-      if (new StateIdlModel({}).hasOwnProperty(name)) {
+      if (new StateModel({}).hasOwnProperty(name)) {
         // @ts-ignore
         stateModel[name] = value;
       } else if (process.env.NODE_ENV === "development") {
