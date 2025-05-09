@@ -71,11 +71,6 @@ export class StateClient {
       return [txSig, statePda];
     }
 
-    // let extraMetasAccount =
-    //   mints && mints[0].lockUpPeriod && mints[0].lockUpPeriod > 0
-    //     ? this.base.extraMetasPda
-    //     : null;
-
     // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
       const initStateIx = await this.base.program.methods
