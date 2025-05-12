@@ -4,7 +4,7 @@ import { DriftClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
 import { JupiterVoteClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
-import { WSolClient } from "./client/wsol";
+import { VaultClient } from "./client/vault";
 import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
 import { MintClient } from "./client/mint";
@@ -26,7 +26,7 @@ export class GlamClient extends BaseClient {
   private _jupiterSwap?: JupiterSwapClient;
   private _jupiterVote?: JupiterVoteClient;
   private _marinade?: MarinadeClient;
-  private _wsol?: WSolClient;
+  private _vault?: VaultClient;
   private _price?: PriceClient;
   private _staking?: StakingClient;
   private _state?: StateClient;
@@ -74,11 +74,11 @@ export class GlamClient extends BaseClient {
     return this._marinade;
   }
 
-  get wsol(): WSolClient {
-    if (!this._wsol) {
-      this._wsol = new WSolClient(this);
+  get vault(): VaultClient {
+    if (!this._vault) {
+      this._vault = new VaultClient(this);
     }
-    return this._wsol;
+    return this._vault;
   }
 
   get staking(): StakingClient {
