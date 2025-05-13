@@ -10020,6 +10020,9 @@ export type GlamProtocol = {
           },
           {
             "name": "meteoraDlmmPools"
+          },
+          {
+            "name": "borrowableAssets"
           }
         ]
       }
@@ -12598,6 +12601,14 @@ export type GlamProtocol = {
                     "name": "integration"
                   }
                 }
+              }
+            }
+          },
+          {
+            "name": "borrowableAssets",
+            "type": {
+              "option": {
+                "vec": "pubkey"
               }
             }
           },

@@ -49,6 +49,7 @@ export class StateIdlModel implements StateModelType {
   // ACLs
   delegateAcls: DelegateAcl[] | null;
   integrations: Integration[] | null;
+  borrowableAssets: PublicKey[] | null;
 
   // Integration specific configs
   driftMarketIndexesPerp: number[] | null;
@@ -84,6 +85,7 @@ export class StateIdlModel implements StateModelType {
     // ACLs
     this.delegateAcls = data.delegateAcls ?? null;
     this.integrations = data.integrations ?? null;
+    this.borrowableAssets = data.borrowableAssets ?? null;
 
     // Integration specific configs
     this.driftMarketIndexesPerp = data.driftMarketIndexesPerp ?? null;

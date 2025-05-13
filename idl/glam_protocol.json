@@ -10014,6 +10014,9 @@
           },
           {
             "name": "MeteoraDlmmPools"
+          },
+          {
+            "name": "BorrowableAssets"
           }
         ]
       }
@@ -12592,6 +12595,14 @@
                     "name": "Integration"
                   }
                 }
+              }
+            }
+          },
+          {
+            "name": "borrowable_assets",
+            "type": {
+              "option": {
+                "vec": "pubkey"
               }
             }
           },

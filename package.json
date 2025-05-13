@@ -18,8 +18,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.0",
-    "@coral-xyz/borsh": "^0.31.0",
+    "@coral-xyz/anchor": "^0.31.1",
+    "@coral-xyz/borsh": "^0.31.1",
     "@marinade.finance/marinade-ts-sdk": "^5.0.15",
     "@meteora-ag/dlmm": "^1.4.11",
     "@solana/spl-stake-pool": "^1.1.5",
