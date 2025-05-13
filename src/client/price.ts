@@ -34,16 +34,8 @@ export class PriceClient {
     );
 
     // @ts-ignore
-    const glamStateAccount = await this.base.fetchStateAccount();
-    let pricedAssets = [] as any[];
-    glamStateAccount.params[0].forEach((param) => {
-      const name = Object.keys(param.name)[0];
-      if (name === "pricedAssets") {
-        // @ts-ignore
-        pricedAssets = Object.values(param.value)[0].val;
-      }
-    });
-    return pricedAssets.reduce(
+    const stateModel = await this.base.fetchStateModel();
+    return (stateModel?.pricedAssets || []).reduce(
       (sum, p) => new BN(p.amount).add(sum),
       new BN(0),
     ) as BN;
@@ -220,13 +212,15 @@ export class PriceClient {
   };
 
   remainingAccountsForPricingVaultAssets = async () => {
-    const glamStateAccount = await this.base.fetchStateAccount();
-    return glamStateAccount.assets
+    const stateModel = await this.base.fetchStateModel();
+    const assetsForPricing = (stateModel.borrowableAssets || []).concat(
+      stateModel.assets || [],
+    );
+    return assetsForPricing
       .map((asset) => [
         this.base.getVaultAta(asset),
         asset,
-        // FIXME: check oracle vs LST state?
-        ASSETS_MAINNET.get(asset.toBase58())?.oracle || new PublicKey(0),
+        ASSETS_MAINNET.get(asset.toBase58())?.oracle!, // FIXME: support more assets
       ])
       .flat()
       .map((a) => ({

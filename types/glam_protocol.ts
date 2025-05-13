@@ -9283,6 +9283,11 @@ export type GlamProtocol = {
       "msg": "Timelock still active"
     },
     {
+      "code": 48006,
+      "name": "assetNotBorrowable",
+      "msg": "Asset is not allowed to borrow"
+    },
+    {
       "code": 49000,
       "name": "invalidAccountType",
       "msg": "Invalid account type"

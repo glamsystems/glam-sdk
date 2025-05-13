@@ -9277,6 +9277,11 @@
       "msg": "Timelock still active"
     },
     {
+      "code": 48006,
+      "name": "AssetNotBorrowable",
+      "msg": "Asset is not allowed to borrow"
+    },
+    {
       "code": 49000,
       "name": "InvalidAccountType",
       "msg": "Invalid account type"
