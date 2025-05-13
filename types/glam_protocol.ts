@@ -6773,6 +6773,102 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "setProtocolFees",
+      "discriminator": [
+        49,
+        143,
+        189,
+        18,
+        56,
+        206,
+        158,
+        226
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "baseFeeBps",
+          "type": "u16"
+        },
+        {
+          "name": "flowFeeBps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "setTokenAccountsStates",
       "discriminator": [
         50,
