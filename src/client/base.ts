@@ -293,11 +293,15 @@ export class BaseClient {
           }).compileToV0Message(lookupTables),
         );
         console.log(
+          "Lookup tables:",
+          lookupTables.map((lt) => lt.key.toString()),
+        );
+        console.log(
           "Tx (base64):",
           Buffer.from(vTx.serialize()).toString("base64"),
         );
         console.error(
-          "Simulation failed. If error message is too obscure, inspect the tx in explorer (https://explorer.solana.com/tx/inspector)",
+          "Simulation failed. If error message is too obscure, inspect and simulate the tx in explorer: https://explorer.solana.com/tx/inspector",
         );
         throw e;
       }
@@ -621,7 +625,7 @@ export class BaseClient {
       throw new Error("Invalid mint index");
     }
 
-    // iterate over the mint params
+    // Iterate over the mint params
     for (const param of state.params[1]) {
       const name = Object.keys(param.name)[0];
       // @ts-ignore

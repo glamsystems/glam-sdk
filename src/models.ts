@@ -104,6 +104,7 @@ export class StateModel extends StateIdlModel {
 
   externalVaultAccounts: PublicKey[] | null;
   pricedAssets: any[] | null;
+  ledger: LedgerEntry[] | null;
 
   constructor(
     data: Partial<StateModel>,
@@ -115,6 +116,7 @@ export class StateModel extends StateIdlModel {
     // Will be set from state params
     this.externalVaultAccounts = data.externalVaultAccounts ?? null;
     this.pricedAssets = data.pricedAssets ?? null;
+    this.ledger = data.ledger ?? null;
   }
 
   get idStr() {
@@ -198,7 +200,6 @@ export class StateModel extends StateIdlModel {
       created: stateAccount.created,
       delegateAcls: stateAccount.delegateAcls,
       integrations: stateAccount.integrations,
-      owner: new ManagerModel({ pubkey: stateAccount.owner }),
       mints: [],
     };
 
@@ -236,6 +237,16 @@ export class StateModel extends StateIdlModel {
     });
     stateModel.company = new CompanyModel(company);
 
+    // Build stateModel.owner from openfunds account
+    const owner = { pubkey: stateAccount.owner };
+    openfundsMetadataAccount?.fundManagers[0].forEach((param) => {
+      const name = Object.keys(param.name)[0];
+      const value = param.value;
+      // @ts-ignore
+      owner[name] = value;
+    });
+    stateModel.owner = new ManagerModel(owner);
+
     // Build the array of ShareClassModel
     stateAccount.mints.forEach((_, i) => {
       const mintIdlModel = {} as any;
@@ -245,6 +256,14 @@ export class StateModel extends StateIdlModel {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
+
+        // Ledger is a mint param but we store it on the state model
+        if (Object.keys(stateAccount.accountType)[0] === "fund") {
+          if (name === "ledger") {
+            stateModel["ledger"] = value;
+          }
+        }
+
         mintIdlModel[name] = value;
       });
 
@@ -580,6 +599,7 @@ export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
 export type NotifyAndSettle = IdlTypes<GlamProtocol>["notifyAndSettle"];
+export type LedgerEntry = IdlTypes<GlamProtocol>["ledgerEntry"];
 
 export class PriceDenom {
   static readonly SOL = { sol: {} };

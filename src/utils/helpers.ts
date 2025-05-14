@@ -22,6 +22,7 @@ import {
 } from "../constants";
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
+import { GlamProtocolIdlJson } from "../glamExports";
 
 export const fetchStakeAccounts = async (
   connection: Connection,
@@ -231,16 +232,14 @@ const getErrorFromRPCResponse = (
         // @ts-ignore due to missing typing information mentioned above.
         const instructionError = error["InstructionError"];
         // An instruction error is a custom program error and looks like:
-        // [
-        //   1,
-        //   {
-        //     "Custom": 1
-        //   }
-        // ]
+        // [1, {"Custom": 1}]
         // See also https://solana.stackexchange.com/a/931/294
-        throw new Error(
-          `Error in transaction: instruction index ${instructionError[0]}, custom program error ${instructionError[1]["Custom"]}`,
-        );
+        const customErrorCode = instructionError[1]["Custom"];
+        const { errors: glamErrors } = GlamProtocolIdlJson;
+        const glamError = glamErrors.find((e) => e.code === customErrorCode);
+        const msg = glamError?.msg || "Unknown custsom error";
+        console.log(`Custom error code: ${customErrorCode}, error: ${msg}}`);
+        throw new Error(msg);
       }
     }
     throw Error(error.toString());
