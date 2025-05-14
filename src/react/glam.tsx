@@ -55,7 +55,8 @@ interface GlamProviderContext {
   driftMarketConfigs: DriftMarketConfigs;
   driftUser: DriftUser;
   setActiveGlamState: (f: GlamStateCache) => void;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<void>; // refresh active glam state
+  refetchGlamStates: () => Promise<void>;
 }
 
 interface UserWallet {
@@ -182,7 +183,7 @@ export function GlamProvider({
     }
   };
 
-  const { data: glamStateModels } = useQuery({
+  const { data: glamStateModels, refetch: refetchGlamStates } = useQuery({
     queryKey: ["/all-glam-states", activeGlamState?.pubkey, cluster.network],
     queryFn: () => glamClient.fetchGlamStates(),
   });
@@ -381,14 +382,17 @@ export function GlamProvider({
     userWallet,
     jupTokenList,
     prices: tokenPrices,
-    setActiveGlamState,
     driftMarketConfigs,
     driftUser,
+    setActiveGlamState,
     refresh: async () => {
       refreshVaultHoldings();
       refreshDelegateAcls();
       refetchDriftUser();
       refetchWalletBalances();
+    },
+    refetchGlamStates: async () => {
+      refetchGlamStates();
     },
   };
 
