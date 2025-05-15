@@ -122,7 +122,6 @@
         7,
         -1,
         8,
-        -1,
         9,
         10,
         11,
@@ -130,7 +129,8 @@
         13,
         14,
         15,
-        16
+        16,
+        17
       ]
     },
     {
@@ -251,6 +251,75 @@
         -1,
         7,
         8
+      ]
+    },
+    {
+      "src_ix_name": "withdraw_stake_account",
+      "src_discriminator": [
+        211,
+        85,
+        184,
+        65,
+        183,
+        177,
+        233,
+        217
+      ],
+      "dst_ix_name": "marinade_withdraw_stake_account",
+      "dst_discriminator": [
+        88,
+        200,
+        107,
+        134,
+        244,
+        89,
+        194,
+        111
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        5,
+        6,
+        -1,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
       ]
     }
   ]

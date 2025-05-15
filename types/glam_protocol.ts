@@ -3043,6 +3043,11 @@ export type GlamProtocol = {
           "writable": true
         },
         {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "tokenProgram"
         }
       ],
@@ -4061,6 +4066,11 @@ export type GlamProtocol = {
           "writable": true
         },
         {
+          "name": "rentPayer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "msolMint",
           "writable": true
         },
@@ -5031,6 +5041,10 @@ export type GlamProtocol = {
         {
           "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "base",
           "signer": true
         },
         {

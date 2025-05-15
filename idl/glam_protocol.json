@@ -3037,6 +3037,11 @@
           "writable": true
         },
         {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "token_program"
         }
       ],
@@ -4055,6 +4060,11 @@
           "writable": true
         },
         {
+          "name": "rent_payer",
+          "writable": true,
+          "signer": true
+        },
+        {
           "name": "msol_mint",
           "writable": true
         },
@@ -5025,6 +5035,10 @@
         {
           "name": "payer",
           "writable": true,
+          "signer": true
+        },
+        {
+          "name": "base",
           "signer": true
         },
         {

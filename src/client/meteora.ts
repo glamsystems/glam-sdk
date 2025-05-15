@@ -76,7 +76,7 @@ export class MeteoraDlmmClient {
 
     const position = this.getPositionPda(
       new PublicKey(pool),
-      this.base.vaultPda,
+      this.base.getSigner(), // use signer as base key
       minBinId,
       width,
     );
@@ -88,6 +88,7 @@ export class MeteoraDlmmClient {
         glamState: this.base.statePda,
         lbPair: new PublicKey(pool),
         position,
+        base: this.base.getSigner(), // use signer as base key
         eventAuthority: EVENT_AUTHORITY,
         program: METEORA_DLMM_PROGRAM,
       })
