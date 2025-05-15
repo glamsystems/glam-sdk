@@ -2,7 +2,7 @@
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glam_protocol",
-    "version": "0.4.21",
+    "version": "0.4.22",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -4179,6 +4179,131 @@
         {
           "name": "msol_amount",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "marinade_withdraw_stake_account",
+      "discriminator": [
+        88,
+        200,
+        107,
+        134,
+        244,
+        89,
+        194,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
+        },
+        {
+          "name": "state",
+          "writable": true
+        },
+        {
+          "name": "msol_mint",
+          "writable": true
+        },
+        {
+          "name": "burn_msol_from",
+          "writable": true
+        },
+        {
+          "name": "treasury_msol_account",
+          "writable": true
+        },
+        {
+          "name": "validator_list",
+          "writable": true
+        },
+        {
+          "name": "stake_list",
+          "writable": true
+        },
+        {
+          "name": "stake_withdraw_authority"
+        },
+        {
+          "name": "stake_deposit_authority"
+        },
+        {
+          "name": "stake_account",
+          "writable": true
+        },
+        {
+          "name": "split_stake_account",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "split_stake_rent_payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "clock"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "stake_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "stake_index",
+          "type": "u32"
+        },
+        {
+          "name": "validator_index",
+          "type": "u32"
+        },
+        {
+          "name": "msol_amount",
+          "type": "u64"
+        },
+        {
+          "name": "beneficiary",
+          "type": "pubkey"
         }
       ]
     },

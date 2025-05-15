@@ -10,6 +10,7 @@ import {
   SimulatedTransactionResponse,
   SignatureResult,
   StakeProgram,
+  ParsedAccountData,
 } from "@solana/web3.js";
 import {
   MARINADE_PROGRAM_ID,
@@ -24,10 +25,19 @@ import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
 import { GlamProtocolIdlJson } from "../glamExports";
 
+export type StakeAccountInfo = {
+  address: PublicKey;
+  lamports: number;
+  state: string;
+  voter?: PublicKey; // if undefined, the stake account is not delegated
+};
+
 export const fetchStakeAccounts = async (
   connection: Connection,
   withdrawAuthority: PublicKey,
 ): Promise<PublicKey[]> => {
+  // stake authority offset: 12
+  // withdraw authority offset: 44
   const accounts = await connection.getParsedProgramAccounts(
     StakeProgram.programId,
     {
@@ -37,7 +47,7 @@ export const fetchStakeAccounts = async (
         },
         {
           memcmp: {
-            offset: 12,
+            offset: 44,
             bytes: withdrawAuthority.toBase58(),
           },
         },
@@ -48,6 +58,70 @@ export const fetchStakeAccounts = async (
   return accounts
     .sort((a, b) => b.account.lamports - a.account.lamports)
     .map((a) => a.pubkey);
+};
+
+export const getStakeAccountsWithStates = async (
+  connection: Connection,
+  withdrawAuthority: PublicKey,
+): Promise<StakeAccountInfo[]> => {
+  // stake authority offset: 12
+  // withdraw authority offset: 44
+  const accounts = await connection.getParsedProgramAccounts(
+    StakeProgram.programId,
+    {
+      filters: [
+        {
+          dataSize: STAKE_ACCOUNT_SIZE,
+        },
+        {
+          memcmp: {
+            offset: 44,
+            bytes: withdrawAuthority.toBase58(),
+          },
+        },
+      ],
+    },
+  );
+
+  const epochInfo = await connection.getEpochInfo();
+  const stakes = await Promise.all(
+    accounts.map(async (account) => {
+      const delegation = (account.account.data as ParsedAccountData).parsed.info
+        .stake?.delegation;
+
+      let state = "undelegated";
+
+      if (!delegation) {
+        return {
+          address: account.pubkey,
+          lamports: account.account.lamports,
+          state,
+        };
+      }
+
+      // possible state if delegated: active, inactive, activating, deactivating
+      const { activationEpoch, deactivationEpoch, voter } = delegation;
+      if (activationEpoch == epochInfo.epoch) {
+        state = "activating";
+      } else if (deactivationEpoch == epochInfo.epoch) {
+        state = "deactivating";
+      } else if (epochInfo.epoch > deactivationEpoch) {
+        state = "inactive";
+      } else if (epochInfo.epoch > activationEpoch) {
+        state = "active";
+      }
+
+      return {
+        address: account.pubkey,
+        lamports: account.account.lamports,
+        voter: new PublicKey(voter),
+        state,
+      };
+    }),
+  );
+
+  // order by lamports desc
+  return stakes.sort((a, b) => b.lamports - a.lamports);
 };
 
 export const fetchMarinadeTicketAccounts = async (

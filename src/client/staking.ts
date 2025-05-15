@@ -14,6 +14,7 @@ import { BaseClient, TxOptions } from "./base";
 import { MarinadeClient } from "./marinade";
 import { getStakePoolAccount } from "@solana/spl-stake-pool";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
+import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
 
 interface StakePoolAccountData {
   programId: PublicKey;
@@ -25,13 +26,6 @@ interface StakePoolAccountData {
   tokenProgramId: PublicKey;
   validatorList: PublicKey;
 }
-
-type StakeAccountInfo = {
-  address: PublicKey;
-  lamports: number;
-  state: string;
-  voter?: PublicKey; // if undefined, the stake account is not delegated
-};
 
 export class StakingClient {
   public constructor(
@@ -177,13 +171,6 @@ export class StakingClient {
    * Utils
    */
 
-  // getStakeAccountPda(state: PublicKey, accountId: string): [PublicKey, number] {
-  //   return PublicKey.findProgramAddressSync(
-  //     [Buffer.from("stake_account"), Buffer.from(accountId), state.toBuffer()],
-  //     this.base.program.programId,
-  //   );
-  // }
-
   getStakePoolWithdrawAuthority(programId: PublicKey, stakePool: PublicKey) {
     const [publicKey] = PublicKey.findProgramAddressSync(
       [stakePool.toBuffer(), Buffer.from("withdraw")],
@@ -203,6 +190,7 @@ export class StakingClient {
     return publicKey;
   }
 
+  // FIXME: this is a dupe of getStakeAccountsWithStates in utils/helpers
   async getStakeAccountsWithStates(
     withdrawAuthority?: PublicKey,
   ): Promise<StakeAccountInfo[]> {
@@ -421,8 +409,10 @@ export class StakingClient {
     const poolTokensTo = this.base.getVaultAta(poolMint, tokenProgram);
 
     // All stake accounts owned by the stake pool withdraw authority
-    const validatorStakeCandidates =
-      await this.getStakeAccountsWithStates(withdrawAuthority);
+    const validatorStakeCandidates = await getStakeAccountsWithStates(
+      this.base.provider.connection,
+      withdrawAuthority,
+    );
 
     // Find a validator stake account to use from the list of candidates.
     // The vault stake account must have the same vote address as the chosen validator stake account.
@@ -494,9 +484,13 @@ export class StakingClient {
 
     // The reserve stake account should NOT be used for withdrawals unless we have no other options.
     const validatorStakeCandidates = (
-      await this.getStakeAccountsWithStates(withdrawAuthority)
+      await getStakeAccountsWithStates(
+        this.base.provider.connection,
+        withdrawAuthority,
+      )
     ).filter((s) => !s.address.equals(reserveStake));
     console.log("validatorStakeCandidates", validatorStakeCandidates);
+
     const validatorStakeAccount =
       validatorStakeCandidates.length === 0
         ? reserveStake

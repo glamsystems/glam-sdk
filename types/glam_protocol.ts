@@ -8,7 +8,7 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.21",
+    "version": "0.4.22",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -4185,6 +4185,131 @@ export type GlamProtocol = {
         {
           "name": "msolAmount",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "marinadeWithdrawStakeAccount",
+      "discriminator": [
+        88,
+        200,
+        107,
+        134,
+        244,
+        89,
+        194,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD"
+        },
+        {
+          "name": "state",
+          "writable": true
+        },
+        {
+          "name": "msolMint",
+          "writable": true
+        },
+        {
+          "name": "burnMsolFrom",
+          "writable": true
+        },
+        {
+          "name": "treasuryMsolAccount",
+          "writable": true
+        },
+        {
+          "name": "validatorList",
+          "writable": true
+        },
+        {
+          "name": "stakeList",
+          "writable": true
+        },
+        {
+          "name": "stakeWithdrawAuthority"
+        },
+        {
+          "name": "stakeDepositAuthority"
+        },
+        {
+          "name": "stakeAccount",
+          "writable": true
+        },
+        {
+          "name": "splitStakeAccount",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "splitStakeRentPayer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "clock"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "stakeProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "stakeIndex",
+          "type": "u32"
+        },
+        {
+          "name": "validatorIndex",
+          "type": "u32"
+        },
+        {
+          "name": "msolAmount",
+          "type": "u64"
+        },
+        {
+          "name": "beneficiary",
+          "type": "pubkey"
         }
       ]
     },

@@ -9,6 +9,7 @@ import {
   SystemProgram,
   Transaction,
   TransactionInstruction,
+  Keypair,
 } from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -24,7 +25,12 @@ import {
   MSOL,
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
-import { fetchMarinadeTicketAccounts } from "../utils/helpers";
+import {
+  fetchMarinadeTicketAccounts,
+  getStakeAccountsWithStates,
+  StakeAccountInfo,
+} from "../utils/helpers";
+import { StakingClient } from "./staking";
 
 export type Ticket = {
   address: PublicKey; // offset 8 after anchor discriminator
@@ -62,6 +68,15 @@ export class MarinadeClient {
   ): Promise<TransactionSignature> {
     const tx = await this.depositStakeAccountTx(stakeAccount, {});
     return await this.base.sendAndConfirm(tx);
+  }
+
+  public async withdrawStakeAccount(
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    return await this.withdrawStakeAccountTx(amount, txOptions);
+    // const tx = await this.withdrawStakeAccountTx(amount, txOptions);
+    // return await this.base.sendAndConfirm(tx);
   }
 
   public async orderUnstake(
@@ -328,6 +343,117 @@ export class MarinadeClient {
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  parseAccountList(data: Buffer, itemSize: number) {
+    const accounts = [];
+    for (let i = 8; i < data.length; i += itemSize) {
+      accounts.push(new PublicKey(data.subarray(i, i + 32)));
+    }
+    return accounts;
+  }
+
+  async getIndexes(
+    stakeAccount: StakeAccountInfo,
+    stakeList: any,
+    validatorList: any,
+  ) {
+    if (!stakeAccount.voter) {
+      throw new Error("Stake account is not delegated");
+    }
+
+    const accountsInfo =
+      await this.base.provider.connection.getMultipleAccountsInfo([
+        stakeList.account,
+        validatorList.account,
+      ]);
+
+    if (!accountsInfo[0] || !accountsInfo[1]) {
+      throw new Error(
+        "Failed to get accounts info of stakeList and validatorList",
+      );
+    }
+
+    const stakeIndex = this.parseAccountList(
+      accountsInfo[0].data,
+      56, // stakeList.itemSize, // FIXME: for some reason stakeList.itemSize is not correct
+    ).findIndex((a) => a.equals(stakeAccount.address));
+
+    const validatorIndex = this.parseAccountList(
+      accountsInfo[1].data,
+      61, // validatorList.itemSize, // FIXME: for some reason validatorList.itemSize is not correct
+    ).findIndex((a) => a.equals(stakeAccount.voter!));
+
+    return {
+      stakeIndex,
+      validatorIndex,
+    };
+  }
+
+  public async withdrawStakeAccountTx(
+    amount: BN,
+    txOptions: TxOptions,
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const marinadeState = await new Marinade().getMarinadeState();
+
+    // Get mariande stake withdraw authority
+    const stakeWithdrawAuthority = await marinadeState.stakeWithdrawAuthority();
+    const stakeDepositAuthority = await marinadeState.stakeDepositAuthority();
+    const stakeList = marinadeState.state.stakeSystem.stakeList;
+    const validatorList = marinadeState.state.validatorSystem.validatorList;
+
+    // Fetch stake accounts by withdraw authority
+    // Filter by state "active" does not work in localnet tests
+    const stakeAccounts = await getStakeAccountsWithStates(
+      this.base.provider.connection,
+      stakeWithdrawAuthority,
+    );
+
+    const { stakeIndex, validatorIndex } = await this.getIndexes(
+      stakeAccounts[0],
+      stakeList,
+      validatorList,
+    );
+
+    const burnMsolFrom = this.base.getVaultAta(MSOL);
+    const newStake = Keypair.generate();
+
+    // FIXME: why is treasuryMsolAccount not correct?
+    // console.log(
+    //   "treasuryMsolAccount:",
+    //   marinadeState.treasuryMsolAccount.toBase58(),
+    // );
+
+    const tx = await this.base.program.methods
+      .marinadeWithdrawStakeAccount(
+        stakeIndex,
+        validatorIndex,
+        amount,
+        this.base.vaultPda,
+      )
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        state: marinadeState.marinadeStateAddress,
+        validatorList: validatorList.account,
+        stakeList: stakeList.account,
+        stakeAccount: stakeAccounts[0].address,
+        stakeWithdrawAuthority,
+        stakeDepositAuthority,
+        treasuryMsolAccount: this.getMarinadeState().treasuryMsolAccount,
+        msolMint: MSOL,
+        burnMsolFrom,
+        splitStakeAccount: newStake.publicKey,
+        splitStakeRentPayer: glamSigner,
+        clock: SYSVAR_CLOCK_PUBKEY,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        stakeProgram: StakeProgram.programId,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx, [newStake]);
   }
 
   public async orderUnstakeTx(
