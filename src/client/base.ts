@@ -120,7 +120,7 @@ export class BaseClient {
     this.jupiterApi = config?.jupiterApi || JUPITER_API_DEFAULT;
     this.blockhashWithCache = new BlockhashWithCache(
       this.provider,
-      !!isBrowser,
+      false, // always disable browser cache (use in-memory cache instead), for in-app browser compatibility
     );
   }
 
