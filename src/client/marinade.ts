@@ -15,7 +15,11 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { Marinade } from "@marinade.finance/marinade-ts-sdk";
+import {
+  Marinade,
+  MarinadeConfig,
+  MarinadeState,
+} from "@marinade.finance/marinade-ts-sdk";
 
 import { BaseClient, TxOptions } from "./base";
 import {
@@ -30,7 +34,6 @@ import {
   getStakeAccountsWithStates,
   StakeAccountInfo,
 } from "../utils/helpers";
-import { StakingClient } from "./staking";
 
 export type Ticket = {
   address: PublicKey; // offset 8 after anchor discriminator
@@ -74,9 +77,11 @@ export class MarinadeClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    return await this.withdrawStakeAccountTx(amount, txOptions);
-    // const tx = await this.withdrawStakeAccountTx(amount, txOptions);
-    // return await this.base.sendAndConfirm(tx);
+    const [tx, extraSigner] = await this.withdrawStakeAccountTx(
+      amount,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx, [extraSigner]);
   }
 
   public async orderUnstake(
@@ -132,10 +137,12 @@ export class MarinadeClient {
     });
   }
 
-  getMarinadeState() {
+  /**
+   * @deprecated Use Marinade.getMarinadeState() instead
+   */
+  get marinadeStateStatic() {
     // The addresses are the same in mainnet and devnet:
     // https://docs.marinade.finance/developers/contract-addresses
-    // TODO: use marinade.getMarinadeState(); ?
     return {
       marinadeStateAddress: new PublicKey(
         "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC",
@@ -156,6 +163,15 @@ export class MarinadeClient {
       ),
       solLeg: new PublicKey("UefNb6z6yvArqe4cJHTXCqStRsKmWhGxnZzuHbikP5Q"),
     };
+  }
+
+  async fetchMarinadeState(): Promise<MarinadeState> {
+    const marinade = new Marinade(
+      new MarinadeConfig({
+        connection: this.base.provider.connection,
+      }),
+    );
+    return await marinade.getMarinadeState();
   }
 
   async getParsedStakeAccountInfo(stakeAccount: PublicKey): Promise<any> {
@@ -182,7 +198,7 @@ export class MarinadeClient {
 
     if (parsedData.space != 200) {
       throw new Error(
-        `${stakeAccount.toBase58()} is not a stake account because space is ${
+        `${stakeAccount} is not a stake account. Account size ${
           parsedData.space
         } != 200`,
       );
@@ -205,7 +221,7 @@ export class MarinadeClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const vault = this.base.vaultPda;
-    const marinadeState = this.getMarinadeState();
+    const marinadeState = this.marinadeStateStatic;
     const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
 
     const createMsolAtaIx = createAssociatedTokenAccountIdempotentInstruction(
@@ -306,9 +322,8 @@ export class MarinadeClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const stakeAccountInfo = await this.getParsedStakeAccountInfo(stakeAccount);
-    console.log("Stake account info", stakeAccountInfo);
 
-    const marinadeState = await new Marinade().getMarinadeState();
+    const marinadeState = await this.fetchMarinadeState();
     const { validatorRecords } = await marinadeState.getValidatorRecords();
     const validatorLookupIndex = validatorRecords.findIndex(
       ({ validatorAccount }) => validatorAccount.equals(stakeAccountInfo.voter),
@@ -376,12 +391,12 @@ export class MarinadeClient {
 
     const stakeIndex = this.parseAccountList(
       accountsInfo[0].data,
-      56, // stakeList.itemSize, // FIXME: for some reason stakeList.itemSize is not correct
+      stakeList.itemSize,
     ).findIndex((a) => a.equals(stakeAccount.address));
 
     const validatorIndex = this.parseAccountList(
       accountsInfo[1].data,
-      61, // validatorList.itemSize, // FIXME: for some reason validatorList.itemSize is not correct
+      validatorList.itemSize,
     ).findIndex((a) => a.equals(stakeAccount.voter!));
 
     return {
@@ -393,9 +408,9 @@ export class MarinadeClient {
   public async withdrawStakeAccountTx(
     amount: BN,
     txOptions: TxOptions,
-  ): Promise<TransactionSignature> {
+  ): Promise<[VersionedTransaction, Keypair]> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const marinadeState = await new Marinade().getMarinadeState();
+    const marinadeState = await this.fetchMarinadeState();
 
     // Get mariande stake withdraw authority
     const stakeWithdrawAuthority = await marinadeState.stakeWithdrawAuthority();
@@ -419,12 +434,6 @@ export class MarinadeClient {
     const burnMsolFrom = this.base.getVaultAta(MSOL);
     const newStake = Keypair.generate();
 
-    // FIXME: why is treasuryMsolAccount not correct?
-    // console.log(
-    //   "treasuryMsolAccount:",
-    //   marinadeState.treasuryMsolAccount.toBase58(),
-    // );
-
     const tx = await this.base.program.methods
       .marinadeWithdrawStakeAccount(
         stakeIndex,
@@ -441,7 +450,7 @@ export class MarinadeClient {
         stakeAccount: stakeAccounts[0].address,
         stakeWithdrawAuthority,
         stakeDepositAuthority,
-        treasuryMsolAccount: this.getMarinadeState().treasuryMsolAccount,
+        treasuryMsolAccount: marinadeState.treasuryMsolAccount,
         msolMint: MSOL,
         burnMsolFrom,
         splitStakeAccount: newStake.publicKey,
@@ -451,9 +460,9 @@ export class MarinadeClient {
         stakeProgram: StakeProgram.programId,
       })
       .transaction();
-
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx, [newStake]);
+
+    return [vTx, newStake];
   }
 
   public async orderUnstakeTx(
@@ -461,7 +470,7 @@ export class MarinadeClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const marinadeState = this.getMarinadeState();
+    const marinadeState = this.marinadeStateStatic;
     const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
 
     const ticketSeed = Date.now().toString();
@@ -510,7 +519,7 @@ export class MarinadeClient {
     }
 
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const marinadeState = this.getMarinadeState();
+    const marinadeState = this.marinadeStateStatic;
 
     const instructions = await Promise.all(
       tickets.map((ticket) =>

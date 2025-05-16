@@ -1,4 +1,29 @@
 import { PublicKey } from "@solana/web3.js";
+import { LstList } from "sanctum-lst-list";
+
+export const STAKE_POOLS = LstList.filter(
+  (lst) =>
+    !lst.name.includes("Sanctum Automated") &&
+    (lst.pool.program === "Spl" ||
+      lst.pool.program === "Marinade" ||
+      lst.pool.program === "SanctumSpl" ||
+      lst.pool.program === "SanctumSplMulti"),
+).map((lst) => {
+  const { pool, tokenProgram } = lst.pool as any;
+  return {
+    name: lst.name,
+    symbol: lst.symbol,
+    mint: lst.mint,
+    logoURI: lst.logoUri,
+    tokenProgram,
+    poolState:
+      lst.pool.program === "Marinade"
+        ? "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC"
+        : pool || "",
+  };
+});
+
+export const STAKE_POOLS_MAP = new Map(STAKE_POOLS.map((p) => [p.mint, p]));
 
 /**
  * Metadata for an asset for pricing
