@@ -72,6 +72,7 @@ export interface Vault {
   balanceLamports: number; // TODO: this should be a BN or string, it works until ~9M SOL
   uiAmount: number;
   tokenAccounts: TokenAccount[];
+  driftUser?: DriftUser;
 }
 
 interface GlamStateCache {
@@ -177,6 +178,7 @@ export function GlamProvider({
         glamClient.vaultPda,
       );
       setVault({
+        ...vault,
         ...balances,
         pubkey: glamClient.vaultPda,
       });
@@ -367,6 +369,10 @@ export function GlamProvider({
   useEffect(() => {
     if (!driftUserError && driftUserData) {
       setDriftUser(driftUserData);
+      setVault({
+        ...vault,
+        driftUser: driftUserData,
+      });
     } else {
       setDriftUser({} as DriftUser);
     }
