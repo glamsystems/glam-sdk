@@ -4949,16 +4949,16 @@
       ]
     },
     {
-      "name": "meteora_dlmm_close_position",
+      "name": "meteora_dlmm_close_position2",
       "discriminator": [
-        186,
+        69,
         117,
-        42,
-        24,
-        221,
-        194,
+        240,
+        192,
         34,
-        143
+        79,
+        62,
+        230
       ],
       "accounts": [
         {
@@ -4997,18 +4997,6 @@
         },
         {
           "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lb_pair",
-          "writable": true
-        },
-        {
-          "name": "bin_array_lower",
-          "writable": true
-        },
-        {
-          "name": "bin_array_upper",
           "writable": true
         },
         {

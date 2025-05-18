@@ -4955,16 +4955,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "meteoraDlmmClosePosition",
+      "name": "meteoraDlmmClosePosition2",
       "discriminator": [
-        186,
+        69,
         117,
-        42,
-        24,
-        221,
-        194,
+        240,
+        192,
         34,
-        143
+        79,
+        62,
+        230
       ],
       "accounts": [
         {
@@ -5003,18 +5003,6 @@ export type GlamProtocol = {
         },
         {
           "name": "position",
-          "writable": true
-        },
-        {
-          "name": "lbPair",
-          "writable": true
-        },
-        {
-          "name": "binArrayLower",
-          "writable": true
-        },
-        {
-          "name": "binArrayUpper",
           "writable": true
         },
         {

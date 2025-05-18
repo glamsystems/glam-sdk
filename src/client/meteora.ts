@@ -103,8 +103,13 @@ export class MeteoraDlmmClient {
     amountX: BN | number,
     amountY: BN | number,
     strategyType: keyof typeof Strategy,
+    maxActiveBinSlippage: number,
     txOptions: TxOptions = {},
   ) {
+    if (!strategyType.endsWith("ImBalanced")) {
+      throw new Error("Only imbalanced strategy types are supported");
+    }
+
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
@@ -130,7 +135,7 @@ export class MeteoraDlmmClient {
       amountX: new BN(amountX),
       amountY: new BN(amountY),
       activeId: activeBinId,
-      maxActiveBinSlippage: 20,
+      maxActiveBinSlippage,
       strategyParameters: {
         minBinId: lowerBinId,
         maxBinId: upperBinId,
@@ -154,7 +159,7 @@ export class MeteoraDlmmClient {
       isWritable: true,
     }));
 
-    // TODO: if token X or Y program is token2022 we need to properly constrcut the slides
+    // TODO: if token X or Y program is token2022 we need to properly construct the slices
     // @ts-ignore
     const tx = await this.base.program.methods
       .meteoraDlmmAddLiquidityByStrategy2(liquidityParameter, { slices: [] })
@@ -162,9 +167,8 @@ export class MeteoraDlmmClient {
         glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
-        binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
-          ? dlmmPool.binArrayBitmapExtension.publicKey
-          : METEORA_DLMM_PROGRAM,
+        binArrayBitmapExtension:
+          dlmmPool.binArrayBitmapExtension?.publicKey || null,
         userTokenX: vaultTokenXAta,
         userTokenY: vaultTokenYAta,
         reserveX: dlmmPool.tokenX.reserve,
@@ -212,9 +216,8 @@ export class MeteoraDlmmClient {
         glamState: this.base.statePda,
         position: new PublicKey(position),
         lbPair,
-        binArrayBitmapExtension: dlmmPool.binArrayBitmapExtension
-          ? dlmmPool.binArrayBitmapExtension.publicKey
-          : METEORA_DLMM_PROGRAM,
+        binArrayBitmapExtension:
+          dlmmPool.binArrayBitmapExtension?.publicKey || null,
         userTokenX: vaultTokenXAta,
         userTokenY: vaultTokenYAta,
         reserveX: dlmmPool.tokenX.reserve,
@@ -293,17 +296,21 @@ export class MeteoraDlmmClient {
 
     // @ts-ignore
     const tx = await this.base.program.methods
-      .meteoraDlmmClosePosition()
+      .meteoraDlmmClosePosition2()
       .accounts({
         glamState: this.base.statePda,
         position: new PublicKey(position),
-        lbPair,
-        binArrayLower,
-        binArrayUpper,
         rentReceiver: this.base.getSigner(),
         eventAuthority: EVENT_AUTHORITY,
         program: METEORA_DLMM_PROGRAM,
       })
+      .remainingAccounts(
+        [binArrayLower, binArrayUpper].map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: true,
+        })),
+      )
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
