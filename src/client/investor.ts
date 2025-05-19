@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
-import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
+import { TRANSFER_HOOK_PROGRAM, USDC, WSOL } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 
 export class InvestorClient {
@@ -58,8 +58,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    // Claim WSOL from redeemed shares
-    if (asset.equals(WSOL)) {
+    // Claim asset redeemed from redeemed shares
+    if (asset.equals(WSOL) || asset.equals(USDC)) {
       const tx = await this.claimAssetTx(asset, mintId, txOptions);
       return await this.base.sendAndConfirm(tx);
     }
@@ -80,8 +80,10 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !asset.equals(WSOL)) {
-      throw new Error("Only WSOL is supported & mintId must be 0");
+    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
+      throw new Error(
+        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
+      );
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -165,8 +167,10 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !asset.equals(WSOL)) {
-      throw new Error("Only WSOL is supported & mintId must be 0");
+    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
+      throw new Error(
+        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
+      );
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -228,8 +232,10 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !asset.equals(WSOL)) {
-      throw new Error("Only WSOL is supported & mintId must be 0");
+    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
+      throw new Error(
+        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
+      );
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -286,8 +292,10 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !asset.equals(WSOL)) {
-      throw new Error("Only WSOL is supported & mintId must be 0");
+    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
+      throw new Error(
+        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
+      );
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -341,13 +349,19 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !asset.equals(WSOL)) {
-      throw new Error("Only WSOL is supported & mintId must be 0");
+    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
+      throw new Error(
+        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
+      );
     }
-
     const signer = txOptions.signer || this.base.getSigner();
     const glamMint = this.base.mintPda;
     const signerAta = this.base.getAta(asset, signer);
+
+    // Close wSOL ata so user gets SOL
+    const postInstructions = asset.equals(WSOL)
+      ? [createCloseAccountInstruction(signerAta, signer, signer)]
+      : [];
 
     const tx = await this.base.program.methods
       .claim(0)
@@ -365,9 +379,7 @@ export class InvestorClient {
           asset,
         ),
       ])
-      .postInstructions([
-        createCloseAccountInstruction(signerAta, signer, signer),
-      ])
+      .postInstructions(postInstructions)
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
