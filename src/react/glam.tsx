@@ -59,7 +59,7 @@ interface GlamProviderContext {
   refetchGlamStates: () => Promise<void>;
 }
 
-interface UserWallet {
+export interface UserWallet {
   queryKey: string[];
   pubkey?: PublicKey; // if pubkey is null, wallet is not connected
   balanceLamports: number;
