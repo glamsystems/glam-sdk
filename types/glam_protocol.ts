@@ -2907,11 +2907,6 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -3041,11 +3036,6 @@ export type GlamProtocol = {
         {
           "name": "destinationTokens",
           "writable": true
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
         },
         {
           "name": "tokenProgram"
@@ -4066,11 +4056,6 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "rentPayer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "msolMint",
           "writable": true
         },
@@ -4272,11 +4257,6 @@ export type GlamProtocol = {
         },
         {
           "name": "splitStakeAccount",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "splitStakeRentPayer",
           "writable": true,
           "signer": true
         },
@@ -5066,11 +5046,6 @@ export type GlamProtocol = {
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "position",
           "writable": true,
           "signer": true
@@ -5150,15 +5125,6 @@ export type GlamProtocol = {
         {
           "name": "cpiProgram",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "base",
-          "signer": true
         },
         {
           "name": "position",

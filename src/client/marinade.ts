@@ -454,7 +454,6 @@ export class MarinadeClient {
         msolMint: MSOL,
         burnMsolFrom,
         splitStakeAccount: newStake.publicKey,
-        splitStakeRentPayer: glamSigner,
         clock: SYSVAR_CLOCK_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
         stakeProgram: StakeProgram.programId,

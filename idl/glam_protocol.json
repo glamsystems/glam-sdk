@@ -2901,11 +2901,6 @@
           "writable": true
         },
         {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
@@ -3035,11 +3030,6 @@
         {
           "name": "destination_tokens",
           "writable": true
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
         },
         {
           "name": "token_program"
@@ -4060,11 +4050,6 @@
           "writable": true
         },
         {
-          "name": "rent_payer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "msol_mint",
           "writable": true
         },
@@ -4266,11 +4251,6 @@
         },
         {
           "name": "split_stake_account",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "split_stake_rent_payer",
           "writable": true,
           "signer": true
         },
@@ -5060,11 +5040,6 @@
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
         },
         {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
           "name": "position",
           "writable": true,
           "signer": true
@@ -5144,15 +5119,6 @@
         {
           "name": "cpi_program",
           "address": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo"
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "base",
-          "signer": true
         },
         {
           "name": "position",
