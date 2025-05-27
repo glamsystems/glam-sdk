@@ -9471,6 +9471,16 @@
       "msg": "Asset is not allowed to borrow"
     },
     {
+      "code": 48007,
+      "name": "InvalidAccountOwner",
+      "msg": "Account owned by an invalid program"
+    },
+    {
+      "code": 48008,
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority"
+    },
+    {
       "code": 49000,
       "name": "InvalidAccountType",
       "msg": "Invalid account type"
@@ -9659,6 +9669,11 @@
       "code": 51107,
       "name": "MathError",
       "msg": "Math error"
+    },
+    {
+      "code": 51108,
+      "name": "TypeCastingError",
+      "msg": "Type casting error"
     },
     {
       "code": 52000,

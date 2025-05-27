@@ -9477,6 +9477,16 @@ export type GlamProtocol = {
       "msg": "Asset is not allowed to borrow"
     },
     {
+      "code": 48007,
+      "name": "invalidAccountOwner",
+      "msg": "Account owned by an invalid program"
+    },
+    {
+      "code": 48008,
+      "name": "invalidAuthority",
+      "msg": "Invalid authority"
+    },
+    {
       "code": 49000,
       "name": "invalidAccountType",
       "msg": "Invalid account type"
@@ -9665,6 +9675,11 @@ export type GlamProtocol = {
       "code": 51107,
       "name": "mathError",
       "msg": "Math error"
+    },
+    {
+      "code": 51108,
+      "name": "typeCastingError",
+      "msg": "Type casting error"
     },
     {
       "code": 52000,
