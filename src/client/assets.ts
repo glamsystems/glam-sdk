@@ -1,3 +1,4 @@
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { LstList } from "sanctum-lst-list";
 
@@ -98,6 +99,47 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 6,
       oracle: new PublicKey("JDKJSkxjasBGL3ce1pkrN6tqDzuVUZPWzzkGuyX8m9yN"),
+    },
+  ],
+  [
+    // USDY
+    "A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6",
+    {
+      decimals: 6,
+      oracle: new PublicKey("9PgHM68FNGDK6nHb29ERDBcFrV6gNMD8LyUqwxbyyeb2"),
+    },
+  ],
+  [
+    // PYUSD
+    "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
+    {
+      decimals: 6,
+      oracle: new PublicKey("5QZMnsyndmphvZF4BNgoMHwVZaREXeE2rpBoCPMxgCCd"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
+  [
+    // USDe
+    "DEkqHyPN7GMRJ5cArtQFAWefqbZb33Hyf6s5iCwjEonT",
+    {
+      decimals: 6,
+      oracle: new PublicKey("5uR6oza6teuMRpjsbMi9fDhCDid2hoYdRBiLW7WzcK54"),
+    },
+  ],
+  [
+    // sUSDe
+    "Eh6XEPhSwoLv5wFApukmnaVSHQ6sAnoD9BmgmwQoN2sN",
+    {
+      decimals: 6,
+      oracle: new PublicKey("BRuNuzLAPHHGSSVAJPKMcmJMdgDfrekvnSxkxPDGdeqp"),
+    },
+  ],
+  [
+    // USDS
+    "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA",
+    {
+      decimals: 6,
+      oracle: new PublicKey("7pT9mxKXyvfaZKeKy1oe2oV2K1RFtF7tPEJHUY3h2vVV"),
     },
   ],
   [

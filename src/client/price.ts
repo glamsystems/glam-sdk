@@ -217,11 +217,14 @@ export class PriceClient {
       stateModel.assets || [],
     );
     return assetsForPricing
-      .map((asset) => [
-        this.base.getVaultAta(asset),
-        asset,
-        ASSETS_MAINNET.get(asset.toBase58())?.oracle!, // FIXME: support more assets
-      ])
+      .map((mint) => {
+        const assetMeta = ASSETS_MAINNET.get(mint.toBase58());
+        if (!assetMeta) {
+          throw new Error(`Asset meta not found for ${mint}`);
+        }
+        const ata = this.base.getVaultAta(mint, assetMeta?.programId);
+        return [ata, mint, assetMeta?.oracle!];
+      })
       .flat()
       .map((a) => ({
         pubkey: a,
