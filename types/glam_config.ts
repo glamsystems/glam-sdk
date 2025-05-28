@@ -626,6 +626,9 @@ export type GlamConfig = {
           },
           {
             "name": "marinadeState"
+          },
+          {
+            "name": "baseAsset"
           }
         ]
       }

@@ -9487,6 +9487,11 @@ export type GlamProtocol = {
       "msg": "Invalid authority"
     },
     {
+      "code": 48009,
+      "name": "invalidPriceDenom",
+      "msg": "Invalid price denom"
+    },
+    {
       "code": 49000,
       "name": "invalidAccountType",
       "msg": "Invalid account type"
@@ -9680,6 +9685,11 @@ export type GlamProtocol = {
       "code": 51108,
       "name": "typeCastingError",
       "msg": "Type casting error"
+    },
+    {
+      "code": 51109,
+      "name": "baseAssetNotSupported",
+      "msg": "Base asset must have 6 decimals."
     },
     {
       "code": 52000,
@@ -11829,6 +11839,9 @@ export type GlamProtocol = {
           },
           {
             "name": "marinadeState"
+          },
+          {
+            "name": "baseAsset"
           }
         ]
       }

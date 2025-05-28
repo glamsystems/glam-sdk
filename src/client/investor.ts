@@ -58,12 +58,6 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    // Claim asset redeemed from redeemed shares
-    if (asset.equals(WSOL) || asset.equals(USDC)) {
-      const tx = await this.claimAssetTx(asset, mintId, txOptions);
-      return await this.base.sendAndConfirm(tx);
-    }
-
     // Claim shares after subscription is fulfilled
     const glamMint = this.base.mintPda;
     if (glamMint.equals(asset)) {
@@ -71,7 +65,9 @@ export class InvestorClient {
       return await this.base.sendAndConfirm(tx);
     }
 
-    throw new Error(`Invalid asset to claim: ${asset.toBase58()}`);
+    // Claim asset redeemed from shares
+    const tx = await this.claimAssetTx(asset, mintId, txOptions);
+    return await this.base.sendAndConfirm(tx);
   }
 
   public async subscribeTx(
@@ -80,10 +76,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
-      throw new Error(
-        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
-      );
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -167,10 +161,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
-      throw new Error(
-        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
-      );
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -232,10 +224,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
-      throw new Error(
-        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
-      );
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -292,10 +282,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
-      throw new Error(
-        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
-      );
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
     }
 
     const signer = txOptions.signer || this.base.getSigner();
@@ -349,10 +337,8 @@ export class InvestorClient {
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    if (mintId !== 0 || !(asset.equals(WSOL) || asset.equals(USDC))) {
-      throw new Error(
-        "Not supported. Only WSOL and USDC are allowed, and mintId must be 0",
-      );
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
     }
     const signer = txOptions.signer || this.base.getSigner();
     const glamMint = this.base.mintPda;

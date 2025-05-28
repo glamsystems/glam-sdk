@@ -604,6 +604,7 @@ export type LedgerEntry = IdlTypes<GlamProtocol>["ledgerEntry"];
 export class PriceDenom {
   static readonly SOL = { sol: {} };
   static readonly USD = { usd: {} };
+  static readonly ASSET = { asset6: {} };
 }
 
 export class TimeUnit {

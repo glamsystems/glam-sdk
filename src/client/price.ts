@@ -87,6 +87,25 @@ export class PriceClient {
   ): Promise<TransactionInstruction[]> {
     const glamVault = this.base.vaultPda;
 
+    const priceVaultIx = await this.base.program.methods
+      .priceVault(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(
+        await this.remainingAccountsForPricingVaultAssets(
+          priceDenom == PriceDenom.ASSET,
+        ),
+      )
+      .instruction();
+
+    // If priceDenom is ASSET, only priceVaultIx is returned
+    // We currently don't support pricing other assets in custom base asset
+    if (priceDenom == PriceDenom.ASSET) {
+      return [priceVaultIx];
+    }
+
     const tickets = await fetchMarinadeTicketAccounts(
       this.base.provider.connection,
       glamVault,
@@ -124,15 +143,6 @@ export class PriceClient {
           isWritable: false,
         })),
       )
-      .instruction();
-
-    const priceVaultIx = await this.base.program.methods
-      .priceVault(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(await this.remainingAccountsForPricingVaultAssets())
       .instruction();
 
     const priceMeteoraIx = await this.base.program.methods
@@ -211,8 +221,24 @@ export class PriceClient {
     return chunks.flat();
   };
 
-  remainingAccountsForPricingVaultAssets = async () => {
+  remainingAccountsForPricingVaultAssets = async (
+    baseAssetOnly: boolean = false,
+  ) => {
     const stateModel = await this.base.fetchStateModel();
+    if (baseAssetOnly) {
+      if (!stateModel.baseAsset) {
+        throw new Error("Base asset not configured for the vault");
+      }
+      // FIXME: support token 2022 base asset
+      const ata = this.base.getVaultAta(stateModel.baseAsset);
+      // Set oracle to default pubkey (aka system program) to indicate oracle isn't needed
+      return [ata, stateModel.baseAsset, PublicKey.default].map((k) => ({
+        pubkey: k,
+        isSigner: false,
+        isWritable: false,
+      }));
+    }
+
     const assetsForPricing = (stateModel.borrowableAssets || []).concat(
       stateModel.assets || [],
     );

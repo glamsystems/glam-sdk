@@ -9481,6 +9481,11 @@
       "msg": "Invalid authority"
     },
     {
+      "code": 48009,
+      "name": "InvalidPriceDenom",
+      "msg": "Invalid price denom"
+    },
+    {
       "code": 49000,
       "name": "InvalidAccountType",
       "msg": "Invalid account type"
@@ -9674,6 +9679,11 @@
       "code": 51108,
       "name": "TypeCastingError",
       "msg": "Type casting error"
+    },
+    {
+      "code": 51109,
+      "name": "BaseAssetNotSupported",
+      "msg": "Base asset must have 6 decimals."
     },
     {
       "code": 52000,
@@ -11823,6 +11833,9 @@
           },
           {
             "name": "MarinadeState"
+          },
+          {
+            "name": "BaseAsset"
           }
         ]
       }

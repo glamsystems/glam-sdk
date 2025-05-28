@@ -620,6 +620,9 @@
           },
           {
             "name": "MarinadeState"
+          },
+          {
+            "name": "BaseAsset"
           }
         ]
       }
