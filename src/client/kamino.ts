@@ -625,15 +625,31 @@ export class KaminoLendingClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const vault = this.base.vaultPda;
     const userMetadata = this.getUserMetadataPda(vault);
-
-    const preInstructions = [];
-    const postInstructions = [];
-    const depositReserve = await this.findAndParseReserve(market, asset);
     const obligation = this.getObligationPda(
       vault,
       market,
       DEFAULT_OBLIGATION_ARGS,
     );
+
+    const preInstructions = [];
+    const postInstructions = [];
+
+    // If user metadata doesn't exist, initialize it
+    const userMetadataAccount =
+      await this.base.provider.connection.getAccountInfo(userMetadata);
+    if (!userMetadataAccount) {
+      preInstructions.push(
+        await this.base.program.methods
+          .kaminoLendingInitUserMetadata(new PublicKey(0))
+          .accounts({
+            glamState: this.base.statePda,
+            glamSigner,
+            userMetadata,
+            referrerUserMetadata: null,
+          })
+          .instruction(),
+      );
+    }
 
     // If obligation doesn't exist, initialize & refresh obligation and collateral farm state first
     const obligationAccount =
@@ -655,6 +671,7 @@ export class KaminoLendingClient {
       );
     }
 
+    const depositReserve = await this.findAndParseReserve(market, asset);
     // If reserve has collateral farm but obligation farm state doesn't exist, initialize it
     let obligationFarm = null;
     if (depositReserve.farmCollateral) {
