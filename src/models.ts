@@ -105,6 +105,8 @@ export class StateModel extends StateIdlModel {
   externalVaultAccounts: PublicKey[] | null;
   pricedAssets: any[] | null;
   ledger: LedgerEntry[] | null;
+  timelockExpiresAt: number | null;
+  pendingUpdates: any | null; // timelocked updates
 
   constructor(
     data: Partial<StateModel>,
@@ -117,6 +119,10 @@ export class StateModel extends StateIdlModel {
     this.externalVaultAccounts = data.externalVaultAccounts ?? null;
     this.pricedAssets = data.pricedAssets ?? null;
     this.ledger = data.ledger ?? null;
+    this.timelockExpiresAt = data.timelockExpiresAt
+      ? Number(data.timelockExpiresAt.toString())
+      : null;
+    this.pendingUpdates = data.pendingUpdates ?? null;
   }
 
   get idStr() {
@@ -204,7 +210,6 @@ export class StateModel extends StateIdlModel {
     };
 
     // All fields in fund params[0] should be available on the StateModel
-    // @ts-ignore
     stateAccount.params[0].forEach((param) => {
       const name = Object.keys(param.name)[0];
       // @ts-ignore
@@ -213,9 +218,25 @@ export class StateModel extends StateIdlModel {
         // @ts-ignore
         stateModel[name] = value;
       } else if (process.env.NODE_ENV === "development") {
-        console.warn(`State param ${name} not found in StateIdlModel`);
+        console.warn(`State param ${name} not found in StateModel`);
       }
     });
+
+    // If timelock is enabled, parse pending updates from params[2] and params[3]
+    stateModel.pendingUpdates = {};
+    if (stateAccount.params[2]) {
+      // pending updates to state params
+      stateAccount.params[2].forEach((param) => {
+        const name = Object.keys(param.name)[0];
+        // @ts-ignore
+        const value = Object.values(param.value)[0].val;
+        stateModel.pendingUpdates[name] = value;
+      });
+    }
+
+    if (stateAccount.params[3]) {
+      // pending updates to mint params
+    }
 
     // Build stateModel.rawOpenfunds from openfunds account
     const fundOpenfundsFields = {};
