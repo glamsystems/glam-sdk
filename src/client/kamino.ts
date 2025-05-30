@@ -369,15 +369,15 @@ export class KaminoLendingClient {
     );
   }
 
-  refreshObligationFarmsForReserveIxs(
+  refreshObligationCollateralFarmsForReservesIxs(
     obligation: PublicKey,
     lendingMarket: PublicKey,
     parsedReserves: ParsedReserve[],
   ) {
     return parsedReserves
       .map((parsedReserve) => {
-        const { farmCollateral, farmDebt } = parsedReserve;
-        return [farmCollateral, farmDebt]
+        const { farmCollateral } = parsedReserve;
+        return [farmCollateral]
           .filter((farm) => !!farm)
           .map((farm) => {
             const obligationFarmUserState = this.getObligationFarmState(
@@ -407,34 +407,42 @@ export class KaminoLendingClient {
       .flat();
   }
 
-  // If obligation has deposits or borrows, we need the following refresh ixs:
-  // - refreshReserve x N_reserves
-  // - refreshObligation
-  // - refreshObligationFarmsForReserve x M_farms
-  //
-  // For pricing purpose, we don't need to refresh farm states
-  public async getRefreshIxs(
+  refreshObligationDebtFarmsForReservesIxs(
     obligation: PublicKey,
-    refreshFarms: boolean = true,
+    lendingMarket: PublicKey,
+    parsedReserves: ParsedReserve[],
   ) {
-    const { lendingMarket, deposits, borrows } =
-      await this.fetchAndParseObligation(obligation);
-    if (!lendingMarket) {
-      throw new Error("Lending market not found");
-    }
-    const reserves = deposits.concat(borrows).map((d) => d.reserve);
-    const parsedReserves = await this.fetchAndParseReserves(reserves);
-    return [
-      ...this.refreshReserveIxs(lendingMarket, reserves),
-      refreshObligation({ lendingMarket, obligation, reserves }),
-      ...(refreshFarms
-        ? this.refreshObligationFarmsForReserveIxs(
-            obligation,
-            lendingMarket,
-            parsedReserves,
-          )
-        : []),
-    ];
+    return parsedReserves
+      .map((parsedReserve) => {
+        const { farmDebt } = parsedReserve;
+        return [farmDebt]
+          .filter((farm) => !!farm)
+          .map((farm) => {
+            const obligationFarmUserState = this.getObligationFarmState(
+              obligation,
+              farm,
+            );
+            return refreshObligationFarmsForReserve(
+              { mode: 0 },
+              {
+                crank: this.base.getSigner(), // Must be signer
+                baseAccounts: {
+                  obligation,
+                  lendingMarketAuthority:
+                    this.getMarketAuthority(lendingMarket),
+                  reserve: parsedReserve.address,
+                  reserveFarmState: farm,
+                  obligationFarmUserState,
+                  lendingMarket,
+                },
+                farmsProgram: KAMINO_FARM_PROGRAM,
+                rent: SYSVAR_RENT_PUBKEY,
+                systemProgram: SystemProgram.programId,
+              },
+            );
+          });
+      })
+      .flat();
   }
 
   getMarketAuthority(market: PublicKey) {
@@ -724,9 +732,11 @@ export class KaminoLendingClient {
     );
 
     if (depositReserve.farmCollateral) {
-      const ixs = this.refreshObligationFarmsForReserveIxs(obligation, market, [
-        depositReserve,
-      ]);
+      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
+        obligation,
+        market,
+        [depositReserve],
+      );
       preInstructions.push(...ixs);
       postInstructions.push(...ixs); // farms must be refreshed after deposit
     }
@@ -861,9 +871,11 @@ export class KaminoLendingClient {
     );
 
     if (withdrawReserve.farmCollateral) {
-      const ixs = this.refreshObligationFarmsForReserveIxs(obligation, market, [
-        withdrawReserve,
-      ]);
+      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
+        obligation,
+        market,
+        [withdrawReserve],
+      );
       preInstructions.push(...ixs);
       postInstructions.push(...ixs); // farms must be refreshed after withdraw
     }
@@ -993,7 +1005,7 @@ export class KaminoLendingClient {
       }),
     );
 
-    // Don't need to refresh debt farm for borrow
+    // FIXME: Don't need to refresh debt farm for borrow?
     /*
     if (borrowReserve.farmDebt) {
       const ixs = this.refreshObligationFarmsForReserveIxs(obligation, market, [

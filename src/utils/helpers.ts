@@ -234,20 +234,22 @@ export async function fetchLookupTables(
   );
 
   // Fetch all accounts owned by the ALT program
-  const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
-    filters: [
-      { memcmp: { offset: 22, bytes: authority.toBase58() } },
-      { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
-    ],
-  });
+  // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
+  // const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
+  //   filters: [
+  //     { memcmp: { offset: 22, bytes: authority.toBase58() } },
+  //     { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
+  //   ],
+  // });
 
-  return accounts.map(
-    ({ pubkey, account }) =>
-      new AddressLookupTableAccount({
-        key: pubkey,
-        state: AddressLookupTableAccount.deserialize(account.data),
-      }),
-  );
+  // return accounts.map(
+  //   ({ pubkey, account }) =>
+  //     new AddressLookupTableAccount({
+  //       key: pubkey,
+  //       state: AddressLookupTableAccount.deserialize(account.data),
+  //     }),
+  // );
+  return [];
 }
 
 export const getSimulationComputeUnits = async (
