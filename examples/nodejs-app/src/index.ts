@@ -8,20 +8,25 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const glamStatePda = new PublicKey(process.env.GLAM_STATE!);
-const glamClient = new GlamClient();
+const glamClient = new GlamClient({
+  statePda: glamStatePda,
+});
 
 const txOptions = { simulate: true, maxFeeLamports: 10_000, useMaxFee: true };
 
+// Main market
+const KAMINO_MARKET = new PublicKey(
+  "7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF",
+);
+
 async function main() {
-  const glamVaultPda = glamClient.getVaultPda(glamStatePda);
-  console.log("GLAM vault:", glamVaultPda.toBase58());
+  console.log("GLAM vault:", glamClient.vaultPda.toBase58());
 
   // Deposit 0.01 SOL to Kamino
   const depositAmount = 0.01;
   try {
     const txSig = await glamClient.kaminoLending.deposit(
-      glamStatePda,
-      new PublicKey("7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"), // Kamino main market pubkey
+      KAMINO_MARKET,
       WSOL,
       new BN(depositAmount * LAMPORTS_PER_SOL), // amount in lamports
       txOptions,
@@ -35,8 +40,7 @@ async function main() {
   const borrowAmount = 1;
   try {
     const txSig = await glamClient.kaminoLending.borrow(
-      glamStatePda,
-      new PublicKey("7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"), // Kamino main market pubkey
+      KAMINO_MARKET,
       USDC,
       new BN(borrowAmount * 10 ** 6), // scaled amount, USDC has 6 decimals
       txOptions,
@@ -50,8 +54,7 @@ async function main() {
   const repayAmount = 1;
   try {
     const txSig = await glamClient.kaminoLending.repay(
-      glamStatePda,
-      new PublicKey("7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF"), // Kamino main market pubkey
+      KAMINO_MARKET,
       USDC,
       new BN(repayAmount * 10 ** 6), // scaled amount, USDC has 6 decimals
       txOptions,

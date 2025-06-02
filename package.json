@@ -1,6 +1,6 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "0.1.23",
+  "version": "0.1.25",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
@@ -26,6 +26,7 @@
     "@solana/spl-token": "^0.4.9",
     "@solana/spl-token-metadata": "^0.1.4",
     "@solana/web3.js": "^1.98.0",
+    "sanctum-lst-list": "^0.2.53",
     "bs58": "^5.0.0",
     "buffer": "^6.0.3"
   },
