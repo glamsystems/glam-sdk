@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { ExtensionType, getExtensionData, Mint } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
-import { SEED_METADATA, SEED_MINT, SEED_VAULT } from "./constants";
+import { SEED_METADATA, SEED_MINT, SEED_VAULT, USDC, WSOL } from "./constants";
 
 export const GlamIntegrations =
   GlamProtocolIdlJson?.types
@@ -626,6 +626,16 @@ export class PriceDenom {
   static readonly SOL = { sol: {} };
   static readonly USD = { usd: {} };
   static readonly ASSET = { asset6: {} };
+
+  static fromAsset(asset: PublicKey) {
+    if (asset.equals(WSOL)) {
+      return PriceDenom.SOL;
+    }
+    if (asset.equals(USDC)) {
+      return PriceDenom.USD;
+    }
+    return PriceDenom.ASSET;
+  }
 }
 
 export class TimeUnit {

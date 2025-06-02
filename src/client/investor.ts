@@ -15,7 +15,7 @@ import {
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
-import { TRANSFER_HOOK_PROGRAM, USDC, WSOL } from "../constants";
+import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 
 export class InvestorClient {
@@ -35,21 +35,19 @@ export class InvestorClient {
   }
 
   public async queuedRedeem(
-    asset: PublicKey,
     amount: BN,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.queuedRedeemTx(asset, amount, mintId, txOptions);
+    const tx = await this.queuedRedeemTx(amount, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async fulfill(
-    asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.fulfillTx(asset, mintId, txOptions);
+    const tx = await this.fulfillTx(mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -219,7 +217,6 @@ export class InvestorClient {
   }
 
   public async queuedRedeemTx(
-    asset: PublicKey,
     amount: BN,
     mintId: number = 0,
     txOptions: TxOptions = {},
@@ -278,7 +275,6 @@ export class InvestorClient {
   }
 
   public async fulfillTx(
-    asset: PublicKey,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
@@ -287,13 +283,16 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
+    const stateModel = await this.base.fetchStateModel();
+    const baseAsset = stateModel.baseAsset!;
+
     const vault = this.base.vaultPda;
-    const vaultAssetAta = this.base.getAta(asset, vault);
+    const vaultAssetAta = this.base.getAta(baseAsset, vault);
 
     const glamMint = this.base.mintPda;
     const escrow = this.base.escrowPda;
     const escrowMintAta = this.base.getMintAta(escrow);
-    const escrowAssetAta = this.base.getAta(asset, escrow);
+    const escrowAssetAta = this.base.getAta(baseAsset, escrow);
 
     let preInstructions: TransactionInstruction[] = [
       createAssociatedTokenAccountIdempotentInstruction(
@@ -307,13 +306,13 @@ export class InvestorClient {
         signer,
         escrowAssetAta,
         escrow,
-        asset,
+        baseAsset,
       ),
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
         vaultAssetAta,
         vault,
-        asset,
+        baseAsset,
       ),
       ...(txOptions.preInstructions || []),
     ];
@@ -324,7 +323,7 @@ export class InvestorClient {
         glamState: this.base.statePda,
         glamMint,
         signer,
-        asset,
+        asset: baseAsset,
       })
       .preInstructions(preInstructions)
       .transaction();

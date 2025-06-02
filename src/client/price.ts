@@ -102,6 +102,7 @@ export class PriceClient {
 
     // If priceDenom is ASSET, only priceVaultIx is returned
     // We currently don't support pricing other assets in custom base asset
+    // due to the lack of oracles
     if (priceDenom == PriceDenom.ASSET) {
       return [priceVaultIx];
     }
