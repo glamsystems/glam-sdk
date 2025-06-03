@@ -15,6 +15,7 @@ import { MarinadeClient } from "./marinade";
 import { getStakePoolAccount } from "@solana/spl-stake-pool";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
+import { STAKE_POOLS } from "./assets";
 
 interface StakePoolAccountData {
   programId: PublicKey;
@@ -51,12 +52,12 @@ export class StakingClient {
     }
 
     // Other LSTs
-    const assetMeta = this.base.getAssetMeta(assetStr);
-    if (!assetMeta || !assetMeta.oracle) {
-      throw new Error("Invalid LST: " + asset);
+    const stakePool = STAKE_POOLS.find((p) => p.mint === assetStr);
+    if (!stakePool) {
+      throw new Error("LST not supported: " + assetStr);
     }
     const tx = await this.stakePoolWithdrawStakeTx(
-      assetMeta.oracle,
+      stakePool.poolState,
       new BN(amount),
       true,
       txOptions,

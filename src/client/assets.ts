@@ -10,17 +10,23 @@ export const STAKE_POOLS = LstList.filter(
       lst.pool.program === "SanctumSpl" ||
       lst.pool.program === "SanctumSplMulti"),
 ).map((lst) => {
-  const { pool, tokenProgram } = lst.pool as any;
+  const { pool, program } = lst.pool as any;
+  const poolState =
+    program === "Marinade"
+      ? "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC"
+      : pool;
+  if (!poolState) {
+    throw new Error("Invalid pool state for LST: " + lst.name);
+  }
+
   return {
     name: lst.name,
     symbol: lst.symbol,
     mint: lst.mint,
+    decimals: lst.decimals,
     logoURI: lst.logoUri,
-    tokenProgram,
-    poolState:
-      lst.pool.program === "Marinade"
-        ? "8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC"
-        : pool || "",
+    tokenProgram: new PublicKey(lst.tokenProgram),
+    poolState: new PublicKey(poolState),
   };
 });
 

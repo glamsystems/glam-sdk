@@ -21,7 +21,7 @@ import {
   MERKLE_DISTRIBUTOR_PROGRAM,
   WSOL,
 } from "../constants";
-import { ASSETS_MAINNET } from "./assets";
+import { STAKE_POOLS_MAP } from "./assets";
 
 export type QuoteParams = {
   inputMint: string;
@@ -203,9 +203,9 @@ export class JupiterSwapClient {
     ]);
 
     const inputStakePool =
-      ASSETS_MAINNET.get(inputMint.toBase58())?.oracle || null;
+      STAKE_POOLS_MAP.get(inputMint.toBase58())?.poolState || null;
     const outputStakePool =
-      ASSETS_MAINNET.get(outputMint.toBase58())?.oracle || null;
+      STAKE_POOLS_MAP.get(outputMint.toBase58())?.poolState || null;
 
     const preInstructions = await this.getPreInstructions(
       glamSigner,
