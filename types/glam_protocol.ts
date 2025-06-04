@@ -3724,7 +3724,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
