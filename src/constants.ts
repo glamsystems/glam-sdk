@@ -63,6 +63,9 @@ export const MARINADE_PROGRAM_ID = new PublicKey(
 export const DRIFT_PROGRAM_ID = new PublicKey(
   "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH",
 );
+export const DRIFT_VAULTS_PROGRAM_ID = new PublicKey(
+  "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR",
+);
 export const JUPITER_PROGRAM_ID = new PublicKey(
   "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
 );

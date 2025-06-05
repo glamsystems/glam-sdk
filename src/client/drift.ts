@@ -18,11 +18,17 @@ import {
   MarginMode,
   Order,
 } from "../utils/driftTypes";
+import { DriftVaultLayout, DriftVault } from "../layouts/drift-vault";
 import { decodeUser } from "../utils/driftUser";
 
 import { BaseClient, TxOptions } from "./base";
 import { AccountMeta } from "@solana/web3.js";
-import { DRIFT_PROGRAM_ID, GLAM_REFERRER, WSOL } from "../constants";
+import {
+  DRIFT_PROGRAM_ID,
+  DRIFT_VAULTS_PROGRAM_ID,
+  GLAM_REFERRER,
+  WSOL,
+} from "../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
@@ -1190,5 +1196,155 @@ export class DriftClient {
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+}
+
+export class DriftVaultsClient {
+  public constructor(
+    readonly base: BaseClient,
+    readonly drift: DriftClient,
+  ) {}
+
+  async fetchUserPositions(user: PublicKey): Promise<{
+    perpPositions: PerpPosition[];
+    spotPositions: SpotPosition[];
+  }> {
+    const accountInfo =
+      await this.base.provider.connection.getAccountInfo(user);
+    if (!accountInfo) {
+      throw new Error(`Drift user ${user} account not found for vault.`);
+    }
+    const { spotPositions, perpPositions } = decodeUser(accountInfo.data);
+    return { perpPositions, spotPositions };
+  }
+
+  getVaultDepositor(driftVault: PublicKey) {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("vault_depositor"),
+        driftVault.toBuffer(),
+        this.base.vaultPda.toBuffer(),
+      ],
+      DRIFT_VAULTS_PROGRAM_ID,
+    )[0];
+  }
+
+  async parseDriftVault(driftVault: PublicKey) {
+    const connection = this.base.provider.connection;
+    const accountInfo = await connection.getAccountInfo(driftVault);
+
+    if (!accountInfo) {
+      throw new Error(
+        `Drift vault account not found: ${driftVault.toBase58()}`,
+      );
+    }
+
+    try {
+      return DriftVaultLayout.decode(accountInfo.data) as DriftVault;
+    } catch (error) {
+      throw new Error(`Failed to parse drift vault account: ${error}`);
+    }
+  }
+
+  async composeRemainingAccounts(user: PublicKey): Promise<AccountMeta[]> {
+    const { spotPositions, perpPositions } =
+      await this.fetchUserPositions(user);
+    const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
+    const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
+
+    const spotMarkets =
+      await this.drift.fetchAndParseSpotMarkets(spotMarketIndexes);
+    const perpMarkets =
+      await this.drift.fetchAndParsePerpMarkets(perpMarketIndexes);
+
+    const oracles = spotMarkets
+      .map((m) => m.oracle)
+      .concat(perpMarkets.map((m) => m.oracle));
+    const markets = spotMarkets
+      .map((m) => m.marketPda)
+      .concat(perpMarkets.map((m) => m.marketPda));
+
+    return oracles
+      .map((o) => ({
+        pubkey: new PublicKey(o),
+        isWritable: false,
+        isSigner: false,
+      }))
+      .concat(
+        markets.map((m) => ({
+          pubkey: new PublicKey(m),
+          isWritable: true,
+          isSigner: false,
+        })),
+      );
+  }
+
+  public async initializeVaultDepositor(
+    driftVault: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vaultDepositor = this.getVaultDepositor(driftVault);
+
+    const tx = await this.base.program.methods
+      .driftVaultsInitializeVaultDepositor()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vault: driftVault,
+        vaultDepositor,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async deposit(
+    driftVault: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vaultDepositor = this.getVaultDepositor(driftVault);
+
+    const {
+      user: driftUser,
+      tokenAccount: vaultTokenAccount,
+      userStats: driftUserStats,
+      spotMarketIndex,
+    } = await this.parseDriftVault(driftVault);
+
+    const {
+      vault: driftSpotMarketVault,
+      mint,
+      tokenProgram,
+    } = await this.drift.fetchAndParseSpotMarket(spotMarketIndex);
+    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
+
+    // GLAM vault's token account for deposit, we assume it exists
+    const userTokenAccount = this.base.getVaultAta(mint, tokenProgram);
+
+    const tx = await this.base.program.methods
+      .driftVaultsDeposit(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vault: driftVault,
+        vaultDepositor,
+        vaultTokenAccount,
+        driftUserStats,
+        driftUser,
+        driftState: this.drift.driftStatePda,
+        driftSpotMarketVault,
+        userTokenAccount,
+        tokenProgram,
+        driftProgram: DRIFT_PROGRAM_ID,
+      })
+      .remainingAccounts(remainingAccounts)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
   }
 }

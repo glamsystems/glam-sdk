@@ -1579,6 +1579,397 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "driftVaultsCancelRequestWithdraw",
+      "discriminator": [
+        241,
+        196,
+        156,
+        180,
+        21,
+        155,
+        228,
+        125
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "vaultDepositor",
+          "writable": true
+        },
+        {
+          "name": "driftUserStats"
+        },
+        {
+          "name": "driftUser"
+        },
+        {
+          "name": "driftState"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "driftVaultsDeposit",
+      "discriminator": [
+        95,
+        223,
+        42,
+        76,
+        37,
+        21,
+        176,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "vaultDepositor",
+          "writable": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "driftUserStats",
+          "writable": true
+        },
+        {
+          "name": "driftUser",
+          "writable": true
+        },
+        {
+          "name": "driftState"
+        },
+        {
+          "name": "driftSpotMarketVault",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "driftProgram"
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "driftVaultsInitializeVaultDepositor",
+      "discriminator": [
+        109,
+        183,
+        50,
+        62,
+        60,
+        195,
+        192,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+        },
+        {
+          "name": "vault"
+        },
+        {
+          "name": "vaultDepositor",
+          "writable": true
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "driftVaultsRequestWithdraw",
+      "discriminator": [
+        19,
+        53,
+        222,
+        51,
+        44,
+        215,
+        35,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "vaultDepositor",
+          "writable": true
+        },
+        {
+          "name": "driftUserStats"
+        },
+        {
+          "name": "driftUser"
+        },
+        {
+          "name": "driftState"
+        }
+      ],
+      "args": [
+        {
+          "name": "withdrawAmount",
+          "type": "u64"
+        },
+        {
+          "name": "withdrawUnit",
+          "type": {
+            "defined": {
+              "name": "withdrawUnit"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "driftVaultsWithdraw",
+      "discriminator": [
+        58,
+        127,
+        150,
+        177,
+        66,
+        45,
+        5,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "vaultDepositor",
+          "writable": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "driftUserStats",
+          "writable": true
+        },
+        {
+          "name": "driftUser",
+          "writable": true
+        },
+        {
+          "name": "driftState"
+        },
+        {
+          "name": "driftSpotMarketVault",
+          "writable": true
+        },
+        {
+          "name": "driftSigner"
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "driftProgram"
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "driftWithdraw",
       "discriminator": [
         86,
@@ -11023,6 +11414,9 @@ export type GlamProtocol = {
           },
           {
             "name": "meteoraDlmm"
+          },
+          {
+            "name": "driftVaults"
           }
         ]
       }
@@ -12143,6 +12537,12 @@ export type GlamProtocol = {
           },
           {
             "name": "emergencyUpdate"
+          },
+          {
+            "name": "driftVaultsDeposit"
+          },
+          {
+            "name": "driftVaultsWithdraw"
           }
         ]
       }
@@ -12996,6 +13396,23 @@ export type GlamProtocol = {
           },
           {
             "name": "periodic"
+          }
+        ]
+      }
+    },
+    {
+      "name": "withdrawUnit",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "shares"
+          },
+          {
+            "name": "token"
+          },
+          {
+            "name": "sharesPercent"
           }
         ]
       }

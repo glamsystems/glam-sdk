@@ -1,6 +1,6 @@
 import { GlamClientConfig } from "./clientConfig";
 import { BaseClient } from "./client/base";
-import { DriftClient } from "./client/drift";
+import { DriftClient, DriftVaultsClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
 import { JupiterVoteClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
@@ -22,6 +22,7 @@ export { JUPITER_API_DEFAULT } from "./client/base";
  */
 export class GlamClient extends BaseClient {
   private _drift?: DriftClient;
+  private _driftVaults?: DriftVaultsClient;
   private _investor?: InvestorClient;
   private _jupiterSwap?: JupiterSwapClient;
   private _jupiterVote?: JupiterVoteClient;
@@ -44,6 +45,13 @@ export class GlamClient extends BaseClient {
       this._drift = new DriftClient(this);
     }
     return this._drift;
+  }
+
+  get driftVaults(): DriftVaultsClient {
+    if (!this._driftVaults) {
+      this._driftVaults = new DriftVaultsClient(this, this.drift);
+    }
+    return this._driftVaults;
   }
 
   get investor(): InvestorClient {
