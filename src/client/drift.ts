@@ -1347,4 +1347,63 @@ export class DriftVaultsClient {
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
+
+  public async requestWithdraw(
+    driftVault: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vaultDepositor = this.getVaultDepositor(driftVault);
+
+    const { user: driftUser, userStats: driftUserStats } =
+      await this.parseDriftVault(driftVault);
+
+    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
+
+    const tx = await this.base.program.methods
+      .driftVaultsRequestWithdraw(amount, { shares: {} })
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vault: driftVault,
+        vaultDepositor,
+        driftUserStats,
+        driftUser,
+      })
+      .remainingAccounts(remainingAccounts)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async cancelWithdrawRequest(
+    driftVault: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vaultDepositor = this.getVaultDepositor(driftVault);
+
+    const { user: driftUser, userStats: driftUserStats } =
+      await this.parseDriftVault(driftVault);
+
+    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
+
+    const tx = await this.base.program.methods
+      .driftVaultsCancelRequestWithdraw()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vault: driftVault,
+        vaultDepositor,
+        driftUserStats,
+        driftUser,
+      })
+      .remainingAccounts(remainingAccounts)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
 }

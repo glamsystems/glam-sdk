@@ -8,7 +8,7 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.24",
+    "version": "0.4.25",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -1637,9 +1637,6 @@ export type GlamProtocol = {
         },
         {
           "name": "driftUser"
-        },
-        {
-          "name": "driftState"
         }
       ],
       "args": []
@@ -1860,9 +1857,6 @@ export type GlamProtocol = {
         },
         {
           "name": "driftUser"
-        },
-        {
-          "name": "driftState"
         }
       ],
       "args": [
