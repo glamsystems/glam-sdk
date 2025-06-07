@@ -6140,16 +6140,16 @@
       ]
     },
     {
-      "name": "price_drift",
+      "name": "price_drift_user",
       "discriminator": [
-        240,
-        91,
-        209,
-        89,
-        155,
-        0,
-        97,
-        133
+        113,
+        43,
+        127,
+        102,
+        161,
+        68,
+        20,
+        69
       ],
       "accounts": [
         {
@@ -6157,7 +6157,25 @@
           "writable": true
         },
         {
-          "name": "glam_vault"
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
         },
         {
           "name": "signer",
@@ -6168,13 +6186,273 @@
           "name": "sol_oracle"
         },
         {
-          "name": "state"
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
         },
         {
           "name": "user"
         },
         {
           "name": "user_stats"
+        }
+      ],
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "PriceDenom"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "price_drift_vault_depositor",
+      "discriminator": [
+        48,
+        112,
+        54,
+        88,
+        2,
+        64,
+        224,
+        53
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "sol_oracle"
+        },
+        {
+          "name": "glam_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
+        },
+        {
+          "name": "depositor",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  100,
+                  101,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "drift_vault"
+              },
+              {
+                "kind": "account",
+                "path": "glam_vault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                13,
+                158,
+                250,
+                191,
+                214,
+                114,
+                241,
+                30,
+                159,
+                143,
+                57,
+                228,
+                51,
+                37,
+                216,
+                70,
+                229,
+                235,
+                161,
+                12,
+                10,
+                187,
+                99,
+                153,
+                37,
+                52,
+                248,
+                180,
+                183,
+                131,
+                12,
+                134
+              ]
+            }
+          }
+        },
+        {
+          "name": "drift_vault"
+        },
+        {
+          "name": "drift_user"
+        },
+        {
+          "name": "drift_user_stats"
         }
       ],
       "args": [
@@ -6227,7 +6505,7 @@
           }
         },
         {
-          "name": "glam_signer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -6367,7 +6645,7 @@
           }
         },
         {
-          "name": "glam_signer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -6487,7 +6765,7 @@
           }
         },
         {
-          "name": "glam_signer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -6607,7 +6885,7 @@
           }
         },
         {
-          "name": "glam_signer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -6727,7 +7005,7 @@
           }
         },
         {
-          "name": "glam_signer",
+          "name": "signer",
           "writable": true,
           "signer": true
         },
@@ -10070,6 +10348,16 @@
       "code": 51109,
       "name": "BaseAssetNotSupported",
       "msg": "Base asset must have 6 decimals."
+    },
+    {
+      "code": 51110,
+      "name": "TooManyDriftSubAccounts",
+      "msg": "Too many Drift sub accounts"
+    },
+    {
+      "code": 51111,
+      "name": "UnknownExternalVaultAsset",
+      "msg": "Unknown external vault account"
     },
     {
       "code": 52000,

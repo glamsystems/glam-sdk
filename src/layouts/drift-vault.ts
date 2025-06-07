@@ -66,9 +66,16 @@ export const DriftVaultLayout = struct([
   u16("spotMarketIndex"),
   u8("bump"),
   bool("permissioned"),
+  bool("vaultProtocol"),
+  u8("fuelDistributionMode"),
+  u8("feeUpdateStatus"),
+  u8("padding1"),
+  u32("lastCumulativeFuelPerShareTs"),
+  u128("cumulativeFuelPerShare"),
+  u128("cumulativeFuel"),
 
   // Final padding
-  array(u64(), 8, "padding"), // [u64; 8]
+  array(u64(), 3, "padding"), // [u64; 3]
 ]);
 
 export interface DriftVault {
@@ -110,5 +117,12 @@ export interface DriftVault {
   spotMarketIndex: number;
   bump: number;
   permissioned: boolean;
-  padding: bigint[];
+  vaultProtocol: boolean;
+  fuelDistributionMode: number;
+  feeUpdateStatus: number;
+  padding1: number;
+  lastCumulativeFuelPerShareTs: number;
+  cumulativeFuelPerShare: BN;
+  cumulativeFuel: BN;
+  padding: BN[];
 }

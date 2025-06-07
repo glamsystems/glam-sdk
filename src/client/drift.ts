@@ -1313,6 +1313,7 @@ export class DriftVaultsClient {
       tokenAccount: vaultTokenAccount,
       userStats: driftUserStats,
       spotMarketIndex,
+      vaultProtocol, // if true the last remaining account should be the vaultProtocol account (for protocol fee)
     } = await this.parseDriftVault(driftVault);
 
     const {
@@ -1399,6 +1400,52 @@ export class DriftVaultsClient {
         vaultDepositor,
         driftUserStats,
         driftUser,
+      })
+      .remainingAccounts(remainingAccounts)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async withdraw(
+    driftVault: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vaultDepositor = this.getVaultDepositor(driftVault);
+
+    const {
+      user: driftUser,
+      userStats: driftUserStats,
+      tokenAccount: vaultTokenAccount,
+      spotMarketIndex,
+    } = await this.parseDriftVault(driftVault);
+    const {
+      vault: driftSpotMarketVault,
+      mint,
+      tokenProgram,
+    } = await this.drift.fetchAndParseSpotMarket(spotMarketIndex);
+    const userTokenAccount = this.base.getVaultAta(mint, tokenProgram);
+
+    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
+
+    const tx = await this.base.program.methods
+      .driftVaultsWithdraw()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vault: driftVault,
+        vaultDepositor,
+        vaultTokenAccount,
+        driftUserStats,
+        driftUser,
+        driftSpotMarketVault,
+        driftSigner: DRIFT_SIGNER,
+        userTokenAccount,
+        driftState: this.drift.driftStatePda,
+        driftProgram: DRIFT_PROGRAM_ID,
+        tokenProgram,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();

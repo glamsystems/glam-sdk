@@ -14,13 +14,14 @@ import {
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
-import { DriftClient } from "./drift";
+import { DriftClient, DriftVaultsClient } from "./drift";
 
 export class PriceClient {
   public constructor(
     readonly base: BaseClient,
     readonly klend: KaminoLendingClient,
     readonly drift: DriftClient,
+    readonly driftVaults: DriftVaultsClient,
   ) {}
 
   /**
@@ -77,6 +78,29 @@ export class PriceClient {
         scopePrices: KAMINO_SCOPE_PRICES,
       })
       .remainingAccounts(remainingAccounts)
+      .instruction();
+
+    return priceIx;
+  }
+
+  public async priceDriftVaultDepositorIx(
+    priceDenom: PriceDenom,
+    driftVault: PublicKey,
+  ) {
+    const { user: driftUser, userStats: driftUserStats } =
+      await this.driftVaults.parseDriftVault(driftVault);
+    const priceIx = await this.base.program.methods
+      .priceDriftVaultDepositor(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+        driftVault,
+        driftUser,
+        driftUserStats,
+      })
+      .remainingAccounts(
+        await this.driftVaults.composeRemainingAccounts(driftUser),
+      )
       .instruction();
 
     return priceIx;
@@ -160,15 +184,13 @@ export class PriceClient {
     try {
       const { user, userStats } = this.drift.getDriftUserPdas();
       const remainingAccounts = await this.drift.composeRemainingAccounts(0);
-      const priceDriftIx = await this.base.program.methods
-        .priceDrift(priceDenom)
+      const priceDriftUserIx = await this.base.program.methods
+        .priceDriftUser(priceDenom)
         .accounts({
           glamState: this.base.statePda,
-          glamVault,
           solOracle: SOL_ORACLE,
           user,
           userStats,
-          state: this.drift.driftStatePda,
         })
         .remainingAccounts(remainingAccounts)
         .instruction();
@@ -179,10 +201,10 @@ export class PriceClient {
         priceVaultIx,
         priceMeteoraIx,
         priceKaminoIx,
-        priceDriftIx,
+        priceDriftUserIx,
       ];
     } catch (error) {
-      // Drift user not found, skip priceDriftIx
+      // Drift user not found, skip priceDriftUserIx
       return [
         priceTicketsIx,
         priceStakesIx,

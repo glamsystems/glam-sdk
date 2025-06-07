@@ -98,7 +98,12 @@ export class GlamClient extends BaseClient {
 
   get price(): PriceClient {
     if (!this._price) {
-      this._price = new PriceClient(this, this.kaminoLending, this.drift);
+      this._price = new PriceClient(
+        this,
+        this.kaminoLending,
+        this.drift,
+        this.driftVaults,
+      );
     }
     return this._price;
   }
