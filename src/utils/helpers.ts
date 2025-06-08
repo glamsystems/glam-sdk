@@ -252,6 +252,23 @@ export async function fetchLookupTables(
   return [];
 }
 
+/**
+ * Parses program logs to extract error message
+ */
+export function parseProgramLogs(logs?: null | string[]): string {
+  const errorMsgLog = (logs || []).find((log) =>
+    log.includes("Error Message:"),
+  );
+
+  console.log("error message from program logs", errorMsgLog);
+
+  if (errorMsgLog) {
+    return errorMsgLog.split("Error Message:")[1].trim();
+  }
+
+  return "Unknown error";
+}
+
 export const getSimulationComputeUnits = async (
   connection: Connection,
   instructions: Array<TransactionInstruction>,
@@ -286,9 +303,7 @@ export const getSimulationComputeUnits = async (
 };
 
 const getErrorFromRPCResponse = (
-  rpcResponse: RpcResponseAndContext<
-    SignatureResult | SimulatedTransactionResponse
-  >,
+  rpcResponse: RpcResponseAndContext<SimulatedTransactionResponse>,
 ) => {
   // Note: `confirmTransaction` does not throw an error if the confirmation does not succeed,
   // but rather a `TransactionError` object. so we handle that here
@@ -313,12 +328,15 @@ const getErrorFromRPCResponse = (
         const customErrorCode = instructionError[1]["Custom"];
         const { errors: glamErrors } = GlamProtocolIdlJson;
         const glamError = glamErrors.find((e) => e.code === customErrorCode);
-        const msg = glamError?.msg || "Unknown custsom error";
-        console.log(`Custom error code: ${customErrorCode}, error: ${msg}}`);
-        throw new Error(msg);
+        if (glamError?.msg) {
+          throw new Error(glamError.msg);
+        }
+        // Unrecognized error code, try to parse program logs to get error message
+        const errMsg = parseProgramLogs(rpcResponse.value.logs);
+        throw new Error(errMsg);
       }
     }
-    throw Error(error.toString());
+    throw Error("Unknown error");
   }
 };
 

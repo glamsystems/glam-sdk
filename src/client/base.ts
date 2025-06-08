@@ -16,7 +16,7 @@ import {
   VersionedTransaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { getSimulationComputeUnits } from "../utils/helpers";
+import { getSimulationComputeUnits, parseProgramLogs } from "../utils/helpers";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -396,26 +396,12 @@ export class BaseClient {
         maxSupportedTransactionVersion: 0,
       });
       throw new GlamError(
-        this.parseProgramLogs(errTx?.meta?.logMessages),
+        parseProgramLogs(errTx?.meta?.logMessages),
         errTx?.meta?.err || undefined,
         errTx?.meta?.logMessages || [],
       );
     }
     return txSig;
-  }
-
-  parseProgramLogs(logs?: null | string[]): string {
-    const errorMsgLog = (logs || []).find((log) =>
-      log.includes("Error Message:"),
-    );
-
-    console.log("error message from program logs", errorMsgLog);
-
-    if (errorMsgLog) {
-      return errorMsgLog.split("Error Message:")[1].trim();
-    }
-
-    return "Unknown error";
   }
 
   async getAdressLookupTableAccounts(
