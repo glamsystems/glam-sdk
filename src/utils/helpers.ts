@@ -8,7 +8,6 @@ import {
   TransactionMessage,
   RpcResponseAndContext,
   SimulatedTransactionResponse,
-  SignatureResult,
   StakeProgram,
   ParsedAccountData,
 } from "@solana/web3.js";
@@ -18,8 +17,6 @@ import {
   STAKE_ACCOUNT_SIZE,
   METEORA_DLMM_PROGRAM,
   METEORA_POSITION_SIZE,
-  KAMINO_LENDING_PROGRAM,
-  KAMINO_OBTRIGATION_SIZE,
 } from "../constants";
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
@@ -32,7 +29,7 @@ export type StakeAccountInfo = {
   voter?: PublicKey; // if undefined, the stake account is not delegated
 };
 
-export const fetchStakeAccounts = async (
+export const findStakeAccounts = async (
   connection: Connection,
   withdrawAuthority: PublicKey,
 ): Promise<PublicKey[]> => {
@@ -124,7 +121,7 @@ export const getStakeAccountsWithStates = async (
   return stakes.sort((a, b) => b.lamports - a.lamports);
 };
 
-export const fetchMarinadeTicketAccounts = async (
+export const findMarinadeTickets = async (
   connection: Connection,
   beneficiary: PublicKey,
 ) =>
@@ -141,28 +138,6 @@ export const fetchMarinadeTicketAccounts = async (
       },
     ],
   });
-
-export const fetchKaminoObligations = async (
-  connection: Connection,
-  owner: PublicKey,
-  market?: PublicKey,
-) => {
-  const accounts = await connection.getProgramAccounts(KAMINO_LENDING_PROGRAM, {
-    filters: [
-      {
-        dataSize: KAMINO_OBTRIGATION_SIZE,
-      },
-      {
-        memcmp: {
-          offset: 64,
-          bytes: owner.toBase58(),
-        },
-      },
-      ...(market ? [{ memcmp: { offset: 32, bytes: market.toBase58() } }] : []),
-    ],
-  });
-  return accounts.map((a) => a.pubkey);
-};
 
 export const fetchMeteoraPositions = async (
   connection: Connection,

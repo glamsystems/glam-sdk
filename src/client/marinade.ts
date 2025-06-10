@@ -30,7 +30,7 @@ import {
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
 import {
-  fetchMarinadeTicketAccounts,
+  findMarinadeTickets,
   getStakeAccountsWithStates,
   StakeAccountInfo,
 } from "../utils/helpers";
@@ -106,7 +106,7 @@ export class MarinadeClient {
 
   async getTickets(): Promise<PublicKey[]> {
     const vault = this.base.vaultPda;
-    const accounts = await fetchMarinadeTicketAccounts(
+    const accounts = await findMarinadeTickets(
       this.base.provider.connection,
       vault,
     );
@@ -115,7 +115,7 @@ export class MarinadeClient {
 
   async getParsedTickets(): Promise<Ticket[]> {
     const vault = this.base.vaultPda;
-    const accounts = await fetchMarinadeTicketAccounts(
+    const accounts = await findMarinadeTickets(
       this.base.provider.connection,
       vault,
     );

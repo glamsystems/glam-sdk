@@ -25,6 +25,7 @@ import { BaseClient, TxOptions } from "./base";
 import { AccountMeta } from "@solana/web3.js";
 import {
   DRIFT_PROGRAM_ID,
+  DRIFT_VAULT_DEPOSITOR_SIZE,
   DRIFT_VAULTS_PROGRAM_ID,
   GLAM_REFERRER,
   WSOL,
@@ -1218,7 +1219,7 @@ export class DriftVaultsClient {
     return { perpPositions, spotPositions };
   }
 
-  getVaultDepositor(driftVault: PublicKey) {
+  getDepositorPda(driftVault: PublicKey) {
     return PublicKey.findProgramAddressSync(
       [
         Buffer.from("vault_depositor"),
@@ -1279,12 +1280,39 @@ export class DriftVaultsClient {
       );
   }
 
+  parseDepositor(depositor: PublicKey, data: Buffer) {
+    const driftVault = new PublicKey(data.subarray(8, 40));
+    const shares = new BN(data.subarray(104, 112), "le");
+    return { address: depositor, driftVault, shares };
+  }
+
+  /**
+   * Finds all drift vault depositors
+   */
+  public async findAndParseVaultDepositors(authority?: PublicKey) {
+    const accounts = await this.base.provider.connection.getProgramAccounts(
+      DRIFT_VAULTS_PROGRAM_ID,
+      {
+        filters: [
+          { dataSize: DRIFT_VAULT_DEPOSITOR_SIZE },
+          {
+            memcmp: {
+              offset: 72,
+              bytes: (authority || this.base.vaultPda).toBase58(),
+            },
+          },
+        ],
+      },
+    );
+    return accounts.map((a) => this.parseDepositor(a.pubkey, a.account.data));
+  }
+
   public async initializeVaultDepositor(
     driftVault: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vaultDepositor = this.getVaultDepositor(driftVault);
+    const vaultDepositor = this.getDepositorPda(driftVault);
 
     const tx = await this.base.program.methods
       .driftVaultsInitializeVaultDepositor()
@@ -1306,7 +1334,7 @@ export class DriftVaultsClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vaultDepositor = this.getVaultDepositor(driftVault);
+    const vaultDepositor = this.getDepositorPda(driftVault);
 
     const {
       user: driftUser,
@@ -1355,7 +1383,7 @@ export class DriftVaultsClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vaultDepositor = this.getVaultDepositor(driftVault);
+    const vaultDepositor = this.getDepositorPda(driftVault);
 
     const { user: driftUser, userStats: driftUserStats } =
       await this.parseDriftVault(driftVault);
@@ -1384,7 +1412,7 @@ export class DriftVaultsClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vaultDepositor = this.getVaultDepositor(driftVault);
+    const vaultDepositor = this.getDepositorPda(driftVault);
 
     const { user: driftUser, userStats: driftUserStats } =
       await this.parseDriftVault(driftVault);
@@ -1413,7 +1441,7 @@ export class DriftVaultsClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vaultDepositor = this.getVaultDepositor(driftVault);
+    const vaultDepositor = this.getDepositorPda(driftVault);
 
     const {
       user: driftUser,

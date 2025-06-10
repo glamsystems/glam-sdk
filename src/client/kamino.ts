@@ -20,6 +20,7 @@ import {
 import {
   KAMINO_FARM_PROGRAM,
   KAMINO_LENDING_PROGRAM,
+  KAMINO_OBTRIGATION_SIZE,
   KAMINO_SCOPE_PRICES,
   WSOL,
 } from "../constants";
@@ -157,7 +158,7 @@ function refreshObligationFarmsForReserve(
     },
     buffer,
   );
-  const data = Buffer.concat([identifier, buffer]).slice(0, 8 + len);
+  const data = Buffer.concat([identifier, buffer]).subarray(0, 8 + len);
   const ix = new TransactionInstruction({ keys, programId, data });
   return ix;
 }
@@ -333,29 +334,6 @@ export class KaminoLendingClient {
     return obligationFarm;
   }
 
-  public async initUserMetadataTx(
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.vaultPda;
-    const userMetadata = this.getUserMetadataPda(vault);
-    const lookupTable = new PublicKey(0); // FIXME: create lookup table
-
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .kaminoLendingInitUserMetadata(lookupTable)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        userMetadata,
-        referrerUserMetadata: null,
-      })
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
   refreshReserveIxs(lendingMarket: PublicKey, reserves: PublicKey[]) {
     return reserves.map((reserve) =>
       refreshReserve({
@@ -478,33 +456,7 @@ export class KaminoLendingClient {
     };
   }
 
-  /**
-   * Fetches and parses obligation account
-   *
-   * @param obligation User obligation pubkey
-   * @returns Pubkeys of reserves for deposits and borrows
-   */
-  async fetchAndParseObligation(
-    obligation: PublicKey,
-  ): Promise<ParsedObligation> {
-    const cached = this.obligations.get(obligation);
-    if (cached) {
-      return cached;
-    }
-
-    const obligationAccount =
-      await this.base.provider.connection.getAccountInfo(obligation);
-    if (!obligationAccount) {
-      return {
-        address: obligation,
-        lendingMarket: null,
-        deposits: [],
-        borrows: [],
-      };
-    }
-
-    const data = obligationAccount.data;
-
+  parseObligation(obligation: PublicKey, data: Buffer): ParsedObligation {
     const lendingMarket = new PublicKey(data.subarray(32, 64));
 
     // read deposits
@@ -541,12 +493,41 @@ export class KaminoLendingClient {
       return { reserve };
     }).filter((d) => !d.reserve.equals(PublicKey.default));
 
-    const parsedObligation = {
+    return {
       address: obligation,
       lendingMarket,
       deposits,
       borrows,
     };
+  }
+
+  /**
+   * Fetches and parses an obligation account
+   */
+  async fetchAndParseObligation(
+    obligation: PublicKey,
+  ): Promise<ParsedObligation> {
+    const cached = this.obligations.get(obligation);
+    if (cached) {
+      return cached;
+    }
+
+    const obligationAccount =
+      await this.base.provider.connection.getAccountInfo(obligation);
+    if (!obligationAccount) {
+      return {
+        address: obligation,
+        lendingMarket: null,
+        deposits: [],
+        borrows: [],
+      };
+    }
+
+    const parsedObligation = this.parseObligation(
+      obligation,
+      obligationAccount.data,
+    );
+
     this.obligations.set(obligation, parsedObligation);
     return parsedObligation;
   }
@@ -558,13 +539,14 @@ export class KaminoLendingClient {
     return a.every((p, i) => p.equals(b[i]));
   };
 
-  _parseReserveAccount(data: Buffer) {
+  parseReserveAccount(reserve: PublicKey, data: Buffer): ParsedReserve {
     const market = new PublicKey(data.subarray(32, 64));
     const farmCollateral = new PublicKey(data.subarray(64, 96));
     const farmDebt = new PublicKey(data.subarray(96, 128));
     const liquidityMint = new PublicKey(data.subarray(128, 160));
 
     return {
+      address: reserve,
       farmCollateral: farmCollateral.equals(PublicKey.default)
         ? null
         : farmCollateral,
@@ -588,11 +570,10 @@ export class KaminoLendingClient {
     return reserveAccounts
       .filter((a) => !!a)
       .map((account, i) => {
-        const parsedReserve = {
-          address: reserves[i],
-          ...this._parseReserveAccount(account.data),
-        };
-
+        const parsedReserve = this.parseReserveAccount(
+          reserves[i],
+          account.data,
+        );
         this.reserves.set(reserves[i], parsedReserve);
         return parsedReserve;
       });
@@ -615,13 +596,61 @@ export class KaminoLendingClient {
     if (accounts.length === 0) {
       throw new Error("Reserve not found");
     }
-    const account = accounts[0];
-    const parsedReserve = {
-      address: account.pubkey,
-      ...this._parseReserveAccount(account.account.data),
-    };
-    this.reserves.set(account.pubkey, parsedReserve);
+    const parsedReserve = this.parseReserveAccount(
+      accounts[0].pubkey,
+      accounts[0].account.data,
+    );
+    this.reserves.set(accounts[0].pubkey, parsedReserve);
     return parsedReserve;
+  }
+
+  /**
+   * Finds and parses Kamino obligations for a given owner and market (optional)
+   */
+  public async findAndParseObligations(
+    owner: PublicKey,
+    market?: PublicKey,
+  ): Promise<ParsedObligation[]> {
+    const accounts = await this.base.provider.connection.getProgramAccounts(
+      KAMINO_LENDING_PROGRAM,
+      {
+        filters: [
+          { dataSize: KAMINO_OBTRIGATION_SIZE },
+          { memcmp: { offset: 64, bytes: owner.toBase58() } },
+          ...(market
+            ? [{ memcmp: { offset: 32, bytes: market.toBase58() } }]
+            : []),
+        ],
+      },
+    );
+    // Parse obligations and cache them
+    return accounts.map((a) => {
+      const parsedObligation = this.parseObligation(a.pubkey, a.account.data);
+      this.obligations.set(a.pubkey, parsedObligation);
+      return parsedObligation;
+    });
+  }
+
+  public async initUserMetadataTx(
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vault = this.base.vaultPda;
+    const userMetadata = this.getUserMetadataPda(vault);
+    const lookupTable = new PublicKey(0); // FIXME: create lookup table
+
+    const tx = await this.base.program.methods
+      .kaminoLendingInitUserMetadata(lookupTable)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        userMetadata,
+        referrerUserMetadata: null,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return vTx;
   }
 
   public async depositTx(

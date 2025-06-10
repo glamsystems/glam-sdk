@@ -190,3 +190,6 @@ export const ASSETS_TESTS: Map<string, AssetMeta> = new Map([]);
 export const SOL_ORACLE = ASSETS_MAINNET.get(
   "So11111111111111111111111111111111111111112",
 )!.oracle;
+export const USDC_ORACLE = ASSETS_MAINNET.get(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+)!.oracle;

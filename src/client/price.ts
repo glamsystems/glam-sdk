@@ -4,13 +4,12 @@ import { KaminoLendingClient } from "./kamino";
 
 import { BaseClient } from "./base";
 
-import { ASSETS_MAINNET, SOL_ORACLE } from "./assets";
+import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "./assets";
 import {
-  fetchStakeAccounts,
-  fetchMarinadeTicketAccounts,
+  findStakeAccounts,
+  findMarinadeTickets,
   fetchMeteoraPositions,
   parseMeteoraPosition,
-  fetchKaminoObligations,
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
@@ -34,7 +33,6 @@ export class PriceClient {
       "getAum() should only be used for testing. It doesn't reflect the actual AUM of the vault in production.",
     );
 
-    // @ts-ignore
     const stateModel = await this.base.fetchStateModel();
     return (stateModel?.pricedAssets || []).reduce(
       (sum, p) => new BN(p.amount).add(sum),
@@ -42,15 +40,21 @@ export class PriceClient {
     ) as BN;
   }
 
-  async priceKaminoIx(priceDenom: PriceDenom) {
-    const glamVault = this.base.vaultPda;
-    const obligations = await fetchKaminoObligations(
-      this.base.provider.connection,
-      glamVault,
+  /**
+   * Returns an instruction that prices Kamino obligations.
+   * If there are no Kamino obligations, returns null.
+   */
+  async priceKaminoObligationsIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const parsedObligations = await this.klend.findAndParseObligations(
+      this.base.vaultPda,
     );
-    const parsedObligations = await Promise.all(
-      obligations.map((o) => this.klend.fetchAndParseObligation(o)),
-    );
+
+    if (parsedObligations.length === 0) {
+      return null;
+    }
+
     const pubkeySet = new Set<string>([]);
     parsedObligations
       .filter((o) => o.lendingMarket !== null)
@@ -66,7 +70,6 @@ export class PriceClient {
       isWritable: true,
     }));
 
-    // @ts-ignore
     const priceIx = await this.base.program.methods
       .priceKaminoObligations(priceDenom)
       .accounts({
@@ -83,107 +86,18 @@ export class PriceClient {
     return priceIx;
   }
 
-  public async priceDriftVaultDepositorIx(
+  /**
+   * Returns an instruction that prices the specified Drift user (aka sub-account).
+   * If the Drift user account is not found, returns null.
+   */
+  public async priceDriftUserIx(
     priceDenom: PriceDenom,
-    driftVault: PublicKey,
-  ) {
-    const { user: driftUser, userStats: driftUserStats } =
-      await this.driftVaults.parseDriftVault(driftVault);
-    const priceIx = await this.base.program.methods
-      .priceDriftVaultDepositor(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-        driftVault,
-        driftUser,
-        driftUserStats,
-      })
-      .remainingAccounts(
-        await this.driftVaults.composeRemainingAccounts(driftUser),
-      )
-      .instruction();
-
-    return priceIx;
-  }
-
-  public async priceVaultIxs(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction[]> {
-    const glamVault = this.base.vaultPda;
-
-    const priceVaultIx = await this.base.program.methods
-      .priceVault(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(
-        await this.remainingAccountsForPricingVaultAssets(
-          priceDenom == PriceDenom.ASSET,
-        ),
-      )
-      .instruction();
-
-    // If priceDenom is ASSET, only priceVaultIx is returned
-    // We currently don't support pricing other assets in custom base asset
-    // due to the lack of oracles
-    if (priceDenom == PriceDenom.ASSET) {
-      return [priceVaultIx];
-    }
-
-    const tickets = await fetchMarinadeTicketAccounts(
-      this.base.provider.connection,
-      glamVault,
-    );
-    // @ts-ignore
-    const priceTicketsIx = await this.base.program.methods
-      .priceTickets(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(
-        tickets.map((t) => ({
-          pubkey: t.pubkey,
-          isSigner: false,
-          isWritable: false,
-        })),
-      )
-      .instruction();
-
-    const stakes = await fetchStakeAccounts(
-      this.base.provider.connection,
-      glamVault,
-    );
-    const priceStakesIx = await this.base.program.methods
-      .priceStakes(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(
-        stakes.map((s) => ({
-          pubkey: s,
-          isSigner: false,
-          isWritable: false,
-        })),
-      )
-      .instruction();
-
-    const priceMeteoraIx = await this.base.program.methods
-      .priceMeteoraPositions(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(await this.remainingAccountsForPricingMeteora())
-      .instruction();
-
-    const priceKaminoIx = await this.priceKaminoIx(priceDenom);
-
+    subAccountId: number,
+  ): Promise<TransactionInstruction | null> {
+    const { user, userStats } = this.drift.getDriftUserPdas();
     try {
-      const { user, userStats } = this.drift.getDriftUserPdas();
-      const remainingAccounts = await this.drift.composeRemainingAccounts(0);
+      const remainingAccounts =
+        await this.drift.composeRemainingAccounts(subAccountId);
       const priceDriftUserIx = await this.base.program.methods
         .priceDriftUser(priceDenom)
         .accounts({
@@ -195,31 +109,188 @@ export class PriceClient {
         .remainingAccounts(remainingAccounts)
         .instruction();
 
-      return [
-        priceTicketsIx,
-        priceStakesIx,
-        priceVaultIx,
-        priceMeteoraIx,
-        priceKaminoIx,
-        priceDriftUserIx,
-      ];
+      return priceDriftUserIx;
     } catch (error) {
-      // Drift user not found, skip priceDriftUserIx
-      return [
-        priceTicketsIx,
-        priceStakesIx,
-        priceVaultIx,
-        priceMeteoraIx,
-        priceKaminoIx,
-      ];
+      return null;
     }
   }
 
+  /**
+   * Returns an instruction that prices a drift vault depositor.
+   * If the drift vault depositor account is not found, returns null.
+   */
+  public async priceDriftVaultDepositorsIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const parsedVaultDepositors =
+      await this.driftVaults.findAndParseVaultDepositors();
+
+    if (parsedVaultDepositors.length === 0) {
+      return null;
+    }
+
+    // FIXME: how should we compose remaining accounts for multiple vault depositors?
+    const { driftVault } = parsedVaultDepositors[0];
+    const { user: driftUser, userStats: driftUserStats } =
+      await this.driftVaults.parseDriftVault(driftVault);
+
+    const remainingAccounts =
+      await this.driftVaults.composeRemainingAccounts(driftUser);
+    const priceIx = await this.base.program.methods
+      .priceDriftVaultDepositor(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+        driftVault,
+        driftUser,
+        driftUserStats,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
+
+    return priceIx;
+  }
+
+  /**
+   * Returns an instruction that prices vault balance and tokens the vault holds
+   */
+  async priceVaultIx(priceDenom: PriceDenom): Promise<TransactionInstruction> {
+    const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
+      priceDenom == PriceDenom.ASSET,
+    );
+    const priceVaultIx = await this.base.program.methods
+      .priceVault(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
+    return priceVaultIx;
+  }
+
+  /**
+   * Returns an instruction that prices Marinade tickets.
+   * If there are no Marinade tickets, returns null.
+   */
+  async priceTicketsIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const tickets = await findMarinadeTickets(
+      this.base.provider.connection,
+      this.base.vaultPda,
+    );
+    if (tickets.length === 0) {
+      return null;
+    }
+    const priceTicketsIx = await this.base.program.methods
+      .priceTickets(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(
+        tickets.map(({ pubkey }) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
+      .instruction();
+    return priceTicketsIx;
+  }
+
+  /**
+   * Returns an instruction that prices stake accounts.
+   * If there are no stake accounts, returns null.
+   */
+  async priceStakesIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const stakes = await findStakeAccounts(
+      this.base.provider.connection,
+      this.base.vaultPda,
+    );
+    if (stakes.length === 0) {
+      return null;
+    }
+    const priceStakesIx = await this.base.program.methods
+      .priceStakes(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(
+        stakes.map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
+      .instruction();
+    return priceStakesIx;
+  }
+
+  /**
+   * Returns an instruction that prices Meteora positions.
+   * If there are no Meteora positions, returns null.
+   */
+  async priceMeteoraPositionsIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const remainingAccounts = await this.remainingAccountsForPricingMeteora();
+    if (remainingAccounts.length === 0) {
+      return null;
+    }
+    const priceMeteoraIx = await this.base.program.methods
+      .priceMeteoraPositions(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
+    return priceMeteoraIx;
+  }
+
+  public async priceVaultIxs(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction[]> {
+    const priceVaultIx = await this.priceVaultIx(priceDenom);
+
+    // If priceDenom is ASSET, only priceVaultIx is returned
+    // We currently don't support pricing other assets in custom base asset
+    // due to the lack of oracles
+    if (priceDenom == PriceDenom.ASSET) {
+      return [priceVaultIx];
+    }
+
+    // If there are no external assets, we don't need to price DeFi positions
+    const stateModel = await this.base.fetchStateModel();
+    if ((stateModel.externalVaultAccounts || []).length === 0) {
+      return [priceVaultIx];
+    }
+
+    const priceTicketsIx = await this.priceTicketsIx(priceDenom);
+    const priceStakesIx = await this.priceStakesIx(priceDenom);
+    const priceMeteoraIx = await this.priceMeteoraPositionsIx(priceDenom);
+    const priceKaminoIx = await this.priceKaminoObligationsIx(priceDenom);
+    const priceDriftUserIx = await this.priceDriftUserIx(priceDenom, 0);
+
+    return [
+      priceVaultIx,
+      priceTicketsIx,
+      priceStakesIx,
+      priceMeteoraIx,
+      priceKaminoIx,
+      priceDriftUserIx,
+    ].filter((ix) => ix !== null);
+  }
+
   remainingAccountsForPricingMeteora = async () => {
-    const glamVault = this.base.vaultPda;
     const positions = await fetchMeteoraPositions(
       this.base.provider.connection,
-      glamVault,
+      this.base.vaultPda,
     );
 
     let chunks = await Promise.all(
@@ -232,8 +303,8 @@ export class PriceClient {
           lbPair,
           binArrayLower,
           binArrayUpper,
-          new PublicKey("3m6i4RFWEDw2Ft4tFHPJtYgmpPe21k56M3FHeWYrgGBz"),
-          new PublicKey("9VCioxmni2gDLv11qufWzT3RDERhQE4iY5Gf7NTfYyAV"),
+          SOL_ORACLE, // FIXME: token x oracle
+          USDC_ORACLE, // FIXME: token y oracle
         ].map((k) => ({
           pubkey: k,
           isSigner: false,
