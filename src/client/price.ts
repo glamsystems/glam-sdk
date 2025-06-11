@@ -87,29 +87,30 @@ export class PriceClient {
   }
 
   /**
-   * Returns an instruction that prices the specified Drift user (aka sub-account).
-   * If the Drift user account is not found, returns null.
+   * Returns an instruction that prices the all Drift users (aka sub-accounts) controlled by the GLAM vault.
+   * These Drift users must share the same user_stats that's also controlled by the GLAM vault.
    */
-  public async priceDriftUserIx(
+  public async priceDriftUsersIx(
     priceDenom: PriceDenom,
-    subAccountId: number,
   ): Promise<TransactionInstruction | null> {
+    // FIXME: check more users than #0
     const { user, userStats } = this.drift.getDriftUserPdas();
     try {
-      const remainingAccounts =
-        await this.drift.composeRemainingAccounts(subAccountId);
-      const priceDriftUserIx = await this.base.program.methods
-        .priceDriftUser(priceDenom)
+      const remainingAccounts = await this.drift.composeRemainingAccounts(0);
+      const priceDriftUsersIx = await this.base.program.methods
+        .priceDriftUsers(priceDenom)
         .accounts({
           glamState: this.base.statePda,
           solOracle: SOL_ORACLE,
-          user,
-          userStats,
         })
-        .remainingAccounts(remainingAccounts)
+        .remainingAccounts([
+          { pubkey: userStats, isSigner: false, isWritable: false },
+          { pubkey: user, isSigner: false, isWritable: false },
+          ...remainingAccounts,
+        ])
         .instruction();
 
-      return priceDriftUserIx;
+      return priceDriftUsersIx;
     } catch (error) {
       return null;
     }
@@ -117,7 +118,7 @@ export class PriceClient {
 
   /**
    * Returns an instruction that prices a drift vault depositor.
-   * If the drift vault depositor account is not found, returns null.
+   * If there are no vault depositor accounts, returns null.
    */
   public async priceDriftVaultDepositorsIx(
     priceDenom: PriceDenom,
@@ -129,21 +130,42 @@ export class PriceClient {
       return null;
     }
 
-    // FIXME: how should we compose remaining accounts for multiple vault depositors?
-    const { driftVault } = parsedVaultDepositors[0];
-    const { user: driftUser, userStats: driftUserStats } =
-      await this.driftVaults.parseDriftVault(driftVault);
+    // For each vault deposit, we need the following pubkeys in remaining accounts:
+    // - depositor
+    // - drift vault
+    // - drift user of the vault
+    // - spot & perp markets
+    // - oracles
+    // There might be overlaps between markets and oracles so we use a set to avoid duplicates
 
-    const remainingAccounts =
-      await this.driftVaults.composeRemainingAccounts(driftUser);
+    const remainingAccountsKeys = new Set<string>();
+    for (const depositor of parsedVaultDepositors) {
+      remainingAccountsKeys.add(depositor.address.toBase58());
+      remainingAccountsKeys.add(depositor.driftVault.toBase58());
+      const { user: driftUser } = await this.driftVaults.parseDriftVault(
+        depositor.driftVault,
+      );
+      remainingAccountsKeys.add(driftUser.toBase58());
+
+      const markets_and_oracles = (
+        await this.driftVaults.composeRemainingAccounts(driftUser)
+      ).map((a) => a.pubkey.toBase58());
+      for (const k of markets_and_oracles) {
+        remainingAccountsKeys.add(k);
+      }
+    }
+
+    const remainingAccounts = Array.from(remainingAccountsKeys).map((k) => ({
+      pubkey: new PublicKey(k),
+      isSigner: false,
+      isWritable: false,
+    }));
+
     const priceIx = await this.base.program.methods
-      .priceDriftVaultDepositor(priceDenom)
+      .priceDriftVaultDepositors(priceDenom)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
-        driftVault,
-        driftUser,
-        driftUserStats,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -275,7 +297,9 @@ export class PriceClient {
     const priceStakesIx = await this.priceStakesIx(priceDenom);
     const priceMeteoraIx = await this.priceMeteoraPositionsIx(priceDenom);
     const priceKaminoIx = await this.priceKaminoObligationsIx(priceDenom);
-    const priceDriftUserIx = await this.priceDriftUserIx(priceDenom, 0);
+    const priceDriftUsersIx = await this.priceDriftUsersIx(priceDenom);
+    const priceDriftVaultDepositorsIx =
+      await this.priceDriftVaultDepositorsIx(priceDenom);
 
     return [
       priceVaultIx,
@@ -283,7 +307,8 @@ export class PriceClient {
       priceStakesIx,
       priceMeteoraIx,
       priceKaminoIx,
-      priceDriftUserIx,
+      priceDriftUsersIx,
+      priceDriftVaultDepositorsIx,
     ].filter((ix) => ix !== null);
   }
 

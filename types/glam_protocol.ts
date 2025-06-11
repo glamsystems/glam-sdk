@@ -6146,16 +6146,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "priceDriftUser",
+      "name": "priceDriftUsers",
       "discriminator": [
-        113,
-        43,
-        127,
-        102,
-        161,
-        68,
-        20,
-        69
+        12,
+        5,
+        143,
+        51,
+        101,
+        81,
+        200,
+        150
       ],
       "accounts": [
         {
@@ -6252,12 +6252,6 @@ export type GlamProtocol = {
               ]
             }
           }
-        },
-        {
-          "name": "user"
-        },
-        {
-          "name": "userStats"
         }
       ],
       "args": [
@@ -6272,16 +6266,16 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "priceDriftVaultDepositor",
+      "name": "priceDriftVaultDepositors",
       "discriminator": [
-        48,
-        112,
-        54,
-        88,
-        2,
-        64,
-        224,
-        53
+        234,
+        16,
+        238,
+        70,
+        189,
+        23,
+        98,
+        160
       ],
       "accounts": [
         {
@@ -6378,87 +6372,6 @@ export type GlamProtocol = {
               ]
             }
           }
-        },
-        {
-          "name": "depositor",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116,
-                  95,
-                  100,
-                  101,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  111,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "driftVault"
-              },
-              {
-                "kind": "account",
-                "path": "glamVault"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                13,
-                158,
-                250,
-                191,
-                214,
-                114,
-                241,
-                30,
-                159,
-                143,
-                57,
-                228,
-                51,
-                37,
-                216,
-                70,
-                229,
-                235,
-                161,
-                12,
-                10,
-                187,
-                99,
-                153,
-                37,
-                52,
-                248,
-                180,
-                183,
-                131,
-                12,
-                134
-              ]
-            }
-          }
-        },
-        {
-          "name": "driftVault"
-        },
-        {
-          "name": "driftUser"
-        },
-        {
-          "name": "driftUserStats"
         }
       ],
       "args": [
@@ -10357,8 +10270,8 @@ export type GlamProtocol = {
     },
     {
       "code": 51110,
-      "name": "tooManyDriftSubAccounts",
-      "msg": "Too many Drift sub accounts"
+      "name": "invalidQuoteSpotMarket",
+      "msg": "Unsupported spot market for perp quotes"
     },
     {
       "code": 51111,

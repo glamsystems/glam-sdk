@@ -6140,16 +6140,16 @@
       ]
     },
     {
-      "name": "price_drift_user",
+      "name": "price_drift_users",
       "discriminator": [
-        113,
-        43,
-        127,
-        102,
-        161,
-        68,
-        20,
-        69
+        12,
+        5,
+        143,
+        51,
+        101,
+        81,
+        200,
+        150
       ],
       "accounts": [
         {
@@ -6246,12 +6246,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "user"
-        },
-        {
-          "name": "user_stats"
         }
       ],
       "args": [
@@ -6266,16 +6260,16 @@
       ]
     },
     {
-      "name": "price_drift_vault_depositor",
+      "name": "price_drift_vault_depositors",
       "discriminator": [
-        48,
-        112,
-        54,
-        88,
-        2,
-        64,
-        224,
-        53
+        234,
+        16,
+        238,
+        70,
+        189,
+        23,
+        98,
+        160
       ],
       "accounts": [
         {
@@ -6372,87 +6366,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "depositor",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116,
-                  95,
-                  100,
-                  101,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  111,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "drift_vault"
-              },
-              {
-                "kind": "account",
-                "path": "glam_vault"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                13,
-                158,
-                250,
-                191,
-                214,
-                114,
-                241,
-                30,
-                159,
-                143,
-                57,
-                228,
-                51,
-                37,
-                216,
-                70,
-                229,
-                235,
-                161,
-                12,
-                10,
-                187,
-                99,
-                153,
-                37,
-                52,
-                248,
-                180,
-                183,
-                131,
-                12,
-                134
-              ]
-            }
-          }
-        },
-        {
-          "name": "drift_vault"
-        },
-        {
-          "name": "drift_user"
-        },
-        {
-          "name": "drift_user_stats"
         }
       ],
       "args": [
@@ -10351,8 +10264,8 @@
     },
     {
       "code": 51110,
-      "name": "TooManyDriftSubAccounts",
-      "msg": "Too many Drift sub accounts"
+      "name": "InvalidQuoteSpotMarket",
+      "msg": "Unsupported spot market for perp quotes"
     },
     {
       "code": 51111,
