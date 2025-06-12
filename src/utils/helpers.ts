@@ -12,8 +12,6 @@ import {
   ParsedAccountData,
 } from "@solana/web3.js";
 import {
-  MARINADE_PROGRAM_ID,
-  MARINADE_TICKET_SIZE,
   STAKE_ACCOUNT_SIZE,
   METEORA_DLMM_PROGRAM,
   METEORA_POSITION_SIZE,
@@ -120,24 +118,6 @@ export const getStakeAccountsWithStates = async (
   // order by lamports desc
   return stakes.sort((a, b) => b.lamports - a.lamports);
 };
-
-export const findMarinadeTickets = async (
-  connection: Connection,
-  beneficiary: PublicKey,
-) =>
-  await connection.getProgramAccounts(MARINADE_PROGRAM_ID, {
-    filters: [
-      {
-        dataSize: MARINADE_TICKET_SIZE,
-      },
-      {
-        memcmp: {
-          offset: 40,
-          bytes: beneficiary.toBase58(),
-        },
-      },
-    ],
-  });
 
 export const fetchMeteoraPositions = async (
   connection: Connection,

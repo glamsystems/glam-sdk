@@ -21,7 +21,6 @@ export const SEED_ESCROW = (
   ""
 ).replace(/"/g, "");
 
-export const MARINADE_TICKET_SIZE = 88;
 export const STAKE_ACCOUNT_SIZE = 200;
 export const METEORA_POSITION_SIZE = 8120;
 export const KAMINO_OBTRIGATION_SIZE = 3344;

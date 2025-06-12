@@ -41,29 +41,29 @@ export class StakingClient {
   public async unstake(
     asset: PublicKey,
     amount: number | BN,
+    deactivate: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const assetStr = asset.toBase58();
-
     // mSOL
-    if (assetStr === MSOL.toBase58()) {
-      const tx = await this.marinade.orderUnstakeTx(new BN(amount), txOptions);
-      return await this.base.sendAndConfirm(tx);
+    if (asset.equals(MSOL)) {
+      return await this.marinade.withdrawStakeAccount(
+        new BN(amount),
+        deactivate,
+        txOptions,
+      );
     }
 
     // Other LSTs
-    const stakePool = STAKE_POOLS.find((p) => p.mint === assetStr);
+    const stakePool = STAKE_POOLS.find((p) => p.mint === asset.toBase58());
     if (!stakePool) {
-      throw new Error("LST not supported: " + assetStr);
+      throw new Error(`LST not supported: ${asset}`);
     }
-    const tx = await this.stakePoolWithdrawStakeTx(
+    return await this.stakePoolWithdrawStake(
       stakePool.poolState,
       new BN(amount),
-      true,
+      deactivate,
       txOptions,
     );
-
-    return await this.base.sendAndConfirm(tx);
   }
 
   public async stakePoolDepositSol(
@@ -91,12 +91,13 @@ export class StakingClient {
   public async stakePoolWithdrawStake(
     stakePool: PublicKey,
     amount: BN,
+    deactivate: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.stakePoolWithdrawStakeTx(
       stakePool,
       amount,
-      false,
+      deactivate,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx);
@@ -480,7 +481,6 @@ export class StakingClient {
       reserveStake,
     } = await this.getStakePoolAccountData(stakePool);
 
-    const glamVault = this.base.vaultPda;
     const poolTokensFrom = this.base.getVaultAta(poolMint, tokenProgram);
 
     // The reserve stake account should NOT be used for withdrawals unless we have no other options.
@@ -490,7 +490,6 @@ export class StakingClient {
         withdrawAuthority,
       )
     ).filter((s) => !s.address.equals(reserveStake));
-    console.log("validatorStakeCandidates", validatorStakeCandidates);
 
     const validatorStakeAccount =
       validatorStakeCandidates.length === 0

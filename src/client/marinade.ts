@@ -7,7 +7,6 @@ import {
   StakeProgram,
   SYSVAR_CLOCK_PUBKEY,
   SystemProgram,
-  Transaction,
   TransactionInstruction,
   Keypair,
 } from "@solana/web3.js";
@@ -24,16 +23,10 @@ import {
 import { BaseClient, TxOptions } from "./base";
 import {
   MARINADE_NATIVE_STAKE_AUTHORITY,
-  MARINADE_PROGRAM_ID,
-  MARINADE_TICKET_SIZE,
   MSOL,
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
-import {
-  findMarinadeTickets,
-  getStakeAccountsWithStates,
-  StakeAccountInfo,
-} from "../utils/helpers";
+import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
 
 export type Ticket = {
   address: PublicKey; // offset 8 after anchor discriminator
@@ -75,67 +68,20 @@ export class MarinadeClient {
 
   public async withdrawStakeAccount(
     amount: BN,
+    deactivate: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const [tx, extraSigner] = await this.withdrawStakeAccountTx(
       amount,
+      deactivate,
       txOptions,
     );
     return await this.base.sendAndConfirm(tx, [extraSigner]);
   }
 
-  public async orderUnstake(
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.orderUnstakeTx(amount, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async claim(
-    tickets: PublicKey[],
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.claimTx(tickets, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
   /*
    * Utils
    */
-
-  async getTickets(): Promise<PublicKey[]> {
-    const vault = this.base.vaultPda;
-    const accounts = await findMarinadeTickets(
-      this.base.provider.connection,
-      vault,
-    );
-    return accounts.map((a) => a.pubkey);
-  }
-
-  async getParsedTickets(): Promise<Ticket[]> {
-    const vault = this.base.vaultPda;
-    const accounts = await findMarinadeTickets(
-      this.base.provider.connection,
-      vault,
-    );
-
-    const currentEpoch = await this.base.provider.connection.getEpochInfo();
-    return accounts.map((a) => {
-      const lamports = Number((a.account.data as Buffer).readBigInt64LE(72));
-      const createdEpoch = Number(
-        (a.account.data as Buffer).readBigInt64LE(80),
-      );
-      const isDue = currentEpoch.epoch > createdEpoch;
-      return {
-        address: a.pubkey,
-        lamports,
-        createdEpoch,
-        isDue,
-        isClaimable: isDue && currentEpoch.slotIndex > 5000, // 5000 slots ~= 33.3 minutes
-      };
-    });
-  }
 
   /**
    * @deprecated Use Marinade.getMarinadeState() instead
@@ -407,6 +353,7 @@ export class MarinadeClient {
 
   public async withdrawStakeAccountTx(
     amount: BN,
+    deactivate: boolean = false,
     txOptions: TxOptions,
   ): Promise<[VersionedTransaction, Keypair]> {
     const glamSigner = txOptions.signer || this.base.getSigner();
@@ -434,6 +381,19 @@ export class MarinadeClient {
     const burnMsolFrom = this.base.getVaultAta(MSOL);
     const newStake = Keypair.generate();
 
+    const postInstructions = deactivate
+      ? [
+          await this.base.program.methods
+            .stakeDeactivate()
+            .accounts({
+              glamSigner,
+              glamState: this.base.statePda,
+              stake: newStake.publicKey,
+            })
+            .instruction(),
+        ]
+      : [];
+
     const tx = await this.base.program.methods
       .marinadeWithdrawStakeAccount(
         stakeIndex,
@@ -458,86 +418,10 @@ export class MarinadeClient {
         tokenProgram: TOKEN_PROGRAM_ID,
         stakeProgram: StakeProgram.programId,
       })
+      .postInstructions(postInstructions)
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
 
     return [vTx, newStake];
-  }
-
-  public async orderUnstakeTx(
-    amount: BN,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const marinadeState = this.marinadeStateStatic;
-    const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
-
-    const ticketSeed = Date.now().toString();
-    const ticket = await PublicKey.createWithSeed(
-      glamSigner,
-      ticketSeed,
-      MARINADE_PROGRAM_ID,
-    );
-    const lamports =
-      await this.base.provider.connection.getMinimumBalanceForRentExemption(
-        MARINADE_TICKET_SIZE,
-      );
-    const createTicketIx = SystemProgram.createAccountWithSeed({
-      fromPubkey: glamSigner,
-      newAccountPubkey: ticket,
-      basePubkey: glamSigner,
-      seed: ticketSeed,
-      lamports,
-      space: MARINADE_TICKET_SIZE,
-      programId: MARINADE_PROGRAM_ID,
-    });
-    const tx = await this.base.program.methods
-      .marinadeOrderUnstake(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        newTicketAccount: ticket,
-        msolMint: marinadeState.msolMintAddress,
-        burnMsolFrom: vaultMsolAta,
-        state: marinadeState.marinadeStateAddress,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .preInstructions([createTicketIx])
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  public async claimTx(
-    tickets: PublicKey[],
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    if (tickets.length < 1) {
-      throw new Error("At least one ticket is required");
-    }
-
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const marinadeState = this.marinadeStateStatic;
-
-    const instructions = await Promise.all(
-      tickets.map((ticket) =>
-        this.base.program.methods
-          .marinadeClaim()
-          .accounts({
-            glamState: this.base.statePda,
-            glamSigner,
-            ticketAccount: ticket,
-            state: marinadeState.marinadeStateAddress,
-            reservePda: marinadeState.reserveAddress,
-            clock: SYSVAR_CLOCK_PUBKEY,
-          })
-          .instruction(),
-      ),
-    );
-    const tx = new Transaction();
-    tx.add(...instructions);
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 }

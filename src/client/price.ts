@@ -7,7 +7,6 @@ import { BaseClient } from "./base";
 import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "./assets";
 import {
   findStakeAccounts,
-  findMarinadeTickets,
   fetchMeteoraPositions,
   parseMeteoraPosition,
 } from "../utils/helpers";
@@ -134,8 +133,8 @@ export class PriceClient {
     // - depositor
     // - drift vault
     // - drift user of the vault
-    // - spot & perp markets
     // - oracles
+    // - spot & perp markets
     // There might be overlaps between markets and oracles so we use a set to avoid duplicates
 
     const remainingAccountsKeys = new Set<string>();
@@ -189,37 +188,6 @@ export class PriceClient {
       .remainingAccounts(remainingAccounts)
       .instruction();
     return priceVaultIx;
-  }
-
-  /**
-   * Returns an instruction that prices Marinade tickets.
-   * If there are no Marinade tickets, returns null.
-   */
-  async priceTicketsIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
-    const tickets = await findMarinadeTickets(
-      this.base.provider.connection,
-      this.base.vaultPda,
-    );
-    if (tickets.length === 0) {
-      return null;
-    }
-    const priceTicketsIx = await this.base.program.methods
-      .priceTickets(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(
-        tickets.map(({ pubkey }) => ({
-          pubkey,
-          isSigner: false,
-          isWritable: false,
-        })),
-      )
-      .instruction();
-    return priceTicketsIx;
   }
 
   /**
@@ -293,7 +261,6 @@ export class PriceClient {
       return [priceVaultIx];
     }
 
-    const priceTicketsIx = await this.priceTicketsIx(priceDenom);
     const priceStakesIx = await this.priceStakesIx(priceDenom);
     const priceMeteoraIx = await this.priceMeteoraPositionsIx(priceDenom);
     const priceKaminoIx = await this.priceKaminoObligationsIx(priceDenom);
@@ -303,7 +270,6 @@ export class PriceClient {
 
     return [
       priceVaultIx,
-      priceTicketsIx,
       priceStakesIx,
       priceMeteoraIx,
       priceKaminoIx,
