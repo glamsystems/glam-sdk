@@ -10064,11 +10064,6 @@ export type GlamProtocol = {
       "msg": "Invalid authority"
     },
     {
-      "code": 48009,
-      "name": "invalidPriceDenom",
-      "msg": "Invalid price denom"
-    },
-    {
       "code": 49000,
       "name": "invalidAccountType",
       "msg": "Invalid account type"
@@ -10277,6 +10272,16 @@ export type GlamProtocol = {
       "code": 51111,
       "name": "unknownExternalVaultAsset",
       "msg": "Unknown external vault account"
+    },
+    {
+      "code": 51112,
+      "name": "invalidPriceDenom",
+      "msg": "Invalid price denom"
+    },
+    {
+      "code": 51113,
+      "name": "unexpectedDiscriminator",
+      "msg": "Invalid account: discriminator mismatch"
     },
     {
       "code": 52000,

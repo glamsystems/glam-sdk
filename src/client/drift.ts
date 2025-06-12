@@ -418,10 +418,20 @@ export class DriftClient {
       });
     }
 
-    // At this point this.spotMarkets has all the requested markets
-    return marketIndexes
+    // At this point this.spotMarkets should have all the requested markets
+    // If not, it means some market indexes are invalid and we throw an error
+    const spotMarkets = marketIndexes
       .map((marketIndex) => this.spotMarkets.get(marketIndex)!)
       .filter((m) => m);
+    const invalidIndexes = marketIndexes.filter(
+      (marketIndex) => !this.spotMarkets.has(marketIndex),
+    );
+    if (invalidIndexes.length > 0) {
+      console.warn(
+        `The following spot markets could not be found: ${invalidIndexes.join(", ")}`,
+      );
+    }
+    return spotMarkets;
   }
 
   public async fetchAndParsePerpMarket(
@@ -463,9 +473,18 @@ export class DriftClient {
       }
     }
 
-    return marketIndexes
+    const perpMarkets = marketIndexes
       .map((marketIndex) => this.perpMarkets.get(marketIndex)!)
       .filter((m) => m);
+    const invalidIndexes = marketIndexes.filter(
+      (marketIndex) => !this.perpMarkets.has(marketIndex),
+    );
+    if (invalidIndexes.length > 0) {
+      console.warn(
+        `The following perp markets could not be found: ${invalidIndexes.join(", ")}`,
+      );
+    }
+    return perpMarkets;
   }
 
   public async fetchMarketConfigs(): Promise<DriftMarketConfigs> {
@@ -1253,6 +1272,11 @@ export class DriftVaultsClient {
     const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
     const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
 
+    // If there are perp positions, add spot market 0 as it's used as quote market for perp
+    if (perpMarketIndexes.length > 0 && !spotMarketIndexes.includes(0)) {
+      spotMarketIndexes.push(0);
+    }
+
     const spotMarkets =
       await this.drift.fetchAndParseSpotMarkets(spotMarketIndexes);
     const perpMarkets =
@@ -1343,6 +1367,10 @@ export class DriftVaultsClient {
       spotMarketIndex,
       vaultProtocol, // if true the last remaining account should be the vaultProtocol account (for protocol fee)
     } = await this.parseDriftVault(driftVault);
+
+    if (vaultProtocol) {
+      throw new Error("Vault protocol fees not supported");
+    }
 
     const {
       vault: driftSpotMarketVault,

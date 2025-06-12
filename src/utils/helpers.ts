@@ -231,14 +231,22 @@ export async function fetchLookupTables(
  * Parses program logs to extract error message
  */
 export function parseProgramLogs(logs?: null | string[]): string {
-  const errorMsgLog = (logs || []).find((log) =>
-    log.includes("Error Message:"),
+  // "Error Message:" indicates an anchor program error
+  // Other messages are manually sourced & handled
+  const errorMsgLog = (logs || []).find(
+    (log) =>
+      log.includes("Error Message:") ||
+      log.includes("Error: insufficient funds"),
   );
 
-  console.log("error message from program logs", errorMsgLog);
+  console.log("error message found in program logs", errorMsgLog);
 
   if (errorMsgLog) {
-    return errorMsgLog.split("Error Message:")[1].trim();
+    if (errorMsgLog.includes("Error Message:")) {
+      return errorMsgLog.split("Error Message:")[1].trim();
+    } else {
+      return "Insufficient funds";
+    }
   }
 
   return "Unknown error";

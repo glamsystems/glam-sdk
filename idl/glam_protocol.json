@@ -10058,11 +10058,6 @@
       "msg": "Invalid authority"
     },
     {
-      "code": 48009,
-      "name": "InvalidPriceDenom",
-      "msg": "Invalid price denom"
-    },
-    {
       "code": 49000,
       "name": "InvalidAccountType",
       "msg": "Invalid account type"
@@ -10271,6 +10266,16 @@
       "code": 51111,
       "name": "UnknownExternalVaultAsset",
       "msg": "Unknown external vault account"
+    },
+    {
+      "code": 51112,
+      "name": "InvalidPriceDenom",
+      "msg": "Invalid price denom"
+    },
+    {
+      "code": 51113,
+      "name": "UnexpectedDiscriminator",
+      "msg": "Invalid account: discriminator mismatch"
     },
     {
       "code": 52000,
