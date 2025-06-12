@@ -186,6 +186,21 @@ export class StateClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
+  public async extend(
+    newBytes: number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.base.program.methods
+      .extendState(newBytes)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner: this.base.signer,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
   public async close(txOptions: TxOptions = {}): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 

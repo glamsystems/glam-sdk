@@ -2132,6 +2132,40 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "extendState",
+      "discriminator": [
+        34,
+        147,
+        151,
+        206,
+        134,
+        128,
+        82,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "bytes",
+          "type": "u32"
+        }
+      ]
+    },
+    {
       "name": "forceTransferTokens",
       "discriminator": [
         185,
