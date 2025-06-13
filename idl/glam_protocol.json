@@ -4239,6 +4239,235 @@
       ]
     },
     {
+      "name": "kamino_vaults_deposit",
+      "discriminator": [
+        209,
+        133,
+        37,
+        193,
+        192,
+        217,
+        55,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "vault_state",
+          "writable": true
+        },
+        {
+          "name": "token_vault",
+          "writable": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "base_vault_authority"
+        },
+        {
+          "name": "shares_mint",
+          "writable": true
+        },
+        {
+          "name": "user_token_ata",
+          "writable": true
+        },
+        {
+          "name": "user_shares_ata",
+          "writable": true
+        },
+        {
+          "name": "klend_program"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "shares_token_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "kamino_vaults_withdraw",
+      "discriminator": [
+        82,
+        106,
+        49,
+        86,
+        156,
+        15,
+        87,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "withdraw_from_available_vault_state",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_vault",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_base_vault_authority"
+        },
+        {
+          "name": "withdraw_from_available_user_token_ata",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_user_shares_ata",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_shares_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_program"
+        },
+        {
+          "name": "withdraw_from_available_shares_token_program"
+        },
+        {
+          "name": "withdraw_from_available_klend_program"
+        },
+        {
+          "name": "withdraw_from_available_event_authority"
+        },
+        {
+          "name": "withdraw_from_available_program"
+        },
+        {
+          "name": "withdraw_from_reserve_vault_state",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_ctoken_vault",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_lending_market"
+        },
+        {
+          "name": "withdraw_from_reserve_lending_market_authority"
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_liquidity_supply",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_collateral_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_collateral_token_program"
+        },
+        {
+          "name": "withdraw_from_reserve_instruction_sysvar_account"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "marinade_deposit",
       "discriminator": [
         62,
@@ -11373,6 +11602,9 @@
           },
           {
             "name": "DriftVaults"
+          },
+          {
+            "name": "KaminoVaults"
           }
         ]
       }
@@ -12499,6 +12731,12 @@
           },
           {
             "name": "DriftVaultsWithdraw"
+          },
+          {
+            "name": "KaminoVaultsDeposit"
+          },
+          {
+            "name": "KaminoVaultsWithdraw"
           }
         ]
       }

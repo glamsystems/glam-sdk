@@ -4245,6 +4245,235 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "kaminoVaultsDeposit",
+      "discriminator": [
+        209,
+        133,
+        37,
+        193,
+        192,
+        217,
+        55,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "vaultState",
+          "writable": true
+        },
+        {
+          "name": "tokenVault",
+          "writable": true
+        },
+        {
+          "name": "tokenMint"
+        },
+        {
+          "name": "baseVaultAuthority"
+        },
+        {
+          "name": "sharesMint",
+          "writable": true
+        },
+        {
+          "name": "userTokenAta",
+          "writable": true
+        },
+        {
+          "name": "userSharesAta",
+          "writable": true
+        },
+        {
+          "name": "klendProgram"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "sharesTokenProgram"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "kaminoVaultsWithdraw",
+      "discriminator": [
+        82,
+        106,
+        49,
+        86,
+        156,
+        15,
+        87,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "withdrawFromAvailableVaultState",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableTokenVault",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableBaseVaultAuthority"
+        },
+        {
+          "name": "withdrawFromAvailableUserTokenAta",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableTokenMint",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableUserSharesAta",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableSharesMint",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromAvailableTokenProgram"
+        },
+        {
+          "name": "withdrawFromAvailableSharesTokenProgram"
+        },
+        {
+          "name": "withdrawFromAvailableKlendProgram"
+        },
+        {
+          "name": "withdrawFromAvailableEventAuthority"
+        },
+        {
+          "name": "withdrawFromAvailableProgram"
+        },
+        {
+          "name": "withdrawFromReserveVaultState",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromReserveReserve",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromReserveCtokenVault",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromReserveLendingMarket"
+        },
+        {
+          "name": "withdrawFromReserveLendingMarketAuthority"
+        },
+        {
+          "name": "withdrawFromReserveReserveLiquiditySupply",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromReserveReserveCollateralMint",
+          "writable": true
+        },
+        {
+          "name": "withdrawFromReserveReserveCollateralTokenProgram"
+        },
+        {
+          "name": "withdrawFromReserveInstructionSysvarAccount"
+        },
+        {
+          "name": "eventAuthority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "marinadeDeposit",
       "discriminator": [
         62,
@@ -11379,6 +11608,9 @@ export type GlamProtocol = {
           },
           {
             "name": "driftVaults"
+          },
+          {
+            "name": "kaminoVaults"
           }
         ]
       }
@@ -12505,6 +12737,12 @@ export type GlamProtocol = {
           },
           {
             "name": "driftVaultsWithdraw"
+          },
+          {
+            "name": "kaminoVaultsDeposit"
+          },
+          {
+            "name": "kaminoVaultsWithdraw"
           }
         ]
       }
