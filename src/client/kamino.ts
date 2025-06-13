@@ -22,13 +22,22 @@ import {
   KAMINO_LENDING_PROGRAM,
   KAMINO_OBTRIGATION_SIZE,
   KAMINO_SCOPE_PRICES,
+  KAMINO_VAULTS_PROGRAM,
   WSOL,
 } from "../constants";
+import {
+  KVaultAllocation,
+  KVaultState,
+  KVaultStateLayout,
+} from "../layouts/kvault-state";
 
 const LOOKUP_TABLE = new PublicKey(
   "284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2",
 );
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
+const EVENT_AUTHORITY = new PublicKey(
+  "24tHwQyJJ9akVXxnvkekGfAoeUJXXS7mE6kQNioNySsK",
+);
 
 interface RefreshObligationAccounts {
   lendingMarket: PublicKey;
@@ -165,6 +174,7 @@ function refreshObligationFarmsForReserve(
 
 interface ParsedReserve {
   address: PublicKey;
+  market: PublicKey;
   farmCollateral: PublicKey | null;
   farmDebt: PublicKey | null;
   liquidityMint: PublicKey;
@@ -182,7 +192,7 @@ interface ParsedObligation {
 }
 
 export class KaminoLendingClient {
-  private reserves: Map<PublicKey, ParsedReserve> = new Map();
+  private reserves: Map<string, ParsedReserve> = new Map();
   private obligations: Map<PublicKey, ParsedObligation> = new Map();
 
   public constructor(readonly base: BaseClient) {}
@@ -547,6 +557,7 @@ export class KaminoLendingClient {
 
     return {
       address: reserve,
+      market,
       farmCollateral: farmCollateral.equals(PublicKey.default)
         ? null
         : farmCollateral,
@@ -557,26 +568,43 @@ export class KaminoLendingClient {
   }
 
   async fetchAndParseReserves(reserves: PublicKey[]): Promise<ParsedReserve[]> {
-    if (this.pubkeyArraysEqual(reserves, Array.from(this.reserves.keys()))) {
-      return Array.from(this.reserves.values());
+    const requestReservesSet = new Set(reserves.map((r) => r.toBase58()));
+    const cachedReservesSet = new Set(this.reserves.keys());
+
+    // If all requested reserves are cached, return data from cache
+    if ([...requestReservesSet].every((r) => cachedReservesSet.has(r))) {
+      return Array.from(this.reserves.values()).filter((r) =>
+        requestReservesSet.has(r.address.toBase58()),
+      );
+    }
+
+    // Only fetch reserves that are not cached
+    const reservesToFetch = [...requestReservesSet]
+      .filter((r) => !cachedReservesSet.has(r))
+      .map((r) => new PublicKey(r));
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "Fetching reserves:",
+        reservesToFetch.map((r) => r.toBase58()),
+      );
     }
 
     const reserveAccounts =
-      await this.base.provider.connection.getMultipleAccountsInfo(reserves);
-    if (reserveAccounts.find((a) => !a)) {
+      await this.base.provider.connection.getMultipleAccountsInfo(
+        reservesToFetch,
+      );
+    if (reserveAccounts.some((a) => !a)) {
       throw new Error("Not all reserves can be found");
     }
 
-    return reserveAccounts
-      .filter((a) => !!a)
-      .map((account, i) => {
-        const parsedReserve = this.parseReserveAccount(
-          reserves[i],
-          account.data,
-        );
-        this.reserves.set(reserves[i], parsedReserve);
-        return parsedReserve;
-      });
+    return reserveAccounts.map((account, i) => {
+      const parsedReserve = this.parseReserveAccount(
+        reserves[i],
+        account!.data,
+      );
+      this.reserves.set(reserves[i].toBase58(), parsedReserve);
+      return parsedReserve;
+    });
   }
 
   async findAndParseReserve(
@@ -600,7 +628,7 @@ export class KaminoLendingClient {
       accounts[0].pubkey,
       accounts[0].account.data,
     );
-    this.reserves.set(accounts[0].pubkey, parsedReserve);
+    this.reserves.set(accounts[0].pubkey.toBase58(), parsedReserve);
     return parsedReserve;
   }
 
@@ -1363,6 +1391,215 @@ export class KaminoFarmClient {
       ...txOptions,
       lookupTables,
     });
+    return vTx;
+  }
+}
+
+export class KaminoVaultsClient {
+  public constructor(
+    readonly base: BaseClient,
+    readonly kaminoLending: KaminoLendingClient,
+  ) {}
+
+  public async deposit(
+    vault: PublicKey,
+    amount: number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.depositTx(vault, amount, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async withdraw(
+    vault: PublicKey,
+    amount: number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.withdrawTx(vault, amount, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  async fetchAndParseVaultState(vault: PublicKey) {
+    const vaultAccount =
+      await this.base.provider.connection.getAccountInfo(vault);
+    if (!vaultAccount) {
+      throw new Error(`Kamino vault account not found:, ${vault}`);
+    }
+    const vaultState = KVaultStateLayout.decode(vaultAccount.data);
+    return vaultState as KVaultState;
+  }
+
+  public async composeRemainingAccounts(
+    allocationStrategies: KVaultAllocation[],
+  ): Promise<AccountMeta[]> {
+    // For each allocation get reserve and market pubkeys
+    const reserves = allocationStrategies.map((strategy) => strategy.reserve);
+    const parsedReserves =
+      await this.kaminoLending.fetchAndParseReserves(reserves);
+
+    const reserveMetas = reserves.map((pubkey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: true,
+    }));
+    const marketMetas = parsedReserves.map(({ market }) => ({
+      pubkey: market,
+      isSigner: false,
+      isWritable: false,
+    }));
+    return [...reserveMetas, ...marketMetas];
+  }
+
+  public async depositTx(
+    vault: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+
+    const vaultState = await this.fetchAndParseVaultState(vault);
+    const amountBN = new BN(
+      amount * 10 ** vaultState.tokenMintDecimals.toNumber(),
+    );
+    const { tokenProgram: sharesTokenProgram } =
+      await this.base.fetchMintAndTokenProgram(vaultState.sharesMint);
+
+    const userTokenAta = this.base.getVaultAta(
+      vaultState.tokenMint,
+      vaultState.tokenProgram,
+    );
+    const userSharesAta = this.base.getVaultAta(
+      vaultState.sharesMint,
+      sharesTokenProgram,
+    );
+
+    // Create user shares ata
+    const preInstructions = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        glamSigner,
+        userSharesAta,
+        this.base.vaultPda,
+        vaultState.sharesMint,
+        sharesTokenProgram,
+      ),
+    ];
+
+    // Remaining accounts, skip empty allocation strategies
+    const remainingAccounts = await this.composeRemainingAccounts(
+      vaultState.vaultAllocationStrategy.filter(
+        ({ reserve }) => !reserve.equals(PublicKey.default),
+      ),
+    );
+
+    const tx = await this.base.program.methods
+      .kaminoVaultsDeposit(amountBN)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        vaultState: vault,
+        tokenVault: vaultState.tokenVault,
+        tokenMint: vaultState.tokenMint,
+        baseVaultAuthority: vaultState.baseVaultAuthority,
+        sharesMint: vaultState.sharesMint,
+        userTokenAta,
+        userSharesAta,
+        klendProgram: KAMINO_LENDING_PROGRAM,
+        tokenProgram: vaultState.tokenProgram,
+        sharesTokenProgram,
+        eventAuthority: EVENT_AUTHORITY,
+        program: KAMINO_VAULTS_PROGRAM,
+      })
+      .remainingAccounts(remainingAccounts)
+      .preInstructions(preInstructions)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return vTx;
+  }
+
+  public async withdrawTx(
+    vault: PublicKey,
+    amount: number,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+
+    const vaultState = await this.fetchAndParseVaultState(vault);
+    const userTokenAta = this.base.getVaultAta(
+      vaultState.tokenMint,
+      vaultState.tokenProgram,
+    );
+    const { tokenProgram: sharesTokenProgram } =
+      await this.base.fetchMintAndTokenProgram(vaultState.sharesMint);
+    const userSharesAta = this.base.getVaultAta(
+      vaultState.sharesMint,
+      sharesTokenProgram,
+    );
+    const amountBN = new BN(
+      amount * 10 ** vaultState.sharesMintDecimals.toNumber(),
+    );
+
+    const reserves = vaultState.vaultAllocationStrategy.filter(
+      ({ reserve }) => !reserve.equals(PublicKey.default),
+    );
+    // Withdraw from the first reserve when kvault does not have enough liquidity
+    const idx = 0;
+    const withdrawReserve = (
+      await this.kaminoLending.fetchAndParseReserves(
+        reserves.map((r) => r.reserve),
+      )
+    )[idx];
+    const vaultCollateralTokenVault =
+      vaultState.vaultAllocationStrategy[idx].ctokenVault;
+
+    const remainingAccounts = await this.composeRemainingAccounts(reserves);
+    const preInstructions = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        glamSigner,
+        userTokenAta,
+        this.base.vaultPda,
+        vaultState.tokenMint,
+        vaultState.tokenProgram,
+      ),
+    ];
+
+    const tx = await this.base.program.methods
+      .kaminoVaultsWithdraw(amountBN)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        withdrawFromAvailableVaultState: vault,
+        withdrawFromAvailableTokenVault: vaultState.tokenVault,
+        withdrawFromAvailableBaseVaultAuthority: vaultState.baseVaultAuthority,
+        withdrawFromAvailableUserTokenAta: userTokenAta,
+        withdrawFromAvailableTokenMint: vaultState.tokenMint,
+        withdrawFromAvailableUserSharesAta: userSharesAta,
+        withdrawFromAvailableSharesMint: vaultState.sharesMint,
+        withdrawFromAvailableTokenProgram: vaultState.tokenProgram,
+        withdrawFromAvailableSharesTokenProgram: sharesTokenProgram,
+        withdrawFromAvailableKlendProgram: KAMINO_LENDING_PROGRAM,
+        withdrawFromAvailableEventAuthority: EVENT_AUTHORITY,
+        withdrawFromAvailableProgram: KAMINO_VAULTS_PROGRAM,
+        withdrawFromReserveVaultState: vault,
+        withdrawFromReserveReserve: withdrawReserve.address,
+        withdrawFromReserveCtokenVault: vaultCollateralTokenVault,
+        withdrawFromReserveLendingMarket: withdrawReserve.market,
+        withdrawFromReserveLendingMarketAuthority:
+          this.kaminoLending.getMarketAuthority(withdrawReserve.market),
+        withdrawFromReserveReserveLiquiditySupply:
+          withdrawReserve.liquiditySupplyVault,
+        withdrawFromReserveReserveCollateralMint:
+          withdrawReserve.collateralMint,
+        withdrawFromReserveReserveCollateralTokenProgram: TOKEN_PROGRAM_ID, // Check
+        withdrawFromReserveInstructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        eventAuthority: EVENT_AUTHORITY,
+        program: KAMINO_VAULTS_PROGRAM,
+      })
+      .remainingAccounts(remainingAccounts)
+      .preInstructions(preInstructions)
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 }

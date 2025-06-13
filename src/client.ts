@@ -8,7 +8,11 @@ import { VaultClient } from "./client/vault";
 import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
 import { MintClient } from "./client/mint";
-import { KaminoFarmClient, KaminoLendingClient } from "./client/kamino";
+import {
+  KaminoFarmClient,
+  KaminoLendingClient,
+  KaminoVaultsClient,
+} from "./client/kamino";
 import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestorClient } from "./client/investor";
 import { PriceClient } from "./client/price";
@@ -34,6 +38,7 @@ export class GlamClient extends BaseClient {
   private _mint?: MintClient;
   private _kaminoLending?: KaminoLendingClient;
   private _kaminoFarm?: KaminoFarmClient;
+  private _kaminoVaults?: KaminoVaultsClient;
   private _meteoraDlmm?: MeteoraDlmmClient;
 
   public constructor(config?: GlamClientConfig) {
@@ -134,6 +139,13 @@ export class GlamClient extends BaseClient {
       this._kaminoFarm = new KaminoFarmClient(this);
     }
     return this._kaminoFarm;
+  }
+
+  get kaminoVaults(): KaminoVaultsClient {
+    if (!this._kaminoVaults) {
+      this._kaminoVaults = new KaminoVaultsClient(this, this.kaminoLending);
+    }
+    return this._kaminoVaults;
   }
 
   get meteoraDlmm(): MeteoraDlmmClient {

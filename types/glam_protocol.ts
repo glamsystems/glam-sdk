@@ -8,7 +8,7 @@ export type GlamProtocol = {
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glamProtocol",
-    "version": "0.4.27",
+    "version": "0.4.28",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -4262,6 +4262,7 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4357,6 +4358,7 @@ export type GlamProtocol = {
         },
         {
           "name": "glamVault",
+          "writable": true,
           "pda": {
             "seeds": [
               {

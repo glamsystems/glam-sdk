@@ -2,7 +2,7 @@
   "address": "GLAMbTqav9N9witRjswJ8enwp9vv5G8bsSJ2kPJ4rcyc",
   "metadata": {
     "name": "glam_protocol",
-    "version": "0.4.27",
+    "version": "0.4.28",
     "spec": "0.1.0",
     "description": "Glam Protocol"
   },
@@ -4256,6 +4256,7 @@
         },
         {
           "name": "glam_vault",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -4351,6 +4352,7 @@
         },
         {
           "name": "glam_vault",
+          "writable": true,
           "pda": {
             "seeds": [
               {
