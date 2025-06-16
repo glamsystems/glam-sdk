@@ -126,3 +126,44 @@ export interface DriftVault {
   cumulativeFuel: BN;
   padding: BN[];
 }
+
+export const DriftSpotMarket = struct([
+  array(u8(), 8, "discriminator"),
+  publicKey("marketPda"),
+  publicKey("oracle"),
+  publicKey("mint"),
+  publicKey("vault"),
+
+  array(u8(), 32, "name"),
+
+  // Padding for bytes between name and cumulativeDepositInterest
+  array(u8(), 464 - 168, "padding1"),
+
+  u128("cumulativeDepositInterest"),
+  u128("cumulativeBorrowInterest"),
+
+  // Padding for bytes between cumulativeBorrowInterest and decimals
+  array(u8(), 680 - 496, "padding2"),
+
+  u32("decimals"),
+  u16("marketIndex"),
+  u8("padding3"),
+  u8("oracleSource"),
+]);
+
+export interface DriftSpotMarket {
+  discriminator: number[];
+  marketPda: PublicKey;
+  oracle: PublicKey;
+  mint: PublicKey;
+  vault: PublicKey;
+  name: number[];
+  padding1: number[];
+  cumulativeDepositInterest: BN;
+  cumulativeBorrowInterest: BN;
+  padding2: number[];
+  decimals: number;
+  marketIndex: number;
+  padding3: number;
+  oracleSource: number;
+}

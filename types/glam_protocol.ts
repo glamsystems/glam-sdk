@@ -4258,7 +4258,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -4354,7 +4355,8 @@ export type GlamProtocol = {
       ],
       "accounts": [
         {
-          "name": "glamState"
+          "name": "glamState",
+          "writable": true
         },
         {
           "name": "glamVault",
@@ -6509,6 +6511,146 @@ export type GlamProtocol = {
         179,
         69,
         246
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "kaminoLendingProgram",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "solOracle"
+        },
+        {
+          "name": "glamConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                10,
+                11,
+                0,
+                83,
+                72,
+                16,
+                46,
+                144,
+                46,
+                42,
+                79,
+                22,
+                157,
+                123,
+                21,
+                242,
+                192,
+                146,
+                1,
+                78,
+                88,
+                59,
+                102,
+                9,
+                190,
+                226,
+                92,
+                189,
+                187,
+                232,
+                83,
+                220
+              ]
+            }
+          }
+        },
+        {
+          "name": "pythOracle",
+          "optional": true
+        },
+        {
+          "name": "switchboardPriceOracle",
+          "optional": true
+        },
+        {
+          "name": "switchboardTwapOracle",
+          "optional": true
+        },
+        {
+          "name": "scopePrices",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "denom",
+          "type": {
+            "defined": {
+              "name": "priceDenom"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "priceKaminoVaultShares",
+      "discriminator": [
+        112,
+        92,
+        238,
+        224,
+        145,
+        105,
+        38,
+        249
       ],
       "accounts": [
         {

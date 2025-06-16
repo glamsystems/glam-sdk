@@ -29,7 +29,7 @@ import {
   KVaultAllocation,
   KVaultState,
   KVaultStateLayout,
-} from "../layouts/kvault-state";
+} from "../deser/kaminoLayouts";
 
 const LOOKUP_TABLE = new PublicKey(
   "284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2",

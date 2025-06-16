@@ -18,7 +18,7 @@ import {
   MarginMode,
   Order,
 } from "../utils/driftTypes";
-import { DriftVaultLayout, DriftVault } from "../layouts/drift-vault";
+import { DriftVaultLayout, DriftVault } from "../deser/driftLayouts";
 import { decodeUser } from "../utils/driftUser";
 
 import { BaseClient, TxOptions } from "./base";
