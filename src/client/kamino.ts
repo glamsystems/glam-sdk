@@ -193,7 +193,7 @@ interface ParsedObligation {
 
 export class KaminoLendingClient {
   private reserves: Map<string, ParsedReserve> = new Map();
-  private obligations: Map<PublicKey, ParsedObligation> = new Map();
+  private obligations: Map<string, ParsedObligation> = new Map();
 
   public constructor(readonly base: BaseClient) {}
 
@@ -517,7 +517,7 @@ export class KaminoLendingClient {
   async fetchAndParseObligation(
     obligation: PublicKey,
   ): Promise<ParsedObligation> {
-    const cached = this.obligations.get(obligation);
+    const cached = this.obligations.get(obligation.toBase58());
     if (cached) {
       return cached;
     }
@@ -538,7 +538,7 @@ export class KaminoLendingClient {
       obligationAccount.data,
     );
 
-    this.obligations.set(obligation, parsedObligation);
+    this.obligations.set(obligation.toBase58(), parsedObligation);
     return parsedObligation;
   }
 
@@ -654,7 +654,7 @@ export class KaminoLendingClient {
     // Parse obligations and cache them
     return accounts.map((a) => {
       const parsedObligation = this.parseObligation(a.pubkey, a.account.data);
-      this.obligations.set(a.pubkey, parsedObligation);
+      this.obligations.set(a.pubkey.toBase58(), parsedObligation);
       return parsedObligation;
     });
   }
@@ -1396,6 +1396,9 @@ export class KaminoFarmClient {
 }
 
 export class KaminoVaultsClient {
+  private vaultStates: Map<string, KVaultState> = new Map();
+  private shareMintToVaultPdaMap: Map<string, PublicKey> = new Map();
+
   public constructor(
     readonly base: BaseClient,
     readonly kaminoLending: KaminoLendingClient,
@@ -1419,6 +1422,44 @@ export class KaminoVaultsClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  async findAndParseKaminoVaults(): Promise<KVaultState[]> {
+    const accounts = await this.base.provider.connection.getProgramAccounts(
+      KAMINO_VAULTS_PROGRAM,
+      {
+        filters: [
+          { dataSize: 62552 },
+          { memcmp: { offset: 0, bytes: "5MRSpWLS65g=", encoding: "base64" } }, // discriminator
+        ],
+      },
+    );
+    if (accounts.length === 0) {
+      throw new Error("Kamino vaults not found");
+    }
+    return accounts.map((a) => {
+      const vaultState = KVaultStateLayout.decode(
+        a.account.data,
+      ) as KVaultState;
+
+      this.vaultStates.set(a.pubkey.toBase58(), vaultState);
+      this.shareMintToVaultPdaMap.set(
+        vaultState.sharesMint.toBase58(),
+        a.pubkey,
+      );
+
+      return vaultState;
+    });
+  }
+
+  async getVaultPdasByShareMints(mints: PublicKey[]) {
+    if (this.vaultStates.size === 0) {
+      await this.findAndParseKaminoVaults();
+    }
+
+    return mints.map((mint) =>
+      this.shareMintToVaultPdaMap.get(mint.toBase58()),
+    );
+  }
+
   async fetchAndParseVaultState(vault: PublicKey) {
     const vaultAccount =
       await this.base.provider.connection.getAccountInfo(vault);
@@ -1426,6 +1467,9 @@ export class KaminoVaultsClient {
       throw new Error(`Kamino vault account not found:, ${vault}`);
     }
     const vaultState = KVaultStateLayout.decode(vaultAccount.data);
+
+    this.vaultStates.set(vault.toBase58(), vaultState);
+    this.shareMintToVaultPdaMap.set(vaultState.sharesMint.toBase58(), vault);
     return vaultState as KVaultState;
   }
 

@@ -1,6 +1,6 @@
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { KaminoLendingClient } from "./kamino";
+import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 
 import { BaseClient } from "./base";
 
@@ -18,8 +18,9 @@ export class PriceClient {
   public constructor(
     readonly base: BaseClient,
     readonly klend: KaminoLendingClient,
+    readonly kvaults: KaminoVaultsClient,
     readonly drift: DriftClient,
-    readonly driftVaults: DriftVaultsClient,
+    readonly dvaults: DriftVaultsClient,
   ) {}
 
   /**
@@ -85,6 +86,67 @@ export class PriceClient {
     return priceIx;
   }
 
+  public async priceKaminoVaultSharesIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction | null> {
+    const allKvaultStates = await this.kvaults.findAndParseKaminoVaults();
+    const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
+
+    // All share token accounts GLAM vault could possibly hold
+    const possibleShareAtas = allKvaultMints.map((mint) =>
+      this.base.getVaultAta(mint),
+    );
+    const possibleShareAtaAccountsInfo =
+      await this.base.provider.connection.getMultipleAccountsInfo(
+        possibleShareAtas,
+      );
+    const shareAtas: typeof possibleShareAtas = [];
+    const shareMints: typeof allKvaultMints = [];
+    const kvaultStates: typeof allKvaultStates = [];
+    possibleShareAtaAccountsInfo.forEach((info, i) => {
+      if (info !== null) {
+        shareAtas.push(possibleShareAtas[i]);
+        shareMints.push(allKvaultMints[i]);
+        kvaultStates.push(allKvaultStates[i]);
+      }
+    });
+    const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
+
+    const remainingAccounts = (
+      await Promise.all(
+        kvaultStates.map((kvault) => {
+          return this.kvaults.composeRemainingAccounts(
+            kvault.vaultAllocationStrategy.filter(
+              (alloc) => !alloc.reserve.equals(PublicKey.default),
+            ),
+          );
+        }),
+      )
+    ).flat();
+    [...kvaultPdas, ...shareAtas].map((pubkey) => {
+      remainingAccounts.unshift({
+        pubkey: pubkey!,
+        isSigner: false,
+        isWritable: false,
+      });
+    });
+
+    const priceIx = await this.base.program.methods
+      .priceKaminoVaultShares(priceDenom)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+        pythOracle: null,
+        switchboardPriceOracle: null,
+        switchboardTwapOracle: null,
+        scopePrices: KAMINO_SCOPE_PRICES,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
+
+    return priceIx;
+  }
+
   /**
    * Returns an instruction that prices the all Drift users (aka sub-accounts) controlled by the GLAM vault.
    * These Drift users must share the same user_stats that's also controlled by the GLAM vault.
@@ -123,7 +185,7 @@ export class PriceClient {
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction | null> {
     const parsedVaultDepositors =
-      await this.driftVaults.findAndParseVaultDepositors();
+      await this.dvaults.findAndParseVaultDepositors();
 
     if (parsedVaultDepositors.length === 0) {
       return null;
@@ -141,13 +203,13 @@ export class PriceClient {
     for (const depositor of parsedVaultDepositors) {
       remainingAccountsKeys.add(depositor.address.toBase58());
       remainingAccountsKeys.add(depositor.driftVault.toBase58());
-      const { user: driftUser } = await this.driftVaults.parseDriftVault(
+      const { user: driftUser } = await this.dvaults.parseDriftVault(
         depositor.driftVault,
       );
       remainingAccountsKeys.add(driftUser.toBase58());
 
       const markets_and_oracles = (
-        await this.driftVaults.composeRemainingAccounts(driftUser)
+        await this.dvaults.composeRemainingAccounts(driftUser)
       ).map((a) => a.pubkey.toBase58());
       for (const k of markets_and_oracles) {
         remainingAccountsKeys.add(k);

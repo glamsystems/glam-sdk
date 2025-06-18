@@ -106,6 +106,7 @@ export class GlamClient extends BaseClient {
       this._price = new PriceClient(
         this,
         this.kaminoLending,
+        this.kaminoVaults,
         this.drift,
         this.driftVaults,
       );
