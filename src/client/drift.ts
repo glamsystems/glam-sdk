@@ -385,8 +385,12 @@ export class DriftClient {
 
   public async fetchAndParseSpotMarket(
     marketIndex: number,
+    skipCache: boolean = false,
   ): Promise<SpotMarket> {
-    const markets = await this.fetchAndParseSpotMarkets([marketIndex]);
+    const markets = await this.fetchAndParseSpotMarkets(
+      [marketIndex],
+      skipCache,
+    );
     if (!markets || markets.length === 0) {
       throw new Error(`Spot market not found at index ${marketIndex}`);
     }
@@ -395,9 +399,10 @@ export class DriftClient {
 
   public async fetchAndParseSpotMarkets(
     marketIndexes: number[],
+    skipCache: boolean = false,
   ): Promise<SpotMarket[]> {
     const indexesToFetch = marketIndexes.filter(
-      (marketIndex) => !this.spotMarkets.has(marketIndex),
+      (marketIndex) => skipCache || !this.spotMarkets.has(marketIndex),
     );
 
     if (indexesToFetch.length > 0) {
@@ -436,8 +441,12 @@ export class DriftClient {
 
   public async fetchAndParsePerpMarket(
     marketIndex: number,
+    skipCache: boolean = false,
   ): Promise<PerpMarket> {
-    const markets = await this.fetchAndParsePerpMarkets([marketIndex]);
+    const markets = await this.fetchAndParsePerpMarkets(
+      [marketIndex],
+      skipCache,
+    );
     if (!markets || markets.length === 0) {
       throw new Error(`Perp market not found at index ${marketIndex}`);
     }
@@ -446,9 +455,10 @@ export class DriftClient {
 
   public async fetchAndParsePerpMarkets(
     marketIndexes: number[],
+    skipCache: boolean = false,
   ): Promise<PerpMarket[]> {
     const indexesToFetch = marketIndexes.filter(
-      (marketIndex) => !this.perpMarkets.has(marketIndex),
+      (marketIndex) => skipCache || !this.perpMarkets.has(marketIndex),
     );
 
     if (indexesToFetch.length > 0) {
@@ -487,37 +497,69 @@ export class DriftClient {
     return perpMarkets;
   }
 
-  public async fetchMarketConfigs(): Promise<DriftMarketConfigs> {
-    // const response = await fetch(
-    //   "https://api.glam.systems/v0/drift/market_configs/",
-    // );
-    // if (!response.ok) {
-    //   throw new Error(`Failed to fetch market configs: ${response.status}`);
-    // }
-    // const data = await response.json();
-    // const { orderConstants, perp, spot } = data;
+  public async fetchMarketConfigs(
+    skipCache: boolean = false,
+  ): Promise<DriftMarketConfigs> {
+    // Attempt to fetch market configs from glam API first
+    const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+    if (glamApi) {
+      const response = await fetch(`${glamApi}/v0/drift/market_configs/`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch market configs from ${glamApi}: ${response.status}`,
+        );
+      }
+      const data = await response.json();
+      const { orderConstants, perp, spot } = data;
 
-    // // Transform perp market from API to `PerpMarket` type
-    // const perpMarkets = perp.map((m: any) => ({
-    //   marketIndex: m.marketIndex,
-    //   marketPda: m.marketPDA,
-    //   oracle: new PublicKey(m.oracle),
-    // }));
-    // // Transform spot market from API to `SpotMarket` type
-    // const spotMarkets = spot.map((m: any) => ({
-    //   marketIndex: m.marketIndex,
-    //   marketPda: m.marketPDA,
-    //   oracle: new PublicKey(m.oracle),
-    //   mint: new PublicKey(m.mint),
-    //   vault: new PublicKey(m.vaultPDA),
-    //   decimals: m.decimals,
-    // }));
+      // Transform perp market from API to `PerpMarket` type
+      const perpMarkets = perp.map((m: any) => ({
+        name: m.symbol,
+        marketIndex: m.marketIndex,
+        marketPda: new PublicKey(m.marketPDA),
+        oracle: new PublicKey(m.oracle),
+        oracleSource: OracleSource.fromString(m.oracleSource),
+      })) as PerpMarket[];
+      perpMarkets.forEach((m) => {
+        this.perpMarkets.set(m.marketIndex, m);
+      });
+
+      // Transform spot market from API to `SpotMarket` type
+      const spotMarkets = spot.map((m: any) => ({
+        name: m.symbol,
+        marketIndex: m.marketIndex,
+        marketPda: new PublicKey(m.marketPDA),
+        vault: new PublicKey(m.vaultPDA),
+        oracle: new PublicKey(m.oracle),
+        oracleSource: OracleSource.fromString(m.oracleSource),
+        mint: new PublicKey(m.mint),
+        decimals: m.decimals,
+        tokenProgram: new PublicKey(m.tokenProgram),
+        cumulativeDepositInterest: new BN(m.cumulativeDepositInterest),
+        cumulativeBorrowInterest: new BN(m.cumulativeBorrowInterest),
+      })) as SpotMarket[];
+      spotMarkets.forEach((m) => {
+        this.spotMarkets.set(m.marketIndex, m);
+      });
+
+      const marketConfigs = {
+        orderConstants,
+        perpMarkets,
+        spotMarkets,
+      };
+      this.marketConfigs = marketConfigs;
+      return marketConfigs;
+    }
+
+    // If glam API is not available, fetch market configs from RPC
     if (!this.marketConfigs) {
       const perpMarkets = await this.fetchAndParsePerpMarkets(
         Array.from(Array(100).keys()),
+        skipCache,
       );
       const spotMarkets = await this.fetchAndParseSpotMarkets(
         Array.from(Array(100).keys()),
+        skipCache,
       );
 
       this.marketConfigs = {
@@ -529,22 +571,6 @@ export class DriftClient {
     return this.marketConfigs;
   }
 
-  // public async fetchGlamDriftUser(
-  //   glamState: PublicKey | string,
-  //   subAccountId: number = 0,
-  // ): Promise<GlamDriftUser> {
-  //   const vault = this.base.getVaultPda(new PublicKey(glamState));
-  //   const response = await fetch(
-  //     `https://api.glam.systems/v0/drift/user?authority=${vault.toBase58()}&accountId=${subAccountId}`,
-  //   );
-
-  //   const data = await response.json();
-  //   if (!data) {
-  //     throw new Error("Failed to fetch drift user.");
-  //   }
-  //   return data as GlamDriftUser;
-  // }
-
   charsToName(chars: number[] | Buffer): string {
     return String.fromCharCode(...chars)
       .replace(/\0/g, "")
@@ -553,6 +579,7 @@ export class DriftClient {
 
   public async fetchDriftUser(
     subAccountId: number = 0,
+    skipCache: boolean = false,
   ): Promise<DriftUser | null> {
     const { user } = this.getDriftUserPdas(subAccountId);
     const accountInfo =
@@ -572,7 +599,7 @@ export class DriftClient {
     } = decodeUser(accountInfo.data);
 
     // Prefetch market configs
-    const marketConfigs = await this.fetchMarketConfigs();
+    const marketConfigs = await this.fetchMarketConfigs(skipCache);
 
     const spotPositionsExt = await Promise.all(
       spotPositions.map(async (p) => {
@@ -608,27 +635,11 @@ export class DriftClient {
     };
   }
 
-  // async getPositions(statePda: PublicKey | string, subAccountId: number = 0) {
-  //   const driftUser = await this.fetchDriftUser(
-  //     new PublicKey(statePda),
-  //     subAccountId,
-  //   );
-  //   if (!driftUser) {
-  //     return { spotPositions: [], perpPositions: [] };
-  //   }
-
-  //   const marketConfigs = await this.fetchMarketConfigs();
-
-  //   const { spotPositions, perpPositions } = driftUser;
-  //   return { spotPositions, perpPositions };
-  // }
-
   /**
    * @deprecated
    */
-  async fetchPolicyConfig(glamState: StateModel) {
-    const driftUserAccount =
-      glamState && glamState.id && (await this.fetchDriftUser());
+  async fetchPolicyConfig(stateModel: StateModel) {
+    const driftUserAccount = await this.fetchDriftUser();
 
     let delegate = driftUserAccount?.delegate;
     if (delegate && delegate.equals(PublicKey.default)) {
@@ -637,13 +648,13 @@ export class DriftClient {
     return {
       driftAccessControl: delegate ? 0 : 1,
       driftDelegatedAccount: delegate || null,
-      driftMarketIndexesPerp: glamState?.driftMarketIndexesPerp || [],
-      driftOrderTypes: glamState?.driftOrderTypes || [],
+      driftMarketIndexesPerp: stateModel?.driftMarketIndexesPerp || [],
+      driftOrderTypes: stateModel?.driftOrderTypes || [],
       driftMaxLeverage: driftUserAccount?.maxMarginRatio
         ? DRIFT_MARGIN_PRECISION / driftUserAccount?.maxMarginRatio
         : null,
       driftEnableSpot: driftUserAccount?.isMarginTradingEnabled || false,
-      driftMarketIndexesSpot: glamState?.driftMarketIndexesSpot || [],
+      driftMarketIndexesSpot: stateModel?.driftMarketIndexesSpot || [],
     };
   }
 

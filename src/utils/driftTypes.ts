@@ -139,6 +139,11 @@ export class OracleSource {
   static readonly PYTH_LAZER_1M = { pythLazer1M: {} };
   static readonly PYTH_LAZER_STABLE_COIN = { pythLazerStableCoin: {} };
 
+  static fromString(name: string) {
+    const k = name.slice(0, 1).toLowerCase() + name.slice(1);
+    return { [k]: {} } as OracleSource;
+  }
+
   static get(n: Number) {
     const name = Object.entries(OracleSourceNum).find(([, v]) => v === n)?.[0];
 
