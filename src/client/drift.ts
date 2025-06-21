@@ -817,7 +817,9 @@ export class DriftClient {
     const { user } = this.getDriftUserPdas(subAccountId);
 
     // https://github.com/drift-labs/protocol-v2/blob/babed162b08b1fe34e49a81c5aa3e4ec0a88ecdf/programs/drift/src/math/constants.rs#L183-L184
-    const marginRatio = DRIFT_MARGIN_PRECISION / maxLeverage;
+    // 0 means No Limit
+    const marginRatio =
+      maxLeverage === 0 ? 0 : DRIFT_MARGIN_PRECISION / maxLeverage;
 
     return await this.base.program.methods
       .driftUpdateUserCustomMarginRatio(subAccountId, marginRatio)
