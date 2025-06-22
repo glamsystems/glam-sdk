@@ -744,7 +744,7 @@ export class BaseClient {
         : getMintPda(glamStatePda, 0, this.program.programId);
       const { mint } = await this.fetchMintAndTokenProgram(mintPubkey);
       return StateModel.fromOnchainAccounts(
-        statePda!,
+        glamStatePda,
         stateAccount,
         openfundsMetadataAccount,
         mint,
@@ -753,7 +753,7 @@ export class BaseClient {
     }
 
     return StateModel.fromOnchainAccounts(
-      statePda!,
+      glamStatePda,
       stateAccount,
       openfundsMetadataAccount,
       undefined,
