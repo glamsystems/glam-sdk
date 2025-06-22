@@ -311,7 +311,7 @@ export class VaultClient {
   public async withdrawIxs(
     asset: PublicKey,
     amount: number | BN,
-    txOptions: TxOptions,
+    txOptions: TxOptions = {},
   ): Promise<TransactionInstruction[]> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
