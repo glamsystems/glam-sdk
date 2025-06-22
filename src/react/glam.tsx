@@ -14,7 +14,7 @@ import { atomWithStorage } from "jotai/utils";
 import type { DelegateAcl, StateModel } from "../models";
 import { GlamClient } from "../client";
 import { useAtomValue, useSetAtom } from "jotai/react";
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { WSOL } from "../constants";
 import { DriftMarketConfigs, DriftUser } from "../client/drift";
 import { TokenAccount } from "../client/base";

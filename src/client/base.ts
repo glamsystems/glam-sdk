@@ -146,7 +146,7 @@ export class BaseClient {
     this._statePda = statePda;
   }
 
-  isMainnet(): boolean {
+  get isMainnet(): boolean {
     return this.cluster === ClusterNetwork.Mainnet;
   }
 
@@ -172,7 +172,7 @@ export class BaseClient {
    */
   getAssetMeta(assetMint: string): AssetMeta {
     let assetMeta = ASSETS_MAINNET.get(assetMint);
-    if (!assetMeta && !this.isMainnet()) {
+    if (!assetMeta && !this.isMainnet) {
       assetMeta = ASSETS_TESTS.get(assetMint);
     }
     if (!assetMeta) {
