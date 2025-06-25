@@ -27,6 +27,7 @@ import {
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
 import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
+import { ClusterNetwork } from "../clientConfig";
 
 export type Ticket = {
   address: PublicKey; // offset 8 after anchor discriminator
@@ -372,8 +373,13 @@ export class MarinadeClient {
       stakeWithdrawAuthority,
     );
 
+    const idx =
+      this.base.cluster === ClusterNetwork.Mainnet
+        ? stakeAccounts.findIndex((s) => s.state === "active")
+        : 0;
+
     const { stakeIndex, validatorIndex } = await this.getIndexes(
-      stakeAccounts[0],
+      stakeAccounts[idx],
       stakeList,
       validatorList,
     );
@@ -407,7 +413,7 @@ export class MarinadeClient {
         state: marinadeState.marinadeStateAddress,
         validatorList: validatorList.account,
         stakeList: stakeList.account,
-        stakeAccount: stakeAccounts[0].address,
+        stakeAccount: stakeAccounts[idx].address,
         stakeWithdrawAuthority,
         stakeDepositAuthority,
         treasuryMsolAccount: marinadeState.treasuryMsolAccount,
