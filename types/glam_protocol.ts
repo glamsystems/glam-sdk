@@ -12340,9 +12340,9 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "immediateOrCancel",
+            "name": "bitFlags",
             "type": {
-              "option": "bool"
+              "option": "u8"
             }
           },
           {
@@ -12637,8 +12637,8 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "immediateOrCancel",
-            "type": "bool"
+            "name": "bitFlags",
+            "type": "u8"
           },
           {
             "name": "maxTs",

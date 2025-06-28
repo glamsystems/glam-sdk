@@ -12334,9 +12334,9 @@
             }
           },
           {
-            "name": "immediate_or_cancel",
+            "name": "bit_flags",
             "type": {
-              "option": "bool"
+              "option": "u8"
             }
           },
           {
@@ -12631,8 +12631,8 @@
             }
           },
           {
-            "name": "immediate_or_cancel",
-            "type": "bool"
+            "name": "bit_flags",
+            "type": "u8"
           },
           {
             "name": "max_ts",

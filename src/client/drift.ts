@@ -552,7 +552,8 @@ export class DriftClient {
     }
 
     // If glam API is not available, fetch market configs from RPC
-    if (!this.marketConfigs) {
+    // Force refetching if skipCache is true
+    if (!this.marketConfigs || skipCache) {
       const perpMarkets = await this.fetchAndParsePerpMarkets(
         Array.from(Array(100).keys()),
         skipCache,
