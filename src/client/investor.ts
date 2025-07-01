@@ -85,46 +85,31 @@ export class InvestorClient {
     const mintTo = this.base.getMintAta(signer);
 
     // asset token to transfer to vault
-    const vault = this.base.vaultPda;
-    const vaultInput = this.base.getAta(asset, vault);
-    const signerInput = this.base.getAta(asset, signer);
+    const signerAta = this.base.getAta(asset, signer);
 
     const wrapSolIxs = asset.equals(WSOL)
       ? [
           createAssociatedTokenAccountIdempotentInstruction(
             signer,
-            signerInput,
+            signerAta,
             signer,
             asset,
           ),
           SystemProgram.transfer({
             fromPubkey: signer,
-            toPubkey: signerInput,
+            toPubkey: signerAta,
             lamports: amount.toNumber(),
           }),
-          createSyncNativeInstruction(signerInput),
+          createSyncNativeInstruction(signerAta),
         ]
       : [];
-    let preInstructions: TransactionInstruction[] = [
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        vaultInput,
-        vault,
-        asset,
-      ),
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        mintTo,
-        signer,
-        glamMint,
-        TOKEN_2022_PROGRAM_ID,
-      ),
+    const preInstructions: TransactionInstruction[] = [
       ...wrapSolIxs,
       ...(txOptions.preInstructions || []),
     ];
 
     const postInstructions = asset.equals(WSOL)
-      ? [createCloseAccountInstruction(signerInput, signer, signer)]
+      ? [createCloseAccountInstruction(signerAta, signer, signer)]
       : [];
 
     // Check if lockup is enabled on the fund, if so, add signerPolicy
@@ -136,7 +121,6 @@ export class InvestorClient {
       );
     }
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .subscribe(0, amount)
       .accounts({
@@ -145,6 +129,7 @@ export class InvestorClient {
         signer,
         depositAsset: asset,
         signerPolicy,
+        depositTokenProgram: TOKEN_PROGRAM_ID,
       })
       .preInstructions(preInstructions)
       .postInstructions(postInstructions)
@@ -166,8 +151,6 @@ export class InvestorClient {
     const signer = txOptions.signer || this.base.getSigner();
 
     // asset token to transfer to escrow
-    const escrow = this.base.escrowPda;
-    const escrowAta = this.base.getAta(asset, escrow);
     const signerAta = this.base.getAta(asset, signer);
 
     const wrapSolIxs = asset.equals(WSOL)
@@ -186,13 +169,7 @@ export class InvestorClient {
           createSyncNativeInstruction(signerAta),
         ]
       : [];
-    let preInstructions: TransactionInstruction[] = [
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        escrowAta,
-        escrow,
-        asset,
-      ),
+    const preInstructions: TransactionInstruction[] = [
       ...wrapSolIxs,
       ...(txOptions.preInstructions || []),
     ];
@@ -201,13 +178,13 @@ export class InvestorClient {
       ? [createCloseAccountInstruction(signerAta, signer, signer)]
       : [];
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .queuedSubscribe(0, amount)
       .accounts({
         glamState: this.base.statePda,
         signer,
         depositAsset: asset,
+        depositTokenProgram: TOKEN_PROGRAM_ID,
       })
       .preInstructions(preInstructions)
       .postInstructions(postInstructions)
@@ -227,16 +204,6 @@ export class InvestorClient {
 
     const signer = txOptions.signer || this.base.getSigner();
     const glamMint = this.base.mintPda;
-
-    const preInstructions = [
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        this.base.getMintAta(signer),
-        signer,
-        glamMint,
-        TOKEN_2022_PROGRAM_ID,
-      ),
-    ];
 
     const remainingAccounts: PublicKey[] = [];
     if (await this.base.isLockupEnabled()) {
@@ -261,7 +228,6 @@ export class InvestorClient {
         glamMint,
         signer,
       })
-      .preInstructions(preInstructions)
       .remainingAccounts(
         remainingAccounts.map((pubkey) => ({
           pubkey,
@@ -285,37 +251,7 @@ export class InvestorClient {
     const signer = txOptions.signer || this.base.getSigner();
     const stateModel = await this.base.fetchStateModel();
     const baseAsset = stateModel.baseAsset!;
-
-    const vault = this.base.vaultPda;
-    const vaultAssetAta = this.base.getAta(baseAsset, vault);
-
     const glamMint = this.base.mintPda;
-    const escrow = this.base.escrowPda;
-    const escrowMintAta = this.base.getMintAta(escrow);
-    const escrowAssetAta = this.base.getAta(baseAsset, escrow);
-
-    let preInstructions: TransactionInstruction[] = [
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        escrowMintAta,
-        escrow,
-        glamMint,
-        TOKEN_2022_PROGRAM_ID,
-      ),
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        escrowAssetAta,
-        escrow,
-        baseAsset,
-      ),
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        vaultAssetAta,
-        vault,
-        baseAsset,
-      ),
-      ...(txOptions.preInstructions || []),
-    ];
 
     const tx = await this.base.program.methods
       .fulfill(mintId)
@@ -324,8 +260,9 @@ export class InvestorClient {
         glamMint,
         signer,
         asset: baseAsset,
+        depositTokenProgram: TOKEN_PROGRAM_ID,
       })
-      .preInstructions(preInstructions)
+      .preInstructions(txOptions.preInstructions || [])
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
@@ -340,7 +277,6 @@ export class InvestorClient {
       throw new Error("mintId must be 0");
     }
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.mintPda;
     const signerAta = this.base.getAta(asset, signer);
 
     // Close wSOL ata so user gets SOL
@@ -354,7 +290,7 @@ export class InvestorClient {
         glamState: this.base.statePda,
         signer,
         tokenMint: asset,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        claimTokenProgram: TOKEN_PROGRAM_ID,
       })
       .preInstructions([
         createAssociatedTokenAccountIdempotentInstruction(
@@ -380,8 +316,6 @@ export class InvestorClient {
     }
 
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.mintPda;
-    const signerAta = this.base.getAta(asset, signer, TOKEN_2022_PROGRAM_ID);
     const escrow = this.base.escrowPda;
 
     const remainingAccounts: PublicKey[] = [];
@@ -405,17 +339,8 @@ export class InvestorClient {
         glamState: this.base.statePda,
         signer,
         tokenMint: asset,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        claimTokenProgram: TOKEN_2022_PROGRAM_ID,
       })
-      .preInstructions([
-        createAssociatedTokenAccountIdempotentInstruction(
-          signer,
-          signerAta,
-          signer,
-          asset,
-          TOKEN_2022_PROGRAM_ID,
-        ),
-      ])
       .remainingAccounts(
         remainingAccounts.map((pubkey) => ({
           pubkey,

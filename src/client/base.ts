@@ -16,7 +16,7 @@ import {
   VersionedTransaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { getSimulationComputeUnits, parseProgramLogs } from "../utils/helpers";
+import { getSimulationResult, parseProgramLogs } from "../utils/helpers";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -272,39 +272,28 @@ export class BaseClient {
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
-    try {
-      computeUnitLimit = await getSimulationComputeUnits(
-        this.provider.connection,
-        instructions,
-        signer,
-        lookupTables,
+    const { unitsConsumed, error, serializedTx } = await getSimulationResult(
+      this.provider.connection,
+      instructions,
+      signer,
+      lookupTables,
+    );
+    computeUnitLimit = unitsConsumed;
+
+    // by default, a simulation error doesn't prevent the tx from being sent
+    // - gui: wallet apps usually do the simulation themselves, we should ignore the simulation error here by default
+    // - cli: we should set simulate=true
+    if (error && simulate) {
+      console.log(
+        "Lookup tables:",
+        lookupTables.map((lt) => lt.key.toString()),
       );
-    } catch (e) {
-      // by default, a simulation error doesn't prevent the tx from being sent
-      // - when we run tests with failure cases, this RPC call fails with an incorrect error message so we should ignore it by default
-      // - gui: wallet apps usually do the simulation themselves, we should ignore the simulation error here by default
-      // - cli: we should set simulate=true
-      if (simulate) {
-        const vTx = new VersionedTransaction(
-          new TransactionMessage({
-            instructions,
-            payerKey: signer,
-            recentBlockhash: PublicKey.default.toString(),
-          }).compileToV0Message(lookupTables),
-        );
-        console.log(
-          "Lookup tables:",
-          lookupTables.map((lt) => lt.key.toString()),
-        );
-        console.log(
-          "Tx (base64):",
-          Buffer.from(vTx.serialize()).toString("base64"),
-        );
-        console.error(
-          "Simulation failed. If error message is too obscure, inspect and simulate the tx in explorer: https://explorer.solana.com/tx/inspector",
-        );
-        throw e;
-      }
+      console.log("Tx (base64):", serializedTx);
+      console.error("Simulation failed:", error.message);
+      console.error(
+        "If error message is too obscure, inspect and simulate the tx in explorer: https://explorer.solana.com/tx/inspector",
+      );
+      throw error;
     }
 
     if (computeUnitLimit) {

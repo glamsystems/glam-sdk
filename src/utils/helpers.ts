@@ -232,13 +232,17 @@ export function parseProgramLogs(logs?: null | string[]): string {
   return "Unknown error";
 }
 
-export const getSimulationComputeUnits = async (
+export const getSimulationResult = async (
   connection: Connection,
   instructions: Array<TransactionInstruction>,
   payer: PublicKey,
   lookupTables?: Array<AddressLookupTableAccount>,
-): Promise<number | undefined> => {
-  const testInstructions = [
+): Promise<{
+  unitsConsumed?: number;
+  error?: Error;
+  serializedTx?: String;
+}> => {
+  const testIxs = [
     // Set an arbitrarily high number in simulation
     // so we can be sure the transaction will succeed
     // and get the real compute units used
@@ -246,9 +250,9 @@ export const getSimulationComputeUnits = async (
     ...instructions,
   ];
 
-  const testTransaction = new VersionedTransaction(
+  const testTx = new VersionedTransaction(
     new TransactionMessage({
-      instructions: testInstructions,
+      instructions: testIxs,
       payerKey: payer,
       // RecentBlockhash can by any public key during simulation
       // since 'replaceRecentBlockhash' is set to 'true' below
@@ -256,13 +260,22 @@ export const getSimulationComputeUnits = async (
     }).compileToV0Message(lookupTables),
   );
 
-  const rpcResponse = await connection.simulateTransaction(testTransaction, {
+  const rpcResponse = await connection.simulateTransaction(testTx, {
     replaceRecentBlockhash: true,
     sigVerify: false,
   });
 
-  getErrorFromRPCResponse(rpcResponse);
-  return rpcResponse.value.unitsConsumed || undefined;
+  const serializedTx = Buffer.from(testTx.serialize()).toString("base64");
+
+  try {
+    getErrorFromRPCResponse(rpcResponse);
+  } catch (e) {
+    return { error: e as Error, serializedTx };
+  }
+  return {
+    unitsConsumed: rpcResponse.value.unitsConsumed,
+    serializedTx,
+  };
 };
 
 const getErrorFromRPCResponse = (
