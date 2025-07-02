@@ -26,6 +26,8 @@ export const METEORA_POSITION_SIZE = 8120;
 export const KAMINO_OBTRIGATION_SIZE = 3344;
 export const DRIFT_VAULT_DEPOSITOR_SIZE = 272;
 
+export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
+
 export const JITO_TIP_DEFAULT = new PublicKey(
   "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
 );

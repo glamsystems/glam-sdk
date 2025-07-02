@@ -19,6 +19,12 @@ import { WSOL } from "../constants";
 import { DriftMarketConfigs, DriftUser } from "../client/drift";
 import { TokenAccount } from "../client/base";
 import { useCluster } from "./cluster-provider";
+import {
+  fetchTokenPrices,
+  fetchTokensList,
+  TokenListItem,
+  TokenPrice,
+} from "../client/jupiter";
 
 declare global {
   interface Window {
@@ -26,20 +32,6 @@ declare global {
     PublicKey: any;
     BN: any;
   }
-}
-
-export interface JupTokenListItem {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI: string;
-  tags: string[];
-}
-
-export interface TokenPrice {
-  mint: string;
-  price: number; // USD
 }
 
 interface GlamProviderContext {
@@ -51,7 +43,7 @@ interface GlamProviderContext {
   allGlamStates: StateModel[];
   userWallet: UserWallet;
   prices: TokenPrice[];
-  jupTokenList?: JupTokenListItem[];
+  jupTokenList?: TokenListItem[];
   driftMarketConfigs: DriftMarketConfigs;
   driftUser: DriftUser;
   setActiveGlamState: (f: GlamStateCache) => void;
@@ -138,7 +130,7 @@ export function GlamProvider({
   const { cluster } = useCluster();
 
   const [allGlamStates, setAllGlamStates] = useState([] as StateModel[]);
-  const [jupTokenList, setJupTokenList] = useState([] as JupTokenListItem[]);
+  const [jupTokenList, setJupTokenList] = useState([] as TokenListItem[]);
   const [tokenPrices, setTokenPrices] = useState([] as TokenPrice[]);
   const [driftMarketConfigs, setDriftMarketConfigs] = useState(
     {} as DriftMarketConfigs,
@@ -253,9 +245,9 @@ export function GlamProvider({
   }, [activeGlamState]);
 
   //
-  // Fetch token prices https://station.jup.ag/docs/apis/price-api-v2
+  // Fetch token prices
   //
-  const { data: jupTokenPricesData } = useQuery({
+  const { data: tokenPricesData } = useQuery({
     queryKey: ["/jup-token-prices", vault?.pubkey],
     enabled: cluster.network === "mainnet-beta",
     refetchInterval: 30_000,
@@ -280,22 +272,20 @@ export function GlamProvider({
       });
 
       const tokens = Array.from(tokenMints);
-      return glamClient.jupiterSwap.fetchTokenPrices(tokens);
+      return fetchTokenPrices(tokens);
     },
   });
-  useEffect(() => {
-    if (jupTokenPricesData) {
-      const prices = Object.values(jupTokenPricesData.data).map(
-        (p: any) =>
-          ({
-            mint: p?.id,
-            price: Number(p?.price),
-          }) as TokenPrice,
-      );
+  useEffect(() => setTokenPrices(tokenPricesData || []), [tokenPricesData]);
 
-      setTokenPrices(prices.filter((p) => !!p.mint));
-    }
-  }, [jupTokenPricesData]);
+  //
+  // Fetch token list from jupiter api
+  //
+  const { data: tokenListData } = useQuery({
+    queryKey: ["jupiter-tokens-list"],
+    queryFn: () => fetchTokensList(),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+  useEffect(() => setJupTokenList(tokenListData || []), [tokenListData]);
 
   //
   // Balance and token accounts of the connected wallet
@@ -313,30 +303,6 @@ export function GlamProvider({
       ...walletBalances,
     } as UserWallet);
   }, [walletBalances, wallet]);
-
-  //
-  // Fetch token list from jupiter api
-  //
-  const { data: tokenList } = useQuery({
-    queryKey: ["jupiter-tokens-list"],
-    queryFn: async () => {
-      const response = await fetch(
-        "https://tokens.jup.ag/tokens?tags=verified",
-      );
-      const data = await response.json();
-      const tokenList = data?.map((t: any) => ({
-        address: t.address,
-        name: t.name,
-        symbol: t.symbol,
-        decimals: t.decimals,
-        logoURI: t.logoURI,
-        tags: t.tags,
-      }));
-      return tokenList;
-    },
-    staleTime: 1000 * 60 * 60, // 1 hour
-  });
-  useEffect(() => setJupTokenList(tokenList), [tokenList]);
 
   //
   // Fetch drift market configs

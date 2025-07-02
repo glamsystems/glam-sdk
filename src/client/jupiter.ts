@@ -18,6 +18,7 @@ import {
   GOVERNANCE_PROGRAM_ID,
   JUP,
   JUP_VOTE_PROGRAM,
+  JUPITER_API_DEFAULT,
   MERKLE_DISTRIBUTOR_PROGRAM,
   WSOL,
 } from "../constants";
@@ -53,6 +54,20 @@ export type QuoteResponse = {
   timeTaken: number;
 };
 
+export type TokenListItem = {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  logoURI: string;
+  tags: string[];
+};
+
+export type TokenPrice = {
+  mint: string;
+  price: number; // USD
+};
+
 type JsonAccountMeta = {
   pubkey: string; // not PublicKey but just string
   isSigner: boolean;
@@ -76,6 +91,44 @@ type SwapInstructions = {
 };
 
 const BASE = new PublicKey("bJ1TRoFo2P6UHVwqdiipp6Qhp2HaaHpLowZ5LHet8Gm");
+const JUPITER_API =
+  process.env.NEXT_PUBLIC_JUPITER_API ||
+  process.env.JUPITER_API ||
+  JUPITER_API_DEFAULT;
+
+export async function fetchProgramLabels(): Promise<{ [key: string]: string }> {
+  const res = await fetch(`${JUPITER_API}/swap/v1/program-id-to-label`);
+  const data = await res.json();
+  return data;
+}
+
+export async function fetchTokenPrices(
+  pubkeys: string[],
+): Promise<TokenPrice[]> {
+  const res = await fetch(`${JUPITER_API}/price/v3?ids=${pubkeys.join(",")}`);
+  const data = await res.json();
+
+  return Object.entries(data).map(([key, val]) => {
+    return {
+      mint: key,
+      price: (val as any).usdPrice,
+    };
+  });
+}
+
+export async function fetchTokensList(): Promise<TokenListItem[]> {
+  const response = await fetch(`${JUPITER_API}/tokens/v2/tag?query=verified`);
+  const data = await response.json();
+  const tokenList = data?.map((t: any) => ({
+    address: t.id,
+    name: t.name,
+    symbol: t.symbol,
+    decimals: t.decimals,
+    logoURI: t.icon,
+    tags: t.tags,
+  }));
+  return tokenList;
+}
 
 export class JupiterSwapClient {
   public constructor(readonly base: BaseClient) {}
@@ -102,22 +155,6 @@ export class JupiterSwapClient {
   ): Promise<TransactionSignature> {
     const tx = await this.setMaxSwapSlippageTx(slippageBps, txOptions);
     return await this.base.sendAndConfirm(tx);
-  }
-
-  public async fetchProgramLabels(): Promise<any> {
-    const res = await fetch(
-      `${this.base.jupiterApi}/swap/v1/program-id-to-label`,
-    );
-    const data = await res.json();
-    return data;
-  }
-
-  public async fetchTokenPrices(pubkeys: string[]): Promise<any> {
-    const res = await fetch(
-      `${this.base.jupiterApi}/price/v2?ids=${pubkeys.join(",")}`,
-    );
-    const data = await res.json();
-    return data;
   }
 
   /*
@@ -196,11 +233,9 @@ export class JupiterSwapClient {
     const swapIx: { data: any; keys: AccountMeta[] } =
       this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
-    // TODO: Optimize by using batch RPC
-    const [inputTokenProgram, outputTokenProgram] = await Promise.all([
-      this.getTokenProgram(inputMint),
-      this.getTokenProgram(outputMint),
-    ]);
+    const [inputTokenProgram, outputTokenProgram] = (
+      await this.base.fetchMintsAndTokenPrograms([inputMint, outputMint])
+    ).map((x) => x.tokenProgram);
 
     const inputStakePool =
       STAKE_POOLS_MAP.get(inputMint.toBase58())?.poolState || null;
@@ -328,7 +363,7 @@ export class JupiterSwapClient {
 
   public async getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
     const res = await fetch(
-      `${this.base.jupiterApi}/swap/v1/quote?` +
+      `${JUPITER_API}/swap/v1/quote?` +
         new URLSearchParams(
           Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
         ),
@@ -341,20 +376,17 @@ export class JupiterSwapClient {
   }
 
   async getSwapInstructions(quoteResponse: any, from: PublicKey): Promise<any> {
-    const res = await fetch(
-      `${this.base.jupiterApi}/swap/v1/swap-instructions`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          quoteResponse,
-          userPublicKey: from.toBase58(),
-        }),
+    const res = await fetch(`${JUPITER_API}/swap/v1/swap-instructions`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        quoteResponse,
+        userPublicKey: from.toBase58(),
+      }),
+    });
 
     return await res.json();
   }

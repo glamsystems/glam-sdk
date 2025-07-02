@@ -12,5 +12,4 @@ export type GlamClientConfig = {
   wallet?: Wallet;
   cluster?: ClusterNetwork;
   statePda?: PublicKey;
-  jupiterApi?: string;
 };

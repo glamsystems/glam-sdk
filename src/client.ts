@@ -17,8 +17,6 @@ import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestorClient } from "./client/investor";
 import { PriceClient } from "./client/price";
 
-export { JUPITER_API_DEFAULT } from "./client/base";
-
 /**
  * Main entrypoint for the GLAM SDK
  *

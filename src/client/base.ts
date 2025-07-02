@@ -45,8 +45,6 @@ import {
   getVaultPda,
 } from "../utils/glamPDAs";
 
-export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
-
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 
 const LOOKUP_TABLES = [
@@ -86,7 +84,6 @@ export class BaseClient {
   cluster: ClusterNetwork;
   provider: anchor.Provider;
   program: GlamProgram;
-  jupiterApi: string;
   blockhashWithCache: BlockhashWithCache;
 
   private _statePda?: PublicKey;
@@ -117,7 +114,6 @@ export class BaseClient {
       this.statePda = config.statePda;
     }
 
-    this.jupiterApi = config?.jupiterApi || JUPITER_API_DEFAULT;
     this.blockhashWithCache = new BlockhashWithCache(
       this.provider,
       false, // always disable browser cache (use in-memory cache instead), for in-app browser compatibility
@@ -150,18 +146,17 @@ export class BaseClient {
     return this.cluster === ClusterNetwork.Mainnet;
   }
 
-  isPhantom(): boolean {
+  isPhantomConnected(): boolean {
     if (!isBrowser) return false;
-
-    // TODO: remove when we can bypass from settings
-    return false;
 
     // Phantom automatically estimates fees
     // https://docs.phantom.app/developer-powertools/solana-priority-fees#how-phantom-applies-priority-fees-to-dapp-transactions
-    return (
-      // @ts-ignore
-      window?.phantom?.solana?.isPhantom && window?.phantom?.solana?.isConnected
-    );
+
+    // @ts-ignore
+    const isPhantom = !!window?.phantom?.solana?.isPhantom;
+    // @ts-ignore
+    const isConnected = !!window?.phantom?.solana?.isConnected;
+    return isPhantom && isConnected;
   }
 
   /**
@@ -188,10 +183,6 @@ export class BaseClient {
     maxFeeLamports?: number,
     useMaxFee?: boolean,
   ): Promise<Array<TransactionInstruction>> {
-    if (this.isPhantom()) {
-      return [] as Array<TransactionInstruction>;
-    }
-
     // ComputeBudgetProgram.setComputeUnitLimit costs 150 CUs
     // Add 20% more CUs to account for variable execution
     computeUnitLimit += 150;
@@ -557,6 +548,26 @@ export class BaseClient {
       }
       throw e;
     }
+  }
+
+  async fetchMintsAndTokenPrograms(
+    mintPubkeys: PublicKey[],
+  ): Promise<{ mint: Mint; tokenProgram: PublicKey }[]> {
+    const connection = this.provider.connection;
+    const accountsInfo = await connection.getMultipleAccountsInfo(
+      mintPubkeys,
+      "confirmed",
+    );
+
+    return accountsInfo.map((info, i) => {
+      if (!info) {
+        throw new Error(`Mint ${mintPubkeys[i]} not found`);
+      }
+
+      const tokenProgram = info.owner;
+      const mint = unpackMint(mintPubkeys[i], info, tokenProgram);
+      return { mint, tokenProgram };
+    });
   }
 
   async fetchMintAndTokenProgram(mintPubkey: PublicKey) {
