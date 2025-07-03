@@ -12593,7 +12593,7 @@
             "name": "Unstake"
           },
           {
-            "name": "__DeprecatedLiquidUnstake"
+            "name": "DriftCancelOrders"
           },
           {
             "name": "JupiterSwapAllowlisted"

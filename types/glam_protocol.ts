@@ -12599,7 +12599,7 @@ export type GlamProtocol = {
             "name": "unstake"
           },
           {
-            "name": "deprecatedLiquidUnstake"
+            "name": "driftCancelOrders"
           },
           {
             "name": "jupiterSwapAllowlisted"
