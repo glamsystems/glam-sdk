@@ -961,6 +961,99 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "driftDistributorNewClaim",
+      "discriminator": [
+        204,
+        159,
+        250,
+        46,
+        124,
+        193,
+        250,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x"
+        },
+        {
+          "name": "distributor",
+          "writable": true
+        },
+        {
+          "name": "claimStatus",
+          "writable": true
+        },
+        {
+          "name": "from",
+          "writable": true
+        },
+        {
+          "name": "to",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountUnlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amountLocked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "driftInitializeUser",
       "discriminator": [
         107,
@@ -1579,6 +1672,68 @@ export type GlamProtocol = {
         {
           "name": "marginTradingEnabled",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "driftUpdateUserPoolId",
+      "discriminator": [
+        44,
+        176,
+        143,
+        200,
+        153,
+        248,
+        221,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "user",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "subAccountId",
+          "type": "u16"
+        },
+        {
+          "name": "poolId",
+          "type": "u8"
         }
       ]
     },
@@ -12866,7 +13021,7 @@ export type GlamProtocol = {
             "name": "wSol"
           },
           {
-            "name": "deprecatedWSolUnwrap"
+            "name": "driftClaim"
           },
           {
             "name": "mintMintTokens"

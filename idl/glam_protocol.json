@@ -955,6 +955,99 @@
       ]
     },
     {
+      "name": "drift_distributor_new_claim",
+      "discriminator": [
+        204,
+        159,
+        250,
+        46,
+        124,
+        193,
+        250,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x"
+        },
+        {
+          "name": "distributor",
+          "writable": true
+        },
+        {
+          "name": "claim_status",
+          "writable": true
+        },
+        {
+          "name": "from",
+          "writable": true
+        },
+        {
+          "name": "to",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_unlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amount_locked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "drift_initialize_user",
       "discriminator": [
         107,
@@ -1573,6 +1666,68 @@
         {
           "name": "margin_trading_enabled",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "drift_update_user_pool_id",
+      "discriminator": [
+        44,
+        176,
+        143,
+        200,
+        153,
+        248,
+        221,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+        },
+        {
+          "name": "user",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "sub_account_id",
+          "type": "u16"
+        },
+        {
+          "name": "pool_id",
+          "type": "u8"
         }
       ]
     },
@@ -12860,7 +13015,7 @@
             "name": "WSol"
           },
           {
-            "name": "__DeprecatedWSolUnwrap"
+            "name": "DriftClaim"
           },
           {
             "name": "MintMintTokens"
