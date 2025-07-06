@@ -38,6 +38,11 @@ import {
 import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
 
+const DRIFT_DISTRIBUTOR_PROGRAM = new PublicKey(
+  "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x",
+);
+const DRIFT = new PublicKey("DriFtupJYLTosbwoN8koMbEYSx54aFAVLddWsbksjwg7");
+
 interface OrderConstants {
   perpBaseScale: number;
   quoteScale: number;
@@ -738,6 +743,52 @@ export class DriftClient {
           isSigner: false,
         })),
       );
+  }
+
+  getClaimStatus(claimant: PublicKey, distributor: PublicKey): PublicKey {
+    const [claimStatus] = PublicKey.findProgramAddressSync(
+      [Buffer.from("ClaimStatus"), claimant.toBuffer(), distributor.toBuffer()],
+      DRIFT_DISTRIBUTOR_PROGRAM,
+    );
+    return claimStatus;
+  }
+
+  public async claim(
+    distributor: PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN,
+    proof: number[][],
+    txOptions: TxOptions = {},
+  ) {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const vault = this.base.vaultPda;
+    const vaultAta = this.base.getVaultAta(DRIFT);
+    const distributorAta = this.base.getAta(DRIFT, distributor);
+
+    const preInstructions = [
+      createAssociatedTokenAccountIdempotentInstruction(
+        glamSigner,
+        vaultAta,
+        vault,
+        DRIFT,
+      ),
+    ];
+
+    const tx = await this.base.program.methods
+      .driftDistributorNewClaim(amountUnlocked, amountLocked, proof)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        distributor,
+        claimStatus: this.getClaimStatus(vault, distributor),
+        from: distributorAta,
+        to: vaultAta,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .preInstructions(preInstructions)
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+    return await this.base.sendAndConfirm(vTx);
   }
 
   async initializeUserStatsIx(
