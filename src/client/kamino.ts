@@ -667,6 +667,7 @@ export class KaminoLendingClient {
     const userMetadata = this.getUserMetadataPda(vault);
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
 
+    // @ts-ignore
     const tx = await this.base.program.methods
       .kaminoLendingInitUserMetadata(lookupTable)
       .accounts({
@@ -1406,19 +1407,19 @@ export class KaminoVaultsClient {
 
   public async deposit(
     vault: PublicKey,
-    amount: number,
+    amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(vault, amount, txOptions);
+    const tx = await this.depositTx(vault, new BN(amount), txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async withdraw(
     vault: PublicKey,
-    amount: number,
+    amount: BN | number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.withdrawTx(vault, amount, txOptions);
+    const tx = await this.withdrawTx(vault, new BN(amount), txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -1502,9 +1503,7 @@ export class KaminoVaultsClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const vaultState = await this.fetchAndParseVaultState(vault);
-    const amountBN = new BN(
-      amount * 10 ** vaultState.tokenMintDecimals.toNumber(),
-    );
+    const amountBN = amount.mul(new BN(10).pow(vaultState.tokenMintDecimals));
     const { tokenProgram: sharesTokenProgram } =
       await this.base.fetchMintAndTokenProgram(vaultState.sharesMint);
 
@@ -1563,7 +1562,7 @@ export class KaminoVaultsClient {
 
   public async withdrawTx(
     vault: PublicKey,
-    amount: number,
+    amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
@@ -1579,9 +1578,7 @@ export class KaminoVaultsClient {
       vaultState.sharesMint,
       sharesTokenProgram,
     );
-    const amountBN = new BN(
-      amount * 10 ** vaultState.sharesMintDecimals.toNumber(),
-    );
+    const amountBN = amount.mul(new BN(10).pow(vaultState.sharesMintDecimals));
 
     const reserves = vaultState.vaultAllocationStrategy.filter(
       ({ reserve }) => !reserve.equals(PublicKey.default),

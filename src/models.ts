@@ -642,3 +642,8 @@ export class TimeUnit {
   static readonly Slot = { slot: {} };
   static readonly Second = { second: {} };
 }
+
+export class VoteAuthorize {
+  static readonly Voter = { voter: {} };
+  static readonly Withdrawer = { withdrawer: {} };
+}

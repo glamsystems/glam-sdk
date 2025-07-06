@@ -539,7 +539,7 @@ export class BaseClient {
         tokenProgram,
       );
       return {
-        amount: new BN(account.amount),
+        amount: new BN(account.amount.toString()),
         uiAmount: Number(account.amount) / Math.pow(10, mint.decimals),
       };
     } catch (e) {
@@ -606,6 +606,7 @@ export class BaseClient {
       throw new Error("State PDA is not specified");
     }
 
+    // @ts-ignore
     const state = await this.fetchStateAccount();
     if (state.params.length < 2) {
       throw new Error("Invalid mint index");

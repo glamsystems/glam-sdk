@@ -97,6 +97,7 @@ export class MintClient {
     mintModel: Partial<MintModel>,
     txOptions: TxOptions = {},
   ) {
+    // @ts-ignore
     const tx = await this.base.program.methods
       .updateMint(0, new MintIdlModel(mintModel))
       .accounts({

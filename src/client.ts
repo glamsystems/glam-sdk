@@ -16,6 +16,7 @@ import {
 import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestorClient } from "./client/investor";
 import { PriceClient } from "./client/price";
+import { ValidatorClient } from "./client/validator";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -38,6 +39,7 @@ export class GlamClient extends BaseClient {
   private _kaminoFarm?: KaminoFarmClient;
   private _kaminoVaults?: KaminoVaultsClient;
   private _meteoraDlmm?: MeteoraDlmmClient;
+  private _validator?: ValidatorClient;
 
   public constructor(config?: GlamClientConfig) {
     super(config);
@@ -152,5 +154,12 @@ export class GlamClient extends BaseClient {
       this._meteoraDlmm = new MeteoraDlmmClient(this);
     }
     return this._meteoraDlmm;
+  }
+
+  get validator(): ValidatorClient {
+    if (!this._validator) {
+      this._validator = new ValidatorClient(this);
+    }
+    return this._validator;
   }
 }

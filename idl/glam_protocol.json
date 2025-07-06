@@ -9736,6 +9736,258 @@
       "args": []
     },
     {
+      "name": "vote_authorize",
+      "discriminator": [
+        61,
+        48,
+        136,
+        95,
+        88,
+        65,
+        161,
+        215
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "Vote111111111111111111111111111111111111111"
+        },
+        {
+          "name": "vote",
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_authority",
+          "type": "pubkey"
+        },
+        {
+          "name": "vote_authorize",
+          "type": {
+            "defined": {
+              "name": "VoteAuthorizeEnum"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "vote_update_commission",
+      "discriminator": [
+        193,
+        83,
+        224,
+        17,
+        218,
+        144,
+        211,
+        60
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "Vote111111111111111111111111111111111111111"
+        },
+        {
+          "name": "vote",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_commission",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "vote_update_validator_identity",
+      "discriminator": [
+        164,
+        111,
+        105,
+        150,
+        248,
+        104,
+        150,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "Vote111111111111111111111111111111111111111"
+        },
+        {
+          "name": "vote",
+          "writable": true
+        },
+        {
+          "name": "identity",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vote_withdraw",
+      "discriminator": [
+        193,
+        3,
+        236,
+        192,
+        122,
+        146,
+        217,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "address": "Vote111111111111111111111111111111111111111"
+        },
+        {
+          "name": "vote",
+          "writable": true
+        },
+        {
+          "name": "recipient",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "withdraw",
       "discriminator": [
         183,
@@ -11552,6 +11804,9 @@
           },
           {
             "name": "KaminoVaults"
+          },
+          {
+            "name": "Validator"
           }
         ]
       }
@@ -12684,6 +12939,18 @@
           },
           {
             "name": "KaminoVaultsWithdraw"
+          },
+          {
+            "name": "ValidatorAdmin"
+          },
+          {
+            "name": "ValidatorWithdraw"
+          },
+          {
+            "name": "ValidatorWithdrawToAny"
+          },
+          {
+            "name": "ValidatorWithdrawToIdentity"
           }
         ]
       }
@@ -13537,6 +13804,20 @@
           },
           {
             "name": "Periodic"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VoteAuthorizeEnum",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Voter"
+          },
+          {
+            "name": "Withdrawer"
           }
         ]
       }

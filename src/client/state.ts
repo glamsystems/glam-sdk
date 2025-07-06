@@ -32,6 +32,7 @@ export class StateClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     let stateModel = this.enrichStateModel(partialStateModel);
 
+    // @ts-ignore
     const statePda = getStatePda(stateModel, this.base.program.programId);
     this.base.statePda = statePda;
     console.log(`State PDA set to GlamClient: ${statePda}`);

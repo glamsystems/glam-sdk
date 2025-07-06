@@ -70,6 +70,7 @@ export class PriceClient {
       isWritable: true,
     }));
 
+    // @ts-ignore
     const priceIx = await this.base.program.methods
       .priceKaminoObligations(priceDenom)
       .accounts({
