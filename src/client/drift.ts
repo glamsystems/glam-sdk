@@ -5,6 +5,7 @@ import {
   TransactionSignature,
   TransactionInstruction,
   Transaction,
+  AccountInfo,
 } from "@solana/web3.js";
 import {
   MarketType,
@@ -92,6 +93,7 @@ export interface DriftUser {
   isMarginTradingEnabled: boolean;
   maxMarginRatio: number;
   orders: Order[];
+  poolId: number;
 }
 
 const DRIFT_SIGNER = new PublicKey(
@@ -436,7 +438,7 @@ export class DriftClient {
     const invalidIndexes = marketIndexes.filter(
       (marketIndex) => !this.spotMarkets.has(marketIndex),
     );
-    if (invalidIndexes.length > 0) {
+    if (invalidIndexes.length > 0 && process.env.NODE_ENV === "development") {
       console.warn(
         `The following spot markets could not be found: ${invalidIndexes.join(", ")}`,
       );
@@ -583,16 +585,10 @@ export class DriftClient {
       .trim();
   }
 
-  public async fetchDriftUser(
-    subAccountId: number = 0,
-    skipCache: boolean = false,
-  ): Promise<DriftUser | null> {
-    const { user } = this.getDriftUserPdas(subAccountId);
-    const accountInfo =
-      await this.base.provider.connection.getAccountInfo(user);
-    if (!accountInfo) {
-      return null;
-    }
+  async parseDriftUser(
+    accountInfo: AccountInfo<Buffer>,
+    subAccountId: number,
+  ): Promise<DriftUser> {
     const {
       delegate,
       name,
@@ -602,10 +598,8 @@ export class DriftClient {
       isMarginTradingEnabled,
       maxMarginRatio,
       orders,
+      poolId,
     } = decodeUser(accountInfo.data);
-
-    // Prefetch market configs
-    const marketConfigs = await this.fetchMarketConfigs(skipCache);
 
     const spotPositionsExt = await Promise.all(
       spotPositions.map(async (p) => {
@@ -614,7 +608,7 @@ export class DriftClient {
           p.scaledBalance,
           p.balanceType,
         );
-        const spotMarket = marketConfigs.spotMarkets.find(
+        const spotMarket = this.marketConfigs?.spotMarkets.find(
           (m) => m.marketIndex === p.marketIndex,
         );
         return {
@@ -638,7 +632,49 @@ export class DriftClient {
       subAccountId,
       isMarginTradingEnabled,
       maxMarginRatio,
+      poolId,
     };
+  }
+
+  public async fetchDriftUser(
+    subAccountId: number = 0,
+    skipCache: boolean = false,
+  ): Promise<DriftUser | null> {
+    const { user } = this.getDriftUserPdas(subAccountId);
+    const accountInfo =
+      await this.base.provider.connection.getAccountInfo(user);
+    if (!accountInfo) {
+      return null;
+    }
+
+    return await this.parseDriftUser(accountInfo, subAccountId);
+  }
+
+  public async fetchDriftUsers(
+    skipCache: boolean = false,
+  ): Promise<DriftUser[]> {
+    const userPdas = Array.from(Array(8).keys()).map((subAccountId) => {
+      const { user } = this.getDriftUserPdas(subAccountId);
+      return user;
+    });
+    const accountsInfo =
+      await this.base.provider.connection.getMultipleAccountsInfo(userPdas);
+
+    const subAccountsInfoAndIds: [any, number][] = [];
+    accountsInfo.forEach((a, i) => {
+      if (a) {
+        subAccountsInfoAndIds.push([a, i]);
+      }
+    });
+
+    // Prefetch market configs
+    const marketConfigs = await this.fetchMarketConfigs(skipCache);
+
+    return await Promise.all(
+      subAccountsInfoAndIds.map(([accountInfo, subAccountId]) =>
+        this.parseDriftUser(accountInfo, subAccountId),
+      ),
+    );
   }
 
   /**
@@ -839,6 +875,21 @@ export class DriftClient {
       .instruction();
   }
 
+  async updateUserPoolIdIx(
+    subAccountId: number,
+    poolId: number,
+  ): Promise<TransactionInstruction> {
+    const { user } = this.getDriftUserPdas(subAccountId);
+
+    return await this.base.program.methods
+      .driftUpdateUserPoolId(subAccountId, poolId)
+      .accounts({
+        glamState: this.base.statePda,
+        user,
+      })
+      .instruction();
+  }
+
   public async initializeTx(
     subAccountId: number = 0,
     txOptions: TxOptions = {},
@@ -999,6 +1050,7 @@ export class DriftClient {
       tokenProgram,
       marketPda,
       vault: driftVault,
+      name,
     } = await this.fetchAndParseSpotMarket(marketIndex);
     console.log(
       `Spot market ${marketIndex} mint ${mint}, oracle: ${oracle}, marketPda: ${marketPda}, vault: ${driftVault}`,
@@ -1007,12 +1059,23 @@ export class DriftClient {
     const preInstructions = [];
     const postInstructions = [];
 
-    // If drift user doesn't exist, prepend initializeUserStats and initializeUser instructions
+    // If drift user doesn't exist, prepend initialization ixs
     if (!(await this.fetchDriftUser(subAccountId))) {
       preInstructions.push(
-        await this.initializeUserStatsIx(glamSigner),
         await this.initializeUserIx(glamSigner, subAccountId),
       );
+      // Only add ix to initialize user stats if subAccountId is 0
+      if (subAccountId === 0) {
+        preInstructions.push(await this.initializeUserStatsIx(glamSigner));
+      }
+      // If market name ends with "-N", it means we're depositing to an isolated pool
+      const isolatedPoolMatch = name.match(/-(\d+)$/);
+      if (isolatedPoolMatch) {
+        const poolId = parseInt(isolatedPoolMatch[1]);
+        preInstructions.push(
+          await this.updateUserPoolIdIx(subAccountId, poolId),
+        );
+      }
     }
 
     if (mint.equals(WSOL)) {
