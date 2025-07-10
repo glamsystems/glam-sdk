@@ -647,6 +647,9 @@ export class DriftClient {
       return null;
     }
 
+    // Prefetch market configs
+    const marketConfigs = await this.fetchMarketConfigs(skipCache);
+
     return await this.parseDriftUser(accountInfo, subAccountId);
   }
 

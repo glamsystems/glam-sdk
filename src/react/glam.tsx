@@ -64,7 +64,7 @@ export interface Vault {
   balanceLamports: number; // TODO: this should be a BN or string, it works until ~9M SOL
   uiAmount: number;
   tokenAccounts: TokenAccount[];
-  driftUser?: DriftUser;
+  driftUsers?: DriftUser[];
 }
 
 interface GlamStateCache {
@@ -323,26 +323,26 @@ export function GlamProvider({
   // Fetch drift user
   //
   const {
-    data: driftUserData,
-    error: driftUserError,
+    data: driftUsersData,
+    error: driftUsersError,
     refetch: refetchDriftUser,
   } = useQuery({
-    queryKey: ["/drift-user", activeGlamState?.pubkey],
+    queryKey: ["/drift-users", activeGlamState?.pubkey],
     enabled: !!activeGlamState?.pubkey,
     refetchInterval: 30 * 1000,
-    queryFn: () => glamClient.drift.fetchDriftUser(),
+    queryFn: () => glamClient.drift.fetchDriftUsers(),
   });
   useEffect(() => {
-    if (!driftUserError && driftUserData) {
-      setDriftUser(driftUserData);
+    if (!driftUsersError && driftUsersData) {
+      setDriftUser(driftUsersData[0]);
       setVault({
         ...vault,
-        driftUser: driftUserData,
+        driftUsers: driftUsersData,
       });
     } else {
       setDriftUser({} as DriftUser);
     }
-  }, [driftUserData, driftUserError]);
+  }, [driftUsersData, driftUsersError]);
 
   const value: GlamProviderContext = {
     glamClient,

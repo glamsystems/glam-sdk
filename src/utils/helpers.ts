@@ -20,6 +20,13 @@ import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
 import { GlamProtocolIdlJson } from "../glamExports";
 
+const LOOKUP_TABLES_MAP = new Map([
+  [
+    "3tfbxaHBDjczQo3eyNJGGG64ChZ9nG4V3Gywa4k59d5a", // glam state
+    new PublicKey("8HUXT9abWS2z3z92QyDzg51nMcc18LyWFvaEQZJMPixu"), // table pubkey
+  ],
+]);
+
 export type StakeAccountInfo = {
   address: PublicKey;
   lamports: number;
@@ -188,22 +195,34 @@ export async function fetchLookupTables(
     "AddressLookupTab1e1111111111111111111111111",
   );
 
-  // Fetch all accounts owned by the ALT program
-  // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
-  // const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
-  //   filters: [
-  //     { memcmp: { offset: 22, bytes: authority.toBase58() } },
-  //     { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
-  //   ],
-  // });
-
-  // return accounts.map(
-  //   ({ pubkey, account }) =>
-  //     new AddressLookupTableAccount({
-  //       key: pubkey,
-  //       state: AddressLookupTableAccount.deserialize(account.data),
-  //     }),
-  // );
+  const tablePubkey = LOOKUP_TABLES_MAP.get(firstEntry.toBase58());
+  if (tablePubkey) {
+    const accountInfo = await connection.getAccountInfo(tablePubkey);
+    if (accountInfo) {
+      return [
+        new AddressLookupTableAccount({
+          key: tablePubkey,
+          state: AddressLookupTableAccount.deserialize(accountInfo.data),
+        }),
+      ];
+    }
+  } else {
+    // Fetch all accounts owned by the ALT program
+    // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
+    const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
+      filters: [
+        { memcmp: { offset: 22, bytes: authority.toBase58() } },
+        { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
+      ],
+    });
+    return accounts.map(
+      ({ pubkey, account }) =>
+        new AddressLookupTableAccount({
+          key: pubkey,
+          state: AddressLookupTableAccount.deserialize(account.data),
+        }),
+    );
+  }
   return [];
 }
 
