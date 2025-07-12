@@ -11179,6 +11179,12 @@ export type GlamProtocol = {
           },
           {
             "name": "borrowableAssets"
+          },
+          {
+            "name": "driftVaultsAllowlist"
+          },
+          {
+            "name": "kaminoVaultsAllowlist"
           }
         ]
       }
@@ -13112,6 +13118,9 @@ export type GlamProtocol = {
           },
           {
             "name": "validatorWithdrawToIdentity"
+          },
+          {
+            "name": "fulfill"
           }
         ]
       }
@@ -13848,6 +13857,22 @@ export type GlamProtocol = {
             "name": "maxSwapSlippageBps",
             "type": {
               "option": "u32"
+            }
+          },
+          {
+            "name": "driftVaultsAllowlist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "kaminoVaultsAllowlist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
             }
           },
           {

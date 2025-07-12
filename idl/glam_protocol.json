@@ -11173,6 +11173,12 @@
           },
           {
             "name": "BorrowableAssets"
+          },
+          {
+            "name": "DriftVaultsAllowlist"
+          },
+          {
+            "name": "KaminoVaultsAllowlist"
           }
         ]
       }
@@ -13106,6 +13112,9 @@
           },
           {
             "name": "ValidatorWithdrawToIdentity"
+          },
+          {
+            "name": "Fulfill"
           }
         ]
       }
@@ -13842,6 +13851,22 @@
             "name": "max_swap_slippage_bps",
             "type": {
               "option": "u32"
+            }
+          },
+          {
+            "name": "drift_vaults_allowlist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "kamino_vaults_allowlist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
             }
           },
           {

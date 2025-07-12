@@ -58,6 +58,8 @@ export class StateIdlModel implements StateModelType {
   kaminoLendingMarkets: PublicKey[] | null;
   meteoraDlmmPools: PublicKey[] | null;
   maxSwapSlippageBps: number | null;
+  driftVaultsAllowlist: PublicKey[] | null;
+  kaminoVaultsAllowlist: PublicKey[] | null;
 
   // Metadata
   metadata: Metadata | null;
@@ -94,6 +96,8 @@ export class StateIdlModel implements StateModelType {
     this.kaminoLendingMarkets = data.kaminoLendingMarkets ?? null;
     this.meteoraDlmmPools = data.meteoraDlmmPools ?? null;
     this.maxSwapSlippageBps = data.maxSwapSlippageBps ?? null;
+    this.driftVaultsAllowlist = data.driftVaultsAllowlist ?? null;
+    this.kaminoVaultsAllowlist = data.kaminoVaultsAllowlist ?? null;
 
     this.metadata = data.metadata ?? null;
     this.rawOpenfunds = data.rawOpenfunds ?? null;
