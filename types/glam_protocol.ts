@@ -10395,16 +10395,21 @@ export type GlamProtocol = {
     },
     {
       "code": 48006,
+      "name": "cannotApplyChanges",
+      "msg": "Pending changes cannot be applied due to unfulfilled subscriptions or redemptions"
+    },
+    {
+      "code": 48007,
       "name": "assetNotBorrowable",
       "msg": "Asset is not allowed to borrow"
     },
     {
-      "code": 48007,
+      "code": 48008,
       "name": "invalidAccountOwner",
       "msg": "Account owned by an invalid program"
     },
     {
-      "code": 48008,
+      "code": 48009,
       "name": "invalidAuthority",
       "msg": "Invalid authority"
     },

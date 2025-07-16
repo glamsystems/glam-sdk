@@ -10389,16 +10389,21 @@
     },
     {
       "code": 48006,
+      "name": "CannotApplyChanges",
+      "msg": "Pending changes cannot be applied due to unfulfilled subscriptions or redemptions"
+    },
+    {
+      "code": 48007,
       "name": "AssetNotBorrowable",
       "msg": "Asset is not allowed to borrow"
     },
     {
-      "code": 48007,
+      "code": 48008,
       "name": "InvalidAccountOwner",
       "msg": "Account owned by an invalid program"
     },
     {
-      "code": 48008,
+      "code": 48009,
       "name": "InvalidAuthority",
       "msg": "Invalid authority"
     },
