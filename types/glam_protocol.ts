@@ -11117,7 +11117,7 @@ export type GlamProtocol = {
             "name": "minRedemption"
           },
           {
-            "name": "notifyAndSettle"
+            "name": "redemptionNotifyAndSettle"
           },
           {
             "name": "ledger"

@@ -11111,7 +11111,7 @@
             "name": "MinRedemption"
           },
           {
-            "name": "NotifyAndSettle"
+            "name": "RedemptionNotifyAndSettle"
           },
           {
             "name": "Ledger"
