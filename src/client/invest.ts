@@ -18,7 +18,7 @@ import { BaseClient, TxOptions } from "./base";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 
-export class InvestorClient {
+export class InvestClient {
   public constructor(readonly base: BaseClient) {}
 
   public async subscribe(

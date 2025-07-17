@@ -14,9 +14,10 @@ import {
   KaminoVaultsClient,
 } from "./client/kamino";
 import { MeteoraDlmmClient } from "./client/meteora";
-import { InvestorClient } from "./client/investor";
+import { InvestClient } from "./client/invest";
 import { PriceClient } from "./client/price";
 import { ValidatorClient } from "./client/validator";
+import { FeesClient } from "./client/fees";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -26,7 +27,7 @@ import { ValidatorClient } from "./client/validator";
 export class GlamClient extends BaseClient {
   private _drift?: DriftClient;
   private _driftVaults?: DriftVaultsClient;
-  private _investor?: InvestorClient;
+  private _invest?: InvestClient;
   private _jupiterSwap?: JupiterSwapClient;
   private _jupiterVote?: JupiterVoteClient;
   private _marinade?: MarinadeClient;
@@ -40,6 +41,7 @@ export class GlamClient extends BaseClient {
   private _kaminoVaults?: KaminoVaultsClient;
   private _meteoraDlmm?: MeteoraDlmmClient;
   private _validator?: ValidatorClient;
+  private _fees?: FeesClient;
 
   public constructor(config?: GlamClientConfig) {
     super(config);
@@ -59,11 +61,18 @@ export class GlamClient extends BaseClient {
     return this._driftVaults;
   }
 
-  get investor(): InvestorClient {
-    if (!this._investor) {
-      this._investor = new InvestorClient(this);
+  get invest(): InvestClient {
+    if (!this._invest) {
+      this._invest = new InvestClient(this);
     }
-    return this._investor;
+    return this._invest;
+  }
+
+  get fees(): FeesClient {
+    if (!this._fees) {
+      this._fees = new FeesClient(this, this.price);
+    }
+    return this._fees;
   }
 
   get jupiterSwap(): JupiterSwapClient {
