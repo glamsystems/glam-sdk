@@ -149,8 +149,7 @@ export class PriceClient {
   }
 
   /**
-   * Returns an instruction that prices the all Drift users (aka sub-accounts) controlled by the GLAM vault.
-   * These Drift users must share the same user_stats that's also controlled by the GLAM vault.
+   * Returns an instruction that prices all Drift users (aka sub-accounts) controlled by the GLAM vault.
    */
   public async priceDriftUsersIx(
     priceDenom: PriceDenom,
@@ -169,7 +168,7 @@ export class PriceClient {
     const accountsInfo =
       await this.base.provider.connection.getMultipleAccountsInfo(userPdas);
 
-    // Find valid sub accounts
+    // Parse valid sub accounts
     const driftUsers: DriftUser[] = [];
     for (let i = 0; i < accountsInfo.length; i++) {
       const accountInfo = accountsInfo[i];
@@ -207,6 +206,7 @@ export class PriceClient {
       marketsAndOracles.add(m.marketPda.toBase58());
     });
 
+    // Add markets and oracles to remaining accounts
     Array.from(marketsAndOracles).map((pubkey) =>
       remainingAccounts.push({
         pubkey: new PublicKey(pubkey),
@@ -215,20 +215,16 @@ export class PriceClient {
       }),
     );
 
-    try {
-      const priceDriftUsersIx = await this.base.program.methods
-        .priceDriftUsers(priceDenom)
-        .accounts({
-          glamState: this.base.statePda,
-          solOracle: SOL_ORACLE,
-        })
-        .remainingAccounts(remainingAccounts)
-        .instruction();
+    const priceDriftUsersIx = await this.base.program.methods
+      .priceDriftUsers(priceDenom, driftUsers.length)
+      .accounts({
+        glamState: this.base.statePda,
+        solOracle: SOL_ORACLE,
+      })
+      .remainingAccounts(remainingAccounts)
+      .instruction();
 
-      return priceDriftUsersIx;
-    } catch (error) {
-      return null;
-    }
+    return priceDriftUsersIx;
   }
 
   /**
@@ -392,21 +388,30 @@ export class PriceClient {
       return [priceVaultIx];
     }
 
-    const priceStakesIx = await this.priceStakesIx(priceDenom);
-    const priceMeteoraIx = await this.priceMeteoraPositionsIx(priceDenom);
-    const priceKaminoIx = await this.priceKaminoObligationsIx(priceDenom);
-    const priceDriftUsersIx = await this.priceDriftUsersIx(priceDenom);
-    const priceDriftVaultDepositorsIx =
-      await this.priceDriftVaultDepositorsIx(priceDenom);
+    const integrations = (stateModel.integrations || []).map(
+      (i) => Object.keys(i)[0],
+    );
+    const integrationsToPricingFns: {
+      [key: string]: (priceDenom: PriceDenom) => Promise<any>;
+    } = {
+      drift: this.priceDriftUsersIx.bind(this),
+      kaminoLending: this.priceKaminoObligationsIx.bind(this),
+      nativeStaking: this.priceStakesIx.bind(this),
+      meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
+      driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
+      kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
+    };
 
-    return [
-      priceVaultIx,
-      priceStakesIx,
-      priceMeteoraIx,
-      priceKaminoIx,
-      priceDriftUsersIx,
-      priceDriftVaultDepositorsIx,
-    ].filter((ix) => ix !== null);
+    const pricingFns = integrations
+      .map((integration) => integrationsToPricingFns[integration])
+      .filter(Boolean);
+
+    const pricingIxs = [];
+    for (const fn of pricingFns) {
+      const ix = await fn(priceDenom);
+      pricingIxs.push(ix);
+    }
+    return pricingIxs.filter(Boolean);
   }
 
   remainingAccountsForPricingMeteora = async () => {

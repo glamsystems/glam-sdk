@@ -279,22 +279,21 @@ export const getSimulationResult = async (
     }).compileToV0Message(lookupTables),
   );
 
-  const rpcResponse = await connection.simulateTransaction(testTx, {
-    replaceRecentBlockhash: true,
-    sigVerify: false,
-  });
-
   const serializedTx = Buffer.from(testTx.serialize()).toString("base64");
-
   try {
+    const rpcResponse = await connection.simulateTransaction(testTx, {
+      replaceRecentBlockhash: true,
+      sigVerify: false,
+    });
     getErrorFromRPCResponse(rpcResponse);
+
+    return {
+      unitsConsumed: rpcResponse.value.unitsConsumed,
+      serializedTx,
+    };
   } catch (e) {
     return { error: e as Error, serializedTx };
   }
-  return {
-    unitsConsumed: rpcResponse.value.unitsConsumed,
-    serializedTx,
-  };
 };
 
 const getErrorFromRPCResponse = (

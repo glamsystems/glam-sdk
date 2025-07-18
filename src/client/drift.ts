@@ -519,7 +519,7 @@ export class DriftClient {
       const data = await response.json();
       const { orderConstants, perp, spot } = data;
 
-      // Transform perp market from API to `PerpMarket` type
+      // Transform market data from API to `PerpMarket`/`SpotMarket` objects
       const perpMarkets = perp.map((m: any) => ({
         name: m.symbol,
         marketIndex: m.marketIndex,
@@ -527,11 +527,6 @@ export class DriftClient {
         oracle: new PublicKey(m.oracle),
         oracleSource: OracleSource.fromString(m.oracleSource),
       })) as PerpMarket[];
-      perpMarkets.forEach((m) => {
-        this.perpMarkets.set(m.marketIndex, m);
-      });
-
-      // Transform spot market from API to `SpotMarket` type
       const spotMarkets = spot.map((m: any) => ({
         name: m.symbol,
         marketIndex: m.marketIndex,
@@ -545,6 +540,11 @@ export class DriftClient {
         cumulativeDepositInterest: new BN(m.cumulativeDepositInterest),
         cumulativeBorrowInterest: new BN(m.cumulativeBorrowInterest),
       })) as SpotMarket[];
+
+      // Cache market objects
+      perpMarkets.forEach((m) => {
+        this.perpMarkets.set(m.marketIndex, m);
+      });
       spotMarkets.forEach((m) => {
         this.spotMarkets.set(m.marketIndex, m);
       });
@@ -601,6 +601,15 @@ export class DriftClient {
       poolId,
     } = decodeUser(accountInfo.data);
 
+    // Fetch spot and perp markets used by this user
+    const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
+    const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
+    await Promise.all([
+      this.fetchAndParseSpotMarkets(spotMarketIndexes),
+      this.fetchAndParsePerpMarkets(perpMarketIndexes),
+    ]);
+
+    // Extend spot positions with market info
     const spotPositionsExt = await Promise.all(
       spotPositions.map(async (p) => {
         const { amount, uiAmount } = await this.calcSpotBalance(
@@ -608,9 +617,7 @@ export class DriftClient {
           p.scaledBalance,
           p.balanceType,
         );
-        const spotMarket = this.marketConfigs?.spotMarkets.find(
-          (m) => m.marketIndex === p.marketIndex,
-        );
+        const spotMarket = this.spotMarkets.get(p.marketIndex);
         return {
           ...p,
           amount,
@@ -648,7 +655,7 @@ export class DriftClient {
     }
 
     // Prefetch market configs
-    const marketConfigs = await this.fetchMarketConfigs(skipCache);
+    await this.fetchMarketConfigs(skipCache);
 
     return await this.parseDriftUser(accountInfo, subAccountId);
   }
