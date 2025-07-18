@@ -6741,6 +6741,12 @@ export type GlamProtocol = {
     },
     {
       "name": "priceDriftUsers",
+      "docs": [
+        "Extra accounts for pricing N drift users under the same user stats:",
+        "- user_stats x 1",
+        "- drift_user x N",
+        "- markets and oracles used by all drift users (no specific order)"
+      ],
       "discriminator": [
         12,
         5,
@@ -6856,11 +6862,20 @@ export type GlamProtocol = {
               "name": "priceDenom"
             }
           }
+        },
+        {
+          "name": "numUsers",
+          "type": "u8"
         }
       ]
     },
     {
       "name": "priceDriftVaultDepositors",
+      "docs": [
+        "Extra accounts for pricing N vault depositors:",
+        "- (vault_depositor, drift_vault, drift_user) x N",
+        "- markets and oracles used by all drift users (no specific order)"
+      ],
       "discriminator": [
         234,
         16,
@@ -6976,6 +6991,10 @@ export type GlamProtocol = {
               "name": "priceDenom"
             }
           }
+        },
+        {
+          "name": "numVaultDepositors",
+          "type": "u8"
         }
       ]
     },

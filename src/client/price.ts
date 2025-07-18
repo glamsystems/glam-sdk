@@ -12,7 +12,7 @@ import {
 } from "../utils/helpers";
 import { PriceDenom } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
-import { DriftClient, DriftVaultsClient } from "./drift";
+import { DriftClient, DriftUser, DriftVaultsClient } from "./drift";
 
 export class PriceClient {
   public constructor(
@@ -155,21 +155,74 @@ export class PriceClient {
   public async priceDriftUsersIx(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction | null> {
-    // FIXME: check more users than #0
-    const { user, userStats } = this.drift.getDriftUserPdas();
+    // 1st remaining account is user_stats
+    const { userStats } = this.drift.getDriftUserPdas();
+    const remainingAccounts = [
+      { pubkey: userStats, isSigner: false, isWritable: false },
+    ];
+
+    // Fetch first 8 sub accounts
+    const userPdas = Array.from(Array(8).keys()).map((subAccountId) => {
+      const { user } = this.drift.getDriftUserPdas(subAccountId);
+      return user;
+    });
+    const accountsInfo =
+      await this.base.provider.connection.getMultipleAccountsInfo(userPdas);
+
+    // Find valid sub accounts
+    const driftUsers: DriftUser[] = [];
+    for (let i = 0; i < accountsInfo.length; i++) {
+      const accountInfo = accountsInfo[i];
+      if (accountInfo) {
+        const user = await this.drift.parseDriftUser(accountInfo, i);
+        driftUsers.push(user);
+        remainingAccounts.push({
+          pubkey: userPdas[i],
+          isSigner: false,
+          isWritable: false,
+        });
+      }
+    }
+
+    // Build a set of markets and oracles that are used by all sub accounts
+    const marketsAndOracles = new Set<string>();
+    const spotMarketIndexes = new Set<number>(
+      driftUsers.map((u) => u.spotPositions.map((p) => p.marketIndex)).flat(),
+    );
+    const perpMarketIndexes = new Set<number>(
+      driftUsers.map((u) => u.perpPositions.map((p) => p.marketIndex)).flat(),
+    );
+    const spotMarkets = await this.drift.fetchAndParseSpotMarkets(
+      Array.from(spotMarketIndexes),
+    );
+    const perpMarkets = await this.drift.fetchAndParsePerpMarkets(
+      Array.from(perpMarketIndexes),
+    );
+    spotMarkets.forEach((m) => {
+      marketsAndOracles.add(m.oracle.toBase58());
+      marketsAndOracles.add(m.marketPda.toBase58());
+    });
+    perpMarkets.forEach((m) => {
+      marketsAndOracles.add(m.oracle.toBase58());
+      marketsAndOracles.add(m.marketPda.toBase58());
+    });
+
+    Array.from(marketsAndOracles).map((pubkey) =>
+      remainingAccounts.push({
+        pubkey: new PublicKey(pubkey),
+        isSigner: false,
+        isWritable: false,
+      }),
+    );
+
     try {
-      const remainingAccounts = await this.drift.composeRemainingAccounts(0);
       const priceDriftUsersIx = await this.base.program.methods
         .priceDriftUsers(priceDenom)
         .accounts({
           glamState: this.base.statePda,
           solOracle: SOL_ORACLE,
         })
-        .remainingAccounts([
-          { pubkey: userStats, isSigner: false, isWritable: false },
-          { pubkey: user, isSigner: false, isWritable: false },
-          ...remainingAccounts,
-        ])
+        .remainingAccounts(remainingAccounts)
         .instruction();
 
       return priceDriftUsersIx;
@@ -200,31 +253,46 @@ export class PriceClient {
     // - spot & perp markets
     // There might be overlaps between markets and oracles so we use a set to avoid duplicates
 
-    const remainingAccountsKeys = new Set<string>();
+    const remainingAccounts = [];
+    const marketsAndOracles = new Set<string>();
     for (const depositor of parsedVaultDepositors) {
-      remainingAccountsKeys.add(depositor.address.toBase58());
-      remainingAccountsKeys.add(depositor.driftVault.toBase58());
       const { user: driftUser } = await this.dvaults.parseDriftVault(
         depositor.driftVault,
       );
-      remainingAccountsKeys.add(driftUser.toBase58());
+      remainingAccounts.push({
+        pubkey: depositor.address,
+        isSigner: false,
+        isWritable: false,
+      });
+      remainingAccounts.push({
+        pubkey: depositor.driftVault,
+        isSigner: false,
+        isWritable: false,
+      });
+      remainingAccounts.push({
+        pubkey: driftUser,
+        isSigner: false,
+        isWritable: false,
+      });
 
       const markets_and_oracles = (
         await this.dvaults.composeRemainingAccounts(driftUser)
       ).map((a) => a.pubkey.toBase58());
       for (const k of markets_and_oracles) {
-        remainingAccountsKeys.add(k);
+        marketsAndOracles.add(k);
       }
     }
 
-    const remainingAccounts = Array.from(remainingAccountsKeys).map((k) => ({
-      pubkey: new PublicKey(k),
-      isSigner: false,
-      isWritable: false,
-    }));
+    Array.from(marketsAndOracles).forEach((k) =>
+      remainingAccounts.push({
+        pubkey: new PublicKey(k),
+        isSigner: false,
+        isWritable: false,
+      }),
+    );
 
     const priceIx = await this.base.program.methods
-      .priceDriftVaultDepositors(priceDenom)
+      .priceDriftVaultDepositors(priceDenom, parsedVaultDepositors.length)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,

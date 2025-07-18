@@ -6735,6 +6735,12 @@
     },
     {
       "name": "price_drift_users",
+      "docs": [
+        "Extra accounts for pricing N drift users under the same user stats:",
+        "- user_stats x 1",
+        "- drift_user x N",
+        "- markets and oracles used by all drift users (no specific order)"
+      ],
       "discriminator": [
         12,
         5,
@@ -6850,11 +6856,20 @@
               "name": "PriceDenom"
             }
           }
+        },
+        {
+          "name": "num_users",
+          "type": "u8"
         }
       ]
     },
     {
       "name": "price_drift_vault_depositors",
+      "docs": [
+        "Extra accounts for pricing N vault depositors:",
+        "- (vault_depositor, drift_vault, drift_user) x N",
+        "- markets and oracles used by all drift users (no specific order)"
+      ],
       "discriminator": [
         234,
         16,
@@ -6970,6 +6985,10 @@
               "name": "PriceDenom"
             }
           }
+        },
+        {
+          "name": "num_vault_depositors",
+          "type": "u8"
         }
       ]
     },
