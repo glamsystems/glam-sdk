@@ -406,7 +406,7 @@ export class PriceClient {
       .map((integration) => integrationsToPricingFns[integration])
       .filter(Boolean);
 
-    const pricingIxs = [];
+    const pricingIxs = [priceVaultIx];
     for (const fn of pricingFns) {
       const ix = await fn(priceDenom);
       pricingIxs.push(ix);
