@@ -45,7 +45,6 @@ interface GlamProviderContext {
   prices: TokenPrice[];
   jupTokenList?: TokenListItem[];
   driftMarketConfigs: DriftMarketConfigs;
-  driftUser: DriftUser;
   setActiveGlamState: (f: GlamStateCache) => void;
   refresh: () => Promise<void>; // refresh active glam state
   refetchGlamStates: () => Promise<void>;
@@ -135,7 +134,6 @@ export function GlamProvider({
   const [driftMarketConfigs, setDriftMarketConfigs] = useState(
     {} as DriftMarketConfigs,
   );
-  const [driftUser, setDriftUser] = useState({} as DriftUser);
 
   const activeGlamState = deserializeGlamStateCache(
     useAtomValue(activeGlamStateAtom),
@@ -169,11 +167,11 @@ export function GlamProvider({
       const balances = await glamClient.getSolAndTokenBalances(
         glamClient.vaultPda,
       );
-      setVault({
-        ...vault,
+      setVault((prevVault) => ({
+        ...prevVault,
         ...balances,
         pubkey: glamClient.vaultPda,
-      });
+      }));
     }
   };
 
@@ -262,7 +260,7 @@ export function GlamProvider({
       });
 
       // Drift spot positions
-      (driftUser.spotPositions || []).forEach((position) => {
+      (vault?.driftUsers?.[0].spotPositions || []).forEach((position) => {
         const marketConfig = driftMarketConfigs.spotMarkets.find(
           (m) => position.marketIndex === m.marketIndex,
         );
@@ -275,7 +273,11 @@ export function GlamProvider({
       return fetchTokenPrices(tokens);
     },
   });
-  useEffect(() => setTokenPrices(tokenPricesData || []), [tokenPricesData]);
+  useEffect(() => {
+    if (tokenPricesData) {
+      setTokenPrices(tokenPricesData);
+    }
+  }, [tokenPricesData]);
 
   //
   // Fetch token list from jupiter api
@@ -334,13 +336,10 @@ export function GlamProvider({
   });
   useEffect(() => {
     if (!driftUsersError && driftUsersData) {
-      setDriftUser(driftUsersData[0]);
-      setVault({
-        ...vault,
+      setVault((prevVault) => ({
+        ...prevVault,
         driftUsers: driftUsersData,
-      });
-    } else {
-      setDriftUser({} as DriftUser);
+      }));
     }
   }, [driftUsersData, driftUsersError]);
 
@@ -355,7 +354,6 @@ export function GlamProvider({
     jupTokenList,
     prices: tokenPrices,
     driftMarketConfigs,
-    driftUser,
     setActiveGlamState,
     refresh: async () => {
       refreshVaultHoldings();

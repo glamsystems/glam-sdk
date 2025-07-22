@@ -117,7 +117,7 @@ export class PriceClient {
 
     // first 3N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state)
     for (let i = 0; i < shareAtas.length; i++) {
-      [shareAtas[i], shareMints[i], kvaultStates[i]].map((pubkey) => {
+      [shareAtas[i], shareMints[i], kvaultPdas[i]].map((pubkey) => {
         remainingAccounts.push({
           pubkey,
           isSigner: false,
