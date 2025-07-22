@@ -258,7 +258,7 @@ export class BaseClient {
     }
 
     lookupTables.push(
-      ...(await this.getAdressLookupTableAccounts(LOOKUP_TABLES)),
+      ...(await this.fetchAdressLookupTableAccounts(LOOKUP_TABLES)),
     );
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
@@ -384,7 +384,7 @@ export class BaseClient {
     return txSig;
   }
 
-  async getAdressLookupTableAccounts(
+  async fetchAdressLookupTableAccounts(
     keys?: string[] | PublicKey[],
   ): Promise<AddressLookupTableAccount[]> {
     if (!keys) {

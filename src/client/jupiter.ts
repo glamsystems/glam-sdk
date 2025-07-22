@@ -226,7 +226,7 @@ export class JupiterSwapClient {
         swapInstructions.addressLookupTableAddresses;
     }
 
-    const lookupTables = await this.base.getAdressLookupTableAccounts(
+    const lookupTables = await this.base.fetchAdressLookupTableAccounts(
       addressLookupTableAddresses,
     );
 

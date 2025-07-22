@@ -19,6 +19,7 @@ import {
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
 import { GlamProtocolIdlJson } from "../glamExports";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 const LOOKUP_TABLES_MAP = new Map([
   [
@@ -211,6 +212,7 @@ export async function fetchLookupTables(
     // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
     const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
       filters: [
+        { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
         { memcmp: { offset: 22, bytes: authority.toBase58() } },
         { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
       ],

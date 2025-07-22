@@ -850,7 +850,7 @@ export class KaminoLendingClient {
 
     const lookupTables =
       txOptions.lookupTables ||
-      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
     const vTx = await this.base.intoVersionedTransaction(tx, {
       ...txOptions,
       lookupTables,
@@ -985,7 +985,7 @@ export class KaminoLendingClient {
 
     const lookupTables =
       txOptions.lookupTables ||
-      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
     const vTx = await this.base.intoVersionedTransaction(tx, {
       ...txOptions,
       lookupTables,
@@ -1115,7 +1115,7 @@ export class KaminoLendingClient {
 
     const lookupTables =
       txOptions.lookupTables ||
-      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
     const vTx = await this.base.intoVersionedTransaction(tx, {
       ...txOptions,
       lookupTables,
@@ -1221,7 +1221,7 @@ export class KaminoLendingClient {
 
     const lookupTables =
       txOptions.lookupTables ||
-      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
     const vTx = await this.base.intoVersionedTransaction(tx, {
       ...txOptions,
       lookupTables,
@@ -1387,7 +1387,7 @@ export class KaminoFarmClient {
 
     const lookupTables =
       txOptions.lookupTables ||
-      (await this.base.getAdressLookupTableAccounts([LOOKUP_TABLE]));
+      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
     const vTx = await this.base.intoVersionedTransaction(tx, {
       ...txOptions,
       lookupTables,
