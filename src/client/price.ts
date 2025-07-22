@@ -113,7 +113,21 @@ export class PriceClient {
     });
     const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
 
-    const remainingAccounts = (
+    const remainingAccounts = [];
+
+    // first 3N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state)
+    for (let i = 0; i < shareAtas.length; i++) {
+      [shareAtas[i], shareMints[i], kvaultStates[i]].map((pubkey) => {
+        remainingAccounts.push({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        });
+      });
+    }
+
+    // markets and reserves
+    const marketsAndReserves = (
       await Promise.all(
         kvaultStates.map((kvault) => {
           return this.kvaults.composeRemainingAccounts(
@@ -124,16 +138,10 @@ export class PriceClient {
         }),
       )
     ).flat();
-    [...kvaultPdas, ...shareAtas].map((pubkey) => {
-      remainingAccounts.unshift({
-        pubkey: pubkey!,
-        isSigner: false,
-        isWritable: false,
-      });
-    });
+    remainingAccounts.push(...marketsAndReserves);
 
     const priceIx = await this.base.program.methods
-      .priceKaminoVaultShares(priceDenom)
+      .priceKaminoVaultShares(priceDenom, shareAtas.length)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,

@@ -7140,6 +7140,12 @@ export type GlamProtocol = {
     },
     {
       "name": "priceKaminoVaultShares",
+      "docs": [
+        "Extra accounts for pricing N kamino vault shares:",
+        "- (kvault_share_ata, kvault_share_mint, kvault_state) x N",
+        "- lending markets used by kvaults (no specific order)",
+        "- reserves of lending markets (no specific order)"
+      ],
       "discriminator": [
         112,
         92,
@@ -7275,6 +7281,10 @@ export type GlamProtocol = {
               "name": "priceDenom"
             }
           }
+        },
+        {
+          "name": "numVaults",
+          "type": "u8"
         }
       ]
     },
@@ -7520,6 +7530,12 @@ export type GlamProtocol = {
     },
     {
       "name": "priceVault",
+      "docs": [
+        "Price vault SOL balance and tokens it holds.",
+        "",
+        "Extra accounts for pricing N tokens:",
+        "- (ata, mint, oracle) x N"
+      ],
       "discriminator": [
         47,
         213,
