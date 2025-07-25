@@ -7528,7 +7528,7 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "priceVault",
+      "name": "priceVaultTokens",
       "docs": [
         "Price vault SOL balance and tokens it holds.",
         "",
@@ -7536,14 +7536,14 @@ export type GlamProtocol = {
         "- (ata, mint, oracle) x N"
       ],
       "discriminator": [
-        47,
-        213,
-        36,
-        17,
+        54,
+        42,
+        16,
+        199,
+        20,
         183,
-        5,
-        141,
-        45
+        50,
+        137
       ],
       "accounts": [
         {

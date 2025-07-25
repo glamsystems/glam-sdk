@@ -109,6 +109,7 @@ export class PriceClient {
         shareAtas.push(possibleShareAtas[i]);
         shareMints.push(allKvaultMints[i]);
         kvaultStates.push(allKvaultStates[i]);
+        // FIXME: add oracle account
       }
     });
     const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
@@ -315,7 +316,7 @@ export class PriceClient {
       priceDenom == PriceDenom.ASSET,
     );
     const priceVaultIx = await this.base.program.methods
-      .priceVault(priceDenom)
+      .priceVaultTokens(priceDenom)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
