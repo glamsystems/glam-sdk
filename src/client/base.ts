@@ -384,11 +384,21 @@ export class BaseClient {
     return txSig;
   }
 
-  async fetchAdressLookupTableAccounts(
+  /**
+   * Fetches multiple address lookup table accounts.
+   *
+   * @param keys Array of lookup table addresses.
+   * @returns
+   */
+  public async fetchAdressLookupTableAccounts(
     keys?: string[] | PublicKey[],
   ): Promise<AddressLookupTableAccount[]> {
     if (!keys) {
       throw new Error("addressLookupTableAddresses is undefined");
+    }
+
+    if (keys.length === 0) {
+      return [];
     }
 
     const addressLookupTableAccountInfos =

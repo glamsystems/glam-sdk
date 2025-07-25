@@ -15,6 +15,7 @@ import {
   STAKE_ACCOUNT_SIZE,
   METEORA_DLMM_PROGRAM,
   METEORA_POSITION_SIZE,
+  ALT_PROGRAM_ID,
 } from "../constants";
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
@@ -25,6 +26,10 @@ const LOOKUP_TABLES_MAP = new Map([
   [
     "3tfbxaHBDjczQo3eyNJGGG64ChZ9nG4V3Gywa4k59d5a", // glam state
     new PublicKey("8HUXT9abWS2z3z92QyDzg51nMcc18LyWFvaEQZJMPixu"), // table pubkey
+  ],
+  [
+    "6K1wuNhcFX6yDJZaGYwQMnnf4rGuCNBTvngx5dQNNfcN", // glam state
+    new PublicKey("7xp9pQNju5H2PauapcbWLvKFQuVTYD37qDM3q5NSGDCW"), // table pubkey
   ],
 ]);
 
@@ -187,45 +192,65 @@ export const parseMeteoraPosition = async (
   };
 };
 
+export async function fetchLookTableAccount(
+  connection: Connection,
+  tablePubkey: PublicKey,
+): Promise<AddressLookupTableAccount | null> {
+  const accountInfo = await connection.getAccountInfo(tablePubkey);
+  if (accountInfo) {
+    return new AddressLookupTableAccount({
+      key: tablePubkey,
+      state: AddressLookupTableAccount.deserialize(accountInfo.data),
+    });
+  }
+  return null;
+}
+
 export async function fetchLookupTables(
   connection: Connection,
   authority: PublicKey,
-  firstEntry: PublicKey,
+  statePda: PublicKey,
 ): Promise<AddressLookupTableAccount[]> {
-  const ALT_PROGRAM_ID = new PublicKey(
-    "AddressLookupTab1e1111111111111111111111111",
-  );
+  const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+  if (glamApi) {
+    const response = await fetch(`${glamApi}/v0/lut/glam/?state=${statePda}`);
+    const data = await response.json();
+    const { t: lookupTables } = data;
 
-  const tablePubkey = LOOKUP_TABLES_MAP.get(firstEntry.toBase58());
-  if (tablePubkey) {
-    const accountInfo = await connection.getAccountInfo(tablePubkey);
-    if (accountInfo) {
-      return [
-        new AddressLookupTableAccount({
-          key: tablePubkey,
-          state: AddressLookupTableAccount.deserialize(accountInfo.data),
-        }),
-      ];
+    const pubkeys = Object.keys(lookupTables);
+    if (pubkeys.length > 0) {
+      const tablePubkey = new PublicKey(pubkeys[0]);
+      const tableAccount = await fetchLookTableAccount(connection, tablePubkey);
+      if (tableAccount) {
+        return [tableAccount];
+      }
     }
-  } else {
-    // Fetch all accounts owned by the ALT program
-    // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
-    const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
-      filters: [
-        { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
-        { memcmp: { offset: 22, bytes: authority.toBase58() } },
-        { memcmp: { offset: 56, bytes: firstEntry.toBase58() } }, // 1st entry in the table
-      ],
-    });
-    return accounts.map(
-      ({ pubkey, account }) =>
-        new AddressLookupTableAccount({
-          key: pubkey,
-          state: AddressLookupTableAccount.deserialize(account.data),
-        }),
-    );
   }
-  return [];
+
+  const tablePubkey = LOOKUP_TABLES_MAP.get(statePda.toBase58());
+  if (tablePubkey) {
+    const tableAccount = await fetchLookTableAccount(connection, tablePubkey);
+    if (tableAccount) {
+      return [tableAccount];
+    }
+  }
+
+  // Fetch all accounts owned by the ALT program
+  // This is currently disabled due to RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
+  const accounts = await connection.getProgramAccounts(ALT_PROGRAM_ID, {
+    filters: [
+      { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
+      { memcmp: { offset: 22, bytes: authority.toBase58() } },
+      { memcmp: { offset: 56, bytes: statePda.toBase58() } }, // 1st entry in the table
+    ],
+  });
+  return accounts.map(
+    ({ pubkey, account }) =>
+      new AddressLookupTableAccount({
+        key: pubkey,
+        state: AddressLookupTableAccount.deserialize(account.data),
+      }),
+  );
 }
 
 /**

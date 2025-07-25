@@ -101,7 +101,9 @@ export const KAMINO_FARM_PROGRAM = new PublicKey(
 export const MEMO_PROGRAM = new PublicKey(
   "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
 );
-
+export const ALT_PROGRAM_ID = new PublicKey(
+  "AddressLookupTab1e1111111111111111111111111",
+);
 /**
  * Stake pools
  */

@@ -31,9 +31,6 @@ import {
   KVaultStateLayout,
 } from "../deser/kaminoLayouts";
 
-const LOOKUP_TABLE = new PublicKey(
-  "284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2",
-);
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
 const EVENT_AUTHORITY = new PublicKey(
   "24tHwQyJJ9akVXxnvkekGfAoeUJXXS7mE6kQNioNySsK",
@@ -848,13 +845,7 @@ export class KaminoLendingClient {
       .postInstructions(postInstructions)
       .transaction();
 
-    const lookupTables =
-      txOptions.lookupTables ||
-      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
-    const vTx = await this.base.intoVersionedTransaction(tx, {
-      ...txOptions,
-      lookupTables,
-    });
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 
@@ -983,13 +974,7 @@ export class KaminoLendingClient {
     const tx = new Transaction();
     tx.add(...preInstructions, withdrawIx, ...postInstructions);
 
-    const lookupTables =
-      txOptions.lookupTables ||
-      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
-    const vTx = await this.base.intoVersionedTransaction(tx, {
-      ...txOptions,
-      lookupTables,
-    });
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 
@@ -1113,13 +1098,7 @@ export class KaminoLendingClient {
     const tx = new Transaction();
     tx.add(...preInstructions, borrowIx);
 
-    const lookupTables =
-      txOptions.lookupTables ||
-      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
-    const vTx = await this.base.intoVersionedTransaction(tx, {
-      ...txOptions,
-      lookupTables,
-    });
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 
@@ -1219,13 +1198,7 @@ export class KaminoLendingClient {
     const tx = new Transaction();
     tx.add(...preInstructions, repayIx);
 
-    const lookupTables =
-      txOptions.lookupTables ||
-      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
-    const vTx = await this.base.intoVersionedTransaction(tx, {
-      ...txOptions,
-      lookupTables,
-    });
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 }
@@ -1385,13 +1358,7 @@ export class KaminoFarmClient {
       }
     }
 
-    const lookupTables =
-      txOptions.lookupTables ||
-      (await this.base.fetchAdressLookupTableAccounts([LOOKUP_TABLE]));
-    const vTx = await this.base.intoVersionedTransaction(tx, {
-      ...txOptions,
-      lookupTables,
-    });
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 }
@@ -1503,7 +1470,6 @@ export class KaminoVaultsClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     const vaultState = await this.fetchAndParseVaultState(vault);
-    const amountBN = amount.mul(new BN(10).pow(vaultState.tokenMintDecimals));
     const { tokenProgram: sharesTokenProgram } =
       await this.base.fetchMintAndTokenProgram(vaultState.sharesMint);
 
@@ -1535,7 +1501,7 @@ export class KaminoVaultsClient {
     );
 
     const tx = await this.base.program.methods
-      .kaminoVaultsDeposit(amountBN)
+      .kaminoVaultsDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1578,7 +1544,6 @@ export class KaminoVaultsClient {
       vaultState.sharesMint,
       sharesTokenProgram,
     );
-    const amountBN = amount.mul(new BN(10).pow(vaultState.sharesMintDecimals));
 
     const reserves = vaultState.vaultAllocationStrategy.filter(
       ({ reserve }) => !reserve.equals(PublicKey.default),
@@ -1605,7 +1570,7 @@ export class KaminoVaultsClient {
     ];
 
     const tx = await this.base.program.methods
-      .kaminoVaultsWithdraw(amountBN)
+      .kaminoVaultsWithdraw(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
