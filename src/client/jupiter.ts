@@ -226,8 +226,8 @@ export class JupiterSwapClient {
         swapInstructions.addressLookupTableAddresses;
     }
 
-    const lookupTables = await this.base.fetchAdressLookupTableAccounts(
-      addressLookupTableAddresses,
+    const lookupTables = addressLookupTableAddresses.map(
+      (pubkey) => new PublicKey(pubkey),
     );
 
     const swapIx: { data: any; keys: AccountMeta[] } =

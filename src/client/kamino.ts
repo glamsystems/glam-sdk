@@ -1443,6 +1443,7 @@ export class KaminoVaultsClient {
 
   public async composeRemainingAccounts(
     allocationStrategies: KVaultAllocation[],
+    pricingMode: boolean = false,
   ): Promise<AccountMeta[]> {
     // For each allocation get reserve and market pubkeys
     const reserves = allocationStrategies.map((strategy) => strategy.reserve);
@@ -1459,7 +1460,15 @@ export class KaminoVaultsClient {
       isSigner: false,
       isWritable: false,
     }));
-    return [...reserveMetas, ...marketMetas];
+
+    if (pricingMode) {
+      // (market, reserve) must be paired
+      return marketMetas.reduce((acc: AccountMeta[], marketMeta, i) => {
+        acc.push(marketMeta, reserveMetas[i]);
+        return acc;
+      }, []);
+    }
+    return [...reserveMetas, ...marketMetas]; // Non pricing mode
   }
 
   public async depositTx(

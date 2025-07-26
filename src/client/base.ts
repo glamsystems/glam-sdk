@@ -28,7 +28,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
 } from "@solana/spl-token";
-import { WSOL, USDC, JITO_TIP_DEFAULT } from "../constants";
+import { WSOL, USDC, JITO_TIP_DEFAULT, ALT_PROGRAM_ID } from "../constants";
 
 import { GlamProgram, getGlamProgram } from "../glamExports";
 import { ClusterNetwork, GlamClientConfig } from "../clientConfig";
@@ -53,6 +53,13 @@ const LOOKUP_TABLES = [
   new PublicKey("EiWSskK5HXnBTptiS5DH6gpAJRVNQ3cAhTKBGaiaysAb"), // drift
 ];
 
+const STATES_LOOKUP_TABLES_MAP = new Map([
+  [
+    "3tfbxaHBDjczQo3eyNJGGG64ChZ9nG4V3Gywa4k59d5a", // glam state
+    new PublicKey("8HUXT9abWS2z3z92QyDzg51nMcc18LyWFvaEQZJMPixu"), // table pubkey
+  ],
+]);
+
 export const isBrowser =
   process.env.ANCHOR_BROWSER ||
   (typeof window !== "undefined" && !window.process?.hasOwnProperty("type"));
@@ -65,7 +72,7 @@ export type TxOptions = {
   useMaxFee?: boolean;
   jitoTipLamports?: number;
   preInstructions?: TransactionInstruction[];
-  lookupTables?: AddressLookupTableAccount[];
+  lookupTables?: PublicKey[] | AddressLookupTableAccount[];
   simulate?: boolean;
 };
 
@@ -229,6 +236,50 @@ export class BaseClient {
     ];
   }
 
+  /**
+   * Fetches lookup tables for the current GLAM instance
+   */
+  public async findLookupTables(): Promise<AddressLookupTableAccount[]> {
+    const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+    if (glamApi) {
+      const response = await fetch(
+        `${glamApi}/v0/lut/glam/?state=${this.statePda}`,
+      );
+      const data = await response.json();
+      const { t: lookupTables } = data;
+
+      const pubkeys = Object.keys(lookupTables);
+      if (pubkeys.length > 0) {
+        return await this.fetchAdressLookupTableAccounts(pubkeys);
+      }
+    }
+
+    const tablePubkey = STATES_LOOKUP_TABLES_MAP.get(this.statePda.toBase58());
+    if (tablePubkey) {
+      return await this.fetchAdressLookupTableAccounts([tablePubkey]);
+    }
+
+    // Fetch all accounts owned by the ALT program
+    // This is very likely to hit the RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
+    const accounts = await this.provider.connection.getProgramAccounts(
+      ALT_PROGRAM_ID,
+      {
+        filters: [
+          { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
+          { memcmp: { offset: 56, bytes: this.statePda.toBase58() } }, // 1st entry in the table is the state PDA
+          { memcmp: { offset: 88, bytes: this.vaultPda.toBase58() } }, // 2st entry in the table is the vault PDA
+        ],
+      },
+    );
+    return accounts.map(
+      ({ pubkey, account }) =>
+        new AddressLookupTableAccount({
+          key: pubkey,
+          state: AddressLookupTableAccount.deserialize(account.data),
+        }),
+    );
+  }
+
   public async intoVersionedTransaction(
     tx: Transaction,
     {
@@ -257,9 +308,19 @@ export class BaseClient {
       );
     }
 
-    lookupTables.push(
-      ...(await this.fetchAdressLookupTableAccounts(LOOKUP_TABLES)),
-    );
+    const lookupTableAccounts: AddressLookupTableAccount[] = [];
+    if (lookupTables.every((t) => t instanceof AddressLookupTableAccount)) {
+      const accounts = await this.fetchAdressLookupTableAccounts([
+        ...LOOKUP_TABLES,
+      ]);
+      lookupTableAccounts.push(...lookupTables, ...accounts);
+    } else {
+      const accounts = await this.fetchAdressLookupTableAccounts([
+        ...lookupTables,
+        ...LOOKUP_TABLES,
+      ]);
+      lookupTableAccounts.push(...accounts);
+    }
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
@@ -267,7 +328,7 @@ export class BaseClient {
       this.provider.connection,
       instructions,
       signer,
-      lookupTables,
+      lookupTableAccounts,
     );
     computeUnitLimit = unitsConsumed;
 
@@ -275,10 +336,6 @@ export class BaseClient {
     // - gui: wallet apps usually do the simulation themselves, we should ignore the simulation error here by default
     // - cli: we should set simulate=true
     if (error && simulate) {
-      console.log(
-        "Lookup tables:",
-        lookupTables.map((lt) => lt.key.toString()),
-      );
       console.log("Tx (base64):", serializedTx);
       console.error("Simulation failed:", error.message);
       console.error(
@@ -293,7 +350,7 @@ export class BaseClient {
           payerKey: signer,
           recentBlockhash,
           instructions,
-        }).compileToV0Message(lookupTables),
+        }).compileToV0Message(lookupTableAccounts),
       );
       const cuIxs = await this.getComputeBudgetIxs(
         vTx,
@@ -310,7 +367,7 @@ export class BaseClient {
         payerKey: signer,
         recentBlockhash,
         instructions,
-      }).compileToV0Message(lookupTables),
+      }).compileToV0Message(lookupTableAccounts),
     );
   }
 
@@ -387,27 +444,27 @@ export class BaseClient {
   /**
    * Fetches multiple address lookup table accounts.
    *
-   * @param keys Array of lookup table addresses.
+   * @param pubkeys Array of lookup table public keys.
    * @returns
    */
   public async fetchAdressLookupTableAccounts(
-    keys?: string[] | PublicKey[],
+    pubkeys?: string[] | PublicKey[],
   ): Promise<AddressLookupTableAccount[]> {
-    if (!keys) {
+    if (!pubkeys) {
       throw new Error("addressLookupTableAddresses is undefined");
     }
 
-    if (keys.length === 0) {
+    if (pubkeys.length === 0) {
       return [];
     }
 
     const addressLookupTableAccountInfos =
       await this.provider.connection.getMultipleAccountsInfo(
-        keys.map((key: string | PublicKey) => new PublicKey(key)),
+        pubkeys.map((key: string | PublicKey) => new PublicKey(key)),
       );
 
     return addressLookupTableAccountInfos.reduce((acc, accountInfo, index) => {
-      const tableAddress = keys[index];
+      const tableAddress = pubkeys[index];
       if (accountInfo) {
         const tableAccount = new AddressLookupTableAccount({
           key: new PublicKey(tableAddress),

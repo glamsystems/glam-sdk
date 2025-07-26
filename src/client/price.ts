@@ -104,12 +104,15 @@ export class PriceClient {
     const shareAtas: typeof possibleShareAtas = [];
     const shareMints: typeof allKvaultMints = [];
     const kvaultStates: typeof allKvaultStates = [];
+    const oracles: PublicKey[] = []; // oracle of kvault deposit token
     possibleShareAtaAccountsInfo.forEach((info, i) => {
       if (info !== null) {
         shareAtas.push(possibleShareAtas[i]);
         shareMints.push(allKvaultMints[i]);
         kvaultStates.push(allKvaultStates[i]);
-        // FIXME: add oracle account
+        const { tokenMint } = allKvaultStates[i];
+        const assetMeta = ASSETS_MAINNET.get(tokenMint.toBase58());
+        oracles.push(assetMeta?.oracle!);
       }
     });
     const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
@@ -118,7 +121,7 @@ export class PriceClient {
 
     // first 3N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state)
     for (let i = 0; i < shareAtas.length; i++) {
-      [shareAtas[i], shareMints[i], kvaultPdas[i]].map((pubkey) => {
+      [shareAtas[i], shareMints[i], kvaultPdas[i], oracles[i]].map((pubkey) => {
         remainingAccounts.push({
           pubkey,
           isSigner: false,
@@ -135,6 +138,7 @@ export class PriceClient {
             kvault.vaultAllocationStrategy.filter(
               (alloc) => !alloc.reserve.equals(PublicKey.default),
             ),
+            true,
           );
         }),
       )
