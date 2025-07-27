@@ -250,13 +250,13 @@ export class BaseClient {
 
       const pubkeys = Object.keys(lookupTables);
       if (pubkeys.length > 0) {
-        return await this.fetchAdressLookupTableAccounts(pubkeys);
+        return await this.fetchAddressLookupTableAccounts(pubkeys);
       }
     }
 
     const tablePubkey = STATES_LOOKUP_TABLES_MAP.get(this.statePda.toBase58());
     if (tablePubkey) {
-      return await this.fetchAdressLookupTableAccounts([tablePubkey]);
+      return await this.fetchAddressLookupTableAccounts([tablePubkey]);
     }
 
     // Fetch all accounts owned by the ALT program
@@ -310,12 +310,12 @@ export class BaseClient {
 
     const lookupTableAccounts: AddressLookupTableAccount[] = [];
     if (lookupTables.every((t) => t instanceof AddressLookupTableAccount)) {
-      const accounts = await this.fetchAdressLookupTableAccounts([
+      const accounts = await this.fetchAddressLookupTableAccounts([
         ...LOOKUP_TABLES,
       ]);
       lookupTableAccounts.push(...lookupTables, ...accounts);
     } else {
-      const accounts = await this.fetchAdressLookupTableAccounts([
+      const accounts = await this.fetchAddressLookupTableAccounts([
         ...lookupTables,
         ...LOOKUP_TABLES,
       ]);
@@ -447,7 +447,7 @@ export class BaseClient {
    * @param pubkeys Array of lookup table public keys.
    * @returns
    */
-  public async fetchAdressLookupTableAccounts(
+  public async fetchAddressLookupTableAccounts(
     pubkeys?: string[] | PublicKey[],
   ): Promise<AddressLookupTableAccount[]> {
     if (!pubkeys) {
