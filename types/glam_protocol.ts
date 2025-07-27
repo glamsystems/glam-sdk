@@ -7141,9 +7141,14 @@ export type GlamProtocol = {
     {
       "name": "priceKaminoVaultShares",
       "docs": [
+        "Price Kamino vault shares.",
+        "- `num_vaults` Number of kamino vaults to price.",
+        "",
         "Extra accounts for pricing N kamino vault shares:",
         "- (kvault_share_ata, kvault_share_mint, kvault_state, kvault_deposit_token_oracle) x N",
-        "- (lending_market, reserve) x M, M = number of unique markets used by all kvaults involved"
+        "- (lending_market, reserve) x M",
+        "- M = number of markets used by all kvaults' allocations",
+        "- Tuples must follow the same order of kvaults' allocations"
       ],
       "discriminator": [
         112,
