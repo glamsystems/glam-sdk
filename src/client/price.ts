@@ -1,4 +1,8 @@
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import {
+  AccountMeta,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 
@@ -89,7 +93,7 @@ export class PriceClient {
 
   public async priceKaminoVaultSharesIx(
     priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
+  ): Promise<TransactionInstruction[] | null> {
     const allKvaultStates = await this.kvaults.findAndParseKaminoVaults();
     const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
 
@@ -117,20 +121,19 @@ export class PriceClient {
     });
     const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
 
-    const remainingAccounts = [];
+    const remainingAccounts = [] as AccountMeta[];
 
     // first 3N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state)
     for (let i = 0; i < shareAtas.length; i++) {
       [shareAtas[i], shareMints[i], kvaultPdas[i], oracles[i]].map((pubkey) => {
         remainingAccounts.push({
-          pubkey,
+          pubkey: pubkey!,
           isSigner: false,
           isWritable: false,
         });
       });
     }
 
-    // markets and reserves
     const marketsAndReserves = (
       await Promise.all(
         kvaultStates.map((kvault) => {
@@ -143,22 +146,36 @@ export class PriceClient {
         }),
       )
     ).flat();
-    remainingAccounts.push(...marketsAndReserves);
+
+    const processed = new Set<string>();
+    const preInstructions = [];
+    const chunkSize = 2;
+    for (let i = 0; i < marketsAndReserves.length; i += chunkSize) {
+      const chunk = marketsAndReserves.slice(i, i + chunkSize);
+      const market = chunk[0].pubkey;
+      const reserve = chunk[1].pubkey;
+
+      // reserve should always be added to remaining accounts
+      remainingAccounts.push(chunk[1]);
+
+      // each reserve should only be refreshed once
+      if (!processed.has(reserve.toBase58())) {
+        const ix = this.klend.refreshReserveIxs(market, [reserve]);
+        preInstructions.push(...ix);
+        processed.add(reserve.toBase58());
+      }
+    }
 
     const priceIx = await this.base.program.methods
       .priceKaminoVaultShares(priceDenom, shareAtas.length)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
-        pythOracle: null,
-        switchboardPriceOracle: null,
-        switchboardTwapOracle: null,
-        scopePrices: KAMINO_SCOPE_PRICES,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
 
-    return priceIx;
+    return [...preInstructions, priceIx];
   }
 
   /**
@@ -422,7 +439,11 @@ export class PriceClient {
     const pricingIxs = [priceVaultIx];
     for (const fn of pricingFns) {
       const ix = await fn(priceDenom);
-      pricingIxs.push(ix);
+      if (Array.isArray(ix)) {
+        pricingIxs.push(...ix);
+      } else {
+        pricingIxs.push(ix);
+      }
     }
     return pricingIxs.filter(Boolean);
   }

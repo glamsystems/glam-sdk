@@ -7140,9 +7140,9 @@
         "",
         "Extra accounts for pricing N kamino vault shares:",
         "- (kvault_share_ata, kvault_share_mint, kvault_state, kvault_deposit_token_oracle) x N",
-        "- (lending_market, reserve) x M",
-        "- M = number of markets used by all kvaults' allocations",
-        "- Tuples must follow the same order of kvaults' allocations"
+        "- reserve x M",
+        "- M = number of reserves used by all kvaults' allocations",
+        "- reserve pubkeys must follow the same order of reserves used by each allocation"
       ],
       "discriminator": [
         112,
@@ -7184,10 +7184,6 @@
           "name": "signer",
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "kamino_lending_program",
-          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "sol_oracle"
@@ -7253,22 +7249,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "pyth_oracle",
-          "optional": true
-        },
-        {
-          "name": "switchboard_price_oracle",
-          "optional": true
-        },
-        {
-          "name": "switchboard_twap_oracle",
-          "optional": true
-        },
-        {
-          "name": "scope_prices",
-          "optional": true
         }
       ],
       "args": [

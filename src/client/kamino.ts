@@ -1445,11 +1445,7 @@ export class KaminoVaultsClient {
     allocationStrategies: KVaultAllocation[],
     pricingMode: boolean = false,
   ): Promise<AccountMeta[]> {
-    // Iterate over allocation strategies and get reserve pubkeys, using a Set to avoid dupes
-    const reservesSet = new Set(
-      allocationStrategies.map((strategy) => strategy.reserve.toBase58()),
-    );
-    const reserves = Array.from(reservesSet).map((p) => new PublicKey(p));
+    const reserves = allocationStrategies.map((strategy) => strategy.reserve);
     const parsedReserves =
       await this.kaminoLending.fetchAndParseReserves(reserves);
 

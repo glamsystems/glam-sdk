@@ -7146,9 +7146,9 @@ export type GlamProtocol = {
         "",
         "Extra accounts for pricing N kamino vault shares:",
         "- (kvault_share_ata, kvault_share_mint, kvault_state, kvault_deposit_token_oracle) x N",
-        "- (lending_market, reserve) x M",
-        "- M = number of markets used by all kvaults' allocations",
-        "- Tuples must follow the same order of kvaults' allocations"
+        "- reserve x M",
+        "- M = number of reserves used by all kvaults' allocations",
+        "- reserve pubkeys must follow the same order of reserves used by each allocation"
       ],
       "discriminator": [
         112,
@@ -7190,10 +7190,6 @@ export type GlamProtocol = {
           "name": "signer",
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "kaminoLendingProgram",
-          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "solOracle"
@@ -7259,22 +7255,6 @@ export type GlamProtocol = {
               ]
             }
           }
-        },
-        {
-          "name": "pythOracle",
-          "optional": true
-        },
-        {
-          "name": "switchboardPriceOracle",
-          "optional": true
-        },
-        {
-          "name": "switchboardTwapOracle",
-          "optional": true
-        },
-        {
-          "name": "scopePrices",
-          "optional": true
         }
       ],
       "args": [
