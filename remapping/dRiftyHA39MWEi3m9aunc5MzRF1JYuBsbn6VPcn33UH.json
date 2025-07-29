@@ -465,6 +465,61 @@
       ]
     },
     {
+      "src_ix_name": "update_user_pool_id",
+      "src_discriminator": [
+        219,
+        86,
+        73,
+        106,
+        56,
+        218,
+        128,
+        109
+      ],
+      "dst_ix_name": "drift_update_user_pool_id",
+      "dst_discriminator": [
+        44,
+        176,
+        143,
+        200,
+        153,
+        248,
+        221,
+        218
+      ],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpi_program",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "static_accounts": [],
+      "index_map": [
+        4,
+        -1
+      ]
+    },
+    {
       "src_ix_name": "delete_user",
       "src_discriminator": [
         186,
