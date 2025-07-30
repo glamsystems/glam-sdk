@@ -148,7 +148,8 @@ export class PriceClient {
     ).flat();
 
     const processed = new Set<string>();
-    const preInstructions = [];
+    const reserves = [] as PublicKey[];
+    const markets = [] as PublicKey[];
     const chunkSize = 2;
     for (let i = 0; i < marketsAndReserves.length; i += chunkSize) {
       const chunk = marketsAndReserves.slice(i, i + chunkSize);
@@ -158,13 +159,20 @@ export class PriceClient {
       // reserve should always be added to remaining accounts
       remainingAccounts.push(chunk[1]);
 
-      // each reserve should only be refreshed once
+      // record reserves and markets for refreshReservesBatchIx
       if (!processed.has(reserve.toBase58())) {
-        const ix = this.klend.refreshReserveIxs(market, [reserve]);
-        preInstructions.push(...ix);
+        reserves.push(reserve);
+        markets.push(market);
         processed.add(reserve.toBase58());
       }
     }
+
+    const refreshReservesIx = this.klend.refreshReservesBatchIx(
+      reserves,
+      markets,
+      false, // always update prices
+    );
+    const preInstructions = [refreshReservesIx];
 
     const priceIx = await this.base.program.methods
       .priceKaminoVaultShares(priceDenom, shareAtas.length)
@@ -388,12 +396,12 @@ export class PriceClient {
     const integrationsToPricingFns: {
       [key: string]: (priceDenom: PriceDenom) => Promise<any>;
     } = {
-      // drift: this.priceDriftUsersIx.bind(this),
-      // kaminoLending: this.priceKaminoObligationsIx.bind(this),
-      // nativeStaking: this.priceStakesIx.bind(this),
-      // meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
+      drift: this.priceDriftUsersIx.bind(this),
+      kaminoLending: this.priceKaminoObligationsIx.bind(this),
+      nativeStaking: this.priceStakesIx.bind(this),
+      meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
       driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
-      // kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
+      kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
     };
 
     const pricingFns = integrations

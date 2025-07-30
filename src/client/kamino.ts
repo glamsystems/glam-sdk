@@ -70,105 +70,6 @@ interface RefreshObligationFarmsForReserveAccounts {
   systemProgram: PublicKey;
 }
 
-function refreshObligation(
-  accounts: RefreshObligationAccounts,
-  programId: PublicKey = KAMINO_LENDING_PROGRAM,
-) {
-  const keys: Array<AccountMeta> = [
-    { pubkey: accounts.lendingMarket, isSigner: false, isWritable: false },
-    { pubkey: accounts.obligation, isSigner: false, isWritable: true },
-  ];
-  accounts.reserves.forEach((reserve) => {
-    keys.push({ pubkey: reserve, isSigner: false, isWritable: false });
-  });
-
-  const identifier = Buffer.from([33, 132, 147, 228, 151, 192, 72, 89]);
-  const data = identifier;
-  const ix = new TransactionInstruction({ keys, programId, data });
-  return ix;
-}
-
-function refreshReserve(
-  accounts: RefreshReserveAccounts,
-  programId: PublicKey = KAMINO_LENDING_PROGRAM,
-) {
-  const keys: Array<AccountMeta> = [
-    { pubkey: accounts.reserve, isSigner: false, isWritable: true },
-    { pubkey: accounts.lendingMarket, isSigner: false, isWritable: false },
-    { pubkey: accounts.pythOracle, isSigner: false, isWritable: false },
-    {
-      pubkey: accounts.switchboardPriceOracle,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: accounts.switchboardTwapOracle,
-      isSigner: false,
-      isWritable: false,
-    },
-    { pubkey: accounts.scopePrices, isSigner: false, isWritable: false },
-  ];
-  const identifier = Buffer.from([2, 218, 138, 235, 79, 201, 25, 102]);
-  const data = identifier;
-  const ix = new TransactionInstruction({ keys, programId, data });
-  return ix;
-}
-
-function refreshObligationFarmsForReserve(
-  args: RefreshObligationFarmsForReserveArgs,
-  accounts: RefreshObligationFarmsForReserveAccounts,
-  programId: PublicKey = KAMINO_LENDING_PROGRAM,
-) {
-  const keys: Array<AccountMeta> = [
-    { pubkey: accounts.crank, isSigner: true, isWritable: false },
-    {
-      pubkey: accounts.baseAccounts.obligation,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: accounts.baseAccounts.lendingMarketAuthority,
-      isSigner: false,
-      isWritable: true,
-    },
-    {
-      pubkey: accounts.baseAccounts.reserve,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: accounts.baseAccounts.reserveFarmState,
-      isSigner: false,
-      isWritable: true,
-    },
-    {
-      pubkey: accounts.baseAccounts.obligationFarmUserState,
-      isSigner: false,
-      isWritable: true,
-    },
-    {
-      pubkey: accounts.baseAccounts.lendingMarket,
-      isSigner: false,
-      isWritable: false,
-    },
-    { pubkey: accounts.farmsProgram, isSigner: false, isWritable: false },
-    { pubkey: accounts.rent, isSigner: false, isWritable: false },
-    { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
-  ];
-  const identifier = Buffer.from([140, 144, 253, 21, 10, 74, 248, 3]);
-  const buffer = Buffer.alloc(1000);
-  const layout = borsh.struct([borsh.u8("mode")]);
-  const len = layout.encode(
-    {
-      mode: args.mode,
-    },
-    buffer,
-  );
-  const data = Buffer.concat([identifier, buffer]).subarray(0, 8 + len);
-  const ix = new TransactionInstruction({ keys, programId, data });
-  return ix;
-}
-
 interface ParsedReserve {
   address: PublicKey;
   market: PublicKey;
@@ -341,9 +242,133 @@ export class KaminoLendingClient {
     return obligationFarm;
   }
 
+  refreshObligationIx(
+    accounts: RefreshObligationAccounts,
+    programId: PublicKey = KAMINO_LENDING_PROGRAM,
+  ) {
+    const keys: Array<AccountMeta> = [
+      { pubkey: accounts.lendingMarket, isSigner: false, isWritable: false },
+      { pubkey: accounts.obligation, isSigner: false, isWritable: true },
+    ];
+    accounts.reserves.forEach((reserve) => {
+      keys.push({ pubkey: reserve, isSigner: false, isWritable: false });
+    });
+
+    const identifier = Buffer.from([33, 132, 147, 228, 151, 192, 72, 89]);
+    const data = identifier;
+    return new TransactionInstruction({ keys, programId, data });
+  }
+
+  refreshReserveIx(
+    accounts: RefreshReserveAccounts,
+    programId: PublicKey = KAMINO_LENDING_PROGRAM,
+  ) {
+    const keys: Array<AccountMeta> = [
+      { pubkey: accounts.reserve, isSigner: false, isWritable: true },
+      { pubkey: accounts.lendingMarket, isSigner: false, isWritable: false },
+      { pubkey: accounts.pythOracle, isSigner: false, isWritable: false },
+      {
+        pubkey: accounts.switchboardPriceOracle,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: accounts.switchboardTwapOracle,
+        isSigner: false,
+        isWritable: false,
+      },
+      { pubkey: accounts.scopePrices, isSigner: false, isWritable: false },
+    ];
+    const identifier = Buffer.from([2, 218, 138, 235, 79, 201, 25, 102]);
+    const data = identifier;
+    return new TransactionInstruction({ keys, programId, data });
+  }
+
+  refreshObligationFarmsForReserveIx(
+    args: RefreshObligationFarmsForReserveArgs,
+    accounts: RefreshObligationFarmsForReserveAccounts,
+    programId: PublicKey = KAMINO_LENDING_PROGRAM,
+  ) {
+    const keys: Array<AccountMeta> = [
+      { pubkey: accounts.crank, isSigner: true, isWritable: false },
+      {
+        pubkey: accounts.baseAccounts.obligation,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: accounts.baseAccounts.lendingMarketAuthority,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: accounts.baseAccounts.reserve,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: accounts.baseAccounts.reserveFarmState,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: accounts.baseAccounts.obligationFarmUserState,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: accounts.baseAccounts.lendingMarket,
+        isSigner: false,
+        isWritable: false,
+      },
+      { pubkey: accounts.farmsProgram, isSigner: false, isWritable: false },
+      { pubkey: accounts.rent, isSigner: false, isWritable: false },
+      { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
+    ];
+    const identifier = Buffer.from([140, 144, 253, 21, 10, 74, 248, 3]);
+    const buffer = Buffer.alloc(1000);
+    const layout = borsh.struct([borsh.u8("mode")]);
+    const len = layout.encode({ mode: args.mode }, buffer);
+    const data = Buffer.concat([identifier, buffer]).subarray(0, 8 + len);
+    return new TransactionInstruction({ keys, programId, data });
+  }
+
+  refreshReservesBatchIx(
+    reserves: PublicKey[],
+    lendingMarkets: PublicKey[],
+    skipPriceUpdates: boolean,
+    programId: PublicKey = KAMINO_LENDING_PROGRAM,
+  ) {
+    const keys: Array<AccountMeta> = [];
+    for (let i = 0; i < reserves.length; i++) {
+      keys.push({ pubkey: reserves[i], isSigner: false, isWritable: false });
+      keys.push({
+        pubkey: lendingMarkets[i],
+        isSigner: false,
+        isWritable: true,
+      });
+      if (!skipPriceUpdates) {
+        [
+          KAMINO_LENDING_PROGRAM, // pyth oracle, null
+          KAMINO_LENDING_PROGRAM, // switchboard price oracle, null
+          KAMINO_LENDING_PROGRAM, // switchboard twap oracle, null
+          KAMINO_SCOPE_PRICES,
+        ].forEach((p) =>
+          keys.push({ pubkey: p, isSigner: false, isWritable: false }),
+        );
+      }
+    }
+    const identifier = Buffer.from([144, 110, 26, 103, 162, 204, 252, 147]);
+    const buffer = Buffer.alloc(1000);
+    const layout = borsh.struct([borsh.bool("skipPriceUpdates")]);
+    const len = layout.encode({ skipPriceUpdates }, buffer);
+    const data = Buffer.concat([identifier, buffer]).subarray(0, 8 + len);
+    return new TransactionInstruction({ keys, programId, data });
+  }
+
   refreshReserveIxs(lendingMarket: PublicKey, reserves: PublicKey[]) {
     return reserves.map((reserve) =>
-      refreshReserve({
+      this.refreshReserveIx({
         reserve,
         lendingMarket,
         pythOracle: KAMINO_LENDING_PROGRAM,
@@ -369,7 +394,7 @@ export class KaminoLendingClient {
               obligation,
               farm,
             );
-            return refreshObligationFarmsForReserve(
+            return this.refreshObligationFarmsForReserveIx(
               { mode: 0 },
               {
                 crank: this.base.getSigner(), // Must be signer
@@ -407,7 +432,7 @@ export class KaminoLendingClient {
               obligation,
               farm,
             );
-            return refreshObligationFarmsForReserve(
+            return this.refreshObligationFarmsForReserveIx(
               { mode: 0 },
               {
                 crank: this.base.getSigner(), // Must be signer
@@ -779,7 +804,7 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation({
+      this.refreshObligationIx({
         lendingMarket: market,
         obligation,
         reserves: reservesInUse,
@@ -912,7 +937,7 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation({
+      this.refreshObligationIx({
         lendingMarket: market,
         obligation,
         reserves: reservesInUse,
@@ -1041,7 +1066,7 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation({
+      this.refreshObligationIx({
         lendingMarket: market,
         obligation,
         reserves: reservesInUse,
@@ -1164,7 +1189,7 @@ export class KaminoLendingClient {
 
     // Refresh obligation with reserves in use
     preInstructions.push(
-      refreshObligation({
+      this.refreshObligationIx({
         lendingMarket: market,
         obligation,
         reserves: reservesInUse,
