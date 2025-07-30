@@ -260,6 +260,14 @@
           "signer": false
         }
       ],
+      "static_accounts": [
+        {
+          "account": "11111111111111111111111111111111",
+          "index": 7,
+          "writable": false,
+          "signer": false
+        }
+      ],
       "index_map": [
         4,
         -1,

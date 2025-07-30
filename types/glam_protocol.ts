@@ -9577,6 +9577,10 @@ export type GlamProtocol = {
         {
           "name": "stakeHistory",
           "address": "SysvarStakeHistory1111111111111111111111111"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
