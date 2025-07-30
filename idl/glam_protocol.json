@@ -6868,7 +6868,9 @@
       "docs": [
         "Extra accounts for pricing N vault depositors:",
         "- (vault_depositor, drift_vault, drift_user) x N",
-        "- markets and oracles used by all drift users (no specific order)"
+        "- spot_market used by drift users of vaults (no specific order)",
+        "- perp markets used by drift users of vaults (no specific order)",
+        "- oracles of spot markets and perp markets (no specific order)"
       ],
       "discriminator": [
         234,
@@ -6988,6 +6990,14 @@
         },
         {
           "name": "num_vault_depositors",
+          "type": "u8"
+        },
+        {
+          "name": "num_spot_markets",
+          "type": "u8"
+        },
+        {
+          "name": "num_perp_markets",
           "type": "u8"
         }
       ]

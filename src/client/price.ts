@@ -271,54 +271,18 @@ export class PriceClient {
       return null;
     }
 
-    // For each vault deposit, we need the following pubkeys in remaining accounts:
-    // - depositor
-    // - drift vault
-    // - drift user of the vault
-    // - oracles
-    // - spot & perp markets
-    // There might be overlaps between markets and oracles so we use a set to avoid duplicates
-
-    const remainingAccounts = [];
-    const marketsAndOracles = new Set<string>();
-    for (const depositor of parsedVaultDepositors) {
-      const { user: driftUser } = await this.dvaults.parseDriftVault(
-        depositor.driftVault,
+    const { remainingAccounts, numSpotMarkets, numPerpMarkets } =
+      await this.remainingAccountsForPricingDriftVaultDepositors(
+        parsedVaultDepositors,
       );
-      remainingAccounts.push({
-        pubkey: depositor.address,
-        isSigner: false,
-        isWritable: false,
-      });
-      remainingAccounts.push({
-        pubkey: depositor.driftVault,
-        isSigner: false,
-        isWritable: false,
-      });
-      remainingAccounts.push({
-        pubkey: driftUser,
-        isSigner: false,
-        isWritable: false,
-      });
-
-      const markets_and_oracles = (
-        await this.dvaults.composeRemainingAccounts(driftUser)
-      ).map((a) => a.pubkey.toBase58());
-      for (const k of markets_and_oracles) {
-        marketsAndOracles.add(k);
-      }
-    }
-
-    Array.from(marketsAndOracles).forEach((k) =>
-      remainingAccounts.push({
-        pubkey: new PublicKey(k),
-        isSigner: false,
-        isWritable: false,
-      }),
-    );
 
     const priceIx = await this.base.program.methods
-      .priceDriftVaultDepositors(priceDenom, parsedVaultDepositors.length)
+      .priceDriftVaultDepositors(
+        priceDenom,
+        parsedVaultDepositors.length,
+        numSpotMarkets,
+        numPerpMarkets,
+      )
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
@@ -424,12 +388,12 @@ export class PriceClient {
     const integrationsToPricingFns: {
       [key: string]: (priceDenom: PriceDenom) => Promise<any>;
     } = {
-      drift: this.priceDriftUsersIx.bind(this),
-      kaminoLending: this.priceKaminoObligationsIx.bind(this),
-      nativeStaking: this.priceStakesIx.bind(this),
-      meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
+      // drift: this.priceDriftUsersIx.bind(this),
+      // kaminoLending: this.priceKaminoObligationsIx.bind(this),
+      // nativeStaking: this.priceStakesIx.bind(this),
+      // meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
       driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
-      kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
+      // kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
     };
 
     const pricingFns = integrations
@@ -448,7 +412,77 @@ export class PriceClient {
     return pricingIxs.filter(Boolean);
   }
 
-  remainingAccountsForPricingMeteora = async () => {
+  async remainingAccountsForPricingDriftVaultDepositors(
+    parsedVaultDepositors: {
+      address: PublicKey;
+      driftVault: PublicKey;
+      shares: any;
+    }[],
+  ): Promise<{
+    remainingAccounts: AccountMeta[];
+    numSpotMarkets: number;
+    numPerpMarkets: number;
+  }> {
+    // Extra accounts for pricing N vault depositors:
+    // - (vault_depositor, drift_vault, drift_user) x N
+    // - spot_market used by drift users of vaults (no specific order)
+    // - perp markets used by drift users of vaults (no specific order)
+    // - oracles of spot markets and perp markets (no specific order)
+    const remainingAccounts: AccountMeta[] = [];
+    const spotMarketsSet = new Set<string>();
+    const perpMarketsSet = new Set<string>();
+    const oraclesSet = new Set<string>();
+    for (const { address: depositor, driftVault } of parsedVaultDepositors) {
+      const { user } = await this.dvaults.parseDriftVault(driftVault); // get drift user used by the vault
+      [depositor, driftVault, user].forEach((k) =>
+        remainingAccounts.push({
+          pubkey: k,
+          isSigner: false,
+          isWritable: false,
+        }),
+      );
+
+      const { spotPositions, perpPositions } =
+        await this.dvaults.fetchUserPositions(user);
+      const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
+      const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
+
+      // If there are perp positions, add spot market 0 as it's used as quote market for perp
+      if (perpMarketIndexes.length > 0 && !spotMarketIndexes.includes(0)) {
+        spotMarketIndexes.push(0);
+      }
+
+      const spotMarkets =
+        await this.drift.fetchAndParseSpotMarkets(spotMarketIndexes);
+      const perpMarkets =
+        await this.drift.fetchAndParsePerpMarkets(perpMarketIndexes);
+
+      spotMarkets.forEach((m) => {
+        oraclesSet.add(m.oracle.toBase58());
+        spotMarketsSet.add(m.marketPda.toBase58());
+      });
+      perpMarkets.forEach((m) => {
+        oraclesSet.add(m.oracle.toBase58());
+        perpMarketsSet.add(m.marketPda.toBase58());
+      });
+    }
+
+    [...spotMarketsSet, ...perpMarketsSet, ...oraclesSet].forEach((k) =>
+      remainingAccounts.push({
+        pubkey: new PublicKey(k),
+        isSigner: false,
+        isWritable: false,
+      }),
+    );
+
+    return {
+      remainingAccounts,
+      numSpotMarkets: spotMarketsSet.size,
+      numPerpMarkets: perpMarketsSet.size,
+    };
+  }
+
+  async remainingAccountsForPricingMeteora(): Promise<AccountMeta[]> {
     const positions = await fetchMeteoraPositions(
       this.base.provider.connection,
       this.base.vaultPda,
@@ -474,11 +508,11 @@ export class PriceClient {
       }),
     );
     return chunks.flat();
-  };
+  }
 
-  remainingAccountsForPricingVaultAssets = async (
+  async remainingAccountsForPricingVaultAssets(
     baseAssetOnly: boolean = false,
-  ) => {
+  ): Promise<AccountMeta[]> {
     const stateModel = await this.base.fetchStateModel();
     if (baseAssetOnly) {
       if (!stateModel.baseAsset) {
@@ -512,5 +546,5 @@ export class PriceClient {
         isSigner: false,
         isWritable: false,
       }));
-  };
+  }
 }

@@ -6874,7 +6874,9 @@ export type GlamProtocol = {
       "docs": [
         "Extra accounts for pricing N vault depositors:",
         "- (vault_depositor, drift_vault, drift_user) x N",
-        "- markets and oracles used by all drift users (no specific order)"
+        "- spot_market used by drift users of vaults (no specific order)",
+        "- perp markets used by drift users of vaults (no specific order)",
+        "- oracles of spot markets and perp markets (no specific order)"
       ],
       "discriminator": [
         234,
@@ -6994,6 +6996,14 @@ export type GlamProtocol = {
         },
         {
           "name": "numVaultDepositors",
+          "type": "u8"
+        },
+        {
+          "name": "numSpotMarkets",
+          "type": "u8"
+        },
+        {
+          "name": "numPerpMarkets",
           "type": "u8"
         }
       ]
