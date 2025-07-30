@@ -28,13 +28,13 @@
         {
           "name": "glam_state",
           "index": 0,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
           "name": "glam_vault",
           "index": 1,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
@@ -94,13 +94,13 @@
         {
           "name": "glam_state",
           "index": 0,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
           "name": "glam_vault",
           "index": 1,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
