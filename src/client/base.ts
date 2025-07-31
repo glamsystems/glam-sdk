@@ -321,6 +321,24 @@ export class BaseClient {
       ]);
       lookupTableAccounts.push(...accounts);
     }
+    const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+    if (glamApi) {
+      try {
+        const response = await fetch(
+          `${glamApi}/v0/lut/glam/?state=${this.statePda}`,
+        );
+        const data = await response.json();
+        const { t: lookupTables } = data;
+
+        const pubkeys = Object.keys(lookupTables);
+        if (pubkeys.length > 0) {
+          const accounts = await this.fetchAddressLookupTableAccounts(pubkeys);
+          lookupTableAccounts.push(...accounts);
+        }
+      } catch (e) {
+        console.error("Failed to fetch lookup tables:", e); // Fail open
+      }
+    }
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
