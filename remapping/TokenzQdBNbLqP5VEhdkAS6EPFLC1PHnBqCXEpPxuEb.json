@@ -117,7 +117,7 @@
         {
           "name": "glam_state",
           "index": 0,
-          "writable": false,
+          "writable": true,
           "signer": false
         },
         {
