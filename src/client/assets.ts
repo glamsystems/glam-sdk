@@ -34,7 +34,8 @@ STAKE_POOLS.push({
   symbol: "PSOL",
   mint: "pSo1f9nQXWgXibFtKf7NWYxb5enAM4qfP6UJSiXRQfL",
   decimals: 9,
-  logoURI: "https://assets.phantom.app/assets/metadata/PSOL-512.png",
+  logoURI:
+    "https://coin-images.coingecko.com/coins/images/55849/large/PSOL.png",
   tokenProgram: TOKEN_PROGRAM_ID,
   poolState: new PublicKey("pSPcvR8GmG9aKDUbn9nbKYjkxt9hxMS7kF1qqKJaPqJ"),
 });
