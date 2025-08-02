@@ -126,6 +126,14 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
+    // USDG
+    "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+    {
+      decimals: 6,
+      oracle: new PublicKey("6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s"),
+    },
+  ],
+  [
     // PYUSD
     "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
     {
