@@ -131,6 +131,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 6,
       oracle: new PublicKey("6JkZmXGgWnzsyTQaqRARzP64iFYnpMNT4siiuUDUaB8s"),
+      programId: TOKEN_2022_PROGRAM_ID,
     },
   ],
   [

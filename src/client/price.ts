@@ -14,11 +14,13 @@ import {
   fetchMeteoraPositions,
   parseMeteoraPosition,
 } from "../utils/helpers";
-import { PriceDenom } from "../models";
+import { PriceDenom, StateModel } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
 import { DriftClient, DriftUser, DriftVaultsClient } from "./drift";
 
 export class PriceClient {
+  private _stateModel: StateModel | null = null;
+
   public constructor(
     readonly base: BaseClient,
     readonly klend: KaminoLendingClient,
@@ -26,6 +28,17 @@ export class PriceClient {
     readonly drift: DriftClient,
     readonly dvaults: DriftVaultsClient,
   ) {}
+
+  get stateModel() {
+    if (!this._stateModel) {
+      throw new Error("State model not cached");
+    }
+    return this._stateModel;
+  }
+
+  set stateModel(stateModel: StateModel) {
+    this._stateModel = stateModel;
+  }
 
   /**
    * !! This is a convenience method that calculates the AUM of the vault based on priced assets.
@@ -97,10 +110,11 @@ export class PriceClient {
     const allKvaultStates = await this.kvaults.findAndParseKaminoVaults();
     const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
 
-    // All share token accounts GLAM vault could possibly hold
+    // All kvaut share token accounts GLAM vault could possibly hold
     const possibleShareAtas = allKvaultMints.map((mint) =>
       this.base.getVaultAta(mint),
     );
+
     const possibleShareAtaAccountsInfo =
       await this.base.provider.connection.getMultipleAccountsInfo(
         possibleShareAtas,
@@ -110,7 +124,14 @@ export class PriceClient {
     const kvaultStates: typeof allKvaultStates = [];
     const oracles: PublicKey[] = []; // oracle of kvault deposit token
     possibleShareAtaAccountsInfo.forEach((info, i) => {
-      if (info !== null) {
+      // share ata must exist and it must be tracked by glam state
+      // otherwise skip it for pricing
+      if (
+        info !== null &&
+        this.stateModel.externalVaultAccounts?.find((a) =>
+          a.equals(possibleShareAtas[i]),
+        )
+      ) {
         shareAtas.push(possibleShareAtas[i]);
         shareMints.push(allKvaultMints[i]);
         kvaultStates.push(allKvaultStates[i]);
@@ -308,6 +329,7 @@ export class PriceClient {
     const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
       priceDenom == PriceDenom.ASSET,
     );
+
     const priceVaultIx = await this.base.program.methods
       .priceVaultTokens(priceDenom)
       .accounts({
@@ -386,7 +408,8 @@ export class PriceClient {
 
     // If there are no external assets, we don't need to price DeFi positions
     const stateModel = await this.base.fetchStateModel();
-    if ((stateModel.externalVaultAccounts || []).length === 0) {
+    this.stateModel = stateModel;
+    if ((this.stateModel.externalVaultAccounts || []).length === 0) {
       return [priceVaultIx];
     }
 
