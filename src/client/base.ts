@@ -53,13 +53,6 @@ const LOOKUP_TABLES = [
   new PublicKey("EiWSskK5HXnBTptiS5DH6gpAJRVNQ3cAhTKBGaiaysAb"), // drift
 ];
 
-const STATES_LOOKUP_TABLES_MAP = new Map([
-  [
-    "3tfbxaHBDjczQo3eyNJGGG64ChZ9nG4V3Gywa4k59d5a", // glam state
-    new PublicKey("8HUXT9abWS2z3z92QyDzg51nMcc18LyWFvaEQZJMPixu"), // table pubkey
-  ],
-]);
-
 export const isBrowser =
   process.env.ANCHOR_BROWSER ||
   (typeof window !== "undefined" && !window.process?.hasOwnProperty("type"));
@@ -248,15 +241,17 @@ export class BaseClient {
       const data = await response.json();
       const { t: lookupTables } = data;
 
-      const pubkeys = Object.keys(lookupTables);
-      if (pubkeys.length > 0) {
-        return await this.fetchAddressLookupTableAccounts(pubkeys);
+      const lookupTableAccounts: AddressLookupTableAccount[] = [];
+      for (const [key, lookupTableData] of Object.entries(lookupTables)) {
+        const account = new AddressLookupTableAccount({
+          key: new PublicKey(key),
+          state: AddressLookupTableAccount.deserialize(
+            new Uint8Array(Buffer.from(lookupTableData as string, "base64")),
+          ),
+        });
+        lookupTableAccounts.push(account);
       }
-    }
-
-    const tablePubkey = STATES_LOOKUP_TABLES_MAP.get(this.statePda.toBase58());
-    if (tablePubkey) {
-      return await this.fetchAddressLookupTableAccounts([tablePubkey]);
+      return lookupTableAccounts;
     }
 
     // Fetch all accounts owned by the ALT program
@@ -330,10 +325,14 @@ export class BaseClient {
         const data = await response.json();
         const { t: lookupTables } = data;
 
-        const pubkeys = Object.keys(lookupTables);
-        if (pubkeys.length > 0) {
-          const accounts = await this.fetchAddressLookupTableAccounts(pubkeys);
-          lookupTableAccounts.push(...accounts);
+        for (const [key, lookupTableData] of Object.entries(lookupTables)) {
+          const account = new AddressLookupTableAccount({
+            key: new PublicKey(key),
+            state: AddressLookupTableAccount.deserialize(
+              new Uint8Array(Buffer.from(lookupTableData as string, "base64")),
+            ),
+          });
+          lookupTableAccounts.push(account);
         }
       } catch (e) {
         console.error("Failed to fetch lookup tables:", e); // Fail open

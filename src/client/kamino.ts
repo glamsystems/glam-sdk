@@ -1443,14 +1443,14 @@ export class KaminoVaultsClient {
     });
   }
 
-  async getVaultPdasByShareMints(mints: PublicKey[]) {
+  async getVaultPdasByShareMints(mints: PublicKey[]): Promise<PublicKey[]> {
     if (this.vaultStates.size === 0) {
       await this.findAndParseKaminoVaults();
     }
 
-    return mints.map((mint) =>
-      this.shareMintToVaultPdaMap.get(mint.toBase58()),
-    );
+    return mints
+      .map((mint) => this.shareMintToVaultPdaMap.get(mint.toBase58()))
+      .filter((p) => !!p);
   }
 
   async fetchAndParseVaultState(vault: PublicKey) {

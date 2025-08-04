@@ -640,6 +640,16 @@ export class PriceDenom {
     }
     return PriceDenom.ASSET;
   }
+
+  static fromString(str: string) {
+    if (str === "SOL") {
+      return PriceDenom.SOL;
+    }
+    if (str === "USD") {
+      return PriceDenom.USD;
+    }
+    throw new Error("Invalid price denomination");
+  }
 }
 
 export class TimeUnit {

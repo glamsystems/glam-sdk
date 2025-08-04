@@ -20,6 +20,8 @@ import { DriftClient, DriftUser, DriftVaultsClient } from "./drift";
 
 export class PriceClient {
   private _stateModel: StateModel | null = null;
+  private _lookupTables = new Set<string>();
+  private _kaminoVaults = new Set<string>();
 
   public constructor(
     readonly base: BaseClient,
@@ -38,6 +40,14 @@ export class PriceClient {
 
   set stateModel(stateModel: StateModel) {
     this._stateModel = stateModel;
+  }
+
+  get lookupTables() {
+    return Array.from(this._lookupTables).map((k) => new PublicKey(k));
+  }
+
+  get kaminoVaults() {
+    return Array.from(this._kaminoVaults).map((k) => new PublicKey(k));
   }
 
   /**
@@ -135,12 +145,19 @@ export class PriceClient {
         shareAtas.push(possibleShareAtas[i]);
         shareMints.push(allKvaultMints[i]);
         kvaultStates.push(allKvaultStates[i]);
-        const { tokenMint } = allKvaultStates[i];
+
+        // get oracle and lookup table from kvault state
+        const { tokenMint, vaultLookupTable } = allKvaultStates[i];
         const assetMeta = ASSETS_MAINNET.get(tokenMint.toBase58());
-        oracles.push(assetMeta?.oracle!);
+        if (!assetMeta || !assetMeta.oracle) {
+          throw new Error(`Oracle unavailable for asset ${tokenMint}`);
+        }
+        oracles.push(assetMeta.oracle);
+        this._lookupTables.add(vaultLookupTable.toBase58()); // cache lookup table
       }
     });
     const kvaultPdas = await this.kvaults.getVaultPdasByShareMints(shareMints);
+    kvaultPdas.forEach((p) => this._kaminoVaults.add(p.toBase58())); // cache kvault keys
 
     const remainingAccounts = [] as AccountMeta[];
 
