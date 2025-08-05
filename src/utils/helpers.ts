@@ -10,6 +10,7 @@ import {
   SimulatedTransactionResponse,
   StakeProgram,
   ParsedAccountData,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import {
   STAKE_ACCOUNT_SIZE,
@@ -19,6 +20,13 @@ import {
 import { binIdToBinArrayIndex, deriveBinArray } from "@meteora-ag/dlmm";
 import { BN } from "@coral-xyz/anchor";
 import { GlamProtocolIdlJson } from "../glamExports";
+import { type TokenAccount } from "../client/base";
+import {
+  AccountLayout,
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  unpackMint,
+} from "@solana/spl-token";
 
 export type StakeAccountInfo = {
   address: PublicKey;
@@ -26,6 +34,88 @@ export type StakeAccountInfo = {
   state: string;
   voter?: PublicKey; // if undefined, the stake account is not delegated
 };
+
+/**
+ * Fetches all the token accounts owned by the specified pubkey.
+ */
+export async function getTokenAccountsByOwner(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<TokenAccount[]> {
+  const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
+    programId: TOKEN_PROGRAM_ID,
+  });
+  const token2022Accounts = await connection.getTokenAccountsByOwner(owner, {
+    programId: TOKEN_2022_PROGRAM_ID,
+  });
+
+  const mintPubkeys = [] as PublicKey[];
+  const parseTokenAccountInfo = (pubkey: PublicKey, account: any) => {
+    const { mint, amount, state } = AccountLayout.decode(account.data);
+    mintPubkeys.push(mint);
+    return {
+      owner,
+      pubkey,
+      mint,
+      amount: amount.toString(),
+      frozen: state !== 1,
+    };
+  };
+
+  // Parse token accounts
+  const partialTokenAccounts = tokenAccounts.value
+    .map(({ pubkey, account }) => ({
+      ...parseTokenAccountInfo(pubkey, account),
+      programId: TOKEN_PROGRAM_ID,
+    }))
+    .concat(
+      token2022Accounts.value.map(({ pubkey, account }) => ({
+        ...parseTokenAccountInfo(pubkey, account),
+        programId: TOKEN_2022_PROGRAM_ID,
+      })),
+    );
+
+  // Get mint decimals
+  const mintDecimalMap = new Map<string, number>();
+  const mintAccountsInfo =
+    await connection.getMultipleAccountsInfo(mintPubkeys);
+  mintAccountsInfo.forEach((accountInfo, i) => {
+    if (accountInfo) {
+      const mint = unpackMint(mintPubkeys[i], accountInfo, accountInfo.owner);
+      mintDecimalMap.set(mintPubkeys[i].toBase58(), mint.decimals);
+    }
+  });
+
+  // Enrich token accounts with decimals and uiAmount
+  return partialTokenAccounts
+    .map((ta) => {
+      const decimals = mintDecimalMap.get(ta.mint.toBase58());
+      if (!decimals) {
+        return null;
+      }
+      return {
+        ...ta,
+        decimals,
+        uiAmount: Number(ta.amount) / 10 ** decimals,
+      } as TokenAccount;
+    })
+    .filter((ta) => ta !== null);
+}
+
+export async function getSolAndTokenBalances(
+  connection: Connection,
+  owner: PublicKey,
+) {
+  const balanceLamports = await connection.getBalance(owner);
+  const tokenAccounts = await getTokenAccountsByOwner(connection, owner);
+  const uiAmount = balanceLamports / LAMPORTS_PER_SOL;
+
+  return {
+    balanceLamports,
+    uiAmount,
+    tokenAccounts,
+  };
+}
 
 export const findStakeAccounts = async (
   connection: Connection,

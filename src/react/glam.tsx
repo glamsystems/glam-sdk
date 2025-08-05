@@ -41,21 +41,12 @@ interface GlamProviderContext {
   glamStatesList: GlamStateCache[];
   delegateAcls: DelegateAcl[];
   allGlamStates: StateModel[];
-  userWallet: UserWallet;
   prices: TokenPrice[];
   jupTokenList?: TokenListItem[];
   driftMarketConfigs: DriftMarketConfigs;
   setActiveGlamState: (f: GlamStateCache) => void;
   refresh: () => Promise<void>; // refresh active glam state
   refetchGlamStates: () => Promise<void>;
-}
-
-export interface UserWallet {
-  queryKey: string[];
-  pubkey?: PublicKey; // if pubkey is null, wallet is not connected
-  balanceLamports: number;
-  uiAmount: number;
-  tokenAccounts: TokenAccount[];
 }
 
 export interface Vault {
@@ -123,7 +114,6 @@ export function GlamProvider({
 
   const [delegateAcls, setDelegateAcls] = useState([] as DelegateAcl[]);
   const [vault, setVault] = useState({} as Vault);
-  const [userWallet, setUserWallet] = useState({} as UserWallet);
   const wallet = useWallet();
   const { connection } = useConnection();
   const { cluster } = useCluster();
@@ -290,23 +280,6 @@ export function GlamProvider({
   useEffect(() => setJupTokenList(tokenListData || []), [tokenListData]);
 
   //
-  // Balance and token accounts of the connected wallet
-  //
-  const walletBalancesQueryKey = ["balances", wallet?.publicKey];
-  const { data: walletBalances, refetch: refetchWalletBalances } = useQuery({
-    queryKey: walletBalancesQueryKey,
-    enabled: !!wallet?.publicKey,
-    queryFn: () => glamClient.getSolAndTokenBalances(wallet?.publicKey!),
-  });
-  useEffect(() => {
-    setUserWallet({
-      queryKey: walletBalancesQueryKey,
-      pubkey: wallet.publicKey,
-      ...walletBalances,
-    } as UserWallet);
-  }, [walletBalances, wallet]);
-
-  //
   // Fetch drift market configs
   //
   const { data: marketConfigs } = useQuery({
@@ -350,7 +323,6 @@ export function GlamProvider({
     glamStatesList: useAtomValue(glamStatesListAtom),
     delegateAcls,
     allGlamStates,
-    userWallet,
     jupTokenList,
     prices: tokenPrices,
     driftMarketConfigs,
@@ -359,7 +331,6 @@ export function GlamProvider({
       refreshVaultHoldings();
       refreshDelegateAcls();
       refetchDriftUser();
-      refetchWalletBalances();
     },
     refetchGlamStates: async () => {
       refetchGlamStates();
