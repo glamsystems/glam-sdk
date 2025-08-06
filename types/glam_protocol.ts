@@ -13547,6 +13547,9 @@ export type GlamProtocol = {
           },
           {
             "name": "fulfill"
+          },
+          {
+            "name": "claimFees"
           }
         ]
       }
