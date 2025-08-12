@@ -690,7 +690,7 @@ export class KaminoLendingClient {
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
 
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .kaminoLendingInitUserMetadata(lookupTable)
       .accounts({
         glamState: this.base.statePda,
@@ -727,7 +727,7 @@ export class KaminoLendingClient {
       await this.base.provider.connection.getAccountInfo(userMetadata);
     if (!userMetadataAccount) {
       preInstructions.push(
-        await this.base.program.methods
+        await this.base.protocolProgram.methods
           .kaminoLendingInitUserMetadata(new PublicKey(0))
           .accounts({
             glamState: this.base.statePda,
@@ -744,7 +744,7 @@ export class KaminoLendingClient {
       await this.base.provider.connection.getAccountInfo(obligation);
     if (!obligationAccount) {
       preInstructions.push(
-        await this.base.program.methods
+        await this.base.protocolProgram.methods
           .kaminoLendingInitObligation(DEFAULT_OBLIGATION_ARGS)
           .accounts({
             glamState: this.base.statePda,
@@ -771,7 +771,7 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
+          await this.base.protocolProgram.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
@@ -829,7 +829,7 @@ export class KaminoLendingClient {
 
       // Close wSOL ata automatically after deposit
       if (wrapSolIxs.length > 0) {
-        const closeIx = await this.base.program.methods
+        const closeIx = await this.base.protocolProgram.methods
           .tokenCloseAccount()
           .accounts({
             glamState: this.base.statePda,
@@ -843,7 +843,7 @@ export class KaminoLendingClient {
     }
 
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .kaminoLendingDepositReserveLiquidityAndObligationCollateralV2(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -904,7 +904,7 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
+          await this.base.protocolProgram.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
@@ -964,7 +964,7 @@ export class KaminoLendingClient {
     );
     preInstructions.unshift(createAtaIx);
 
-    const withdrawIx = await this.base.program.methods
+    const withdrawIx = await this.base.protocolProgram.methods
       .kaminoLendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(
         amount,
       )
@@ -1033,7 +1033,7 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
+          await this.base.protocolProgram.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
@@ -1094,7 +1094,7 @@ export class KaminoLendingClient {
     );
     preInstructions.unshift(createAtaIx);
 
-    const borrowIx = await this.base.program.methods
+    const borrowIx = await this.base.protocolProgram.methods
       .kaminoLendingBorrowObligationLiquidityV2(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -1156,7 +1156,7 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
+          await this.base.protocolProgram.methods
             .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
@@ -1196,7 +1196,7 @@ export class KaminoLendingClient {
       }),
     );
 
-    const repayIx = await this.base.program.methods
+    const repayIx = await this.base.protocolProgram.methods
       .kaminoLendingRepayObligationLiquidityV2(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -1362,7 +1362,7 @@ export class KaminoFarmClient {
           tokenProgram,
         );
 
-        const harvestIx = await this.base.program.methods
+        const harvestIx = await this.base.protocolProgram.methods
           .kaminoFarmHarvestReward(new BN(index))
           .accounts({
             glamState: this.base.statePda,
@@ -1533,7 +1533,7 @@ export class KaminoVaultsClient {
       ),
     );
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .kaminoVaultsDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -1602,7 +1602,7 @@ export class KaminoVaultsClient {
       ),
     ];
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .kaminoVaultsWithdraw(amount)
       .accounts({
         glamState: this.base.statePda,

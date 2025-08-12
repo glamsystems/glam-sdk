@@ -281,7 +281,7 @@ export function parseProgramLogs(logs?: null | string[]): string {
       log.includes("Error: insufficient funds"),
   );
 
-  console.log("error message found in program logs", errorMsgLog);
+  // console.log("error message found in program logs", errorMsgLog);
 
   if (errorMsgLog) {
     if (errorMsgLog.includes("Error Message:")) {

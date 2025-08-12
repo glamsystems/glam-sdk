@@ -100,7 +100,7 @@ export class VaultClient {
     const to = this.base.getVaultAta(WSOL);
 
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -125,7 +125,7 @@ export class VaultClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tokenAccount = this.base.getVaultAta(WSOL);
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .tokenCloseAccount()
       .accounts({
         glamState: this.base.statePda,
@@ -146,7 +146,7 @@ export class VaultClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -168,7 +168,7 @@ export class VaultClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    return await this.base.program.methods
+    return await this.base.protocolProgram.methods
       .tokenCloseAccount()
       .accounts({
         glamState: this.base.statePda,
@@ -325,7 +325,7 @@ export class VaultClient {
         asset,
         tokenProgram,
       ),
-      await this.base.program.methods
+      await this.base.protocolProgram.methods
         .withdraw(new BN(amount))
         .accounts({
           glamState: this.base.statePda,
@@ -356,7 +356,7 @@ export class VaultClient {
       ),
     ];
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .withdraw(new BN(amount))
       .accounts({
         glamState: this.base.statePda,

@@ -1,5 +1,5 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import { GlamProtocol, GlamProtocolIdlJson } from "./glamExports";
+import { GlamProtocol, GlamMint, GlamProtocolIdlJson } from "./glamExports";
 import { PublicKey } from "@solana/web3.js";
 import { ExtensionType, getExtensionData, Mint } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
@@ -19,8 +19,6 @@ export const GlamPermissions =
 
 const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamProtocolIdlJson.address);
 
-export type StateAccountType = { vault: {} } | { mint: {} } | { fund: {} };
-
 // @ts-ignore cli-build failed due to "Type instantiation is excessively deep and possibly infinite."
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 
@@ -36,15 +34,16 @@ export class StateIdlModel implements StateModelType {
   enabled: boolean | null;
 
   assets: PublicKey[] | null;
+  baseAsset: PublicKey | null;
+  baseAssetTokenProgram: number | null;
 
   mints: MintModel[] | null;
   company: CompanyModel | null;
   owner: ManagerModel | null;
   created: CreatedModel | null;
 
-  baseAsset: PublicKey | null;
   updateTimelock: number | null;
-  timeUnit: { slot: {} } | { second: {} } | null;
+  timeUnit: TimeUnit | null;
 
   // ACLs
   delegateAcls: DelegateAcl[] | null;
@@ -73,6 +72,8 @@ export class StateIdlModel implements StateModelType {
     this.enabled = data.enabled ?? null;
 
     this.assets = data.assets ?? null;
+    this.baseAsset = data.baseAsset ?? null;
+    this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null;
 
     this.mints = data.mints ?? null;
     this.company = data.company ?? null;
@@ -80,7 +81,6 @@ export class StateIdlModel implements StateModelType {
     this.created = data.created ?? null;
 
     // Configs
-    this.baseAsset = data.baseAsset ?? null;
     this.updateTimelock = data.updateTimelock ?? null;
     this.timeUnit = data.timeUnit ?? null;
 
@@ -108,7 +108,6 @@ export class StateModel extends StateIdlModel {
 
   externalVaultAccounts: PublicKey[] | null;
   pricedAssets: any[] | null;
-  ledger: LedgerEntry[] | null;
   timelockExpiresAt: number | null;
   pendingUpdates: any | null; // timelocked updates
 
@@ -122,7 +121,6 @@ export class StateModel extends StateIdlModel {
     // Will be set from state params
     this.externalVaultAccounts = data.externalVaultAccounts ?? null;
     this.pricedAssets = data.pricedAssets ?? null;
-    this.ledger = data.ledger ?? null;
     this.timelockExpiresAt = data.timelockExpiresAt
       ? Number(data.timelockExpiresAt.toString())
       : null;
@@ -199,14 +197,16 @@ export class StateModel extends StateIdlModel {
     glamMint?: Mint,
     glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
   ) {
-    let stateModel: Partial<StateModel> = {
+    const stateModel: Partial<StateModel> = {
       id: statePda,
       name: stateAccount.name,
       enabled: stateAccount.enabled,
-      uri: stateAccount.uri,
+      uri: "",
       accountType: stateAccount.accountType,
       metadata: stateAccount.metadata,
       assets: stateAccount.assets,
+      baseAsset: stateAccount.baseAssetMint,
+      baseAssetTokenProgram: stateAccount.baseAssetTokenProgram,
       created: stateAccount.created,
       delegateAcls: stateAccount.delegateAcls,
       integrations: stateAccount.integrations,
@@ -282,13 +282,6 @@ export class StateModel extends StateIdlModel {
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
 
-        // Ledger is a mint param but we store it on the state model
-        if (Object.keys(stateAccount.accountType)[0] === "fund") {
-          if (name === "ledger") {
-            stateModel["ledger"] = value;
-          }
-        }
-
         mintIdlModel[name] = value;
       });
 
@@ -313,9 +306,18 @@ export class StateModel extends StateIdlModel {
         const tokenMetadata = extMetadata
           ? unpack(extMetadata)
           : ({} as TokenMetadata);
+
         mintIdlModel["symbol"] = tokenMetadata?.symbol;
         mintIdlModel["name"] = tokenMetadata?.name;
         mintIdlModel["uri"] = tokenMetadata?.uri;
+
+        if (tokenMetadata?.additionalMetadata) {
+          tokenMetadata.additionalMetadata.find(([k, v]) => {
+            if (k === "LockUpPeriodSeconds") {
+              mintIdlModel["lockUpPeriod"] = parseInt(v);
+            }
+          });
+        }
 
         const extPermDelegate = getExtensionData(
           ExtensionType.PermanentDelegate,
@@ -338,8 +340,8 @@ export class StateModel extends StateIdlModel {
         }
       }
 
-      // stateModel.shareClasses should never be null
-      // non-null assertion is safe and is needed to suppress type error
+      // stateModel.mints has been initialized as an empty array
+      // non-null assertion is safe in order to suppress type error
       stateModel.mints!.push(new MintModel(mintIdlModel));
     });
 
@@ -624,7 +626,36 @@ export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
 export type NotifyAndSettle = IdlTypes<GlamProtocol>["notifyAndSettle"];
-export type LedgerEntry = IdlTypes<GlamProtocol>["ledgerEntry"];
+
+export class StateAccountType {
+  static readonly VAULT = { vault: {} };
+  static readonly MINT = { mint: {} };
+  static readonly FUND = { fund: {} };
+
+  static equals(a: StateAccountType, b: StateAccountType) {
+    return Object.keys(a)[0] === Object.keys(b)[0];
+  }
+}
+
+export class RequestType {
+  static readonly SUBSCRIPTION = { subscription: {} };
+  static readonly REDEMPTION = { redemption: {} };
+
+  static equals(a: RequestType, b: RequestType) {
+    return Object.keys(a)[0] === Object.keys(b)[0];
+  }
+
+  static fromInt(int: number) {
+    switch (int) {
+      case 0:
+        return RequestType.SUBSCRIPTION;
+      case 1:
+        return RequestType.REDEMPTION;
+      default:
+        throw new Error("Invalid request type");
+    }
+  }
+}
 
 export class PriceDenom {
   static readonly SOL = { sol: {} };
@@ -661,3 +692,6 @@ export class VoteAuthorize {
   static readonly Voter = { voter: {} };
   static readonly Withdrawer = { withdrawer: {} };
 }
+
+export type RequestQueue = IdlTypes<GlamMint>["requestQueue"];
+export type PendingRequest = IdlTypes<GlamMint>["pendingRequest"];

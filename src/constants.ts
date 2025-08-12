@@ -1,25 +1,15 @@
 import { PublicKey } from "@solana/web3.js";
 import { GlamProtocolIdlJson } from "./glamExports";
 
-export const SEED_METADATA = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_METADATA")
-    ?.value || ""
-).replace(/"/g, "");
-export const SEED_MINT = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_MINT")?.value || ""
-).replace(/"/g, "");
-export const SEED_STATE = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_STATE")?.value ||
-  ""
-).replace(/"/g, "");
-export const SEED_VAULT = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_VAULT")?.value ||
-  ""
-).replace(/"/g, "");
-export const SEED_ESCROW = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_ESCROW")?.value ||
-  ""
-).replace(/"/g, "");
+export const SEED_STATE = "state"; // protocol program
+export const SEED_VAULT = "vault"; // protocol program
+export const SEED_METADATA = "metadata"; // protocol program
+export const SEED_MINT = "mint"; // mint program
+export const SEED_ESCROW = "escrow"; // mint program
+export const SEED_REQUEST_QUEUE = "request-queue"; // mint program
+export const SEED_ACCOUNT_POLICY = "account-policy"; // policies program
+export const SEED_EXTRA_ACCOUNT_METAS = "extra-account-metas"; // policies program
+export const SEED_GLOBAL_CONFIG = "global_config"; // config program
 
 export const STAKE_ACCOUNT_SIZE = 200;
 export const METEORA_POSITION_SIZE = 8120;

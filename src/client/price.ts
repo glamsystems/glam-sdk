@@ -98,7 +98,7 @@ export class PriceClient {
     }));
 
     // @ts-ignore
-    const priceIx = await this.base.program.methods
+    const priceIx = await this.base.protocolProgram.methods
       .priceKaminoObligations(priceDenom)
       .accounts({
         glamState: this.base.statePda,
@@ -212,7 +212,7 @@ export class PriceClient {
     );
     const preInstructions = [refreshReservesIx];
 
-    const priceIx = await this.base.program.methods
+    const priceIx = await this.base.protocolProgram.methods
       .priceKaminoVaultShares(priceDenom, shareAtas.length)
       .accounts({
         glamState: this.base.statePda,
@@ -291,7 +291,7 @@ export class PriceClient {
       }),
     );
 
-    const priceDriftUsersIx = await this.base.program.methods
+    const priceDriftUsersIx = await this.base.protocolProgram.methods
       .priceDriftUsers(priceDenom, driftUsers.length)
       .accounts({
         glamState: this.base.statePda,
@@ -322,7 +322,7 @@ export class PriceClient {
         parsedVaultDepositors,
       );
 
-    const priceIx = await this.base.program.methods
+    const priceIx = await this.base.protocolProgram.methods
       .priceDriftVaultDepositors(
         priceDenom,
         parsedVaultDepositors.length,
@@ -340,17 +340,17 @@ export class PriceClient {
   }
 
   /**
-   * Returns an instruction that prices vault balance and tokens the vault holds
+   * Returns an instruction that prices vault balance and tokens
    */
   async priceVaultIx(priceDenom: PriceDenom): Promise<TransactionInstruction> {
     const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
       priceDenom == PriceDenom.ASSET,
     );
-
-    const priceVaultIx = await this.base.program.methods
+    const priceVaultIx = await this.base.protocolProgram.methods
       .priceVaultTokens(priceDenom)
       .accounts({
         glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
         solOracle: SOL_ORACLE,
       })
       .remainingAccounts(remainingAccounts)
@@ -362,7 +362,7 @@ export class PriceClient {
    * Returns an instruction that prices stake accounts.
    * If there are no stake accounts, returns null.
    */
-  async priceStakesIx(
+  async priceStakeAccountsIx(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction | null> {
     const stakes = await findStakeAccounts(
@@ -372,8 +372,8 @@ export class PriceClient {
     if (stakes.length === 0) {
       return null;
     }
-    const priceStakesIx = await this.base.program.methods
-      .priceStakes(priceDenom)
+    const priceStakesIx = await this.base.protocolProgram.methods
+      .priceStakeAccounts(priceDenom)
       .accounts({
         glamState: this.base.statePda,
         solOracle: SOL_ORACLE,
@@ -400,7 +400,7 @@ export class PriceClient {
     if (remainingAccounts.length === 0) {
       return null;
     }
-    const priceMeteoraIx = await this.base.program.methods
+    const priceMeteoraIx = await this.base.protocolProgram.methods
       .priceMeteoraPositions(priceDenom)
       .accounts({
         glamState: this.base.statePda,
@@ -411,7 +411,7 @@ export class PriceClient {
     return priceMeteoraIx;
   }
 
-  public async priceVaultIxs(
+  public async priceVaultTokensIxs(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction[]> {
     const priceVaultIx = await this.priceVaultIx(priceDenom);
@@ -438,7 +438,7 @@ export class PriceClient {
     } = {
       drift: this.priceDriftUsersIx.bind(this),
       kaminoLending: this.priceKaminoObligationsIx.bind(this),
-      nativeStaking: this.priceStakesIx.bind(this),
+      nativeStaking: this.priceStakeAccountsIx.bind(this),
       meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
       driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
       kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),

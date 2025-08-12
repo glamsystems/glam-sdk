@@ -251,7 +251,7 @@ export class JupiterSwapClient {
       outputTokenProgram,
     );
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterSwap(swapIx.data)
       .accounts({
         glamState: this.base.statePda,
@@ -423,7 +423,7 @@ export class JupiterVoteClient {
     if (!escrowCreated) {
       console.log("Will create escrow account:", escrow.toBase58());
       preInstructions.push(
-        await this.base.program.methods
+        await this.base.protocolProgram.methods
           .jupiterVoteNewEscrow()
           .accounts({
             glamState: this.base.statePda,
@@ -433,7 +433,7 @@ export class JupiterVoteClient {
           .instruction(),
       );
       preInstructions.push(
-        await this.base.program.methods
+        await this.base.protocolProgram.methods
           .jupiterVoteToggleMaxLock(true)
           .accounts({
             glamState: this.base.statePda,
@@ -452,7 +452,7 @@ export class JupiterVoteClient {
       ),
     );
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterVoteIncreaseLockedAmount(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -482,7 +482,7 @@ export class JupiterVoteClient {
     const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterVoteToggleMaxLock(false)
       .accounts({
         glamState: this.base.statePda,
@@ -501,7 +501,7 @@ export class JupiterVoteClient {
     const escrowJupAta = this.base.getAta(JUP, escrow);
     const vaultJupAta = this.base.getAta(JUP, vault);
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterVoteWithdraw()
       .accounts({
         glamState: this.base.statePda,
@@ -540,7 +540,7 @@ export class JupiterVoteClient {
     const distributorJupAta = this.base.getAta(JUP, distributor);
 
     // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
       .accounts({
         glamState: this.base.statePda,
@@ -563,7 +563,7 @@ export class JupiterVoteClient {
     const vault = this.base.vaultPda;
     const escrow = this.getEscrowPda(vault);
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterVoteToggleMaxLock(true)
       .accounts({
         glamState: this.base.statePda,
@@ -601,7 +601,7 @@ export class JupiterVoteClient {
     if (!voteCreated) {
       console.log("Will create vote account:", vote.toBase58());
       preInstructions.push(
-        await this.base.program.methods
+        await this.base.protocolProgram.methods
           .jupiterGovNewVote(glamVault)
           .accountsPartial({
             glamState: this.base.statePda,
@@ -613,7 +613,7 @@ export class JupiterVoteClient {
     }
 
     const escrow = this.getEscrowPda(glamVault);
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterVoteCastVote(side)
       .accounts({
         glamState: this.base.statePda,
