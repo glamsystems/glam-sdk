@@ -7,6 +7,7 @@ import { MarinadeClient } from "./client/marinade";
 import { VaultClient } from "./client/vault";
 import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
+import { MintClient } from "./client/mint";
 import {
   KaminoFarmClient,
   KaminoLendingClient,
@@ -17,7 +18,6 @@ import { InvestClient } from "./client/invest";
 import { PriceClient } from "./client/price";
 import { ValidatorClient } from "./client/validator";
 import { FeesClient } from "./client/fees";
-import { MintClient } from "./client/mint";
 
 /**
  * Main entrypoint for the GLAM SDK
