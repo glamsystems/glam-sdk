@@ -33,10 +33,7 @@ export class StateClient {
     let stateModel = this.enrichStateModel(partialStateModel);
 
     // @ts-ignore
-    const statePda = getStatePda(
-      stateModel,
-      this.base.protocolProgram.programId,
-    );
+    const statePda = getStatePda(stateModel, this.base.program.programId);
     this.base.statePda = statePda;
     console.log(`State PDA set to GlamClient: ${statePda}`);
 
@@ -50,11 +47,12 @@ export class StateClient {
     // No mint, only need to initialize the state
     if (mints && mints.length === 0) {
       // @ts-ignore
-      const tx = await this.base.protocolProgram.methods
+      const tx = await this.base.program.methods
         .initializeState(new StateIdlModel(stateModel))
         .accountsPartial({
           glamState: statePda,
           glamSigner,
+          glamVault: this.base.vaultPda,
         })
         .transaction();
       const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -65,15 +63,16 @@ export class StateClient {
 
     // Initialize state and add mint in one transaction
     if (mints && mints.length > 0 && singleTx) {
-      const initStateIx = await this.base.protocolProgram.methods
+      const initStateIx = await this.base.program.methods
         .initializeState(new StateIdlModel(stateModel))
         .accountsPartial({
           glamState: statePda,
           glamSigner,
+          glamVault: this.base.vaultPda,
         })
         .instruction();
 
-      const tx = await this.base.protocolProgram.methods
+      const tx = await this.base.program.methods
         .addMint(mints[0])
         .accounts({
           glamState: statePda,
@@ -90,7 +89,7 @@ export class StateClient {
     }
 
     // Initialize state and add mints in separate transactions
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .initializeState(new StateIdlModel(stateModel))
       .accountsPartial({
         glamState: statePda,
@@ -104,7 +103,7 @@ export class StateClient {
 
     await Promise.all(
       (mints || []).map(async (mint, j: number) => {
-        const tx = await this.base.protocolProgram.methods
+        const tx = await this.base.program.methods
           .addMint(mint)
           .accounts({
             glamState: statePda,
@@ -146,7 +145,7 @@ export class StateClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .updateState(new StateIdlModel(updated))
       .accounts({
         glamState: this.base.statePda,
@@ -161,7 +160,7 @@ export class StateClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .updateStateApplyTimelock()
       .accounts({
         glamState: this.base.statePda,
@@ -177,7 +176,7 @@ export class StateClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .emergencyUpdateState(new StateIdlModel(updated))
       .accounts({
         glamState: this.base.statePda,
@@ -192,7 +191,7 @@ export class StateClient {
     newBytes: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .extendState(newBytes)
       .accounts({
         glamState: this.base.statePda,
@@ -206,7 +205,7 @@ export class StateClient {
   public async close(txOptions: TxOptions = {}): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .closeState()
       .accounts({
         glamState: this.base.statePda,
@@ -276,7 +275,7 @@ export class StateClient {
     // fields containing fund id / pda
     const statePda = getStatePda(
       partialStateModel,
-      this.base.protocolProgram.programId,
+      this.base.program.programId,
     );
     partialStateModel.uri =
       partialStateModel.uri || `https://gui.glam.systems/products/${statePda}`;
@@ -299,11 +298,7 @@ export class StateClient {
         mint.isRawOpenfunds = false;
       }
 
-      const mintPda = getMintPda(
-        statePda,
-        i,
-        this.base.protocolProgram.programId,
-      );
+      const mintPda = getMintPda(statePda, i, this.base.program.programId);
       mint.uri = `https://api.glam.systems/metadata/${mintPda}`;
       mint.statePubkey = statePda;
       mint.imageUri = `https://api.glam.systems/v0/sparkle?key=${mintPda}&format=png`;
@@ -314,10 +309,7 @@ export class StateClient {
       (s) => new MintModel(s),
     );
 
-    return new StateModel(
-      partialStateModel,
-      this.base.protocolProgram.programId,
-    );
+    return new StateModel(partialStateModel, this.base.program.programId);
   }
 
   /**

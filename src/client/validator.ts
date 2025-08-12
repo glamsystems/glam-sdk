@@ -30,7 +30,7 @@ export class ValidatorClient {
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .voteAuthorize(newAuthority, voteAuthorize)
       .accounts({
         glamState: this.base.statePda,
@@ -52,7 +52,7 @@ export class ValidatorClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .voteUpdateValidatorIdentity()
       .accounts({
         glamState: this.base.statePda,
@@ -76,7 +76,7 @@ export class ValidatorClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .voteUpdateCommission(newCommission)
       .accounts({
         glamState: this.base.statePda,
@@ -99,7 +99,7 @@ export class ValidatorClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .voteWithdraw(new BN(lamports))
       .accounts({
         glamState: this.base.statePda,

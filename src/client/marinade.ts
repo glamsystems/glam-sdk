@@ -179,7 +179,7 @@ export class MarinadeClient {
     );
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .marinadeDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -232,7 +232,7 @@ export class MarinadeClient {
     const [stakeAccount, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
-    const initStakeIx = await this.base.protocolProgram.methods
+    const initStakeIx = await this.base.program.methods
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -240,7 +240,7 @@ export class MarinadeClient {
         stake: stakeAccount,
       })
       .instruction();
-    const fundStakeIx = await this.base.protocolProgram.methods
+    const fundStakeIx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -250,7 +250,7 @@ export class MarinadeClient {
       .instruction();
 
     // Then set stake authority to the marinade key
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeAuthorize(MARINADE_NATIVE_STAKE_AUTHORITY, 0)
       .accounts({
         glamState: this.base.statePda,
@@ -284,7 +284,7 @@ export class MarinadeClient {
       stakeAccountInfo.voter,
     );
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .marinadeDepositStakeAccount(validatorIndex)
       .accounts({
         glamState: this.base.statePda,
@@ -389,7 +389,7 @@ export class MarinadeClient {
 
     const postInstructions = deactivate
       ? [
-          await this.base.protocolProgram.methods
+          await this.base.program.methods
             .stakeDeactivate()
             .accounts({
               glamSigner,
@@ -400,7 +400,7 @@ export class MarinadeClient {
         ]
       : [];
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .marinadeWithdrawStakeAccount(
         stakeIndex,
         validatorIndex,

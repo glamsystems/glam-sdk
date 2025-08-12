@@ -49,7 +49,7 @@ export class MeteoraDlmmClient {
     const position = Keypair.generate();
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmInitializePosition(minBinId, maxBinId - minBinId + 1)
       .accounts({
         glamState: this.base.statePda,
@@ -82,7 +82,7 @@ export class MeteoraDlmmClient {
     );
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmInitializePositionPda(minBinId, width)
       .accounts({
         glamState: this.base.statePda,
@@ -160,7 +160,7 @@ export class MeteoraDlmmClient {
 
     // TODO: if token X or Y program is token2022 we need to properly construct the slices
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmAddLiquidityByStrategy2(liquidityParameter, { slices: [] })
       .accounts({
         glamState: this.base.statePda,
@@ -207,7 +207,7 @@ export class MeteoraDlmmClient {
     }));
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmRemoveLiquidityByRange2(lowerBinId, upperBinId, bpsToRemove, {
         slices: [],
       })
@@ -255,7 +255,7 @@ export class MeteoraDlmmClient {
     }));
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmClaimFee2(lowerBinId, upperBinId, { slices: [] })
       .accounts({
         glamState: this.base.statePda,
@@ -294,7 +294,7 @@ export class MeteoraDlmmClient {
     );
 
     // @ts-ignore
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .meteoraDlmmClosePosition2()
       .accounts({
         glamState: this.base.statePda,
