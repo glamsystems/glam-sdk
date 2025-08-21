@@ -11,116 +11,50 @@ import {
   CompanyModel,
   DelegateAcl,
   StateModel,
-  FundOpenfundsModel,
   ManagerModel,
   MintModel,
-  MintOpenfundsModel,
   CreatedModel,
-  Metadata,
   StateIdlModel,
 } from "../models";
-import { getMintPda, getStatePda } from "../utils/glamPDAs";
+import { getStatePda } from "../utils/glamPDAs";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 export class StateClient {
   public constructor(readonly base: BaseClient) {}
 
   public async create(
-    partialStateModel: Partial<StateModel>,
-    singleTx: boolean = false,
+    partialStateModel: Partial<StateIdlModel>,
     txOptions: TxOptions = {},
   ): Promise<[TransactionSignature, PublicKey]> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    let stateModel = this.enrichStateModel(partialStateModel);
+    const glamSigner = txOptions.signer || this.base.signer;
 
-    // @ts-ignore
-    const statePda = getStatePda(stateModel, this.base.program.programId);
-    this.base.statePda = statePda;
-    console.log(`State PDA set to GlamClient: ${statePda}`);
+    const stateModel = this.enrichStateModel(partialStateModel);
+    const statePda = getStatePda(
+      stateModel,
+      this.base.protocolProgram.programId,
+    );
 
-    const mints = stateModel.mints;
-    stateModel.mints = [];
-
-    if (mints && mints.length > 1) {
-      throw new Error("Multiple mints not supported. Only 1 mint is allowed.");
-    }
-
-    // No mint, only need to initialize the state
-    if (mints && mints.length === 0) {
-      // @ts-ignore
-      const tx = await this.base.program.methods
-        .initializeState(new StateIdlModel(stateModel))
-        .accountsPartial({
-          glamState: statePda,
-          glamSigner,
-          glamVault: this.base.vaultPda,
-        })
-        .transaction();
-      const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-      const txSig = await this.base.sendAndConfirm(vTx);
-
-      return [txSig, statePda];
-    }
-
-    // Initialize state and add mint in one transaction
-    if (mints && mints.length > 0 && singleTx) {
-      const initStateIx = await this.base.program.methods
-        .initializeState(new StateIdlModel(stateModel))
-        .accountsPartial({
-          glamState: statePda,
-          glamSigner,
-          glamVault: this.base.vaultPda,
-        })
-        .instruction();
-
-      const tx = await this.base.program.methods
-        .addMint(mints[0])
-        .accounts({
-          glamState: statePda,
-          glamSigner,
-          newMint: this.base.mintPda,
-          extraMetasAccount: this.base.extraMetasPda,
-        })
-        .preInstructions([initStateIx])
-        .transaction();
-      const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-      const txSig = await this.base.sendAndConfirm(vTx);
-
-      return [txSig, statePda];
-    }
-
-    // Initialize state and add mints in separate transactions
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .initializeState(new StateIdlModel(stateModel))
       .accountsPartial({
         glamState: statePda,
-        glamVault: this.base.vaultPda,
         glamSigner,
-        openfundsMetadata: this.base.openfundsPda,
+        baseAssetMint: stateModel.baseAsset,
+        baseAssetTokenProgram:
+          stateModel.baseAssetTokenProgram === 0
+            ? TOKEN_PROGRAM_ID
+            : TOKEN_2022_PROGRAM_ID,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     const txSig = await this.base.sendAndConfirm(vTx);
 
-    await Promise.all(
-      (mints || []).map(async (mint, j: number) => {
-        const tx = await this.base.program.methods
-          .addMint(mint)
-          .accounts({
-            glamState: statePda,
-            glamSigner,
-            newMint: this.base.mintPda,
-            extraMetasAccount: this.base.extraMetasPda,
-          })
-          .transaction();
-        const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-        return await this.base.sendAndConfirm(vTx);
-      }),
-    );
+    this.base.statePda = statePda; // set statePda for GlamClient on success
     return [txSig, statePda];
   }
 
   public async update(
-    updated: Partial<StateModel>,
+    updated: Partial<StateIdlModel>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.updateStateTx(updated, txOptions);
@@ -133,7 +67,7 @@ export class StateClient {
   }
 
   public async emergencyUpdate(
-    updated: Partial<StateModel>,
+    updated: Partial<StateIdlModel>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const vTx = await this.emergencyUpdateStateTx(updated, txOptions);
@@ -141,11 +75,11 @@ export class StateClient {
   }
 
   public async updateStateTx(
-    updated: Partial<StateModel>,
+    updated: Partial<StateIdlModel>,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .updateState(new StateIdlModel(updated))
       .accounts({
         glamState: this.base.statePda,
@@ -160,7 +94,7 @@ export class StateClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .updateStateApplyTimelock()
       .accounts({
         glamState: this.base.statePda,
@@ -172,11 +106,11 @@ export class StateClient {
   }
 
   public async emergencyUpdateStateTx(
-    updated: Partial<StateModel>,
+    updated: Partial<StateIdlModel>,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .emergencyUpdateState(new StateIdlModel(updated))
       .accounts({
         glamState: this.base.statePda,
@@ -191,7 +125,7 @@ export class StateClient {
     newBytes: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .extendState(newBytes)
       .accounts({
         glamState: this.base.statePda,
@@ -205,7 +139,7 @@ export class StateClient {
   public async close(txOptions: TxOptions = {}): Promise<TransactionSignature> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .closeState()
       .accounts({
         glamState: this.base.statePda,
@@ -221,95 +155,41 @@ export class StateClient {
   /**
    * Create a full state model from a partial state model
    */
-  enrichStateModel(partialStateModel: Partial<StateModel>): StateModel {
-    const owner = this.base.getSigner();
+  enrichStateModel(stateModel: Partial<StateIdlModel>): StateModel {
+    const owner = this.base.signer;
     const defaultDate = new Date().toISOString().split("T")[0];
 
-    if (!partialStateModel?.name) {
+    if (!stateModel?.name) {
       throw new Error("Name must be specified in partial state model");
     }
 
-    // createdKey = hash state name and get first 8 bytes
+    // stateInitKey = hash state name and get first 8 bytes
     // useful for computing state account PDA in the future
-    partialStateModel.created = new CreatedModel({
-      key: [
-        ...Buffer.from(
-          anchor.utils.sha256.hash(partialStateModel.name),
-        ).subarray(0, 8),
-      ],
-    });
-
-    partialStateModel.rawOpenfunds = new FundOpenfundsModel(
-      partialStateModel.rawOpenfunds ?? {},
-    );
-
-    partialStateModel.owner = new ManagerModel({
-      ...partialStateModel.owner,
+    const stateInitKey = [
+      ...Buffer.from(anchor.utils.sha256.hash(stateModel.name)).subarray(0, 8),
+    ];
+    stateModel.created = new CreatedModel({ key: stateInitKey });
+    stateModel.owner = new ManagerModel({
+      ...stateModel.owner,
       pubkey: owner,
     });
 
-    partialStateModel.company = new CompanyModel({
-      ...partialStateModel.company,
+    stateModel.company = new CompanyModel({
+      ...stateModel.company,
     });
-
-    if (partialStateModel.mints?.length == 1) {
-      const mint = partialStateModel.mints[0];
-      partialStateModel.rawOpenfunds.fundCurrency =
-        partialStateModel.rawOpenfunds?.fundCurrency ||
-        mint.rawOpenfunds?.shareClassCurrency ||
-        null;
-    } else if (
-      partialStateModel.mints?.length &&
-      partialStateModel.mints.length > 1
-    ) {
-      throw new Error(
-        "Multiple mints are not supported. Only 1 mint is allowed.",
-      );
-    }
-
-    if (partialStateModel.enabled) {
-      partialStateModel.rawOpenfunds.fundLaunchDate =
-        partialStateModel.rawOpenfunds?.fundLaunchDate || defaultDate;
-    }
 
     // fields containing fund id / pda
     const statePda = getStatePda(
-      partialStateModel,
-      this.base.program.programId,
+      stateModel,
+      this.base.protocolProgram.programId,
     );
-    partialStateModel.uri =
-      partialStateModel.uri || `https://gui.glam.systems/products/${statePda}`;
-    partialStateModel.metadata = new Metadata({
-      ...partialStateModel.metadata,
-      uri: `https://api.glam.systems/v0/openfunds?fund=${statePda}`,
-      template: { openfunds: {} },
-    });
-
-    // build openfunds models for each share classes
-    (partialStateModel.mints || []).forEach((mint: MintModel, i: number) => {
-      if (mint.rawOpenfunds) {
-        if (mint.rawOpenfunds.shareClassLifecycle === "active") {
-          mint.rawOpenfunds.shareClassLaunchDate =
-            mint.rawOpenfunds.shareClassLaunchDate || defaultDate;
-        }
-        mint.rawOpenfunds = new MintOpenfundsModel(mint.rawOpenfunds);
-        mint.isRawOpenfunds = true;
-      } else {
-        mint.isRawOpenfunds = false;
-      }
-
-      const mintPda = getMintPda(statePda, i, this.base.program.programId);
-      mint.uri = `https://api.glam.systems/metadata/${mintPda}`;
-      mint.statePubkey = statePda;
-      mint.imageUri = `https://api.glam.systems/v0/sparkle?key=${mintPda}&format=png`;
-    });
+    stateModel.uri =
+      stateModel.uri || `https://gui.glam.systems/products/${statePda}`;
 
     // convert partial share class models to full share class models
-    partialStateModel.mints = (partialStateModel.mints || []).map(
-      (s) => new MintModel(s),
-    );
+    // stateModel.mints = (stateModel.mints || []).map((s) => new MintModel(s));
 
-    return new StateModel(partialStateModel, this.base.program.programId);
+    return new StateModel(stateModel, this.base.protocolProgram.programId);
   }
 
   /**
@@ -327,7 +207,7 @@ export class StateClient {
       {
         delegateAcls: delegates.map((pubkey) => ({
           pubkey,
-          permissions: [],
+          integrationPermissions: [],
           expiresAt: new BN(0),
         })),
       },

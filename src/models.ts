@@ -1,10 +1,11 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import { GlamProtocol, GlamProtocolIdlJson } from "./glamExports";
+import { GlamProtocol, GlamMint, GlamProtocolIdlJson } from "./glamExports";
 import { PublicKey } from "@solana/web3.js";
 import { ExtensionType, getExtensionData, Mint } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
 import { SEED_METADATA, SEED_MINT, SEED_VAULT, USDC, WSOL } from "./constants";
+import { charsToName } from "./utils/helpers";
 
 export const GlamIntegrations =
   GlamProtocolIdlJson?.types
@@ -19,98 +20,86 @@ export const GlamPermissions =
 
 const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamProtocolIdlJson.address);
 
-export type StateAccountType = { vault: {} } | { mint: {} } | { fund: {} };
-
-// @ts-ignore cli-build failed due to "Type instantiation is excessively deep and possibly infinite."
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
-
-export type OpenfundsMetadataAccount =
-  IdlAccounts<GlamProtocol>["openfundsMetadataAccount"];
 
 export type StateModelType = IdlTypes<GlamProtocol>["stateModel"];
 export class StateIdlModel implements StateModelType {
-  id: PublicKey | null;
   accountType: StateAccountType | null;
   name: string | null;
   uri: string | null;
   enabled: boolean | null;
 
   assets: PublicKey[] | null;
+  baseAsset: PublicKey | null;
+  baseAssetTokenProgram: number | null;
 
-  mints: MintModel[] | null;
   company: CompanyModel | null;
   owner: ManagerModel | null;
   created: CreatedModel | null;
 
-  baseAsset: PublicKey | null;
   updateTimelock: number | null;
-  timeUnit: { slot: {} } | { second: {} } | null;
+  timeUnit: TimeUnit | null;
 
   // ACLs
+  integrationAcls: IntegrationAcl[] | null;
   delegateAcls: DelegateAcl[] | null;
-  integrations: Integration[] | null;
   borrowableAssets: PublicKey[] | null;
+  transferToAllowlist: PublicKey[] | null;
 
   // Integration specific configs
+  maxSwapSlippageBps: number | null;
   driftMarketIndexesPerp: number[] | null;
   driftMarketIndexesSpot: number[] | null;
   driftOrderTypes: number[] | null;
   kaminoLendingMarkets: PublicKey[] | null;
   meteoraDlmmPools: PublicKey[] | null;
-  maxSwapSlippageBps: number | null;
   driftVaultsAllowlist: PublicKey[] | null;
   kaminoVaultsAllowlist: PublicKey[] | null;
 
-  // Metadata
-  metadata: Metadata | null;
-  rawOpenfunds: FundOpenfundsModel | null;
-
   constructor(data: Partial<StateModelType>) {
-    this.id = data.id ?? null;
     this.accountType = data.accountType ?? null;
     this.name = data.name ?? null;
     this.uri = data.uri ?? null;
     this.enabled = data.enabled ?? null;
 
     this.assets = data.assets ?? null;
+    this.baseAsset = data.baseAsset ?? null;
+    this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null;
 
-    this.mints = data.mints ?? null;
     this.company = data.company ?? null;
     this.owner = data.owner ?? null;
     this.created = data.created ?? null;
 
     // Configs
-    this.baseAsset = data.baseAsset ?? null;
     this.updateTimelock = data.updateTimelock ?? null;
     this.timeUnit = data.timeUnit ?? null;
 
     // ACLs
     this.delegateAcls = data.delegateAcls ?? null;
-    this.integrations = data.integrations ?? null;
+    this.integrationAcls = data.integrationAcls ?? null;
     this.borrowableAssets = data.borrowableAssets ?? null;
+    this.transferToAllowlist = data.transferToAllowlist ?? null;
 
     // Integration specific configs
+    this.maxSwapSlippageBps = data.maxSwapSlippageBps ?? null;
     this.driftMarketIndexesPerp = data.driftMarketIndexesPerp ?? null;
     this.driftMarketIndexesSpot = data.driftMarketIndexesSpot ?? null;
     this.driftOrderTypes = data.driftOrderTypes ?? null;
     this.kaminoLendingMarkets = data.kaminoLendingMarkets ?? null;
     this.meteoraDlmmPools = data.meteoraDlmmPools ?? null;
-    this.maxSwapSlippageBps = data.maxSwapSlippageBps ?? null;
     this.driftVaultsAllowlist = data.driftVaultsAllowlist ?? null;
     this.kaminoVaultsAllowlist = data.kaminoVaultsAllowlist ?? null;
-
-    this.metadata = data.metadata ?? null;
-    this.rawOpenfunds = data.rawOpenfunds ?? null;
   }
 }
 export class StateModel extends StateIdlModel {
   readonly glamProgramId: PublicKey;
 
+  id: PublicKey | null;
+  mints: MintModel[] | null;
   externalVaultAccounts: PublicKey[] | null;
   pricedAssets: any[] | null;
-  ledger: LedgerEntry[] | null;
-  timelockExpiresAt: number | null;
   pendingUpdates: any | null; // timelocked updates
+  timelockExpiresAt: number | null;
 
   constructor(
     data: Partial<StateModel>,
@@ -122,7 +111,6 @@ export class StateModel extends StateIdlModel {
     // Will be set from state params
     this.externalVaultAccounts = data.externalVaultAccounts ?? null;
     this.pricedAssets = data.pricedAssets ?? null;
-    this.ledger = data.ledger ?? null;
     this.timelockExpiresAt = data.timelockExpiresAt
       ? Number(data.timelockExpiresAt.toString())
       : null;
@@ -163,9 +151,7 @@ export class StateModel extends StateIdlModel {
 
   get launchDate() {
     const createdAt = this.created?.createdAt.toNumber() ?? 0;
-    return this.rawOpenfunds?.fundLaunchDate || createdAt
-      ? new Date(createdAt * 1000).toISOString().split("T")[0]
-      : "Unknown";
+    return new Date(createdAt * 1000).toISOString().split("T")[0] || "Unknown";
   }
 
   get mintAddresses() {
@@ -195,21 +181,21 @@ export class StateModel extends StateIdlModel {
   static fromOnchainAccounts(
     statePda: PublicKey,
     stateAccount: StateAccount,
-    openfundsMetadataAccount?: OpenfundsMetadataAccount,
     glamMint?: Mint,
     glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
   ) {
-    let stateModel: Partial<StateModel> = {
+    const stateModel: Partial<StateModel> = {
       id: statePda,
-      name: stateAccount.name,
+      name: charsToName(stateAccount.name),
       enabled: stateAccount.enabled,
-      uri: stateAccount.uri,
+      uri: "",
       accountType: stateAccount.accountType,
-      metadata: stateAccount.metadata,
       assets: stateAccount.assets,
+      baseAsset: stateAccount.baseAssetMint,
+      baseAssetTokenProgram: stateAccount.baseAssetTokenProgram,
       created: stateAccount.created,
       delegateAcls: stateAccount.delegateAcls,
-      integrations: stateAccount.integrations,
+      integrationAcls: stateAccount.integrationAcls,
       mints: [],
     };
 
@@ -242,37 +228,10 @@ export class StateModel extends StateIdlModel {
       // pending updates to mint params
     }
 
-    // Build stateModel.rawOpenfunds from openfunds account
-    const fundOpenfundsFields = {};
-    openfundsMetadataAccount?.fund.forEach((param) => {
-      const name = Object.keys(param.name)[0];
-      const value = param.value;
-      // @ts-ignore
-      fundOpenfundsFields[name] = value;
-    });
-    stateModel.rawOpenfunds = new FundOpenfundsModel(fundOpenfundsFields);
-
-    // Build stateModel.company from openfunds account
-    const company = {};
-    openfundsMetadataAccount?.company.forEach((param) => {
-      const name = Object.keys(param.name)[0];
-      const value = param.value;
-      // @ts-ignore
-      company[name] = value;
-    });
-    stateModel.company = new CompanyModel(company);
-
     // Build stateModel.owner from openfunds account
-    const owner = { pubkey: stateAccount.owner };
-    openfundsMetadataAccount?.fundManagers[0].forEach((param) => {
-      const name = Object.keys(param.name)[0];
-      const value = param.value;
-      // @ts-ignore
-      owner[name] = value;
-    });
-    stateModel.owner = new ManagerModel(owner);
+    stateModel.owner = new ManagerModel({ pubkey: stateAccount.owner });
 
-    // Build the array of ShareClassModel
+    // Build the array of MintModels
     stateAccount.mints.forEach((_, i) => {
       const mintIdlModel = {} as any;
       mintIdlModel["statePubkey"] = statePda;
@@ -282,28 +241,8 @@ export class StateModel extends StateIdlModel {
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
 
-        // Ledger is a mint param but we store it on the state model
-        if (Object.keys(stateAccount.accountType)[0] === "fund") {
-          if (name === "ledger") {
-            stateModel["ledger"] = value;
-          }
-        }
-
         mintIdlModel[name] = value;
       });
-
-      if (openfundsMetadataAccount) {
-        const mintOpenfundsFields = {};
-        openfundsMetadataAccount.shareClasses[i].forEach((param) => {
-          const name = Object.keys(param.name)[0];
-          const value = param.value;
-          // @ts-ignore
-          mintOpenfundsFields[name] = value;
-        });
-        mintIdlModel["rawOpenfunds"] = new MintOpenfundsModel(
-          mintOpenfundsFields,
-        );
-      }
 
       if (glamMint) {
         const extMetadata = getExtensionData(
@@ -313,9 +252,18 @@ export class StateModel extends StateIdlModel {
         const tokenMetadata = extMetadata
           ? unpack(extMetadata)
           : ({} as TokenMetadata);
+
         mintIdlModel["symbol"] = tokenMetadata?.symbol;
         mintIdlModel["name"] = tokenMetadata?.name;
         mintIdlModel["uri"] = tokenMetadata?.uri;
+
+        if (tokenMetadata?.additionalMetadata) {
+          tokenMetadata.additionalMetadata.find(([k, v]) => {
+            if (k === "LockUpPeriodSeconds") {
+              mintIdlModel["lockUpPeriod"] = parseInt(v);
+            }
+          });
+        }
 
         const extPermDelegate = getExtensionData(
           ExtensionType.PermanentDelegate,
@@ -338,15 +286,10 @@ export class StateModel extends StateIdlModel {
         }
       }
 
-      // stateModel.shareClasses should never be null
-      // non-null assertion is safe and is needed to suppress type error
+      // stateModel.mints has been initialized as an empty array
+      // non-null assertion is safe in order to suppress type error
       stateModel.mints!.push(new MintModel(mintIdlModel));
     });
-
-    stateModel.name =
-      stateModel.name ||
-      stateModel.rawOpenfunds?.legalFundNameIncludingUmbrella ||
-      (stateModel.mints && stateModel.mints[0]?.name);
 
     // @ts-ignore
     return new StateModel(stateModel, glamProgramId);
@@ -421,9 +364,6 @@ export class MintIdlModel implements MintModelType {
   subscriptionPaused: boolean | null;
   redemptionPaused: boolean | null;
 
-  isRawOpenfunds: boolean | null;
-  rawOpenfunds: MintOpenfundsModel | null;
-
   constructor(data: Partial<MintModelType>) {
     this.symbol = data.symbol ?? null;
     this.name = data.name ?? null;
@@ -431,8 +371,6 @@ export class MintIdlModel implements MintModelType {
     this.statePubkey = data.statePubkey ?? null;
     this.asset = data.asset ?? null;
     this.imageUri = data.imageUri ?? null;
-    this.isRawOpenfunds = data.isRawOpenfunds ?? null;
-    this.rawOpenfunds = data.rawOpenfunds ?? null;
     this.allowlist = data.allowlist ?? null;
     this.blocklist = data.blocklist ?? null;
     this.lockUpPeriod = data.lockUpPeriod ?? null;
@@ -471,81 +409,6 @@ export class MintModel extends MintIdlModel {
       glamProgramId,
     );
     return pda;
-  }
-}
-
-export type MintOpenfundsModelType =
-  IdlTypes<GlamProtocol>["mintOpenfundsModel"];
-export class MintOpenfundsModel implements MintOpenfundsModelType {
-  isin: string | null;
-  shareClassCurrency: string | null;
-  // currencyOfMinimalSubscription: string | null;
-  fullShareClassName: string | null;
-  hasPerformanceFee: boolean | null;
-  investmentStatus: string | null;
-  // investmentStatus: string | null;
-  // minimalInitialSubscriptionCategory: string | null;
-  minimalInitialSubscriptionInAmount: string | null;
-  minimalInitialSubscriptionInShares: string | null;
-  minimalSubsequentSubscriptionInAmount: string | null;
-  minimalSubsequentSubscriptionInShares: string | null;
-  // shareClassDistributionPolicy: string | null;
-  // shareClassExtension: string | null;
-  shareClassLaunchDate: string | null;
-  shareClassLifecycle: string | null;
-  launchPrice: string | null;
-  launchPriceCurrency: string | null;
-  launchPriceDate: string | null;
-  // currencyOfMinimalOrMaximumRedemption: string | null;
-  hasLockUpForRedemption: boolean | null;
-  // isValidIsin: boolean | null;
-  lockUpComment: string | null;
-  lockUpPeriodInDays: string | null;
-  // maximumInitialRedemptionInAmount: string | null;
-  // maximumInitialRedemptionInShares: string | null;
-  minimalInitialRedemptionInAmount: string | null;
-  minimalInitialRedemptionInShares: string | null;
-  minimalSubsequentRedemptionInAmount: string | null;
-  minimalSubsequentRedemptionInShares: string | null;
-  // minimalRedemptionCategory: string | null;
-  // shareClassDividendType: string | null;
-  roundingMethodForPrices: string | null;
-  cusip: string | null;
-  valor: string | null;
-
-  constructor(obj: Partial<MintOpenfundsModelType>) {
-    this.isin = obj.isin ?? null;
-    this.shareClassCurrency = obj.shareClassCurrency ?? null;
-    this.fullShareClassName = obj.fullShareClassName ?? null;
-    this.hasPerformanceFee = obj.hasPerformanceFee ?? null;
-    this.investmentStatus = obj.investmentStatus ?? null;
-    this.minimalInitialSubscriptionInAmount =
-      obj.minimalInitialSubscriptionInAmount ?? null;
-    this.minimalInitialSubscriptionInShares =
-      obj.minimalInitialSubscriptionInShares ?? null;
-    this.minimalSubsequentSubscriptionInAmount =
-      obj.minimalSubsequentSubscriptionInAmount ?? null;
-    this.minimalSubsequentSubscriptionInShares =
-      obj.minimalSubsequentSubscriptionInShares ?? null;
-    this.shareClassLaunchDate = obj.shareClassLaunchDate ?? null;
-    this.shareClassLifecycle = obj.shareClassLifecycle ?? null;
-    this.launchPrice = obj.launchPrice ?? null;
-    this.launchPriceCurrency = obj.launchPriceCurrency ?? null;
-    this.launchPriceDate = obj.launchPriceDate ?? null;
-    this.hasLockUpForRedemption = obj.hasLockUpForRedemption ?? null;
-    this.lockUpComment = obj.lockUpComment ?? null;
-    this.lockUpPeriodInDays = obj.lockUpPeriodInDays ?? null;
-    this.minimalInitialRedemptionInAmount =
-      obj.minimalInitialRedemptionInAmount ?? null;
-    this.minimalInitialRedemptionInShares =
-      obj.minimalInitialRedemptionInShares ?? null;
-    this.minimalSubsequentRedemptionInAmount =
-      obj.minimalSubsequentRedemptionInAmount ?? null;
-    this.minimalSubsequentRedemptionInShares =
-      obj.minimalSubsequentRedemptionInShares ?? null;
-    this.roundingMethodForPrices = obj.roundingMethodForPrices ?? null;
-    this.cusip = obj.cusip ?? null;
-    this.valor = obj.valor ?? null;
   }
 }
 
@@ -606,15 +469,76 @@ export class CreatedModel implements CreatedModelType {
 }
 
 export type Permission = IdlTypes<GlamProtocol>["permission"];
+
+export type IntegrationPermissionsType =
+  IdlTypes<GlamProtocol>["integrationPermissions"];
+export type ProtocolPermissionsType =
+  IdlTypes<GlamProtocol>["protocolPermissions"];
+
+export class IntegrationPermissions implements IntegrationPermissionsType {
+  integrationProgram: PublicKey;
+  protocolPermissions: ProtocolPermissionsType[];
+
+  constructor(obj: Partial<IntegrationPermissionsType>) {
+    this.integrationProgram = obj.integrationProgram!;
+    this.protocolPermissions = obj.protocolPermissions ?? [];
+  }
+}
+
+export class ProtocolPermissions implements ProtocolPermissionsType {
+  protocolBitflag: number;
+  permissionsBitmask: BN;
+
+  constructor(obj: Partial<ProtocolPermissionsType>) {
+    this.protocolBitflag = obj.protocolBitflag!;
+    this.permissionsBitmask = obj.permissionsBitmask!;
+  }
+}
+
+export type JupiterSwapPolicyType = IdlTypes<GlamProtocol>["jupiterSwapPolicy"];
+export class JupiterSwapPolicy implements JupiterSwapPolicyType {
+  maxSlippageBps: number;
+  swapAllowlist: PublicKey[];
+
+  constructor(obj: Partial<JupiterSwapPolicyType>) {
+    this.maxSlippageBps = obj.maxSlippageBps!;
+    this.swapAllowlist = obj.swapAllowlist ?? [];
+  }
+}
+
+export type ProtocolPolicyType = IdlTypes<GlamProtocol>["protocolPolicy"];
+export class ProtocolPolicy implements ProtocolPolicyType {
+  protocolBitflag: number;
+  data: Buffer;
+
+  constructor(obj: Partial<ProtocolPolicyType>) {
+    this.protocolBitflag = obj.protocolBitflag!;
+    this.data = obj.data!;
+  }
+}
+
+export type IntegrationAclType = IdlTypes<GlamProtocol>["integrationAcl"];
+export class IntegrationAcl implements IntegrationAclType {
+  integrationProgram: PublicKey;
+  protocolsBitmask: number;
+  protocolPolicies: ProtocolPolicy[];
+
+  constructor(obj: Partial<IntegrationAclType>) {
+    this.integrationProgram = obj.integrationProgram!;
+    this.protocolsBitmask = obj.protocolsBitmask!;
+    this.protocolPolicies = obj.protocolPolicies ?? [];
+  }
+}
+
 export type DelegateAclType = IdlTypes<GlamProtocol>["delegateAcl"];
 export class DelegateAcl implements DelegateAclType {
   pubkey: PublicKey;
-  permissions: Permission[];
+  integrationPermissions: IntegrationPermissions[];
   expiresAt: BN;
 
   constructor(obj: Partial<DelegateAclType>) {
     this.pubkey = obj.pubkey!;
-    this.permissions = obj.permissions ?? [];
+    this.integrationPermissions = obj.integrationPermissions ?? [];
     this.expiresAt = obj.expiresAt ?? new BN(0);
   }
 }
@@ -624,7 +548,36 @@ export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
 export type NotifyAndSettle = IdlTypes<GlamProtocol>["notifyAndSettle"];
-export type LedgerEntry = IdlTypes<GlamProtocol>["ledgerEntry"];
+
+export class StateAccountType {
+  static readonly VAULT = { vault: {} };
+  static readonly TOKENIZED_VAULT = { tokenizedVault: {} };
+  static readonly MINT = { mint: {} };
+
+  static equals(a: StateAccountType, b: StateAccountType) {
+    return Object.keys(a)[0] === Object.keys(b)[0];
+  }
+}
+
+export class RequestType {
+  static readonly SUBSCRIPTION = { subscription: {} };
+  static readonly REDEMPTION = { redemption: {} };
+
+  static equals(a: RequestType, b: RequestType) {
+    return Object.keys(a)[0] === Object.keys(b)[0];
+  }
+
+  static fromInt(int: number) {
+    switch (int) {
+      case 0:
+        return RequestType.SUBSCRIPTION;
+      case 1:
+        return RequestType.REDEMPTION;
+      default:
+        throw new Error("Invalid request type");
+    }
+  }
+}
 
 export class PriceDenom {
   static readonly SOL = { sol: {} };
@@ -661,3 +614,6 @@ export class VoteAuthorize {
   static readonly Voter = { voter: {} };
   static readonly Withdrawer = { withdrawer: {} };
 }
+
+export type RequestQueue = IdlTypes<GlamMint>["requestQueue"];
+export type PendingRequest = IdlTypes<GlamMint>["pendingRequest"];

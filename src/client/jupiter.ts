@@ -250,8 +250,7 @@ export class JupiterSwapClient {
       inputTokenProgram,
       outputTokenProgram,
     );
-    // @ts-ignore
-    const tx = await this.base.program.methods
+    const tx = await this.base.protocolProgram.methods
       .jupiterSwap(swapIx.data)
       .accounts({
         glamState: this.base.statePda,
@@ -293,10 +292,6 @@ export class JupiterSwapClient {
     return tx.instructions[0];
   }
 
-  /*
-   * Utils
-   */
-
   getPreInstructions = async (
     signer: PublicKey,
     inputMint: PublicKey,
@@ -305,14 +300,11 @@ export class JupiterSwapClient {
     inputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
     outputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
   ): Promise<TransactionInstruction[]> => {
-    const vault = this.base.vaultPda;
-    const ata = this.base.getVaultAta(outputMint, outputTokenProgram);
-
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        ata,
-        vault,
+        this.base.getVaultAta(outputMint, outputTokenProgram),
+        this.base.vaultPda,
         outputMint,
         outputTokenProgram,
       ),
@@ -392,307 +384,308 @@ export class JupiterSwapClient {
   }
 }
 
-export class JupiterVoteClient {
-  public constructor(readonly base: BaseClient) {}
-
-  /*
-   * Client methods
-   */
-
-  /**
-   * Stake JUP. The escrow account will be created if it doesn't exist.
-   *
-   * @param statePda
-   * @param amount
-   * @param txOptions
-   * @returns
-   */
-  public async stakeJup(
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const vault = this.base.vaultPda;
-    const escrow = this.getEscrowPda(vault);
-    const escrowJupAta = this.base.getAta(JUP, escrow);
-    const vaultJupAta = this.base.getAta(JUP, vault);
-
-    const escrowAccountInfo =
-      await this.base.provider.connection.getAccountInfo(escrow);
-    const escrowCreated = escrowAccountInfo ? true : false;
-    const preInstructions = txOptions.preInstructions || [];
-    if (!escrowCreated) {
-      console.log("Will create escrow account:", escrow.toBase58());
-      preInstructions.push(
-        await this.base.program.methods
-          .jupiterVoteNewEscrow()
-          .accounts({
-            glamState: this.base.statePda,
-            locker: this.stakeLocker,
-            escrow,
-          })
-          .instruction(),
-      );
-      preInstructions.push(
-        await this.base.program.methods
-          .jupiterVoteToggleMaxLock(true)
-          .accounts({
-            glamState: this.base.statePda,
-            locker: this.stakeLocker,
-            escrow,
-          })
-          .instruction(),
-      );
-    }
-    preInstructions.push(
-      createAssociatedTokenAccountIdempotentInstruction(
-        this.base.getSigner(),
-        escrowJupAta,
-        escrow,
-        JUP,
-      ),
-    );
-
-    const tx = await this.base.program.methods
-      .jupiterVoteIncreaseLockedAmount(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        locker: this.stakeLocker,
-        escrow,
-        escrowTokens: escrowJupAta,
-        sourceTokens: vaultJupAta,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .preInstructions(preInstructions)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  /**
-   * Unstake all staked JUP.
-   *
-   * @param statePda
-   * @param txOptions
-   * @returns
-   */
-  // TODO: support partial unstake
-  public async unstakeJup(txOptions: TxOptions = {}) {
-    const vault = this.base.vaultPda;
-    const escrow = this.getEscrowPda(vault);
-
-    const tx = await this.base.program.methods
-      .jupiterVoteToggleMaxLock(false)
-      .accounts({
-        glamState: this.base.statePda,
-        locker: this.stakeLocker,
-        escrow,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async withdrawJup(txOptions: TxOptions = {}) {
-    const vault = this.base.vaultPda;
-    const escrow = this.getEscrowPda(vault);
-    const escrowJupAta = this.base.getAta(JUP, escrow);
-    const vaultJupAta = this.base.getAta(JUP, vault);
-
-    const tx = await this.base.program.methods
-      .jupiterVoteWithdraw()
-      .accounts({
-        glamState: this.base.statePda,
-        locker: this.stakeLocker,
-        escrow,
-        escrowTokens: escrowJupAta,
-        destinationTokens: vaultJupAta,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .preInstructions([
-        createAssociatedTokenAccountIdempotentInstruction(
-          this.base.getSigner(),
-          vaultJupAta,
-          vault,
-          JUP,
-        ),
-      ])
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async claimAndStake(
-    distributor: PublicKey,
-    amountUnlocked: BN,
-    amountLocked: BN,
-    proof: number[][],
-    txOptions: TxOptions = {},
-  ) {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.vaultPda;
-    const escrow = this.getEscrowPda(vault);
-    const escrowJupAta = this.base.getAta(JUP, escrow);
-    const distributorJupAta = this.base.getAta(JUP, distributor);
-
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        distributor,
-        from: distributorJupAta,
-        claimStatus: this.getClaimStatus(vault, distributor),
-        voterProgram: JUP_VOTE_PROGRAM,
-        locker: this.stakeLocker,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        escrow,
-        escrowTokens: escrowJupAta,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async cancelUnstake(txOptions: TxOptions = {}) {
-    const vault = this.base.vaultPda;
-    const escrow = this.getEscrowPda(vault);
-
-    const tx = await this.base.program.methods
-      .jupiterVoteToggleMaxLock(true)
-      .accounts({
-        glamState: this.base.statePda,
-        locker: this.stakeLocker,
-        escrow,
-      })
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  /**
-   * Vote on a proposal. The vote account will be created if it doesn't exist.
-   *
-   * @param proposal
-   * @param side
-   * @param txOptions
-   * @returns
-   */
-  public async voteOnProposal(
-    proposal: PublicKey,
-    side: number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamVault = this.base.vaultPda;
-    const vote = this.getVotePda(proposal, glamVault);
-    const governor = this.getGovernorPda();
-
-    const voteAccountInfo =
-      await this.base.provider.connection.getAccountInfo(vote);
-    const voteCreated = voteAccountInfo ? true : false;
-    const preInstructions = [];
-    if (!voteCreated) {
-      console.log("Will create vote account:", vote.toBase58());
-      preInstructions.push(
-        await this.base.program.methods
-          .jupiterGovNewVote(glamVault)
-          .accountsPartial({
-            glamState: this.base.statePda,
-            proposal,
-            vote,
-          })
-          .instruction(),
-      );
-    }
-
-    const escrow = this.getEscrowPda(glamVault);
-    const tx = await this.base.program.methods
-      .jupiterVoteCastVote(side)
-      .accounts({
-        glamState: this.base.statePda,
-        escrow,
-        proposal,
-        vote,
-        locker: this.stakeLocker,
-        governor,
-        governProgram: GOVERNANCE_PROGRAM_ID,
-      })
-      .preInstructions(preInstructions)
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  /*
-   * Utils
-   */
-  async fetchVotes(proposals: PublicKey[] | string[]) {
-    const glamVault = this.base.vaultPda;
-    const votes = proposals.map((proposal) =>
-      this.getVotePda(new PublicKey(proposal), glamVault),
-    );
-
-    const votesAccountInfo =
-      await this.base.provider.connection.getMultipleAccountsInfo(votes);
-    return votesAccountInfo
-      .filter((accountInfo) => accountInfo !== null)
-      .map((accountInfo) => ({
-        // offsets:
-        // 8 (discriminator)
-        // 32 (proposal)
-        // 32 (voter)
-        // 1 (bump)
-        // 1 (side)
-        proposal: new PublicKey(accountInfo.data.subarray(8, 40)),
-        voter: new PublicKey(accountInfo.data.subarray(40, 72)),
-        side: accountInfo.data.readUInt8(73),
-      }));
-  }
-
-  get stakeLocker(): PublicKey {
-    const [locker] = PublicKey.findProgramAddressSync(
-      [Buffer.from("Locker"), BASE.toBuffer()],
-      JUP_VOTE_PROGRAM,
-    );
-    return locker;
-  }
-
-  getClaimStatus(claimant: PublicKey, distributor: PublicKey): PublicKey {
-    const [claimStatus] = PublicKey.findProgramAddressSync(
-      [Buffer.from("ClaimStatus"), claimant.toBuffer(), distributor.toBuffer()],
-      MERKLE_DISTRIBUTOR_PROGRAM,
-    );
-    return claimStatus;
-  }
-
-  getEscrowPda(owner: PublicKey): PublicKey {
-    const [escrow] = PublicKey.findProgramAddressSync(
-      [Buffer.from("Escrow"), this.stakeLocker.toBuffer(), owner.toBuffer()],
-      JUP_VOTE_PROGRAM,
-    );
-    return escrow;
-  }
-
-  getVotePda(proposal: PublicKey, voter: PublicKey): PublicKey {
-    const [vote] = PublicKey.findProgramAddressSync(
-      [Buffer.from("Vote"), proposal.toBuffer(), voter.toBuffer()],
-      GOVERNANCE_PROGRAM_ID,
-    );
-    return vote;
-  }
-
-  getGovernorPda(): PublicKey {
-    const [governor] = PublicKey.findProgramAddressSync(
-      [Buffer.from("Governor"), BASE.toBuffer()],
-      GOVERNANCE_PROGRAM_ID,
-    );
-    return governor;
-  }
-}
+//export class JupiterVoteClient {
+//  public constructor(readonly base: BaseClient) {}
+//
+//  /*
+//   * Client methods
+//   */
+//
+//  /**
+//   * Stake JUP. The escrow account will be created if it doesn't exist.
+//   *
+//   * @param statePda
+//   * @param amount
+//   * @param txOptions
+//   * @returns
+//   */
+//  public async stakeJup(
+//    amount: BN,
+//    txOptions: TxOptions = {},
+//  ): Promise<TransactionSignature> {
+//    const vault = this.base.vaultPda;
+//    const escrow = this.getEscrowPda(vault);
+//    const escrowJupAta = this.base.getAta(JUP, escrow);
+//    const vaultJupAta = this.base.getAta(JUP, vault);
+//
+//    const escrowAccountInfo =
+//      await this.base.provider.connection.getAccountInfo(escrow);
+//    const escrowCreated = escrowAccountInfo ? true : false;
+//    const preInstructions = txOptions.preInstructions || [];
+//    if (!escrowCreated) {
+//      console.log("Will create escrow account:", escrow.toBase58());
+//      preInstructions.push(
+//        await this.base.protocolProgram.methods
+//          .jupiterVoteNewEscrow()
+//          .accounts({
+//            glamState: this.base.statePda,
+//            locker: this.stakeLocker,
+//            escrow,
+//          })
+//          .instruction(),
+//      );
+//      preInstructions.push(
+//        await this.base.protocolProgram.methods
+//          .jupiterVoteToggleMaxLock(true)
+//          .accounts({
+//            glamState: this.base.statePda,
+//            locker: this.stakeLocker,
+//            escrow,
+//          })
+//          .instruction(),
+//      );
+//    }
+//    preInstructions.push(
+//      createAssociatedTokenAccountIdempotentInstruction(
+//        this.base.getSigner(),
+//        escrowJupAta,
+//        escrow,
+//        JUP,
+//      ),
+//    );
+//
+//    const tx = await this.base.protocolProgram.methods
+//      .jupiterVoteIncreaseLockedAmount(amount)
+//      .accounts({
+//        glamState: this.base.statePda,
+//        locker: this.stakeLocker,
+//        escrow,
+//        escrowTokens: escrowJupAta,
+//        sourceTokens: vaultJupAta,
+//        tokenProgram: TOKEN_PROGRAM_ID,
+//      })
+//      .preInstructions(preInstructions)
+//      .transaction();
+//
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  /**
+//   * Unstake all staked JUP.
+//   *
+//   * @param statePda
+//   * @param txOptions
+//   * @returns
+//   */
+//  // TODO: support partial unstake
+//  public async unstakeJup(txOptions: TxOptions = {}) {
+//    const vault = this.base.vaultPda;
+//    const escrow = this.getEscrowPda(vault);
+//
+//    const tx = await this.base.protocolProgram.methods
+//      .jupiterVoteToggleMaxLock(false)
+//      .accounts({
+//        glamState: this.base.statePda,
+//        locker: this.stakeLocker,
+//        escrow,
+//      })
+//      .transaction();
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  public async withdrawJup(txOptions: TxOptions = {}) {
+//    const vault = this.base.vaultPda;
+//    const escrow = this.getEscrowPda(vault);
+//    const escrowJupAta = this.base.getAta(JUP, escrow);
+//    const vaultJupAta = this.base.getAta(JUP, vault);
+//
+//    const tx = await this.base.protocolProgram.methods
+//      .jupiterVoteWithdraw()
+//      .accounts({
+//        glamState: this.base.statePda,
+//        locker: this.stakeLocker,
+//        escrow,
+//        escrowTokens: escrowJupAta,
+//        destinationTokens: vaultJupAta,
+//        tokenProgram: TOKEN_PROGRAM_ID,
+//      })
+//      .preInstructions([
+//        createAssociatedTokenAccountIdempotentInstruction(
+//          this.base.getSigner(),
+//          vaultJupAta,
+//          vault,
+//          JUP,
+//        ),
+//      ])
+//      .transaction();
+//
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  public async claimAndStake(
+//    distributor: PublicKey,
+//    amountUnlocked: BN,
+//    amountLocked: BN,
+//    proof: number[][],
+//    txOptions: TxOptions = {},
+//  ) {
+//    const glamSigner = txOptions.signer || this.base.getSigner();
+//    const vault = this.base.vaultPda;
+//    const escrow = this.getEscrowPda(vault);
+//    const escrowJupAta = this.base.getAta(JUP, escrow);
+//    const distributorJupAta = this.base.getAta(JUP, distributor);
+//
+//    // @ts-ignore
+//    const tx = await this.base.protocolProgram.methods
+//      .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
+//      .accounts({
+//        glamState: this.base.statePda,
+//        glamSigner,
+//        distributor,
+//        from: distributorJupAta,
+//        claimStatus: this.getClaimStatus(vault, distributor),
+//        voterProgram: JUP_VOTE_PROGRAM,
+//        locker: this.stakeLocker,
+//        tokenProgram: TOKEN_PROGRAM_ID,
+//        escrow,
+//        escrowTokens: escrowJupAta,
+//      })
+//      .transaction();
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  public async cancelUnstake(txOptions: TxOptions = {}) {
+//    const vault = this.base.vaultPda;
+//    const escrow = this.getEscrowPda(vault);
+//
+//    const tx = await this.base.protocolProgram.methods
+//      .jupiterVoteToggleMaxLock(true)
+//      .accounts({
+//        glamState: this.base.statePda,
+//        locker: this.stakeLocker,
+//        escrow,
+//      })
+//      .transaction();
+//
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  /**
+//   * Vote on a proposal. The vote account will be created if it doesn't exist.
+//   *
+//   * @param proposal
+//   * @param side
+//   * @param txOptions
+//   * @returns
+//   */
+//  public async voteOnProposal(
+//    proposal: PublicKey,
+//    side: number,
+//    txOptions: TxOptions = {},
+//  ): Promise<TransactionSignature> {
+//    const glamVault = this.base.vaultPda;
+//    const vote = this.getVotePda(proposal, glamVault);
+//    const governor = this.getGovernorPda();
+//
+//    const voteAccountInfo =
+//      await this.base.provider.connection.getAccountInfo(vote);
+//    const voteCreated = voteAccountInfo ? true : false;
+//    const preInstructions = [];
+//    if (!voteCreated) {
+//      console.log("Will create vote account:", vote.toBase58());
+//      preInstructions.push(
+//        await this.base.protocolProgram.methods
+//          .jupiterGovNewVote(glamVault)
+//          .accountsPartial({
+//            glamState: this.base.statePda,
+//            proposal,
+//            vote,
+//          })
+//          .instruction(),
+//      );
+//    }
+//
+//    const escrow = this.getEscrowPda(glamVault);
+//    const tx = await this.base.protocolProgram.methods
+//      .jupiterVoteCastVote(side)
+//      .accounts({
+//        glamState: this.base.statePda,
+//        escrow,
+//        proposal,
+//        vote,
+//        locker: this.stakeLocker,
+//        governor,
+//        governProgram: GOVERNANCE_PROGRAM_ID,
+//      })
+//      .preInstructions(preInstructions)
+//      .transaction();
+//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+//    return await this.base.sendAndConfirm(vTx);
+//  }
+//
+//  /*
+//   * Utils
+//   */
+//  async fetchVotes(proposals: PublicKey[] | string[]) {
+//    const glamVault = this.base.vaultPda;
+//    const votes = proposals.map((proposal) =>
+//      this.getVotePda(new PublicKey(proposal), glamVault),
+//    );
+//
+//    const votesAccountInfo =
+//      await this.base.provider.connection.getMultipleAccountsInfo(votes);
+//    return votesAccountInfo
+//      .filter((accountInfo) => accountInfo !== null)
+//      .map((accountInfo) => ({
+//        // offsets:
+//        // 8 (discriminator)
+//        // 32 (proposal)
+//        // 32 (voter)
+//        // 1 (bump)
+//        // 1 (side)
+//        proposal: new PublicKey(accountInfo.data.subarray(8, 40)),
+//        voter: new PublicKey(accountInfo.data.subarray(40, 72)),
+//        side: accountInfo.data.readUInt8(73),
+//      }));
+//  }
+//
+//  get stakeLocker(): PublicKey {
+//    const [locker] = PublicKey.findProgramAddressSync(
+//      [Buffer.from("Locker"), BASE.toBuffer()],
+//      JUP_VOTE_PROGRAM,
+//    );
+//    return locker;
+//  }
+//
+//  getClaimStatus(claimant: PublicKey, distributor: PublicKey): PublicKey {
+//    const [claimStatus] = PublicKey.findProgramAddressSync(
+//      [Buffer.from("ClaimStatus"), claimant.toBuffer(), distributor.toBuffer()],
+//      MERKLE_DISTRIBUTOR_PROGRAM,
+//    );
+//    return claimStatus;
+//  }
+//
+//  getEscrowPda(owner: PublicKey): PublicKey {
+//    const [escrow] = PublicKey.findProgramAddressSync(
+//      [Buffer.from("Escrow"), this.stakeLocker.toBuffer(), owner.toBuffer()],
+//      JUP_VOTE_PROGRAM,
+//    );
+//    return escrow;
+//  }
+//
+//  getVotePda(proposal: PublicKey, voter: PublicKey): PublicKey {
+//    const [vote] = PublicKey.findProgramAddressSync(
+//      [Buffer.from("Vote"), proposal.toBuffer(), voter.toBuffer()],
+//      GOVERNANCE_PROGRAM_ID,
+//    );
+//    return vote;
+//  }
+//
+//  getGovernorPda(): PublicKey {
+//    const [governor] = PublicKey.findProgramAddressSync(
+//      [Buffer.from("Governor"), BASE.toBuffer()],
+//      GOVERNANCE_PROGRAM_ID,
+//    );
+//    return governor;
+//  }
+//}
+//

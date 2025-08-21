@@ -281,7 +281,7 @@ export function parseProgramLogs(logs?: null | string[]): string {
       log.includes("Error: insufficient funds"),
   );
 
-  console.log("error message found in program logs", errorMsgLog);
+  // console.log("error message found in program logs", errorMsgLog);
 
   if (errorMsgLog) {
     if (errorMsgLog.includes("Error Message:")) {
@@ -384,3 +384,9 @@ export const setsAreEqual = (a: Set<any>, b: Set<any>) => {
   }
   return true;
 };
+
+export function charsToName(chars: number[] | Buffer): string {
+  return String.fromCharCode(...chars)
+    .replace(/\0/g, "")
+    .trim();
+}

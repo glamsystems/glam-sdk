@@ -1,22 +1,8 @@
 import { BN } from "@coral-xyz/anchor";
-import {
-  PublicKey,
-  SystemProgram,
-  TransactionInstruction,
-  TransactionSignature,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createSyncNativeInstruction,
-  TOKEN_2022_PROGRAM_ID,
-  createCloseAccountInstruction,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { PublicKey, TransactionSignature } from "@solana/web3.js";
+import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
-import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
-import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { PriceClient } from "./price";
 import { PriceDenom } from "../models";
 
@@ -25,6 +11,46 @@ export class FeesClient {
     readonly base: BaseClient,
     readonly price: PriceClient,
   ) {}
+
+  /**
+   * Returns claimable fees object
+   */
+  public async getClaimableFees(): Promise<any> {
+    const stateAccount = await this.base.fetchStateAccount();
+    const mintParams = stateAccount.params[1];
+    for (let i = 0; i < mintParams.length; i++) {
+      let param = mintParams[i];
+      const name = Object.keys(param.name)[0];
+      // @ts-ignore
+      const value = Object.values(param.value)[0].val;
+
+      if (name === "claimableFees") {
+        return value;
+      }
+    }
+
+    throw new Error("Claimable fees not found");
+  }
+
+  /**
+   * Returns claimed fees object
+   */
+  public async getClaimedFees(): Promise<any> {
+    const stateAccount = await this.base.fetchStateAccount();
+    const mintParams = stateAccount.params[1];
+    for (let i = 0; i < mintParams.length; i++) {
+      let param = mintParams[i];
+      const name = Object.keys(param.name)[0];
+      // @ts-ignore
+      const value = Object.values(param.value)[0].val;
+
+      if (name === "claimedFees") {
+        return value;
+      }
+    }
+
+    throw new Error("Claimed fees not found");
+  }
 
   public async crystallizeFees(
     txOptions: TxOptions = {},
@@ -35,16 +61,21 @@ export class FeesClient {
       throw new Error("Base asset not found");
     }
 
-    const priceVaultIxs = await this.price.priceVaultIxs(
+    const priceVaultIxs = await this.price.priceVaultTokensIxs(
       PriceDenom.fromAsset(baseAsset),
     );
-    const tx = await this.base.program.methods
-      .crystallizeFees(0)
+    const preInstructions = [
+      ...priceVaultIxs,
+      ...(txOptions.preInstructions || []),
+    ];
+
+    const tx = await this.base.mintProgram.methods
+      .crystallizeFees()
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
       })
-      .preInstructions(priceVaultIxs)
+      .preInstructions(preInstructions)
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -84,7 +115,7 @@ export class FeesClient {
       tokenProgram,
     );
 
-    const priceVaultIxs = await this.price.priceVaultIxs(
+    const priceVaultIxs = await this.price.priceVaultTokensIxs(
       PriceDenom.fromAsset(baseAsset),
     );
     const preInstructions = [
@@ -104,14 +135,13 @@ export class FeesClient {
       ),
       ...priceVaultIxs,
     ];
-    const tx = await this.base.program.methods
-      .disburseFees(0)
+    const tx = await this.base.mintProgram.methods
+      .disburseFees()
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
-        // @ts-ignore
-        protocolFeeAuthorityAta,
-        managerFeeAuthorityAta,
+        protocolFeeAuthority,
+        managerFeeAuthority,
         depositAsset: baseAsset,
         depositTokenProgram: tokenProgram,
       })
@@ -120,5 +150,21 @@ export class FeesClient {
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async setProtocolFees(
+    baseFeeBps: number,
+    flowFeeBps: number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.base.mintProgram.methods
+      .setProtocolFees(baseFeeBps, flowFeeBps)
+      .accounts({
+        glamState: this.base.statePda,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    const txSig = await this.base.sendAndConfirm(vTx);
+    return txSig;
   }
 }

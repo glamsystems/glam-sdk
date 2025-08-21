@@ -38,6 +38,7 @@ import {
 } from "@solana/spl-token";
 import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
+import { charsToName } from "../utils/helpers";
 
 const DRIFT_DISTRIBUTOR_PROGRAM = new PublicKey(
   "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x",
@@ -204,11 +205,17 @@ export class DriftClient {
 
   public async modifyOrder(
     modifyOrderParams: ModifyOrderParams,
+    orderId: number,
+    marketIndex: number,
+    marketType: MarketType,
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.modifyOrderTx(
       modifyOrderParams,
+      orderId,
+      marketIndex,
+      marketType,
       subAccountId,
       txOptions,
     );
@@ -296,7 +303,7 @@ export class DriftClient {
     const marketPda = new PublicKey(data.subarray(8, 40));
     const oracle = new PublicKey(data.subarray(40, 72));
 
-    const name = this.charsToName(data.subarray(1000, 1032));
+    const name = charsToName(data.subarray(1000, 1032));
 
     const oralceEnum = data.subarray(926, 927).readUint8();
     const oracleSource = OracleSource.get(oralceEnum);
@@ -318,7 +325,7 @@ export class DriftClient {
     const mint = new PublicKey(data.subarray(72, 104));
     const vault = new PublicKey(data.subarray(104, 136));
 
-    const name = this.charsToName(data.subarray(136, 168));
+    const name = charsToName(data.subarray(136, 168));
 
     const cumulativeDepositInterest = new BN(data.subarray(464, 480), "le");
     const cumulativeBorrowInterest = new BN(data.subarray(480, 496), "le");
@@ -579,12 +586,6 @@ export class DriftClient {
     return this.marketConfigs;
   }
 
-  charsToName(chars: number[] | Buffer): string {
-    return String.fromCharCode(...chars)
-      .replace(/\0/g, "")
-      .trim();
-  }
-
   async parseDriftUser(
     accountInfo: AccountInfo<Buffer>,
     subAccountId: number,
@@ -631,7 +632,7 @@ export class DriftClient {
 
     return {
       delegate,
-      name: this.charsToName(name),
+      name: charsToName(name),
       spotPositions: spotPositionsExt,
       perpPositions,
       orders,
@@ -799,52 +800,51 @@ export class DriftClient {
     return claimStatus;
   }
 
-  public async claim(
-    distributor: PublicKey,
-    amountUnlocked: BN,
-    amountLocked: BN,
-    proof: number[][],
-    txOptions: TxOptions = {},
-  ) {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.vaultPda;
-    const vaultAta = this.base.getVaultAta(DRIFT);
-    const distributorAta = this.base.getAta(DRIFT, distributor);
+  // public async claim(
+  //   distributor: PublicKey,
+  //   amountUnlocked: BN,
+  //   amountLocked: BN,
+  //   proof: number[][],
+  //   txOptions: TxOptions = {},
+  // ) {
+  //   const glamSigner = txOptions.signer || this.base.getSigner();
+  //   const vault = this.base.vaultPda;
+  //   const vaultAta = this.base.getVaultAta(DRIFT);
+  //   const distributorAta = this.base.getAta(DRIFT, distributor);
 
-    const preInstructions = [
-      createAssociatedTokenAccountIdempotentInstruction(
-        glamSigner,
-        vaultAta,
-        vault,
-        DRIFT,
-      ),
-    ];
+  //   const preInstructions = [
+  //     createAssociatedTokenAccountIdempotentInstruction(
+  //       glamSigner,
+  //       vaultAta,
+  //       vault,
+  //       DRIFT,
+  //     ),
+  //   ];
 
-    const tx = await this.base.program.methods
-      .driftDistributorNewClaim(amountUnlocked, amountLocked, proof)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        distributor,
-        claimStatus: this.getClaimStatus(vault, distributor),
-        from: distributorAta,
-        to: vaultAta,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .preInstructions(preInstructions)
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-    return await this.base.sendAndConfirm(vTx);
-  }
+  //   const tx = await this.base.extDriftProgram.methods
+  //     .distributorNewClaim(amountUnlocked, amountLocked, proof)
+  //     .accounts({
+  //       glamState: this.base.statePda,
+  //       glamSigner,
+  //       distributor,
+  //       claimStatus: this.getClaimStatus(vault, distributor),
+  //       from: distributorAta,
+  //       to: vaultAta,
+  //       tokenProgram: TOKEN_PROGRAM_ID,
+  //     })
+  //     .preInstructions(preInstructions)
+  //     .transaction();
+  //   const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
+  //   return await this.base.sendAndConfirm(vTx);
+  // }
 
   async initializeUserStatsIx(
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
     const { userStats } = this.getDriftUserPdas();
 
-    // @ts-ignore
-    return await this.base.program.methods
-      .driftInitializeUserStats()
+    return await this.base.extDriftProgram.methods
+      .initializeUserStats()
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -872,8 +872,8 @@ export class DriftClient {
       { pubkey: referrerStats, isWritable: true, isSigner: false },
     ];
 
-    return await this.base.program.methods
-      .driftInitializeUser(subAccountId, name)
+    return await this.base.extDriftProgram.methods
+      .initializeUser(subAccountId, name)
       .accounts({
         glamState: this.base.statePda,
         user,
@@ -891,8 +891,8 @@ export class DriftClient {
   ): Promise<TransactionInstruction> {
     const { user } = this.getDriftUserPdas(subAccountId);
 
-    return await this.base.program.methods
-      .driftUpdateUserPoolId(subAccountId, poolId)
+    return await this.base.extDriftProgram.methods
+      .updateUserPoolId(subAccountId, poolId)
       .accounts({
         glamState: this.base.statePda,
         user,
@@ -934,8 +934,8 @@ export class DriftClient {
     const marginRatio =
       maxLeverage === 0 ? 0 : DRIFT_MARGIN_PRECISION / maxLeverage;
 
-    return await this.base.program.methods
-      .driftUpdateUserCustomMarginRatio(subAccountId, marginRatio)
+    return await this.base.extDriftProgram.methods
+      .updateUserCustomMarginRatio(subAccountId, marginRatio)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -967,8 +967,8 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { user } = this.getDriftUserPdas(subAccountId);
 
-    return await this.base.program.methods
-      .driftUpdateUserMarginTradingEnabled(subAccountId, marginTradingEnabled)
+    return await this.base.extDriftProgram.methods
+      .updateUserMarginTradingEnabled(subAccountId, marginTradingEnabled)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1002,8 +1002,8 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { user } = this.getDriftUserPdas(subAccountId);
 
-    return await this.base.program.methods
-      .driftUpdateUserDelegate(subAccountId, new PublicKey(delegate))
+    return await this.base.extDriftProgram.methods
+      .updateUserDelegate(subAccountId, new PublicKey(delegate))
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1031,8 +1031,8 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { user, userStats } = this.getDriftUserPdas(subAccountId);
 
-    const tx = await this.base.program.methods
-      .driftDeleteUser()
+    const tx = await this.base.extDriftProgram.methods
+      .deleteUser()
       .accounts({
         glamState: this.base.statePda,
         state: this.driftStatePda,
@@ -1095,7 +1095,7 @@ export class DriftClient {
       // If we need to wrap SOL, it means the wSOL balance will be drained,
       // and we close the wSOL token account for convenience
       const tokenAccount = this.base.getVaultAta(WSOL);
-      const closeTokenAccountIx = await this.base.program.methods
+      const closeTokenAccountIx = await this.base.extSplProgram.methods
         .tokenCloseAccount()
         .accounts({
           glamState: this.base.statePda,
@@ -1119,16 +1119,16 @@ export class DriftClient {
       });
     }
 
-    const tx = await this.base.program.methods
-      .driftDeposit(marketIndex, amount, false)
+    const tx = await this.base.extDriftProgram.methods
+      .deposit(marketIndex, amount, false)
       .accounts({
         glamState: this.base.statePda,
+        glamSigner,
         state: this.driftStatePda,
         user,
         userStats,
         spotMarketVault: driftVault,
         userTokenAccount: this.base.getVaultAta(mint, tokenProgram),
-        glamSigner,
         tokenProgram,
       })
       .remainingAccounts(remainingAccounts)
@@ -1182,14 +1182,14 @@ export class DriftClient {
       ),
     ];
 
-    const tx = await this.base.program.methods
-      .driftWithdraw(marketIndex, amount, false)
+    const tx = await this.base.extDriftProgram.methods
+      .withdraw(marketIndex, amount, false)
       .accounts({
         glamState: this.base.statePda,
+        glamSigner,
         state: this.driftStatePda,
         user,
         userStats,
-        glamSigner,
         spotMarketVault: driftVault,
         userTokenAccount: glamVaultAta,
         driftSigner: DRIFT_SIGNER,
@@ -1222,14 +1222,13 @@ export class DriftClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const { user } = this.getDriftUserPdas(subAccountId);
 
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .driftPlaceOrders([orderParams])
+    const tx = await this.base.extDriftProgram.methods
+      .placeOrders([orderParams])
       .accounts({
         glamState: this.base.statePda,
+        glamSigner,
         user,
         state: this.driftStatePda,
-        glamSigner,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();
@@ -1239,31 +1238,30 @@ export class DriftClient {
 
   public async modifyOrderTx(
     modifyOrderParams: ModifyOrderParams,
+    orderId: number,
+    marketIndex: number,
+    marketType: MarketType,
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    // const { marketIndex, marketType } = orderParams;
-    // const remainingAccounts = await this.composeRemainingAccounts(
-    //   statePda,
-    //   subAccountId,
-    //   marketConfigs,
-    //   marketType,
-    //   marketIndex,
-    // );
+    const remainingAccounts = await this.composeRemainingAccounts(
+      subAccountId,
+      marketType,
+      marketIndex,
+    );
 
     const signer = txOptions.signer || this.base.getSigner();
     const { user } = this.getDriftUserPdas(subAccountId);
 
-    const tx = await this.base.program.methods
-      // @ts-ignore
-      .driftModifyOrder(1, modifyOrderParams)
+    const tx = await this.base.extDriftProgram.methods
+      .modifyOrder(orderId, modifyOrderParams)
       .accounts({
         glamState: this.base.statePda,
         glamSigner: signer,
         user,
         state: this.driftStatePda,
       })
-      // .remainingAccounts(remainingAccounts)
+      .remainingAccounts(remainingAccounts)
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
@@ -1285,9 +1283,8 @@ export class DriftClient {
       marketIndex,
     );
 
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .driftCancelOrders(marketType, marketIndex, direction)
+    const tx = await this.base.extDriftProgram.methods
+      .cancelOrders(marketType, marketIndex, direction)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1310,9 +1307,8 @@ export class DriftClient {
 
     const remainingAccounts = await this.composeRemainingAccounts(subAccountId);
 
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .driftCancelOrdersByIds(orderIds)
+    const tx = await this.base.extDriftProgram.methods
+      .cancelOrdersByIds(orderIds)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1340,9 +1336,8 @@ export class DriftClient {
       marketIndex,
     );
 
-    // @ts-ignore
-    const tx = await this.base.program.methods
-      .driftSettlePnl(marketIndex)
+    const tx = await this.base.extDriftProgram.methods
+      .settlePnl(marketIndex)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1476,8 +1471,8 @@ export class DriftVaultsClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const vaultDepositor = this.getDepositorPda(driftVault);
 
-    const tx = await this.base.program.methods
-      .driftVaultsInitializeVaultDepositor()
+    const tx = await this.base.extDriftProgram.methods
+      .vaultsInitializeVaultDepositor()
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1520,8 +1515,8 @@ export class DriftVaultsClient {
     // GLAM vault's token account for deposit, we assume it exists
     const userTokenAccount = this.base.getVaultAta(mint, tokenProgram);
 
-    const tx = await this.base.program.methods
-      .driftVaultsDeposit(amount)
+    const tx = await this.base.extDriftProgram.methods
+      .vaultsDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1556,8 +1551,8 @@ export class DriftVaultsClient {
 
     const remainingAccounts = await this.composeRemainingAccounts(driftUser);
 
-    const tx = await this.base.program.methods
-      .driftVaultsRequestWithdraw(amount, { shares: {} })
+    const tx = await this.base.extDriftProgram.methods
+      .vaultsRequestWithdraw(amount, { shares: {} })
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1585,8 +1580,8 @@ export class DriftVaultsClient {
 
     const remainingAccounts = await this.composeRemainingAccounts(driftUser);
 
-    const tx = await this.base.program.methods
-      .driftVaultsCancelRequestWithdraw()
+    const tx = await this.base.extDriftProgram.methods
+      .vaultsCancelRequestWithdraw()
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1624,8 +1619,8 @@ export class DriftVaultsClient {
 
     const remainingAccounts = await this.composeRemainingAccounts(driftUser);
 
-    const tx = await this.base.program.methods
-      .driftVaultsWithdraw()
+    const tx = await this.base.extDriftProgram.methods
+      .vaultsWithdraw()
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
