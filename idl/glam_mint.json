@@ -1759,10 +1759,6 @@
           "optional": true
         },
         {
-          "name": "base_asset_token_program",
-          "optional": true
-        },
-        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         },

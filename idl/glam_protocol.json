@@ -265,10 +265,6 @@
         {
           "name": "base_asset_mint",
           "optional": true
-        },
-        {
-          "name": "base_asset_token_program",
-          "optional": true
         }
       ],
       "args": [
@@ -1624,6 +1620,9 @@
     },
     {
       "name": "stake_merge",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         46,
         181,
@@ -1691,6 +1690,9 @@
     },
     {
       "name": "stake_redelegate",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         134,
         227,
@@ -1756,6 +1758,9 @@
     },
     {
       "name": "stake_split",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         63,
         128,

@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/ext_stake_pool.json`.
  */
 export type ExtStakePool = {
-  "address": "H2NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2ptb",
+  "address": "G1NTstCVkEhGVQPnPe6r7yEyRTvnp3ta63AFkEKxqg25",
   "metadata": {
     "name": "extStakePool",
     "version": "0.1.0",

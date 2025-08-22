@@ -12,12 +12,10 @@ import {
   DelegateAcl,
   StateModel,
   ManagerModel,
-  MintModel,
   CreatedModel,
   StateIdlModel,
 } from "../models";
 import { getStatePda } from "../utils/glamPDAs";
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 export class StateClient {
   public constructor(readonly base: BaseClient) {}
@@ -40,10 +38,6 @@ export class StateClient {
         glamState: statePda,
         glamSigner,
         baseAssetMint: stateModel.baseAsset,
-        baseAssetTokenProgram:
-          stateModel.baseAssetTokenProgram === 0
-            ? TOKEN_PROGRAM_ID
-            : TOKEN_2022_PROGRAM_ID,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);

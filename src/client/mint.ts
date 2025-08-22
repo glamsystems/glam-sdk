@@ -114,19 +114,19 @@ export class MintClient {
     }
 
     let glamMintDecimals = 9;
-    let baseAssetTokenProgram: PublicKey | null = null;
     if (
       StateAccountType.equals(accountType, StateAccountType.TOKENIZED_VAULT)
     ) {
       if (!mintModel.asset) {
-        throw new Error("Mint asset must be specified for account type FUND");
+        throw new Error(
+          "Mint asset must be specified for account type TOKENIZED_VAULT",
+        );
       }
       // Set glam mint decimals to the same as deposit asset
-      const { mint, tokenProgram } = await this.base.fetchMintAndTokenProgram(
+      const { mint } = await this.base.fetchMintAndTokenProgram(
         mintModel.asset,
       );
       glamMintDecimals = mint.decimals;
-      baseAssetTokenProgram = tokenProgram;
     }
 
     const stateInitKey = [
@@ -154,8 +154,7 @@ export class MintClient {
         signer: this.base.signer,
         newMint: this.base.mintPda,
         extraMetasAccount: this.base.extraMetasPda,
-        baseAssetMint: mintModel.asset,
-        baseAssetTokenProgram,
+        baseAssetMint: mintModel.asset || null,
       })
       .transaction();
 

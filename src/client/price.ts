@@ -342,7 +342,9 @@ export class PriceClient {
   /**
    * Returns an instruction that prices vault balance and tokens
    */
-  async priceVaultIx(priceDenom: PriceDenom): Promise<TransactionInstruction> {
+  async priceVaultTokensIx(
+    priceDenom: PriceDenom,
+  ): Promise<TransactionInstruction> {
     const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
       priceDenom == PriceDenom.ASSET,
     );
@@ -411,10 +413,10 @@ export class PriceClient {
   //   return priceMeteoraIx;
   // }
 
-  public async priceVaultTokensIxs(
+  public async priceVaultIxs(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction[]> {
-    const priceVaultIx = await this.priceVaultIx(priceDenom);
+    const priceVaultIx = await this.priceVaultTokensIx(priceDenom);
 
     // If priceDenom is ASSET, only priceVaultIx is returned
     // We currently don't support pricing other assets in custom base asset

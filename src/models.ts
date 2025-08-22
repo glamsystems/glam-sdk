@@ -115,6 +115,7 @@ export class StateModel extends StateIdlModel {
       ? Number(data.timelockExpiresAt.toString())
       : null;
     this.pendingUpdates = data.pendingUpdates ?? null;
+    this.mints = data.mints ?? null;
   }
 
   get idStr() {
@@ -291,7 +292,6 @@ export class StateModel extends StateIdlModel {
       stateModel.mints!.push(new MintModel(mintIdlModel));
     });
 
-    // @ts-ignore
     return new StateModel(stateModel, glamProgramId);
   }
 }

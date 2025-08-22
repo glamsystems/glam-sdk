@@ -61,7 +61,7 @@ export class FeesClient {
       throw new Error("Base asset not found");
     }
 
-    const priceVaultIxs = await this.price.priceVaultTokensIxs(
+    const priceVaultIxs = await this.price.priceVaultIxs(
       PriceDenom.fromAsset(baseAsset),
     );
     const preInstructions = [
@@ -82,7 +82,7 @@ export class FeesClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async disburseFees(
+  public async claimFees(
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const signer = txOptions.signer || this.base.getSigner();
@@ -115,7 +115,7 @@ export class FeesClient {
       tokenProgram,
     );
 
-    const priceVaultIxs = await this.price.priceVaultTokensIxs(
+    const priceVaultIxs = await this.price.priceVaultIxs(
       PriceDenom.fromAsset(baseAsset),
     );
     const preInstructions = [

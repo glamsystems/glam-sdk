@@ -271,10 +271,6 @@ export type GlamProtocol = {
         {
           "name": "baseAssetMint",
           "optional": true
-        },
-        {
-          "name": "baseAssetTokenProgram",
-          "optional": true
         }
       ],
       "args": [
@@ -1630,6 +1626,9 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeMerge",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         46,
         181,
@@ -1697,6 +1696,9 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeRedelegate",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         134,
         227,
@@ -1762,6 +1764,9 @@ export type GlamProtocol = {
     },
     {
       "name": "stakeSplit",
+      "docs": [
+        "Out-of-scope for audit"
+      ],
       "discriminator": [
         63,
         128,

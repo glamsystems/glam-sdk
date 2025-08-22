@@ -2,7 +2,6 @@ import { GlamClientConfig } from "./clientConfig";
 import { BaseClient } from "./client/base";
 import { DriftClient, DriftVaultsClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
-// import { JupiterVoteClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
 import { VaultClient } from "./client/vault";
 import { StakingClient } from "./client/staking";
@@ -12,12 +11,13 @@ import {
   KaminoFarmClient,
   KaminoVaultsClient,
 } from "./client/kamino";
+import { InvestClient } from "./client/invest";
+import { PriceClient } from "./client/price";
+import { FeesClient } from "./client/fees";
+import { MintClient } from "./client/mint";
+// import { JupiterVoteClient } from "./client/jupiter";
 // import { MeteoraDlmmClient } from "./client/meteora";
-// import { InvestClient } from "./client/invest";
-// import { PriceClient } from "./client/price";
 // import { ValidatorClient } from "./client/validator";
-// import { FeesClient } from "./client/fees";
-// import { MintClient } from "./client/mint";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -27,21 +27,21 @@ import {
 export class GlamClient extends BaseClient {
   private _drift?: DriftClient;
   private _driftVaults?: DriftVaultsClient;
-  // private _invest?: InvestClient;
+  private _invest?: InvestClient;
   private _jupiterSwap?: JupiterSwapClient;
-  // private _jupiterVote?: JupiterVoteClient;
   private _marinade?: MarinadeClient;
   private _vault?: VaultClient;
-  // private _price?: PriceClient;
+  private _price?: PriceClient;
   private _staking?: StakingClient;
   private _state?: StateClient;
-  // private _mint?: MintClient;
+  private _mint?: MintClient;
   private _kaminoLending?: KaminoLendingClient;
   private _kaminoFarm?: KaminoFarmClient;
   private _kaminoVaults?: KaminoVaultsClient;
+  private _fees?: FeesClient;
   // private _meteoraDlmm?: MeteoraDlmmClient;
   // private _validator?: ValidatorClient;
-  // private _fees?: FeesClient;
+  // private _jupiterVote?: JupiterVoteClient;
 
   public constructor(config?: GlamClientConfig) {
     super(config);
@@ -61,19 +61,19 @@ export class GlamClient extends BaseClient {
     return this._driftVaults;
   }
 
-  // get invest(): InvestClient {
-  //   if (!this._invest) {
-  //     this._invest = new InvestClient(this);
-  //   }
-  //   return this._invest;
-  // }
+  get invest(): InvestClient {
+    if (!this._invest) {
+      this._invest = new InvestClient(this);
+    }
+    return this._invest;
+  }
 
-  // get fees(): FeesClient {
-  //   if (!this._fees) {
-  //     this._fees = new FeesClient(this, this.price);
-  //   }
-  //   return this._fees;
-  // }
+  get fees(): FeesClient {
+    if (!this._fees) {
+      this._fees = new FeesClient(this, this.price);
+    }
+    return this._fees;
+  }
 
   get jupiterSwap(): JupiterSwapClient {
     if (!this._jupiterSwap) {
@@ -110,18 +110,18 @@ export class GlamClient extends BaseClient {
     return this._staking;
   }
 
-  // get price(): PriceClient {
-  //   if (!this._price) {
-  //     this._price = new PriceClient(
-  //       this,
-  //       this.kaminoLending,
-  //       this.kaminoVaults,
-  //       this.drift,
-  //       this.driftVaults,
-  //     );
-  //   }
-  //   return this._price;
-  // }
+  get price(): PriceClient {
+    if (!this._price) {
+      this._price = new PriceClient(
+        this,
+        this.kaminoLending,
+        this.kaminoVaults,
+        this.drift,
+        this.driftVaults,
+      );
+    }
+    return this._price;
+  }
 
   get state(): StateClient {
     if (!this._state) {
@@ -130,12 +130,12 @@ export class GlamClient extends BaseClient {
     return this._state;
   }
 
-  // get mint(): MintClient {
-  //   if (!this._mint) {
-  //     this._mint = new MintClient(this);
-  //   }
-  //   return this._mint;
-  // }
+  get mint(): MintClient {
+    if (!this._mint) {
+      this._mint = new MintClient(this);
+    }
+    return this._mint;
+  }
 
   get kaminoLending(): KaminoLendingClient {
     if (!this._kaminoLending) {

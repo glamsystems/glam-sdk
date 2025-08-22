@@ -1765,10 +1765,6 @@ export type GlamMint = {
           "optional": true
         },
         {
-          "name": "baseAssetTokenProgram",
-          "optional": true
-        },
-        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
