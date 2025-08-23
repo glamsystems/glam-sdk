@@ -143,6 +143,16 @@
         {
           "name": "data",
           "type": "bytes"
+        },
+        {
+          "name": "extra_params",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "ExtraParams"
+              }
+            }
+          }
         }
       ]
     },
@@ -2530,6 +2540,29 @@
       }
     },
     {
+      "name": "ActionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "AddExternalAccount"
+          },
+          {
+            "name": "DeleteExternalAccount"
+          },
+          {
+            "name": "AddAsset"
+          },
+          {
+            "name": "DeleteAsset"
+          },
+          {
+            "name": "Refund"
+          }
+        ]
+      }
+    },
+    {
       "name": "AssetMeta",
       "type": {
         "kind": "struct",
@@ -3001,6 +3034,32 @@
           {
             "name": "redemption_fee_bps",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ExtraParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "action_type",
+            "type": {
+              "defined": {
+                "name": "ActionType"
+              }
+            }
+          },
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }

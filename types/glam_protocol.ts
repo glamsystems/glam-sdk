@@ -149,6 +149,16 @@ export type GlamProtocol = {
         {
           "name": "data",
           "type": "bytes"
+        },
+        {
+          "name": "extraParams",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "extraParams"
+              }
+            }
+          }
         }
       ]
     },
@@ -2536,6 +2546,29 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "actionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "addExternalAccount"
+          },
+          {
+            "name": "deleteExternalAccount"
+          },
+          {
+            "name": "addAsset"
+          },
+          {
+            "name": "deleteAsset"
+          },
+          {
+            "name": "refund"
+          }
+        ]
+      }
+    },
+    {
       "name": "assetMeta",
       "type": {
         "kind": "struct",
@@ -3007,6 +3040,32 @@ export type GlamProtocol = {
           {
             "name": "redemptionFeeBps",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "extraParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "actionType",
+            "type": {
+              "defined": {
+                "name": "actionType"
+              }
+            }
+          },
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
