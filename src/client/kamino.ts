@@ -962,6 +962,9 @@ export class KaminoLendingClient {
     );
     preInstructions.unshift(createAtaIx);
 
+    // When all assets are being withdrawn from a market, the klend program attempts to close the
+    // obligation account, which requires the system program. We always pass the system program
+    // account as a remaining account just in case.
     const withdrawIx = await this.base.extKaminoProgram.methods
       .lendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(amount)
       .accounts({
@@ -984,6 +987,13 @@ export class KaminoLendingClient {
         reserveFarmState: withdrawReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
+      .remainingAccounts([
+        {
+          pubkey: SystemProgram.programId,
+          isSigner: false,
+          isWritable: false,
+        },
+      ])
       .instruction();
 
     // The final instructions in the tx:
