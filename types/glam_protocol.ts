@@ -2217,51 +2217,56 @@ export type GlamProtocol = {
   "errors": [
     {
       "code": 48000,
-      "name": "notAuthorized",
+      "name": "unauthorizedSigner",
       "msg": "Signer is not authorized"
     },
     {
       "code": 48001,
+      "name": "unauthorizedIntegrationProgram",
+      "msg": "Integration program is not authorized"
+    },
+    {
+      "code": 48002,
       "name": "integrationDisabled",
       "msg": "Integration is disabled"
     },
     {
-      "code": 48002,
+      "code": 48003,
       "name": "glamStateDisabled",
       "msg": "GLAM state is disabled"
     },
     {
-      "code": 48003,
+      "code": 48004,
       "name": "invalidSignerAccount",
       "msg": "Invalid signer token account"
     },
     {
-      "code": 48004,
+      "code": 48005,
       "name": "emergencyUpdateDenied",
       "msg": "Emergency update denied"
     },
     {
-      "code": 48005,
+      "code": 48006,
       "name": "timelockStillActive",
       "msg": "Timelock still active"
     },
     {
-      "code": 48006,
+      "code": 48007,
       "name": "cannotApplyChanges",
       "msg": "Pending changes cannot be applied due to unfulfilled subscriptions or redemptions"
     },
     {
-      "code": 48007,
+      "code": 48008,
       "name": "assetNotBorrowable",
       "msg": "Asset is not allowed to borrow"
     },
     {
-      "code": 48008,
+      "code": 48009,
       "name": "invalidAccountOwner",
       "msg": "Account owned by an invalid program"
     },
     {
-      "code": 48009,
+      "code": 48010,
       "name": "invalidAuthority",
       "msg": "Invalid authority"
     },
@@ -2302,8 +2307,8 @@ export type GlamProtocol = {
     },
     {
       "code": 49007,
-      "name": "invalidMintId",
-      "msg": "Invalid mint id"
+      "name": "invalidMintParams",
+      "msg": "Invalid mint params"
     },
     {
       "code": 49008,
