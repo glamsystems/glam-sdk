@@ -10,6 +10,7 @@ import { MintIdlModel, MintModel, StateAccountType } from "../models";
 import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
+import { charsToName } from "../utils/helpers";
 
 export class MintClient {
   public constructor(readonly base: BaseClient) {}
@@ -112,25 +113,18 @@ export class MintClient {
     if (!mintModel.name) {
       throw new Error("Mint name must be specified");
     }
-
-    let glamMintDecimals = 9;
-    if (
-      StateAccountType.equals(accountType, StateAccountType.TOKENIZED_VAULT)
-    ) {
-      if (!mintModel.asset) {
-        throw new Error(
-          "Mint asset must be specified for account type TOKENIZED_VAULT",
-        );
-      }
-      // Set glam mint decimals to the same as deposit asset
-      const { mint } = await this.base.fetchMintAndTokenProgram(
-        mintModel.asset,
-      );
-      glamMintDecimals = mint.decimals;
+    if (!mintModel.asset) {
+      throw new Error("Mint asset must be specified");
     }
 
+    // Set glam mint decimals to the same as deposit asset
+    const { mint } = await this.base.fetchMintAndTokenProgram(mintModel.asset);
+    const glamMintDecimals = mint.decimals;
+
     const stateInitKey = [
-      ...Buffer.from(anchor.utils.sha256.hash(mintModel.name)).subarray(0, 8),
+      ...Buffer.from(
+        anchor.utils.sha256.hash(charsToName(mintModel.name)),
+      ).subarray(0, 8),
     ];
     const [statePda, _] = PublicKey.findProgramAddressSync(
       [
@@ -154,7 +148,7 @@ export class MintClient {
         signer: this.base.signer,
         newMint: this.base.mintPda,
         extraMetasAccount: this.base.extraMetasPda,
-        baseAssetMint: mintModel.asset || null,
+        baseAssetMint: mintModel.asset,
       })
       .transaction();
 

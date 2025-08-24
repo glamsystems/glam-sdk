@@ -12,6 +12,7 @@ import {
   SEED_VAULT,
   TRANSFER_HOOK_PROGRAM,
 } from "../constants";
+import { charsToName } from "./helpers";
 
 export function getStatePda(
   stateModel: Partial<StateModel>,
@@ -23,16 +24,22 @@ export function getStatePda(
   }
 
   const createdKey = stateModel?.created?.key || [
-    ...Buffer.from(anchor.utils.sha256.hash(stateModel?.name!)).subarray(0, 8),
+    ...Buffer.from(
+      anchor.utils.sha256.hash(charsToName(stateModel.name)),
+    ).subarray(0, 8),
   ];
 
-  const _owner = owner || stateModel?.owner?.pubkey;
-  if (!_owner) {
+  const stateOwner = owner || stateModel?.owner;
+  if (!stateOwner) {
     throw new Error("Owner must be specified explicitly or set in state model");
   }
 
   const [pda, _bump] = PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_STATE), _owner.toBuffer(), Uint8Array.from(createdKey)],
+    [
+      Buffer.from(SEED_STATE),
+      stateOwner.toBuffer(),
+      Uint8Array.from(createdKey),
+    ],
     programId,
   );
   return pda;

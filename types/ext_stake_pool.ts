@@ -715,67 +715,10 @@ export type ExtStakePool = {
         "kind": "enum",
         "variants": [
           {
-            "name": "allowlist"
-          },
-          {
-            "name": "blocklist"
-          },
-          {
-            "name": "externalVaultAccounts"
-          },
-          {
-            "name": "lockUpPeriod"
-          },
-          {
-            "name": "driftMarketIndexesPerp"
-          },
-          {
-            "name": "driftMarketIndexesSpot"
-          },
-          {
-            "name": "driftOrderTypes"
-          },
-          {
-            "name": "transferToAllowlist"
-          },
-          {
-            "name": "pricedAssets"
-          },
-          {
-            "name": "maxCap"
-          },
-          {
-            "name": "minSubscription"
-          },
-          {
-            "name": "minRedemption"
-          },
-          {
-            "name": "notifyAndSettle"
-          },
-          {
-            "name": "feeStructure"
-          },
-          {
-            "name": "feeParams"
-          },
-          {
-            "name": "claimableFees"
-          },
-          {
-            "name": "claimedFees"
-          },
-          {
-            "name": "subscriptionPaused"
-          },
-          {
-            "name": "redemptionPaused"
-          },
-          {
             "name": "owner"
           },
           {
-            "name": "enabled"
+            "name": "portfolioManagerName"
           },
           {
             "name": "name"
@@ -793,10 +736,13 @@ export type ExtStakePool = {
             "name": "integrationAcls"
           },
           {
-            "name": "updateTimelock"
+            "name": "timelockDuration"
           },
           {
             "name": "timelockExpiresAt"
+          },
+          {
+            "name": "borrowable"
           },
           {
             "name": "defaultAccountStateFrozen"
@@ -805,22 +751,19 @@ export type ExtStakePool = {
             "name": "permanentDelegate"
           },
           {
-            "name": "timeUnit"
+            "name": "notifyAndSettle"
           },
           {
-            "name": "kaminoLendingMarkets"
+            "name": "feeStructure"
           },
           {
-            "name": "meteoraDlmmPools"
+            "name": "feeParams"
           },
           {
-            "name": "borrowableAssets"
+            "name": "claimableFees"
           },
           {
-            "name": "driftVaultsAllowlist"
-          },
-          {
-            "name": "kaminoVaultsAllowlist"
+            "name": "claimedFees"
           }
         ]
       }
@@ -953,7 +896,7 @@ export type ExtStakePool = {
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "pricedAssets"
+                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -1007,19 +950,6 @@ export type ExtStakePool = {
                 "type": {
                   "defined": {
                     "name": "notifyAndSettle"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "timeUnit",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "defined": {
-                    "name": "timeUnit"
                   }
                 }
               }
@@ -1138,50 +1068,6 @@ export type ExtStakePool = {
           },
           {
             "name": "soft"
-          }
-        ]
-      }
-    },
-    {
-      "name": "integration",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "drift"
-          },
-          {
-            "name": "splStakePool"
-          },
-          {
-            "name": "sanctumStakePool"
-          },
-          {
-            "name": "nativeStaking"
-          },
-          {
-            "name": "marinade"
-          },
-          {
-            "name": "jupiterSwap"
-          },
-          {
-            "name": "jupiterVote"
-          },
-          {
-            "name": "kaminoLending"
-          },
-          {
-            "name": "meteoraDlmm"
-          },
-          {
-            "name": "driftVaults"
-          },
-          {
-            "name": "kaminoVaults"
-          },
-          {
-            "name": "validator"
           }
         ]
       }
@@ -1322,11 +1208,19 @@ export type ExtStakePool = {
             "type": "u64"
           },
           {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                4
+                3
               ]
             }
           }
@@ -1375,7 +1269,7 @@ export type ExtStakePool = {
       }
     },
     {
-      "name": "pricedAssets",
+      "name": "pricedProtocol",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1385,12 +1279,6 @@ export type ExtStakePool = {
               "defined": {
                 "name": "priceDenom"
               }
-            }
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": "pubkey"
             }
           },
           {
@@ -1410,13 +1298,17 @@ export type ExtStakePool = {
             "type": "u64"
           },
           {
-            "name": "integration",
+            "name": "integrationProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "protocolBitflag",
+            "type": "u16"
+          },
+          {
+            "name": "positions",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "integration"
-                }
-              }
+              "vec": "pubkey"
             }
           }
         ]
@@ -1491,16 +1383,25 @@ export type ExtStakePool = {
             }
           },
           {
-            "name": "owner",
-            "type": "pubkey"
+            "name": "enabled",
+            "type": "bool"
           },
           {
             "name": "vault",
             "type": "pubkey"
           },
           {
-            "name": "enabled",
-            "type": "bool"
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "portfolioManagerName",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "created",
@@ -1519,12 +1420,6 @@ export type ExtStakePool = {
             "type": "u8"
           },
           {
-            "name": "mints",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
             "name": "name",
             "type": {
               "array": [
@@ -1534,7 +1429,25 @@ export type ExtStakePool = {
             }
           },
           {
+            "name": "timelockDuration",
+            "type": "u32"
+          },
+          {
+            "name": "timelockExpiresAt",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
             "name": "assets",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }
@@ -1555,6 +1468,22 @@ export type ExtStakePool = {
               "vec": {
                 "defined": {
                   "name": "delegateAcl"
+                }
+              }
+            }
+          },
+          {
+            "name": "externalPositions",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "pricedProtocols",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "pricedProtocol"
                 }
               }
             }

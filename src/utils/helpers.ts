@@ -390,3 +390,7 @@ export function charsToName(chars: number[] | Buffer): string {
     .replace(/\0/g, "")
     .trim();
 }
+
+export function nameToChars(name: string): number[] {
+  return Array.from(Buffer.from(name).subarray(0, 32));
+}

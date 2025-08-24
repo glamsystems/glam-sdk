@@ -16,6 +16,7 @@ import {
   StateIdlModel,
 } from "../models";
 import { getStatePda } from "../utils/glamPDAs";
+import { charsToName } from "../utils/helpers";
 
 export class StateClient {
   public constructor(readonly base: BaseClient) {}
@@ -37,7 +38,7 @@ export class StateClient {
       .accountsPartial({
         glamState: statePda,
         glamSigner,
-        baseAssetMint: stateModel.baseAsset,
+        baseAssetMint: stateModel.baseAssetMint,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -150,9 +151,6 @@ export class StateClient {
    * Create a full state model from a partial state model
    */
   enrichStateModel(stateModel: Partial<StateIdlModel>): StateModel {
-    const owner = this.base.signer;
-    const defaultDate = new Date().toISOString().split("T")[0];
-
     if (!stateModel?.name) {
       throw new Error("Name must be specified in partial state model");
     }
@@ -160,19 +158,13 @@ export class StateClient {
     // stateInitKey = hash state name and get first 8 bytes
     // useful for computing state account PDA in the future
     const stateInitKey = [
-      ...Buffer.from(anchor.utils.sha256.hash(stateModel.name)).subarray(0, 8),
+      ...Buffer.from(
+        anchor.utils.sha256.hash(charsToName(stateModel.name)),
+      ).subarray(0, 8),
     ];
     stateModel.created = new CreatedModel({ key: stateInitKey });
-    stateModel.owner = new ManagerModel({
-      ...stateModel.owner,
-      pubkey: owner,
-    });
+    stateModel.owner = stateModel.owner || this.base.signer;
 
-    stateModel.company = new CompanyModel({
-      ...stateModel.company,
-    });
-
-    // fields containing fund id / pda
     const statePda = getStatePda(
       stateModel,
       this.base.protocolProgram.programId,
@@ -180,10 +172,10 @@ export class StateClient {
     stateModel.uri =
       stateModel.uri || `https://gui.glam.systems/products/${statePda}`;
 
-    // convert partial share class models to full share class models
-    // stateModel.mints = (stateModel.mints || []).map((s) => new MintModel(s));
-
-    return new StateModel(stateModel, this.base.protocolProgram.programId);
+    return new StateModel(
+      { ...stateModel, id: statePda },
+      this.base.protocolProgram.programId,
+    );
   }
 
   /**

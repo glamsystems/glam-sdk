@@ -56,13 +56,13 @@ export class FeesClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const stateModel = await this.base.fetchStateModel();
-    const { baseAsset } = stateModel;
-    if (!baseAsset) {
+    const { baseAssetMint } = stateModel;
+    if (!baseAssetMint) {
       throw new Error("Base asset not found");
     }
 
     const priceVaultIxs = await this.price.priceVaultIxs(
-      PriceDenom.fromAsset(baseAsset),
+      PriceDenom.fromAsset(baseAssetMint),
     );
     const preInstructions = [
       ...priceVaultIxs,
@@ -87,7 +87,7 @@ export class FeesClient {
   ): Promise<TransactionSignature> {
     const signer = txOptions.signer || this.base.getSigner();
     const stateModel = await this.base.fetchStateModel();
-    const { baseAsset } = stateModel;
+    const { baseAssetMint: baseAsset } = stateModel;
     if (!baseAsset) {
       throw new Error("Base asset not found");
     }
@@ -96,7 +96,7 @@ export class FeesClient {
     const protocolFeeAuthority = new PublicKey(
       "gLJHKPrZLGBiBZ33hFgZh6YnsEhTVxuRT17UCqNp6ff",
     );
-    const managerFeeAuthority = stateModel?.owner?.pubkey;
+    const managerFeeAuthority = stateModel?.owner;
     if (!managerFeeAuthority) {
       throw new Error("Manager fee authority not found");
     }
@@ -136,7 +136,7 @@ export class FeesClient {
       ...priceVaultIxs,
     ];
     const tx = await this.base.mintProgram.methods
-      .disburseFees()
+      .claimFees()
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,

@@ -61,7 +61,7 @@ export class PriceClient {
     );
 
     const stateModel = await this.base.fetchStateModel();
-    return (stateModel?.pricedAssets || []).reduce(
+    return (stateModel?.pricedProtocols || []).reduce(
       (sum, p) => new BN(p.amount).add(sum),
       new BN(0),
     ) as BN;
@@ -138,7 +138,7 @@ export class PriceClient {
       // otherwise skip it for pricing
       if (
         info !== null &&
-        this.stateModel.externalVaultAccounts?.find((a) =>
+        this.stateModel.externalPositions?.find((a) =>
           a.equals(possibleShareAtas[i]),
         )
       ) {
@@ -428,7 +428,7 @@ export class PriceClient {
     // If there are no external assets, we don't need to price DeFi positions
     const stateModel = await this.base.fetchStateModel();
     this.stateModel = stateModel;
-    if ((this.stateModel.externalVaultAccounts || []).length === 0) {
+    if ((this.stateModel.externalPositions || []).length === 0) {
       return [priceVaultIx];
     }
 
@@ -565,30 +565,27 @@ export class PriceClient {
   ): Promise<AccountMeta[]> {
     const stateModel = await this.base.fetchStateModel();
     if (baseAssetOnly) {
-      if (!stateModel.baseAsset) {
+      if (!stateModel.baseAssetMint) {
         throw new Error("Base asset not configured for the vault");
       }
       // FIXME: support token 2022 base asset
-      const ata = this.base.getVaultAta(stateModel.baseAsset);
+      const ata = this.base.getVaultAta(stateModel.baseAssetMint);
       // Set oracle to default pubkey (aka system program) to indicate oracle isn't needed
-      return [ata, stateModel.baseAsset, PublicKey.default].map((k) => ({
+      return [ata, stateModel.baseAssetMint, PublicKey.default].map((k) => ({
         pubkey: k,
         isSigner: false,
         isWritable: false,
       }));
     }
 
-    const assetsForPricing = (stateModel.borrowableAssets || []).concat(
-      stateModel.assets || [],
-    );
-    return assetsForPricing
+    return stateModel.assetsForPricing
       .map((mint) => {
         const assetMeta = ASSETS_MAINNET.get(mint.toBase58());
         if (!assetMeta) {
           throw new Error(`Asset meta not found for ${mint}`);
         }
         const ata = this.base.getVaultAta(mint, assetMeta?.programId);
-        return [ata, mint, assetMeta?.oracle!];
+        return [ata, mint, assetMeta.oracle];
       })
       .flat()
       .map((a) => ({

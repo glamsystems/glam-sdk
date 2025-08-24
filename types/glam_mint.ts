@@ -537,178 +537,16 @@ export type GlamMint = {
       "args": []
     },
     {
-      "name": "closeMint",
+      "name": "claimFees",
       "discriminator": [
-        149,
+        82,
         251,
-        157,
-        212,
-        65,
-        181,
-        235,
-        129
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamSigner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "glamMint",
-          "writable": true
-        },
-        {
-          "name": "extraMetasAccount",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "policiesProgram",
-          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
-        },
-        {
-          "name": "token2022Program",
-          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "crystallizeFees",
-      "discriminator": [
-        78,
-        0,
-        111,
-        26,
-        7,
+        233,
+        156,
         12,
-        41,
-        249
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamEscrow",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  115,
-                  99,
-                  114,
-                  111,
-                  119
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamMint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glamMint",
-          "writable": true
-        },
-        {
-          "name": "escrowMintAta",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "glamEscrow"
-              },
-              {
-                "kind": "account",
-                "path": "token2022Program"
-              },
-              {
-                "kind": "account",
-                "path": "glamMint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "glamProtocolProgram",
-          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
-        },
-        {
-          "name": "token2022Program",
-          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "disburseFees",
-      "discriminator": [
-        205,
-        56,
-        198,
-        40,
-        225,
-        103,
-        141,
-        219
+        52,
+        184,
+        202
       ],
       "accounts": [
         {
@@ -1126,6 +964,168 @@ export type GlamMint = {
         },
         {
           "name": "depositTokenProgram"
+        },
+        {
+          "name": "token2022Program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeMint",
+      "discriminator": [
+        149,
+        251,
+        157,
+        212,
+        65,
+        181,
+        235,
+        129
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glamMint",
+          "writable": true
+        },
+        {
+          "name": "extraMetasAccount",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "policiesProgram",
+          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
+        },
+        {
+          "name": "token2022Program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "crystallizeFees",
+      "discriminator": [
+        78,
+        0,
+        111,
+        26,
+        7,
+        12,
+        41,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamEscrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamMint",
+          "writable": true
+        },
+        {
+          "name": "escrowMintAta",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "glamEscrow"
+              },
+              {
+                "kind": "account",
+                "path": "token2022Program"
+              },
+              {
+                "kind": "account",
+                "path": "glamMint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "glamProtocolProgram",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
           "name": "token2022Program",
@@ -1761,8 +1761,7 @@ export type GlamMint = {
           "writable": true
         },
         {
-          "name": "baseAssetMint",
-          "optional": true
+          "name": "baseAssetMint"
         },
         {
           "name": "systemProgram",
@@ -3250,67 +3249,10 @@ export type GlamMint = {
         "kind": "enum",
         "variants": [
           {
-            "name": "allowlist"
-          },
-          {
-            "name": "blocklist"
-          },
-          {
-            "name": "externalVaultAccounts"
-          },
-          {
-            "name": "lockUpPeriod"
-          },
-          {
-            "name": "driftMarketIndexesPerp"
-          },
-          {
-            "name": "driftMarketIndexesSpot"
-          },
-          {
-            "name": "driftOrderTypes"
-          },
-          {
-            "name": "transferToAllowlist"
-          },
-          {
-            "name": "pricedAssets"
-          },
-          {
-            "name": "maxCap"
-          },
-          {
-            "name": "minSubscription"
-          },
-          {
-            "name": "minRedemption"
-          },
-          {
-            "name": "notifyAndSettle"
-          },
-          {
-            "name": "feeStructure"
-          },
-          {
-            "name": "feeParams"
-          },
-          {
-            "name": "claimableFees"
-          },
-          {
-            "name": "claimedFees"
-          },
-          {
-            "name": "subscriptionPaused"
-          },
-          {
-            "name": "redemptionPaused"
-          },
-          {
             "name": "owner"
           },
           {
-            "name": "enabled"
+            "name": "portfolioManagerName"
           },
           {
             "name": "name"
@@ -3328,10 +3270,13 @@ export type GlamMint = {
             "name": "integrationAcls"
           },
           {
-            "name": "updateTimelock"
+            "name": "timelockDuration"
           },
           {
             "name": "timelockExpiresAt"
+          },
+          {
+            "name": "borrowable"
           },
           {
             "name": "defaultAccountStateFrozen"
@@ -3340,22 +3285,19 @@ export type GlamMint = {
             "name": "permanentDelegate"
           },
           {
-            "name": "timeUnit"
+            "name": "notifyAndSettle"
           },
           {
-            "name": "kaminoLendingMarkets"
+            "name": "feeStructure"
           },
           {
-            "name": "meteoraDlmmPools"
+            "name": "feeParams"
           },
           {
-            "name": "borrowableAssets"
+            "name": "claimableFees"
           },
           {
-            "name": "driftVaultsAllowlist"
-          },
-          {
-            "name": "kaminoVaultsAllowlist"
+            "name": "claimedFees"
           }
         ]
       }
@@ -3488,7 +3430,7 @@ export type GlamMint = {
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "pricedAssets"
+                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -3542,19 +3484,6 @@ export type GlamMint = {
                 "type": {
                   "defined": {
                     "name": "notifyAndSettle"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "timeUnit",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "defined": {
-                    "name": "timeUnit"
                   }
                 }
               }
@@ -3723,50 +3652,6 @@ export type GlamMint = {
       }
     },
     {
-      "name": "integration",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "drift"
-          },
-          {
-            "name": "splStakePool"
-          },
-          {
-            "name": "sanctumStakePool"
-          },
-          {
-            "name": "nativeStaking"
-          },
-          {
-            "name": "marinade"
-          },
-          {
-            "name": "jupiterSwap"
-          },
-          {
-            "name": "jupiterVote"
-          },
-          {
-            "name": "kaminoLending"
-          },
-          {
-            "name": "meteoraDlmm"
-          },
-          {
-            "name": "driftVaults"
-          },
-          {
-            "name": "kaminoVaults"
-          },
-          {
-            "name": "validator"
-          }
-        ]
-      }
-    },
-    {
       "name": "integrationAcl",
       "docs": [
         "An integration program can have multiple protocols supported.",
@@ -3844,19 +3729,18 @@ export type GlamMint = {
           {
             "name": "name",
             "type": {
-              "option": "string"
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
             }
           },
           {
             "name": "uri",
             "type": {
               "option": "string"
-            }
-          },
-          {
-            "name": "statePubkey",
-            "type": {
-              "option": "pubkey"
             }
           },
           {
@@ -3869,28 +3753,6 @@ export type GlamMint = {
             "name": "imageUri",
             "type": {
               "option": "string"
-            }
-          },
-          {
-            "name": "allowlist",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "blocklist",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "lockUpPeriod",
-            "type": {
-              "option": "u32"
             }
           },
           {
@@ -3932,6 +3794,12 @@ export type GlamMint = {
             }
           },
           {
+            "name": "lockupPeriod",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
             "name": "maxCap",
             "type": {
               "option": "u64"
@@ -3959,6 +3827,22 @@ export type GlamMint = {
             "name": "redemptionPaused",
             "type": {
               "option": "bool"
+            }
+          },
+          {
+            "name": "allowlist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "blocklist",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
             }
           }
         ]
@@ -4036,11 +3920,19 @@ export type GlamMint = {
             "type": "u64"
           },
           {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                4
+                3
               ]
             }
           }
@@ -4203,7 +4095,7 @@ export type GlamMint = {
       }
     },
     {
-      "name": "pricedAssets",
+      "name": "pricedProtocol",
       "type": {
         "kind": "struct",
         "fields": [
@@ -4213,12 +4105,6 @@ export type GlamMint = {
               "defined": {
                 "name": "priceDenom"
               }
-            }
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": "pubkey"
             }
           },
           {
@@ -4238,13 +4124,17 @@ export type GlamMint = {
             "type": "u64"
           },
           {
-            "name": "integration",
+            "name": "integrationProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "protocolBitflag",
+            "type": "u16"
+          },
+          {
+            "name": "positions",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "integration"
-                }
-              }
+              "vec": "pubkey"
             }
           }
         ]
@@ -4359,16 +4249,25 @@ export type GlamMint = {
             }
           },
           {
-            "name": "owner",
-            "type": "pubkey"
+            "name": "enabled",
+            "type": "bool"
           },
           {
             "name": "vault",
             "type": "pubkey"
           },
           {
-            "name": "enabled",
-            "type": "bool"
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "portfolioManagerName",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "created",
@@ -4387,12 +4286,6 @@ export type GlamMint = {
             "type": "u8"
           },
           {
-            "name": "mints",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
             "name": "name",
             "type": {
               "array": [
@@ -4402,7 +4295,25 @@ export type GlamMint = {
             }
           },
           {
+            "name": "timelockDuration",
+            "type": "u32"
+          },
+          {
+            "name": "timelockExpiresAt",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
             "name": "assets",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }
@@ -4423,6 +4334,22 @@ export type GlamMint = {
               "vec": {
                 "defined": {
                   "name": "delegateAcl"
+                }
+              }
+            }
+          },
+          {
+            "name": "externalPositions",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "pricedProtocols",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "pricedProtocol"
                 }
               }
             }

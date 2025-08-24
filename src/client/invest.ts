@@ -96,7 +96,7 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const { baseAsset: depositAsset } = await this.base.fetchStateModel();
+    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
     if (!depositAsset) {
       throw new Error("Base asset not found in glam state");
     }
@@ -162,7 +162,7 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const { baseAsset: depositAsset } = await this.base.fetchStateModel();
+    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
     if (!depositAsset) {
       throw new Error("Base asset not found in glam state");
     }
@@ -285,7 +285,7 @@ export class InvestClient {
     let recoverTokenProgram = TOKEN_2022_PROGRAM_ID;
 
     if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
-      const { baseAsset, baseAssetTokenProgram } =
+      const { baseAssetMint: baseAsset, baseAssetTokenProgram } =
         await this.base.fetchStateModel();
       if (!baseAsset) {
         throw new Error("Base asset not found in glam state");
@@ -327,7 +327,7 @@ export class InvestClient {
   public async fulfillTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const { baseAsset } = await this.base.fetchStateModel();
+    const { baseAssetMint: baseAsset } = await this.base.fetchStateModel();
     if (!baseAsset) {
       throw new Error("Base asset not found in glam state");
     }
@@ -356,21 +356,21 @@ export class InvestClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const stateModel = await this.base.fetchStateModel();
-    if (!stateModel.baseAsset) {
+    if (!stateModel.baseAssetMint) {
       throw new Error("Base asset not found in glam state");
     }
 
     const { tokenProgram: claimTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(stateModel.baseAsset);
+      await this.base.fetchMintAndTokenProgram(stateModel.baseAssetMint);
 
     const signer = txOptions.signer || this.base.getSigner();
     const signerAta = this.base.getAta(
-      stateModel.baseAsset,
+      stateModel.baseAssetMint,
       signer,
       claimTokenProgram,
     );
     const escrowAta = this.base.getAta(
-      stateModel.baseAsset,
+      stateModel.baseAssetMint,
       this.base.escrowPda,
       claimTokenProgram,
     );
@@ -381,12 +381,12 @@ export class InvestClient {
         signer,
         signerAta,
         signer,
-        stateModel.baseAsset,
+        stateModel.baseAssetMint,
       ),
     ];
 
     // Close wSOL ata so user gets SOL
-    const postInstructions = stateModel.baseAsset.equals(WSOL)
+    const postInstructions = stateModel.baseAssetMint.equals(WSOL)
       ? [createCloseAccountInstruction(signerAta, signer, signer)]
       : [];
 
@@ -397,7 +397,7 @@ export class InvestClient {
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
         signer,
-        claimTokenMint: stateModel.baseAsset,
+        claimTokenMint: stateModel.baseAssetMint,
         signerAta,
         escrowAta,
         signerPolicy: null, // not needed for claiming redemption

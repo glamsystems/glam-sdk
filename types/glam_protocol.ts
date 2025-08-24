@@ -279,8 +279,7 @@ export type GlamProtocol = {
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "baseAssetMint",
-          "optional": true
+          "name": "baseAssetMint"
         }
       ],
       "args": [
@@ -2413,7 +2412,7 @@ export type GlamProtocol = {
     },
     {
       "code": 51103,
-      "name": "externalAccountsNotPriced",
+      "name": "externalPositionsNotPriced",
       "msg": "Not all external vault accounts are priced"
     },
     {
@@ -2597,44 +2596,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "companyModel",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "fundGroupName",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "manCo",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "domicileOfManCo",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "emailAddressOfManCo",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "fundWebsiteOfManCo",
-            "type": {
-              "option": "string"
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "createdModel",
       "type": {
         "kind": "struct",
@@ -2715,67 +2676,10 @@ export type GlamProtocol = {
         "kind": "enum",
         "variants": [
           {
-            "name": "allowlist"
-          },
-          {
-            "name": "blocklist"
-          },
-          {
-            "name": "externalVaultAccounts"
-          },
-          {
-            "name": "lockUpPeriod"
-          },
-          {
-            "name": "driftMarketIndexesPerp"
-          },
-          {
-            "name": "driftMarketIndexesSpot"
-          },
-          {
-            "name": "driftOrderTypes"
-          },
-          {
-            "name": "transferToAllowlist"
-          },
-          {
-            "name": "pricedAssets"
-          },
-          {
-            "name": "maxCap"
-          },
-          {
-            "name": "minSubscription"
-          },
-          {
-            "name": "minRedemption"
-          },
-          {
-            "name": "notifyAndSettle"
-          },
-          {
-            "name": "feeStructure"
-          },
-          {
-            "name": "feeParams"
-          },
-          {
-            "name": "claimableFees"
-          },
-          {
-            "name": "claimedFees"
-          },
-          {
-            "name": "subscriptionPaused"
-          },
-          {
-            "name": "redemptionPaused"
-          },
-          {
             "name": "owner"
           },
           {
-            "name": "enabled"
+            "name": "portfolioManagerName"
           },
           {
             "name": "name"
@@ -2793,10 +2697,13 @@ export type GlamProtocol = {
             "name": "integrationAcls"
           },
           {
-            "name": "updateTimelock"
+            "name": "timelockDuration"
           },
           {
             "name": "timelockExpiresAt"
+          },
+          {
+            "name": "borrowable"
           },
           {
             "name": "defaultAccountStateFrozen"
@@ -2805,22 +2712,19 @@ export type GlamProtocol = {
             "name": "permanentDelegate"
           },
           {
-            "name": "timeUnit"
+            "name": "notifyAndSettle"
           },
           {
-            "name": "kaminoLendingMarkets"
+            "name": "feeStructure"
           },
           {
-            "name": "meteoraDlmmPools"
+            "name": "feeParams"
           },
           {
-            "name": "borrowableAssets"
+            "name": "claimableFees"
           },
           {
-            "name": "driftVaultsAllowlist"
-          },
-          {
-            "name": "kaminoVaultsAllowlist"
+            "name": "claimedFees"
           }
         ]
       }
@@ -2953,7 +2857,7 @@ export type GlamProtocol = {
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "pricedAssets"
+                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -3007,19 +2911,6 @@ export type GlamProtocol = {
                 "type": {
                   "defined": {
                     "name": "notifyAndSettle"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "timeUnit",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "defined": {
-                    "name": "timeUnit"
                   }
                 }
               }
@@ -3214,50 +3105,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "integration",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "drift"
-          },
-          {
-            "name": "splStakePool"
-          },
-          {
-            "name": "sanctumStakePool"
-          },
-          {
-            "name": "nativeStaking"
-          },
-          {
-            "name": "marinade"
-          },
-          {
-            "name": "jupiterSwap"
-          },
-          {
-            "name": "jupiterVote"
-          },
-          {
-            "name": "kaminoLending"
-          },
-          {
-            "name": "meteoraDlmm"
-          },
-          {
-            "name": "driftVaults"
-          },
-          {
-            "name": "kaminoVaults"
-          },
-          {
-            "name": "validator"
-          }
-        ]
-      }
-    },
-    {
       "name": "integrationAcl",
       "docs": [
         "An integration program can have multiple protocols supported.",
@@ -3321,7 +3168,9 @@ export type GlamProtocol = {
           {
             "name": "swapAllowlist",
             "type": {
-              "vec": "pubkey"
+              "option": {
+                "vec": "pubkey"
+              }
             }
           }
         ]
@@ -3335,50 +3184,6 @@ export type GlamProtocol = {
           {
             "name": "feeBps",
             "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "managerKind",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "wallet"
-          },
-          {
-            "name": "squads"
-          }
-        ]
-      }
-    },
-    {
-      "name": "managerModel",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "portfolioManagerName",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "pubkey",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "kind",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "managerKind"
-                }
-              }
-            }
           }
         ]
       }
@@ -3455,11 +3260,19 @@ export type GlamProtocol = {
             "type": "u64"
           },
           {
+            "name": "timeUnit",
+            "type": {
+              "defined": {
+                "name": "timeUnit"
+              }
+            }
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                4
+                3
               ]
             }
           }
@@ -3573,7 +3386,7 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "pricedAssets",
+      "name": "pricedProtocol",
       "type": {
         "kind": "struct",
         "fields": [
@@ -3583,12 +3396,6 @@ export type GlamProtocol = {
               "defined": {
                 "name": "priceDenom"
               }
-            }
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": "pubkey"
             }
           },
           {
@@ -3608,13 +3415,17 @@ export type GlamProtocol = {
             "type": "u64"
           },
           {
-            "name": "integration",
+            "name": "integrationProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "protocolBitflag",
+            "type": "u16"
+          },
+          {
+            "name": "positions",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "integration"
-                }
-              }
+              "vec": "pubkey"
             }
           }
         ]
@@ -3689,16 +3500,25 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "owner",
-            "type": "pubkey"
+            "name": "enabled",
+            "type": "bool"
           },
           {
             "name": "vault",
             "type": "pubkey"
           },
           {
-            "name": "enabled",
-            "type": "bool"
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "portfolioManagerName",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "created",
@@ -3717,12 +3537,6 @@ export type GlamProtocol = {
             "type": "u8"
           },
           {
-            "name": "mints",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
             "name": "name",
             "type": {
               "array": [
@@ -3732,7 +3546,25 @@ export type GlamProtocol = {
             }
           },
           {
+            "name": "timelockDuration",
+            "type": "u32"
+          },
+          {
+            "name": "timelockExpiresAt",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
             "name": "assets",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }
@@ -3753,6 +3585,22 @@ export type GlamProtocol = {
               "vec": {
                 "defined": {
                   "name": "delegateAcl"
+                }
+              }
+            }
+          },
+          {
+            "name": "externalPositions",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "pricedProtocols",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "pricedProtocol"
                 }
               }
             }
@@ -3790,7 +3638,12 @@ export type GlamProtocol = {
           {
             "name": "name",
             "type": {
-              "option": "string"
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
             }
           },
           {
@@ -3814,7 +3667,7 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "baseAsset",
+            "name": "baseAssetMint",
             "type": {
               "option": "pubkey"
             }
@@ -3823,26 +3676,6 @@ export type GlamProtocol = {
             "name": "baseAssetTokenProgram",
             "type": {
               "option": "u8"
-            }
-          },
-          {
-            "name": "company",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "companyModel"
-                }
-              }
-            }
-          },
-          {
-            "name": "owner",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "managerModel"
-                }
-              }
             }
           },
           {
@@ -3856,19 +3689,34 @@ export type GlamProtocol = {
             }
           },
           {
-            "name": "updateTimelock",
+            "name": "owner",
             "type": {
-              "option": "u32"
+              "option": "pubkey"
             }
           },
           {
-            "name": "timeUnit",
+            "name": "portfolioManagerName",
             "type": {
               "option": {
-                "defined": {
-                  "name": "timeUnit"
-                }
+                "array": [
+                  "u8",
+                  32
+                ]
               }
+            }
+          },
+          {
+            "name": "borrowable",
+            "type": {
+              "option": {
+                "vec": "pubkey"
+              }
+            }
+          },
+          {
+            "name": "timelockDuration",
+            "type": {
+              "option": "u32"
             }
           },
           {
@@ -3892,84 +3740,6 @@ export type GlamProtocol = {
                     "name": "delegateAcl"
                   }
                 }
-              }
-            }
-          },
-          {
-            "name": "borrowableAssets",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "transferToAllowlist",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "maxSwapSlippageBps",
-            "type": {
-              "option": "u32"
-            }
-          },
-          {
-            "name": "driftMarketIndexesPerp",
-            "type": {
-              "option": {
-                "vec": "u32"
-              }
-            }
-          },
-          {
-            "name": "driftMarketIndexesSpot",
-            "type": {
-              "option": {
-                "vec": "u32"
-              }
-            }
-          },
-          {
-            "name": "driftOrderTypes",
-            "type": {
-              "option": {
-                "vec": "u32"
-              }
-            }
-          },
-          {
-            "name": "kaminoLendingMarkets",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "meteoraDlmmPools",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "driftVaultsAllowlist",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "kaminoVaultsAllowlist",
-            "type": {
-              "option": {
-                "vec": "pubkey"
               }
             }
           }

@@ -1,11 +1,22 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import { GlamProtocol, GlamMint, GlamProtocolIdlJson } from "./glamExports";
+import {
+  GlamProtocol,
+  GlamMint,
+  GlamProtocolIdlJson,
+  GlamMintIdlJson,
+} from "./glamExports";
 import { PublicKey } from "@solana/web3.js";
-import { ExtensionType, getExtensionData, Mint } from "@solana/spl-token";
+import {
+  ExtensionType,
+  getExtensionData,
+  getTransferHook,
+  Mint,
+} from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
 import { SEED_METADATA, SEED_MINT, SEED_VAULT, USDC, WSOL } from "./constants";
 import { charsToName } from "./utils/helpers";
+import { MintPolicy, MintPolicyLayout } from "./deser/integrationPolicies";
 
 export const GlamIntegrations =
   GlamProtocolIdlJson?.types
@@ -25,36 +36,23 @@ export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 export type StateModelType = IdlTypes<GlamProtocol>["stateModel"];
 export class StateIdlModel implements StateModelType {
   accountType: StateAccountType | null;
-  name: string | null;
+  name: number[] | null;
   uri: string | null;
   enabled: boolean | null;
 
   assets: PublicKey[] | null;
-  baseAsset: PublicKey | null;
+  baseAssetMint: PublicKey | null;
   baseAssetTokenProgram: number | null;
 
-  company: CompanyModel | null;
-  owner: ManagerModel | null;
   created: CreatedModel | null;
+  owner: PublicKey | null;
+  portfolioManagerName: number[] | null;
 
-  updateTimelock: number | null;
-  timeUnit: TimeUnit | null;
-
-  // ACLs
+  // Configs / ACLs
+  borrowable: PublicKey[] | null;
+  timelockDuration: number | null;
   integrationAcls: IntegrationAcl[] | null;
   delegateAcls: DelegateAcl[] | null;
-  borrowableAssets: PublicKey[] | null;
-  transferToAllowlist: PublicKey[] | null;
-
-  // Integration specific configs
-  maxSwapSlippageBps: number | null;
-  driftMarketIndexesPerp: number[] | null;
-  driftMarketIndexesSpot: number[] | null;
-  driftOrderTypes: number[] | null;
-  kaminoLendingMarkets: PublicKey[] | null;
-  meteoraDlmmPools: PublicKey[] | null;
-  driftVaultsAllowlist: PublicKey[] | null;
-  kaminoVaultsAllowlist: PublicKey[] | null;
 
   constructor(data: Partial<StateModelType>) {
     this.accountType = data.accountType ?? null;
@@ -63,43 +61,32 @@ export class StateIdlModel implements StateModelType {
     this.enabled = data.enabled ?? null;
 
     this.assets = data.assets ?? null;
-    this.baseAsset = data.baseAsset ?? null;
+    this.baseAssetMint = data.baseAssetMint ?? null;
     this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null;
 
-    this.company = data.company ?? null;
-    this.owner = data.owner ?? null;
     this.created = data.created ?? null;
+    this.owner = data.owner ?? null;
+    this.portfolioManagerName = data.portfolioManagerName ?? null;
 
-    // Configs
-    this.updateTimelock = data.updateTimelock ?? null;
-    this.timeUnit = data.timeUnit ?? null;
-
-    // ACLs
+    // Configs / ACLs
+    this.borrowable = data.borrowable ?? null;
+    this.timelockDuration = data.timelockDuration ?? null;
     this.delegateAcls = data.delegateAcls ?? null;
     this.integrationAcls = data.integrationAcls ?? null;
-    this.borrowableAssets = data.borrowableAssets ?? null;
-    this.transferToAllowlist = data.transferToAllowlist ?? null;
-
-    // Integration specific configs
-    this.maxSwapSlippageBps = data.maxSwapSlippageBps ?? null;
-    this.driftMarketIndexesPerp = data.driftMarketIndexesPerp ?? null;
-    this.driftMarketIndexesSpot = data.driftMarketIndexesSpot ?? null;
-    this.driftOrderTypes = data.driftOrderTypes ?? null;
-    this.kaminoLendingMarkets = data.kaminoLendingMarkets ?? null;
-    this.meteoraDlmmPools = data.meteoraDlmmPools ?? null;
-    this.driftVaultsAllowlist = data.driftVaultsAllowlist ?? null;
-    this.kaminoVaultsAllowlist = data.kaminoVaultsAllowlist ?? null;
   }
 }
 export class StateModel extends StateIdlModel {
   readonly glamProgramId: PublicKey;
 
+  // Fields not available on StateIdlModel but can be derived from state account
   id: PublicKey | null;
-  mints: MintModel[] | null;
-  externalVaultAccounts: PublicKey[] | null;
-  pricedAssets: any[] | null;
-  pendingUpdates: any | null; // timelocked updates
+  mint: PublicKey | null;
+  mintModel: MintModel | null;
+  pendingStateUpdates: any | null;
+  pendingMintUpdates: any | null;
   timelockExpiresAt: number | null;
+  externalPositions: PublicKey[] | null;
+  pricedProtocols: any[] | null;
 
   constructor(
     data: Partial<StateModel>,
@@ -109,42 +96,27 @@ export class StateModel extends StateIdlModel {
     this.glamProgramId = glamProgramId;
 
     // Will be set from state params
-    this.externalVaultAccounts = data.externalVaultAccounts ?? null;
-    this.pricedAssets = data.pricedAssets ?? null;
+    this.id = data.id ?? null;
+    this.mint = data.mint ?? null;
+    this.mintModel = data.mintModel ?? null;
+    this.pendingStateUpdates = data.pendingStateUpdates ?? null;
+    this.pendingMintUpdates = data.pendingMintUpdates ?? null;
     this.timelockExpiresAt = data.timelockExpiresAt
       ? Number(data.timelockExpiresAt.toString())
       : null;
-    this.pendingUpdates = data.pendingUpdates ?? null;
-    this.mints = data.mints ?? null;
+    this.externalPositions = data.externalPositions ?? null;
+    this.pricedProtocols = data.pricedProtocols ?? null;
   }
 
   get idStr() {
     return this.id?.toBase58() || "";
   }
 
-  get vaultPda() {
-    if (!this.id) {
-      throw new Error("Glam state ID not set");
-    }
-    const [pda, _bump] = PublicKey.findProgramAddressSync(
-      [Buffer.from(SEED_VAULT), this.id.toBuffer()],
-      this.glamProgramId,
-    );
-    return pda;
+  get nameStr() {
+    return charsToName(this.name);
   }
 
-  get openfundsPda() {
-    if (!this.id) {
-      throw new Error("Glam state ID not set");
-    }
-    const [pda, _] = PublicKey.findProgramAddressSync(
-      [Buffer.from(SEED_METADATA), this.id.toBuffer()],
-      this.glamProgramId,
-    );
-    return pda;
-  }
-
-  get productType() {
+  get productType(): string {
     // @ts-ignore
     const val = Object.keys(this.accountType)[0];
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
@@ -155,21 +127,18 @@ export class StateModel extends StateIdlModel {
     return new Date(createdAt * 1000).toISOString().split("T")[0] || "Unknown";
   }
 
-  get mintAddresses() {
-    if (this.mints && this.mints.length > 0 && !this.id) {
-      // If share classes are set, state ID should also be set
-      throw new Error("Glam state ID not set");
-    }
-    return (this.mints || []).map((_, i) =>
-      MintModel.mintAddress(this.id!, i, this.glamProgramId),
-    );
+  get sparkleKey() {
+    return (
+      this.mint.equals(PublicKey.default) ? this.id : this.mint
+    ).toBase58();
   }
 
-  get sparkleKey() {
-    if (!this.mints || this.mints.length === 0) {
-      return this.idStr;
-    }
-    return this.mintAddresses[0].toBase58() || this.idStr;
+  // A union set of assets and borrowable assets
+  get assetsForPricing(): PublicKey[] {
+    const assets = new Set<string>([]);
+    this.assets?.forEach((a) => assets.add(a.toBase58()));
+    this.borrowable?.forEach((b) => assets.add(b.toBase58()));
+    return Array.from(assets).map((k) => new PublicKey(k));
   }
 
   /**
@@ -185,22 +154,12 @@ export class StateModel extends StateIdlModel {
     glamMint?: Mint,
     glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
   ) {
-    const stateModel: Partial<StateModel> = {
-      id: statePda,
-      name: charsToName(stateAccount.name),
-      enabled: stateAccount.enabled,
-      uri: "",
-      accountType: stateAccount.accountType,
-      assets: stateAccount.assets,
-      baseAsset: stateAccount.baseAssetMint,
-      baseAssetTokenProgram: stateAccount.baseAssetTokenProgram,
-      created: stateAccount.created,
-      delegateAcls: stateAccount.delegateAcls,
-      integrationAcls: stateAccount.integrationAcls,
-      mints: [],
-    };
+    const stateModel: Partial<StateModel> = { id: statePda };
+    Object.entries(stateAccount).forEach(([key, value]) => {
+      stateModel[key] = value;
+    });
 
-    // All fields in fund params[0] should be available on the StateModel
+    // All fields in state_params[0] should be available on the StateModel
     stateAccount.params[0].forEach((param) => {
       const name = Object.keys(param.name)[0];
       // @ts-ignore
@@ -213,84 +172,96 @@ export class StateModel extends StateIdlModel {
       }
     });
 
-    // If timelock is enabled, parse pending updates from params[2] and params[3]
-    stateModel.pendingUpdates = {};
+    // If timelock is enabled, parse pending state & mint updates from params[2] & params[3]
+    stateModel.pendingStateUpdates = {};
+    stateModel.pendingMintUpdates = {};
     if (stateAccount.params[2]) {
-      // pending updates to state params
       stateAccount.params[2].forEach((param) => {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
-        stateModel.pendingUpdates[name] = value;
+        stateModel.pendingStateUpdates[name] = value;
       });
     }
-
     if (stateAccount.params[3]) {
-      // pending updates to mint params
-    }
-
-    // Build stateModel.owner from openfunds account
-    stateModel.owner = new ManagerModel({ pubkey: stateAccount.owner });
-
-    // Build the array of MintModels
-    stateAccount.mints.forEach((_, i) => {
-      const mintIdlModel = {} as any;
-      mintIdlModel["statePubkey"] = statePda;
-
-      stateAccount.params[i + 1].forEach((param) => {
+      stateAccount.params[3].forEach((param) => {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
+        stateModel.pendingMintUpdates[name] = value;
+      });
+    }
 
-        mintIdlModel[name] = value;
+    // Build mint model
+    if (glamMint) {
+      const mintModel = {
+        statePda,
+        asset: stateAccount.baseAssetMint,
+      } as any;
+
+      // Parse mint params
+      stateAccount.params[1].forEach((param) => {
+        const name = Object.keys(param.name)[0];
+        // @ts-ignore
+        const value = Object.values(param.value)[0].val;
+        mintModel[name] = value;
       });
 
-      if (glamMint) {
-        const extMetadata = getExtensionData(
-          ExtensionType.TokenMetadata,
-          glamMint.tlvData,
-        );
-        const tokenMetadata = extMetadata
-          ? unpack(extMetadata)
-          : ({} as TokenMetadata);
-
-        mintIdlModel["symbol"] = tokenMetadata?.symbol;
-        mintIdlModel["name"] = tokenMetadata?.name;
-        mintIdlModel["uri"] = tokenMetadata?.uri;
-
-        if (tokenMetadata?.additionalMetadata) {
-          tokenMetadata.additionalMetadata.find(([k, v]) => {
-            if (k === "LockUpPeriodSeconds") {
-              mintIdlModel["lockUpPeriod"] = parseInt(v);
-            }
-          });
-        }
-
-        const extPermDelegate = getExtensionData(
-          ExtensionType.PermanentDelegate,
-          glamMint.tlvData,
-        );
-        if (extPermDelegate) {
-          const permanentDelegate = new PublicKey(extPermDelegate);
-          mintIdlModel["permanentDelegate"] = permanentDelegate;
-        }
-
-        // default account state
-        const extDefaultState = getExtensionData(
-          ExtensionType.DefaultAccountState,
-          glamMint.tlvData,
-        );
-        if (extDefaultState) {
-          // @ts-ignore
-          mintIdlModel["defaultAccountStateFrozen"] =
-            extDefaultState.readUInt8() === 2;
-        }
+      // Parse token extensions
+      const extMetadata = getExtensionData(
+        ExtensionType.TokenMetadata,
+        glamMint.tlvData,
+      );
+      const tokenMetadata = extMetadata
+        ? unpack(extMetadata)
+        : ({} as TokenMetadata);
+      mintModel["symbol"] = tokenMetadata?.symbol;
+      mintModel["name"] = tokenMetadata?.name;
+      mintModel["uri"] = tokenMetadata?.uri;
+      if (tokenMetadata?.additionalMetadata) {
+        tokenMetadata.additionalMetadata.forEach(([k, v]) => {
+          if (k === "LockupPeriodSeconds") {
+            mintModel["lockupPeriod"] = parseInt(v);
+          }
+        });
       }
 
-      // stateModel.mints has been initialized as an empty array
-      // non-null assertion is safe in order to suppress type error
-      stateModel.mints!.push(new MintModel(mintIdlModel));
-    });
+      mintModel["transferHookProgram"] =
+        getTransferHook(glamMint)?.programId ?? null;
+
+      const extPermDelegate = getExtensionData(
+        ExtensionType.PermanentDelegate,
+        glamMint.tlvData,
+      );
+      if (extPermDelegate) {
+        const permanentDelegate = new PublicKey(
+          extPermDelegate.subarray(0, 32),
+        );
+        mintModel["permanentDelegate"] = permanentDelegate;
+      }
+      const extDefaultState = getExtensionData(
+        ExtensionType.DefaultAccountState,
+        glamMint.tlvData,
+      );
+      if (extDefaultState) {
+        mintModel["defaultAccountStateFrozen"] =
+          extDefaultState.readUInt8() === 2;
+      }
+      // Parse mint policy
+      const mintIntegrationPolicy = stateAccount.integrationAcls?.find(
+        (acl) => acl.integrationProgram.toString() === GlamMintIdlJson.address,
+      );
+      const mintPolicyData = mintIntegrationPolicy?.protocolPolicies?.find(
+        (policy) => policy.protocolBitflag === 1,
+      )?.data;
+      const mintPolicy = MintPolicyLayout.decode(mintPolicyData) as MintPolicy;
+      Object.entries(mintPolicy).forEach(([key, value]) => {
+        mintModel[key] = value;
+      });
+
+      // Assign mint model
+      stateModel.mintModel = new MintModel(mintModel);
+    }
 
     return new StateModel(stateModel, glamProgramId);
   }
@@ -341,74 +312,59 @@ export class FundOpenfundsModel implements FundOpenfundsModelType {
 export type MintModelType = IdlTypes<GlamProtocol>["mintModel"];
 export class MintIdlModel implements MintModelType {
   symbol: string | null;
-  name: string | null;
+  name: number[] | null;
   uri: string | null;
 
-  statePubkey: PublicKey | null;
   asset: PublicKey | null;
   imageUri: string | null;
 
-  allowlist: PublicKey[] | null;
-  blocklist: PublicKey[] | null;
-
-  lockUpPeriod: number | null;
   yearInSeconds: number | null;
   permanentDelegate: PublicKey | null;
   defaultAccountStateFrozen: boolean | null;
   feeStructure: FeeStructure | null;
-  feeParams: FeeParams | null;
   notifyAndSettle: NotifyAndSettle | null;
+
+  lockupPeriod: number | null;
   maxCap: BN | null;
   minSubscription: BN | null;
   minRedemption: BN | null;
   subscriptionPaused: boolean | null;
   redemptionPaused: boolean | null;
+  allowlist: PublicKey[] | null;
+  blocklist: PublicKey[] | null;
 
   constructor(data: Partial<MintModelType>) {
     this.symbol = data.symbol ?? null;
     this.name = data.name ?? null;
     this.uri = data.uri ?? null;
-    this.statePubkey = data.statePubkey ?? null;
+
     this.asset = data.asset ?? null;
     this.imageUri = data.imageUri ?? null;
-    this.allowlist = data.allowlist ?? null;
-    this.blocklist = data.blocklist ?? null;
-    this.lockUpPeriod = data.lockUpPeriod ?? null;
+
     this.yearInSeconds = data.yearInSeconds ?? null;
     this.permanentDelegate = data.permanentDelegate ?? null;
     this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
     this.feeStructure = data.feeStructure ?? null;
-    this.feeParams = data.feeParams ?? null;
     this.notifyAndSettle = data.notifyAndSettle ?? null;
+
+    this.lockupPeriod = data.lockupPeriod ?? null;
     this.maxCap = data.maxCap ?? null;
     this.minSubscription = data.minSubscription ?? null;
     this.minRedemption = data.minRedemption ?? null;
     this.subscriptionPaused = data.subscriptionPaused ?? null;
     this.redemptionPaused = data.redemptionPaused ?? null;
+    this.allowlist = data.allowlist ?? null;
+    this.blocklist = data.blocklist ?? null;
   }
 }
 export class MintModel extends MintIdlModel {
-  constructor(data: Partial<MintIdlModel>) {
-    super(data);
-  }
+  statePda: PublicKey | null;
+  transferHookProgram: PublicKey | null;
 
-  /**
-   * @deprecated
-   */
-  static mintAddress(
-    statePda: PublicKey,
-    idx: number = 0,
-    glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
-  ): PublicKey {
-    const [pda, _] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(SEED_MINT),
-        Uint8Array.from([idx % 256]),
-        statePda.toBuffer(),
-      ],
-      glamProgramId,
-    );
-    return pda;
+  constructor(data: Partial<MintModel>) {
+    super(data);
+    this.statePda = data.statePda ?? null;
+    this.transferHookProgram = data.transferHookProgram ?? null;
   }
 }
 

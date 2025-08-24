@@ -28,6 +28,8 @@ import {
   Mint,
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
+  getExtensionData,
+  ExtensionType,
 } from "@solana/spl-token";
 import { WSOL, USDC, JITO_TIP_DEFAULT, ALT_PROGRAM_ID } from "../constants";
 
@@ -60,6 +62,7 @@ import {
   getOpenfundsPda,
   getVaultPda,
 } from "../utils/glamPDAs";
+import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 const LOOKUP_TABLES = [
@@ -770,39 +773,24 @@ export class BaseClient {
     };
   }
 
-  /**
-   * @deprecated
-   */
-  getName(stateModel: Partial<StateModel>) {
-    const name =
-      stateModel.name || (stateModel.mints && stateModel.mints[0]?.name);
-    if (!name) {
-      throw new Error("Name not be found in state model");
-    }
-    return name;
-  }
-
   async isLockupEnabled(): Promise<boolean> {
     if (!this.statePda) {
       throw new Error("State PDA is not specified");
     }
 
-    // @ts-ignore
-    const state = await this.fetchStateAccount();
-    if (state.params.length < 2) {
-      throw new Error("Invalid mint index");
-    }
-
-    // Check for lockup period in state params
-    for (const param of state.params[1]) {
-      const name = Object.keys(param.name)[0];
-      // @ts-ignore
-      const value = Object.values(param.value)[0].val;
-      if (name === "lockUpPeriod") {
-        return Number(value) >= 0;
+    const { mint } = await this.fetchMintAndTokenProgram(this.mintPda);
+    const extMetadata = getExtensionData(
+      ExtensionType.TokenMetadata,
+      mint.tlvData,
+    );
+    const tokenMetadata = extMetadata
+      ? unpack(extMetadata)
+      : ({} as TokenMetadata);
+    for (const [k, v] of tokenMetadata?.additionalMetadata) {
+      if (k === "LockupPeriodSeconds") {
+        return parseInt(v) > 0;
       }
     }
-
     return false;
   }
 
@@ -904,10 +892,10 @@ export class BaseClient {
     const glamStatePda = statePda || this.statePda;
     const stateAccount = await this.fetchStateAccount(glamStatePda);
 
-    if (stateAccount.mints.length > 0) {
+    if (!stateAccount.mint.equals(PublicKey.default)) {
       const mintPubkey = glamStatePda.equals(this.statePda)
         ? this.mintPda
-        : getMintPda(glamStatePda, 0, this.protocolProgram.programId);
+        : getMintPda(glamStatePda, 0, this.mintProgram.programId);
       const { mint } = await this.fetchMintAndTokenProgram(mintPubkey);
       return StateModel.fromOnchainAccounts(
         glamStatePda,
@@ -951,29 +939,20 @@ export class BaseClient {
             s.account.delegateAcls.some((acl) => acl.pubkey.equals(delegate))),
       );
 
-    // fetch the 1st mint of each glam state if it exists
     let mintsCache = new Map<string, Mint>();
     const mintPubkeys = filteredStateAccounts
-      .map((s) => s.account.mints[0])
-      .filter((addr) => !!addr);
-    const mintAccounts =
-      await this.provider.connection.getMultipleAccountsInfo(mintPubkeys);
-    mintAccounts.forEach((accountInfo, i) => {
-      const mint = unpackMint(
-        mintPubkeys[i],
-        accountInfo,
-        TOKEN_2022_PROGRAM_ID,
-      );
-      mintsCache.set(mintPubkeys[i].toBase58(), mint);
-    });
+      .map((s) => s.account.mint)
+      .filter((p) => !p.equals(PublicKey.default));
+    const mints = await this.fetchMintsAndTokenPrograms(mintPubkeys);
+    for (let i = 0; i < mintPubkeys.length; i++) {
+      mintsCache.set(mintPubkeys[i].toBase58(), mints[i].mint);
+    }
 
-    return filteredStateAccounts.map(({ publicKey, account }) => {
-      const mintPubkey = account.mints[0]?.toBase58() || "";
-
+    return filteredStateAccounts.map(({ publicKey, account: stateAccount }) => {
       return StateModel.fromOnchainAccounts(
         publicKey,
-        account,
-        mintsCache.get(mintPubkey),
+        stateAccount,
+        mintsCache.get(stateAccount.mint.toBase58()),
         this.protocolProgram.programId,
       );
     });

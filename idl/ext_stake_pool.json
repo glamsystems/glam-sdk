@@ -709,67 +709,10 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "Allowlist"
-          },
-          {
-            "name": "Blocklist"
-          },
-          {
-            "name": "ExternalVaultAccounts"
-          },
-          {
-            "name": "LockUpPeriod"
-          },
-          {
-            "name": "DriftMarketIndexesPerp"
-          },
-          {
-            "name": "DriftMarketIndexesSpot"
-          },
-          {
-            "name": "DriftOrderTypes"
-          },
-          {
-            "name": "TransferToAllowlist"
-          },
-          {
-            "name": "PricedAssets"
-          },
-          {
-            "name": "MaxCap"
-          },
-          {
-            "name": "MinSubscription"
-          },
-          {
-            "name": "MinRedemption"
-          },
-          {
-            "name": "NotifyAndSettle"
-          },
-          {
-            "name": "FeeStructure"
-          },
-          {
-            "name": "FeeParams"
-          },
-          {
-            "name": "ClaimableFees"
-          },
-          {
-            "name": "ClaimedFees"
-          },
-          {
-            "name": "SubscriptionPaused"
-          },
-          {
-            "name": "RedemptionPaused"
-          },
-          {
             "name": "Owner"
           },
           {
-            "name": "Enabled"
+            "name": "PortfolioManagerName"
           },
           {
             "name": "Name"
@@ -787,10 +730,13 @@
             "name": "IntegrationAcls"
           },
           {
-            "name": "UpdateTimelock"
+            "name": "TimelockDuration"
           },
           {
             "name": "TimelockExpiresAt"
+          },
+          {
+            "name": "Borrowable"
           },
           {
             "name": "DefaultAccountStateFrozen"
@@ -799,22 +745,19 @@
             "name": "PermanentDelegate"
           },
           {
-            "name": "TimeUnit"
+            "name": "NotifyAndSettle"
           },
           {
-            "name": "KaminoLendingMarkets"
+            "name": "FeeStructure"
           },
           {
-            "name": "MeteoraDlmmPools"
+            "name": "FeeParams"
           },
           {
-            "name": "BorrowableAssets"
+            "name": "ClaimableFees"
           },
           {
-            "name": "DriftVaultsAllowlist"
-          },
-          {
-            "name": "KaminoVaultsAllowlist"
+            "name": "ClaimedFees"
           }
         ]
       }
@@ -947,7 +890,7 @@
                 "type": {
                   "vec": {
                     "defined": {
-                      "name": "PricedAssets"
+                      "name": "PricedProtocol"
                     }
                   }
                 }
@@ -1001,19 +944,6 @@
                 "type": {
                   "defined": {
                     "name": "NotifyAndSettle"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "TimeUnit",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "defined": {
-                    "name": "TimeUnit"
                   }
                 }
               }
@@ -1132,50 +1062,6 @@
           },
           {
             "name": "Soft"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Integration",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Drift"
-          },
-          {
-            "name": "SplStakePool"
-          },
-          {
-            "name": "SanctumStakePool"
-          },
-          {
-            "name": "NativeStaking"
-          },
-          {
-            "name": "Marinade"
-          },
-          {
-            "name": "JupiterSwap"
-          },
-          {
-            "name": "JupiterVote"
-          },
-          {
-            "name": "KaminoLending"
-          },
-          {
-            "name": "MeteoraDlmm"
-          },
-          {
-            "name": "DriftVaults"
-          },
-          {
-            "name": "KaminoVaults"
-          },
-          {
-            "name": "Validator"
           }
         ]
       }
@@ -1316,11 +1202,19 @@
             "type": "u64"
           },
           {
+            "name": "time_unit",
+            "type": {
+              "defined": {
+                "name": "TimeUnit"
+              }
+            }
+          },
+          {
             "name": "_padding",
             "type": {
               "array": [
                 "u8",
-                4
+                3
               ]
             }
           }
@@ -1369,7 +1263,7 @@
       }
     },
     {
-      "name": "PricedAssets",
+      "name": "PricedProtocol",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1379,12 +1273,6 @@
               "defined": {
                 "name": "PriceDenom"
               }
-            }
-          },
-          {
-            "name": "accounts",
-            "type": {
-              "vec": "pubkey"
             }
           },
           {
@@ -1404,13 +1292,17 @@
             "type": "u64"
           },
           {
-            "name": "integration",
+            "name": "integration_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "protocol_bitflag",
+            "type": "u16"
+          },
+          {
+            "name": "positions",
             "type": {
-              "option": {
-                "defined": {
-                  "name": "Integration"
-                }
-              }
+              "vec": "pubkey"
             }
           }
         ]
@@ -1485,16 +1377,25 @@
             }
           },
           {
-            "name": "owner",
-            "type": "pubkey"
+            "name": "enabled",
+            "type": "bool"
           },
           {
             "name": "vault",
             "type": "pubkey"
           },
           {
-            "name": "enabled",
-            "type": "bool"
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "portfolio_manager_name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "created",
@@ -1513,12 +1414,6 @@
             "type": "u8"
           },
           {
-            "name": "mints",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
             "name": "name",
             "type": {
               "array": [
@@ -1528,7 +1423,25 @@
             }
           },
           {
+            "name": "timelock_duration",
+            "type": "u32"
+          },
+          {
+            "name": "timelock_expires_at",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
             "name": "assets",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }
@@ -1549,6 +1462,22 @@
               "vec": {
                 "defined": {
                   "name": "DelegateAcl"
+                }
+              }
+            }
+          },
+          {
+            "name": "external_positions",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "priced_protocols",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "PricedProtocol"
                 }
               }
             }

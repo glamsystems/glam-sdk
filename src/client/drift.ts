@@ -701,13 +701,13 @@ export class DriftClient {
     return {
       driftAccessControl: delegate ? 0 : 1,
       driftDelegatedAccount: delegate || null,
-      driftMarketIndexesPerp: stateModel?.driftMarketIndexesPerp || [],
-      driftOrderTypes: stateModel?.driftOrderTypes || [],
+      driftMarketIndexesPerp: [],
+      driftOrderTypes: [],
       driftMaxLeverage: driftUserAccount?.maxMarginRatio
         ? DRIFT_MARGIN_PRECISION / driftUserAccount?.maxMarginRatio
         : null,
       driftEnableSpot: driftUserAccount?.isMarginTradingEnabled || false,
-      driftMarketIndexesSpot: stateModel?.driftMarketIndexesSpot || [],
+      driftMarketIndexesSpot: [],
     };
   }
 
