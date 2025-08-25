@@ -134,7 +134,11 @@ export class MintClient {
       ],
       this.base.protocolProgram.programId, // state account owner is the protocol program
     );
+
     this.base.statePda = statePda;
+    if (!mintModel.uri) {
+      mintModel.uri = `https://rest2.glam.systems/metadata/${this.base.mintPda}`;
+    }
 
     const tx = await this.base.mintProgram.methods
       .initializeMint(

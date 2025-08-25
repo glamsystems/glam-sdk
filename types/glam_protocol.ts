@@ -488,19 +488,19 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "linkMintToState",
+      "name": "linkUnlinkMint",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        96,
-        176,
-        111,
-        109,
-        242,
-        72,
-        129,
-        127
+        237,
+        235,
+        138,
+        232,
+        220,
+        182,
+        115,
+        14
       ],
       "accounts": [
         {
@@ -516,7 +516,12 @@ export type GlamProtocol = {
           "signer": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "link",
+          "type": "bool"
+        }
+      ]
     },
     {
       "name": "priceDriftUsers",
@@ -1973,19 +1978,19 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "tokenTransferCheckedFromMintAuthority",
+      "name": "tokenTransferCheckedByMintAuthority",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        64,
-        55,
-        169,
-        39,
-        233,
-        118,
-        129,
-        171
+        37,
+        131,
+        188,
+        85,
+        45,
+        183,
+        8,
+        81
       ],
       "accounts": [
         {
@@ -2085,19 +2090,19 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "updateMintParamsFromMintAuthority",
+      "name": "updateMintParamsByMintAuthority",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        245,
-        251,
-        101,
-        34,
-        191,
-        248,
-        69,
-        33
+        94,
+        160,
+        55,
+        53,
+        175,
+        225,
+        62,
+        118
       ],
       "accounts": [
         {

@@ -999,9 +999,43 @@ export type GlamMint = {
           "writable": true
         },
         {
+          "name": "requestQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  45,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamMint"
+              }
+            ]
+          }
+        },
+        {
           "name": "extraMetasAccount",
           "writable": true,
           "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "policiesProgram",
@@ -1012,8 +1046,8 @@ export type GlamMint = {
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
+          "name": "glamProtocol",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
       ],
       "args": []
@@ -3038,7 +3072,7 @@ export type GlamMint = {
     },
     {
       "code": 6001,
-      "name": "notAuthorized",
+      "name": "unauthorizedSigner",
       "msg": "Signer is not authorized"
     },
     {
@@ -3080,6 +3114,11 @@ export type GlamMint = {
       "code": 6009,
       "name": "requestNotFound",
       "msg": "Request not found"
+    },
+    {
+      "code": 6010,
+      "name": "requestQueueNotEmpty",
+      "msg": "Request queue not empty"
     }
   ],
   "types": [

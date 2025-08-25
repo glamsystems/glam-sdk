@@ -482,19 +482,19 @@
       ]
     },
     {
-      "name": "link_mint_to_state",
+      "name": "link_unlink_mint",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        96,
-        176,
-        111,
-        109,
-        242,
-        72,
-        129,
-        127
+        237,
+        235,
+        138,
+        232,
+        220,
+        182,
+        115,
+        14
       ],
       "accounts": [
         {
@@ -510,7 +510,12 @@
           "signer": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "link",
+          "type": "bool"
+        }
+      ]
     },
     {
       "name": "price_drift_users",
@@ -1967,19 +1972,19 @@
       ]
     },
     {
-      "name": "token_transfer_checked_from_mint_authority",
+      "name": "token_transfer_checked_by_mint_authority",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        64,
-        55,
-        169,
-        39,
-        233,
-        118,
-        129,
-        171
+        37,
+        131,
+        188,
+        85,
+        45,
+        183,
+        8,
+        81
       ],
       "accounts": [
         {
@@ -2079,19 +2084,19 @@
       ]
     },
     {
-      "name": "update_mint_params_from_mint_authority",
+      "name": "update_mint_params_by_mint_authority",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        245,
-        251,
-        101,
-        34,
-        191,
-        248,
-        69,
-        33
+        94,
+        160,
+        55,
+        53,
+        175,
+        225,
+        62,
+        118
       ],
       "accounts": [
         {
