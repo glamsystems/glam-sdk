@@ -34,6 +34,23 @@ export interface MintPolicy {
   blocklist: PublicKey[] | null;
 }
 
+export function encodeMintPolicy(policy: MintPolicy): Buffer {
+  // Calculate the required buffer size
+  // Fixed fields: 4 + 8 + 8 + 8 + 1 + 1 + 8 = 38 bytes
+  // Variable fields: allowlist and blocklist (1 byte option flag + 4 bytes length + 32 bytes per pubkey)
+  const allowlistSize = policy.allowlist
+    ? 1 + 4 + policy.allowlist.length * 32
+    : 1;
+  const blocklistSize = policy.blocklist
+    ? 1 + 4 + policy.blocklist.length * 32
+    : 1;
+  const totalSize = 38 + allowlistSize + blocklistSize;
+
+  const buffer = Buffer.alloc(totalSize);
+  MintPolicyLayout.encode(policy, buffer);
+  return buffer;
+}
+
 export interface TransferPolicy {
   allowlist: PublicKey[];
 }

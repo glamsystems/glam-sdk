@@ -259,6 +259,10 @@ export class PriceClient {
       }
     }
 
+    if (driftUsers.length === 0) {
+      return null;
+    }
+
     // Build a set of markets and oracles that are used by all sub accounts
     const marketsAndOracles = new Set<string>();
     const spotMarketIndexes = new Set<number>(
@@ -432,33 +436,50 @@ export class PriceClient {
       return [priceVaultIx];
     }
 
-    const integrations = (stateModel.integrationAcls || []).map(
-      (i) => Object.keys(i)[0],
+    const integrationPrograms = (stateModel.integrationAcls || []).map(
+      (i) => i.integrationProgram,
     );
-    const integrationsToPricingFns: {
-      [key: string]: (priceDenom: PriceDenom) => Promise<any>;
-    } = {
-      drift: this.priceDriftUsersIx.bind(this),
-      kaminoLending: this.priceKaminoObligationsIx.bind(this),
-      nativeStaking: this.priceStakeAccountsIx.bind(this),
-      // meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
-      driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
-      kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
-    };
-
-    const pricingFns = integrations
-      .map((integration) => integrationsToPricingFns[integration])
-      .filter(Boolean);
+    // const integrationsToPricingFns: {
+    //   [key: string]: (priceDenom: PriceDenom) => Promise<any>;
+    // } = {
+    //   drift: this.priceDriftUsersIx.bind(this),
+    //   kaminoLending: this.priceKaminoObligationsIx.bind(this),
+    //   // nativeStaking: this.priceStakeAccountsIx.bind(this),
+    //   // meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
+    //   driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
+    //   kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
+    // };
+    // const pricingFns = integrations
+    //   .map((integration) => integrationsToPricingFns[integration])
+    //   .filter(Boolean);
+    // for (const fn of pricingFns) {
+    //   const ix = await fn(priceDenom);
+    //   if (Array.isArray(ix)) {
+    //     pricingIxs.push(...ix);
+    //   } else {
+    //     pricingIxs.push(ix);
+    //   }
+    // }
 
     const pricingIxs = [priceVaultIx];
-    for (const fn of pricingFns) {
-      const ix = await fn(priceDenom);
-      if (Array.isArray(ix)) {
-        pricingIxs.push(...ix);
-      } else {
-        pricingIxs.push(ix);
-      }
+    if (
+      integrationPrograms.find((p) =>
+        p.equals(this.base.extDriftProgram.programId),
+      )
+    ) {
+      pricingIxs.push(await this.priceDriftUsersIx(priceDenom));
+      pricingIxs.push(await this.priceDriftVaultDepositorsIx(priceDenom));
     }
+
+    if (
+      integrationPrograms.find((p) =>
+        p.equals(this.base.extKaminoProgram.programId),
+      )
+    ) {
+      pricingIxs.push(await this.priceKaminoObligationsIx(priceDenom));
+      pricingIxs.push(...(await this.priceKaminoVaultSharesIx(priceDenom)));
+    }
+
     return pricingIxs.filter(Boolean);
   }
 
