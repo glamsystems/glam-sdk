@@ -8,7 +8,7 @@ export const SEED_ESCROW = "escrow"; // mint program
 export const SEED_REQUEST_QUEUE = "request-queue"; // mint program
 export const SEED_ACCOUNT_POLICY = "account-policy"; // policies program
 export const SEED_EXTRA_ACCOUNT_METAS = "extra-account-metas"; // policies program
-export const SEED_GLOBAL_CONFIG = "global_config"; // config program
+export const SEED_GLOBAL_CONFIG = "global-config";
 export const SEED_INTEGRATION_AUTHORITY = "integration-authority";
 
 export const STAKE_ACCOUNT_SIZE = 200;
