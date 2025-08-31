@@ -588,7 +588,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -719,7 +719,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -855,7 +855,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1001,7 +1001,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1125,7 +1125,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1251,7 +1251,7 @@ export type GlamProtocol = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -2601,6 +2601,23 @@ export type GlamProtocol = {
                 "name": "oracleSource"
               }
             }
+          },
+          {
+            "name": "maxAgeSeconds",
+            "type": "u16"
+          },
+          {
+            "name": "priority",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           }
         ]
       }
@@ -3070,8 +3087,7 @@ export type GlamProtocol = {
           {
             "name": "feeAuthority",
             "docs": [
-              "The authority that can modify fee structure of individual glam state",
-              "and claim protocol fees"
+              "The authority that can modify fee structure of individual glam state and claim protocol fees"
             ],
             "type": "pubkey"
           },
@@ -3343,6 +3359,9 @@ export type GlamProtocol = {
             "name": "pythLazerStableCoin"
           },
           {
+            "name": "notSet"
+          },
+          {
             "name": "lstPoolState"
           },
           {
@@ -3350,6 +3369,9 @@ export type GlamProtocol = {
           },
           {
             "name": "baseAsset"
+          },
+          {
+            "name": "chainlinkRwa"
           }
         ]
       }

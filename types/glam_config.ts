@@ -8,22 +8,22 @@ export type GlamConfig = {
   "address": "gConFzxKL9USmwTdJoeQJvfKmqhJ2CyUaXTyQ8v9TGX",
   "metadata": {
     "name": "glamConfig",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "spec": "0.1.0",
     "description": "Configuration program for GLAM protocol"
   },
   "instructions": [
     {
-      "name": "addAssetMeta",
+      "name": "close",
       "discriminator": [
-        36,
-        10,
-        172,
-        139,
-        10,
-        221,
-        102,
-        77
+        98,
+        165,
+        201,
+        177,
+        108,
+        65,
+        206,
+        96
       ],
       "accounts": [
         {
@@ -40,7 +40,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -55,38 +55,14 @@ export type GlamConfig = {
         {
           "name": "admin",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "globalConfig"
-          ]
+          "signer": true
         },
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "asset",
-          "type": "pubkey"
-        },
-        {
-          "name": "decimals",
-          "type": "u8"
-        },
-        {
-          "name": "oracle",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracleSource",
-          "type": {
-            "defined": {
-              "name": "oracleSource"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "deleteAssetMeta",
@@ -115,7 +91,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -174,7 +150,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -246,7 +222,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -279,77 +255,6 @@ export type GlamConfig = {
       ]
     },
     {
-      "name": "updateAssetMeta",
-      "discriminator": [
-        223,
-        61,
-        171,
-        60,
-        126,
-        37,
-        49,
-        45
-      ],
-      "accounts": [
-        {
-          "name": "globalConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  95,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "admin",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "globalConfig"
-          ]
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "asset",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracle",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracleSource",
-          "type": {
-            "defined": {
-              "name": "oracleSource"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "updateProtocolFees",
       "discriminator": [
         158,
@@ -376,7 +281,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -434,7 +339,7 @@ export type GlamConfig = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -458,6 +363,69 @@ export type GlamConfig = {
         {
           "name": "referrer",
           "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "upsertAssetMeta",
+      "discriminator": [
+        29,
+        40,
+        115,
+        194,
+        215,
+        146,
+        222,
+        212
+      ],
+      "accounts": [
+        {
+          "name": "globalConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "globalConfig"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "assetMeta",
+          "type": {
+            "defined": {
+              "name": "assetMeta"
+            }
+          }
         }
       ]
     }
@@ -490,6 +458,11 @@ export type GlamConfig = {
     },
     {
       "code": 6002,
+      "name": "assetMetaAlreadyExists",
+      "msg": "Asset meta already exists"
+    },
+    {
+      "code": 6003,
       "name": "invalidParameters",
       "msg": "Invalid parameters"
     }
@@ -519,6 +492,23 @@ export type GlamConfig = {
                 "name": "oracleSource"
               }
             }
+          },
+          {
+            "name": "maxAgeSeconds",
+            "type": "u16"
+          },
+          {
+            "name": "priority",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           }
         ]
       }
@@ -538,8 +528,7 @@ export type GlamConfig = {
           {
             "name": "feeAuthority",
             "docs": [
-              "The authority that can modify fee structure of individual glam state",
-              "and claim protocol fees"
+              "The authority that can modify fee structure of individual glam state and claim protocol fees"
             ],
             "type": "pubkey"
           },
@@ -622,6 +611,9 @@ export type GlamConfig = {
             "name": "pythLazerStableCoin"
           },
           {
+            "name": "notSet"
+          },
+          {
             "name": "lstPoolState"
           },
           {
@@ -629,6 +621,9 @@ export type GlamConfig = {
           },
           {
             "name": "baseAsset"
+          },
+          {
+            "name": "chainlinkRwa"
           }
         ]
       }

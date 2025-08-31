@@ -582,7 +582,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -713,7 +713,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -849,7 +849,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -995,7 +995,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1119,7 +1119,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1245,7 +1245,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -2595,6 +2595,23 @@
                 "name": "OracleSource"
               }
             }
+          },
+          {
+            "name": "max_age_seconds",
+            "type": "u16"
+          },
+          {
+            "name": "priority",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           }
         ]
       }
@@ -3064,8 +3081,7 @@
           {
             "name": "fee_authority",
             "docs": [
-              "The authority that can modify fee structure of individual glam state",
-              "and claim protocol fees"
+              "The authority that can modify fee structure of individual glam state and claim protocol fees"
             ],
             "type": "pubkey"
           },
@@ -3337,6 +3353,9 @@
             "name": "PythLazerStableCoin"
           },
           {
+            "name": "NotSet"
+          },
+          {
             "name": "LstPoolState"
           },
           {
@@ -3344,6 +3363,9 @@
           },
           {
             "name": "BaseAsset"
+          },
+          {
+            "name": "ChainlinkRWA"
           }
         ]
       }

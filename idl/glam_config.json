@@ -2,22 +2,22 @@
   "address": "gConFzxKL9USmwTdJoeQJvfKmqhJ2CyUaXTyQ8v9TGX",
   "metadata": {
     "name": "glam_config",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "spec": "0.1.0",
     "description": "Configuration program for GLAM protocol"
   },
   "instructions": [
     {
-      "name": "add_asset_meta",
+      "name": "close",
       "discriminator": [
-        36,
-        10,
-        172,
-        139,
-        10,
-        221,
-        102,
-        77
+        98,
+        165,
+        201,
+        177,
+        108,
+        65,
+        206,
+        96
       ],
       "accounts": [
         {
@@ -34,7 +34,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -49,38 +49,14 @@
         {
           "name": "admin",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "global_config"
-          ]
+          "signer": true
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "asset",
-          "type": "pubkey"
-        },
-        {
-          "name": "decimals",
-          "type": "u8"
-        },
-        {
-          "name": "oracle",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracle_source",
-          "type": {
-            "defined": {
-              "name": "OracleSource"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "delete_asset_meta",
@@ -109,7 +85,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -168,7 +144,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -240,7 +216,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -273,77 +249,6 @@
       ]
     },
     {
-      "name": "update_asset_meta",
-      "discriminator": [
-        223,
-        61,
-        171,
-        60,
-        126,
-        37,
-        49,
-        45
-      ],
-      "accounts": [
-        {
-          "name": "global_config",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  95,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "admin",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "global_config"
-          ]
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "asset",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracle",
-          "type": "pubkey"
-        },
-        {
-          "name": "oracle_source",
-          "type": {
-            "defined": {
-              "name": "OracleSource"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "update_protocol_fees",
       "discriminator": [
         158,
@@ -370,7 +275,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -428,7 +333,7 @@
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -452,6 +357,69 @@
         {
           "name": "referrer",
           "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "upsert_asset_meta",
+      "discriminator": [
+        29,
+        40,
+        115,
+        194,
+        215,
+        146,
+        222,
+        212
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "global_config"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "asset_meta",
+          "type": {
+            "defined": {
+              "name": "AssetMeta"
+            }
+          }
         }
       ]
     }
@@ -484,6 +452,11 @@
     },
     {
       "code": 6002,
+      "name": "AssetMetaAlreadyExists",
+      "msg": "Asset meta already exists"
+    },
+    {
+      "code": 6003,
       "name": "InvalidParameters",
       "msg": "Invalid parameters"
     }
@@ -513,6 +486,23 @@
                 "name": "OracleSource"
               }
             }
+          },
+          {
+            "name": "max_age_seconds",
+            "type": "u16"
+          },
+          {
+            "name": "priority",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           }
         ]
       }
@@ -532,8 +522,7 @@
           {
             "name": "fee_authority",
             "docs": [
-              "The authority that can modify fee structure of individual glam state",
-              "and claim protocol fees"
+              "The authority that can modify fee structure of individual glam state and claim protocol fees"
             ],
             "type": "pubkey"
           },
@@ -616,6 +605,9 @@
             "name": "PythLazerStableCoin"
           },
           {
+            "name": "NotSet"
+          },
+          {
             "name": "LstPoolState"
           },
           {
@@ -623,6 +615,9 @@
           },
           {
             "name": "BaseAsset"
+          },
+          {
+            "name": "ChainlinkRWA"
           }
         ]
       }
