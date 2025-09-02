@@ -1,14 +1,13 @@
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { LstList } from "sanctum-lst-list";
+import { LstList } from "@glamsystems/sanctum-lst-list";
 
 export const STAKE_POOLS = LstList.filter(
   (lst) =>
-    !lst.name.includes("Sanctum Automated") &&
-    (lst.pool.program === "Spl" ||
-      lst.pool.program === "Marinade" ||
-      lst.pool.program === "SanctumSpl" ||
-      lst.pool.program === "SanctumSplMulti"),
+    lst.pool.program === "Spl" ||
+    lst.pool.program === "Marinade" ||
+    lst.pool.program === "SanctumSpl" ||
+    lst.pool.program === "SanctumSplMulti",
 ).map((lst) => {
   const { pool, program } = lst.pool as any;
   const poolState =
@@ -28,16 +27,6 @@ export const STAKE_POOLS = LstList.filter(
     tokenProgram: new PublicKey(lst.tokenProgram),
     poolState: new PublicKey(poolState),
   };
-});
-STAKE_POOLS.push({
-  name: "Phantom Staked SOL",
-  symbol: "PSOL",
-  mint: "pSo1f9nQXWgXibFtKf7NWYxb5enAM4qfP6UJSiXRQfL",
-  decimals: 9,
-  logoURI:
-    "https://coin-images.coingecko.com/coins/images/55849/large/PSOL.png",
-  tokenProgram: TOKEN_PROGRAM_ID,
-  poolState: new PublicKey("pSPcvR8GmG9aKDUbn9nbKYjkxt9hxMS7kF1qqKJaPqJ"),
 });
 
 export const STAKE_POOLS_MAP = new Map(STAKE_POOLS.map((p) => [p.mint, p]));
