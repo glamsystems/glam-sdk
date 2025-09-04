@@ -402,9 +402,6 @@ export type ExtSpl = {
             "name": "timelockDuration"
           },
           {
-            "name": "timelockExpiresAt"
-          },
-          {
             "name": "borrowable"
           },
           {
@@ -545,21 +542,6 @@ export type ExtSpl = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -767,6 +749,9 @@ export type ExtSpl = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

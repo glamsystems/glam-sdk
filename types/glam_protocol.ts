@@ -164,6 +164,12 @@ export type GlamProtocol = {
     },
     {
       "name": "emergencyUpdateState",
+      "docs": [
+        "Bypasses the timelock for emergency updates on access control. Allowed operations:",
+        "- removing an integration program",
+        "- removing a delegate",
+        "- enabling/disabling glam state"
+      ],
       "discriminator": [
         156,
         211,
@@ -187,12 +193,50 @@ export type GlamProtocol = {
       ],
       "args": [
         {
-          "name": "state",
+          "name": "args",
           "type": {
             "defined": {
-              "name": "stateModel"
+              "name": "emergencyAccessUpdateArgs"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "enableDisableProtocols",
+      "discriminator": [
+        222,
+        198,
+        164,
+        163,
+        194,
+        161,
+        11,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "integrationProgram",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocolsBitmask",
+          "type": "u16"
+        },
+        {
+          "name": "setEnabled",
+          "type": "bool"
         }
       ]
     },
@@ -227,6 +271,52 @@ export type GlamProtocol = {
         {
           "name": "bytes",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "grantRevokeDelegatePermissions",
+      "discriminator": [
+        162,
+        21,
+        218,
+        157,
+        218,
+        86,
+        114,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "delegate",
+          "type": "pubkey"
+        },
+        {
+          "name": "integrationProgram",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocolBitflag",
+          "type": "u16"
+        },
+        {
+          "name": "permissionsBitmask",
+          "type": "u64"
+        },
+        {
+          "name": "setGranted",
+          "type": "bool"
         }
       ]
     },
@@ -1365,6 +1455,44 @@ export type GlamProtocol = {
               "name": "jupiterSwapPolicy"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "setProtocolPolicy",
+      "discriminator": [
+        37,
+        99,
+        61,
+        122,
+        227,
+        102,
+        182,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "integrationProgram",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocolBitflag",
+          "type": "u16"
+        },
+        {
+          "name": "data",
+          "type": "bytes"
         }
       ]
     },
@@ -2674,6 +2802,32 @@ export type GlamProtocol = {
       }
     },
     {
+      "name": "emergencyAccessUpdateArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "disabledIntegrations",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "disabledDelegates",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "stateEnabled",
+            "type": {
+              "option": "bool"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "engineField",
       "type": {
         "kind": "struct",
@@ -2725,9 +2879,6 @@ export type GlamProtocol = {
           },
           {
             "name": "timelockDuration"
-          },
-          {
-            "name": "timelockExpiresAt"
           },
           {
             "name": "borrowable"
@@ -2870,21 +3021,6 @@ export type GlamProtocol = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -3162,6 +3298,9 @@ export type GlamProtocol = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

@@ -120,6 +120,10 @@ export type GlamConfig = {
         {
           "name": "asset",
           "type": "pubkey"
+        },
+        {
+          "name": "oracle",
+          "type": "pubkey"
         }
       ]
     },

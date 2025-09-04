@@ -158,6 +158,12 @@
     },
     {
       "name": "emergency_update_state",
+      "docs": [
+        "Bypasses the timelock for emergency updates on access control. Allowed operations:",
+        "- removing an integration program",
+        "- removing a delegate",
+        "- enabling/disabling glam state"
+      ],
       "discriminator": [
         156,
         211,
@@ -181,12 +187,50 @@
       ],
       "args": [
         {
-          "name": "state",
+          "name": "args",
           "type": {
             "defined": {
-              "name": "StateModel"
+              "name": "EmergencyAccessUpdateArgs"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "enable_disable_protocols",
+      "discriminator": [
+        222,
+        198,
+        164,
+        163,
+        194,
+        161,
+        11,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "integration_program",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocols_bitmask",
+          "type": "u16"
+        },
+        {
+          "name": "set_enabled",
+          "type": "bool"
         }
       ]
     },
@@ -221,6 +265,52 @@
         {
           "name": "bytes",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "grant_revoke_delegate_permissions",
+      "discriminator": [
+        162,
+        21,
+        218,
+        157,
+        218,
+        86,
+        114,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "delegate",
+          "type": "pubkey"
+        },
+        {
+          "name": "integration_program",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocol_bitflag",
+          "type": "u16"
+        },
+        {
+          "name": "permissions_bitmask",
+          "type": "u64"
+        },
+        {
+          "name": "set_granted",
+          "type": "bool"
         }
       ]
     },
@@ -1359,6 +1449,44 @@
               "name": "JupiterSwapPolicy"
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "set_protocol_policy",
+      "discriminator": [
+        37,
+        99,
+        61,
+        122,
+        227,
+        102,
+        182,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "integration_program",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocol_bitflag",
+          "type": "u16"
+        },
+        {
+          "name": "data",
+          "type": "bytes"
         }
       ]
     },
@@ -2668,6 +2796,32 @@
       }
     },
     {
+      "name": "EmergencyAccessUpdateArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "disabled_integrations",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "disabled_delegates",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "state_enabled",
+            "type": {
+              "option": "bool"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "EngineField",
       "type": {
         "kind": "struct",
@@ -2719,9 +2873,6 @@
           },
           {
             "name": "TimelockDuration"
-          },
-          {
-            "name": "TimelockExpiresAt"
           },
           {
             "name": "Borrowable"
@@ -2864,21 +3015,6 @@
                   "vec": {
                     "defined": {
                       "name": "IntegrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "VecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "PricedProtocol"
                     }
                   }
                 }
@@ -3156,6 +3292,9 @@
     },
     {
       "name": "IntegrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

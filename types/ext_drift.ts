@@ -2592,9 +2592,6 @@ export type ExtDrift = {
             "name": "timelockDuration"
           },
           {
-            "name": "timelockExpiresAt"
-          },
-          {
             "name": "borrowable"
           },
           {
@@ -2735,21 +2732,6 @@ export type ExtDrift = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -2957,6 +2939,9 @@ export type ExtDrift = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

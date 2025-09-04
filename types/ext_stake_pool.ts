@@ -739,9 +739,6 @@ export type ExtStakePool = {
             "name": "timelockDuration"
           },
           {
-            "name": "timelockExpiresAt"
-          },
-          {
             "name": "borrowable"
           },
           {
@@ -882,21 +879,6 @@ export type ExtStakePool = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -1104,6 +1086,9 @@ export type ExtStakePool = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

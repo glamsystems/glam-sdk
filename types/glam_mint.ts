@@ -901,7 +901,7 @@ export type GlamMint = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -1001,6 +1001,7 @@ export type GlamMint = {
         {
           "name": "requestQueue",
           "writable": true,
+          "optional": true,
           "pda": {
             "seeds": [
               {
@@ -1201,10 +1202,6 @@ export type GlamMint = {
         {
           "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        },
-        {
-          "name": "policiesProgram",
-          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         },
         {
           "name": "glamProtocol",
@@ -1763,6 +1760,7 @@ export type GlamMint = {
         {
           "name": "requestQueue",
           "writable": true,
+          "optional": true,
           "pda": {
             "seeds": [
               {
@@ -2419,7 +2417,7 @@ export type GlamMint = {
                   98,
                   97,
                   108,
-                  95,
+                  45,
                   99,
                   111,
                   110,
@@ -2958,10 +2956,6 @@ export type GlamMint = {
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
         },
         {
-          "name": "policiesProgram",
-          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
-        },
-        {
           "name": "glamProtocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
@@ -3010,10 +3004,6 @@ export type GlamMint = {
         {
           "name": "token2022Program",
           "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        },
-        {
-          "name": "policiesProgram",
-          "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY"
         },
         {
           "name": "glamProtocol",
@@ -3203,6 +3193,23 @@ export type GlamMint = {
                 "name": "oracleSource"
               }
             }
+          },
+          {
+            "name": "maxAgeSeconds",
+            "type": "u16"
+          },
+          {
+            "name": "priority",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           }
         ]
       }
@@ -3310,9 +3317,6 @@ export type GlamMint = {
           },
           {
             "name": "timelockDuration"
-          },
-          {
-            "name": "timelockExpiresAt"
           },
           {
             "name": "borrowable"
@@ -3455,21 +3459,6 @@ export type GlamMint = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -3646,8 +3635,7 @@ export type GlamMint = {
           {
             "name": "feeAuthority",
             "docs": [
-              "The authority that can modify fee structure of individual glam state",
-              "and claim protocol fees"
+              "The authority that can modify fee structure of individual glam state and claim protocol fees"
             ],
             "type": "pubkey"
           },
@@ -3722,6 +3710,9 @@ export type GlamMint = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -4032,6 +4023,9 @@ export type GlamMint = {
             "name": "pythLazerStableCoin"
           },
           {
+            "name": "notSet"
+          },
+          {
             "name": "lstPoolState"
           },
           {
@@ -4039,6 +4033,9 @@ export type GlamMint = {
           },
           {
             "name": "baseAsset"
+          },
+          {
+            "name": "chainlinkRwa"
           }
         ]
       }

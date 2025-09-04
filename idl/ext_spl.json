@@ -396,9 +396,6 @@
             "name": "TimelockDuration"
           },
           {
-            "name": "TimelockExpiresAt"
-          },
-          {
             "name": "Borrowable"
           },
           {
@@ -539,21 +536,6 @@
                   "vec": {
                     "defined": {
                       "name": "IntegrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "VecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "PricedProtocol"
                     }
                   }
                 }
@@ -761,6 +743,9 @@
     },
     {
       "name": "IntegrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [

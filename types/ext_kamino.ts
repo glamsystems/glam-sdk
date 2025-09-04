@@ -1858,9 +1858,6 @@ export type ExtKamino = {
             "name": "timelockDuration"
           },
           {
-            "name": "timelockExpiresAt"
-          },
-          {
             "name": "borrowable"
           },
           {
@@ -2001,21 +1998,6 @@ export type ExtKamino = {
                   "vec": {
                     "defined": {
                       "name": "integrationAcl"
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "name": "vecPricedAssets",
-            "fields": [
-              {
-                "name": "val",
-                "type": {
-                  "vec": {
-                    "defined": {
-                      "name": "pricedProtocol"
                     }
                   }
                 }
@@ -2239,6 +2221,9 @@ export type ExtKamino = {
     },
     {
       "name": "integrationPermissions",
+      "docs": [
+        "Stores delegate permissions for an integration program."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
