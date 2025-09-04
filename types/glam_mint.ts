@@ -1031,8 +1031,7 @@ export type GlamMint = {
         },
         {
           "name": "extraMetasAccount",
-          "writable": true,
-          "optional": true
+          "writable": true
         },
         {
           "name": "systemProgram",

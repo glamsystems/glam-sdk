@@ -14,7 +14,7 @@ import {
 } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
-import { SEED_METADATA, SEED_MINT, SEED_VAULT, USDC, WSOL } from "./constants";
+import { USDC, WSOL } from "./constants";
 import { charsToName } from "./utils/helpers";
 import { MintPolicy, MintPolicyLayout } from "./deser/integrationPolicies";
 
@@ -29,7 +29,7 @@ export const GlamPermissions =
     ?.type?.variants?.map((v) => v.name)
     .filter((v) => !v.startsWith("__")) ?? [];
 
-const GLAM_PROGRAM_ID_DEFAULT = new PublicKey(GlamProtocolIdlJson.address);
+const GLAM_PROTOCOL_PROGRAM_ID = new PublicKey(GlamProtocolIdlJson.address);
 
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 
@@ -90,7 +90,7 @@ export class StateModel extends StateIdlModel {
 
   constructor(
     data: Partial<StateModel>,
-    glamProgramId = GLAM_PROGRAM_ID_DEFAULT,
+    glamProgramId = GLAM_PROTOCOL_PROGRAM_ID,
   ) {
     super(data);
     this.glamProgramId = glamProgramId;
@@ -152,7 +152,7 @@ export class StateModel extends StateIdlModel {
     statePda: PublicKey,
     stateAccount: StateAccount,
     glamMint?: Mint,
-    glamProgramId: PublicKey = GLAM_PROGRAM_ID_DEFAULT,
+    glamProgramId: PublicKey = GLAM_PROTOCOL_PROGRAM_ID,
   ) {
     const stateModel: Partial<StateModel> = { id: statePda };
     Object.entries(stateAccount).forEach(([key, value]) => {
@@ -360,56 +360,62 @@ export class MintIdlModel implements MintModelType {
 export class MintModel extends MintIdlModel {
   statePda: PublicKey | null;
   transferHookProgram: PublicKey | null;
+  claimableFees: AccruedFees | null;
+  claimedFees: AccruedFees | null;
+  feeParams: FeeParams | null;
 
   constructor(data: Partial<MintModel>) {
     super(data);
     this.statePda = data.statePda ?? null;
     this.transferHookProgram = data.transferHookProgram ?? null;
+    this.claimableFees = data.claimableFees ?? null;
+    this.claimedFees = data.claimedFees ?? null;
+    this.feeParams = data.feeParams ?? null;
   }
 }
 
-export type CompanyModelType = IdlTypes<GlamProtocol>["companyModel"];
-export class CompanyModel implements CompanyModelType {
-  fundGroupName: string | null;
-  manCo: string | null;
-  domicileOfManCo: string | null;
-  emailAddressOfManCo: string | null;
-  fundWebsiteOfManCo: string | null;
+// export type CompanyModelType = IdlTypes<GlamProtocol>["companyModel"];
+// export class CompanyModel implements CompanyModelType {
+//   fundGroupName: string | null;
+//   manCo: string | null;
+//   domicileOfManCo: string | null;
+//   emailAddressOfManCo: string | null;
+//   fundWebsiteOfManCo: string | null;
 
-  constructor(data: Partial<CompanyModelType>) {
-    this.fundGroupName = data.fundGroupName ?? null;
-    this.manCo = data.manCo ?? null;
-    this.domicileOfManCo = data.domicileOfManCo ?? null;
-    this.emailAddressOfManCo = data.emailAddressOfManCo ?? null;
-    this.fundWebsiteOfManCo = data.fundWebsiteOfManCo ?? null;
-  }
-}
+//   constructor(data: Partial<CompanyModelType>) {
+//     this.fundGroupName = data.fundGroupName ?? null;
+//     this.manCo = data.manCo ?? null;
+//     this.domicileOfManCo = data.domicileOfManCo ?? null;
+//     this.emailAddressOfManCo = data.emailAddressOfManCo ?? null;
+//     this.fundWebsiteOfManCo = data.fundWebsiteOfManCo ?? null;
+//   }
+// }
 
-export type MetadataType = IdlTypes<GlamProtocol>["metadata"];
-export class Metadata implements MetadataType {
-  template: IdlTypes<GlamProtocol>["metadataTemplate"];
-  pubkey: PublicKey;
-  uri: string;
+// export type MetadataType = IdlTypes<GlamProtocol>["metadata"];
+// export class Metadata implements MetadataType {
+//   template: IdlTypes<GlamProtocol>["metadataTemplate"];
+//   pubkey: PublicKey;
+//   uri: string;
 
-  constructor(data: Partial<MetadataType>) {
-    this.template = data.template!;
-    this.pubkey = data.pubkey ?? new PublicKey(0);
-    this.uri = data.uri ?? "";
-  }
-}
+//   constructor(data: Partial<MetadataType>) {
+//     this.template = data.template!;
+//     this.pubkey = data.pubkey ?? new PublicKey(0);
+//     this.uri = data.uri ?? "";
+//   }
+// }
 
-export type ManagerModelType = IdlTypes<GlamProtocol>["managerModel"];
-export class ManagerModel implements ManagerModelType {
-  portfolioManagerName: string | null;
-  pubkey: PublicKey | null;
-  kind: { wallet: {} } | { squads: {} } | null;
+// export type ManagerModelType = IdlTypes<GlamProtocol>["managerModel"];
+// export class ManagerModel implements ManagerModelType {
+//   portfolioManagerName: string | null;
+//   pubkey: PublicKey | null;
+//   kind: { wallet: {} } | { squads: {} } | null;
 
-  constructor(data: Partial<ManagerModelType>) {
-    this.portfolioManagerName = data.portfolioManagerName ?? null;
-    this.pubkey = data.pubkey ?? null;
-    this.kind = data.kind ?? null;
-  }
-}
+//   constructor(data: Partial<ManagerModelType>) {
+//     this.portfolioManagerName = data.portfolioManagerName ?? null;
+//     this.pubkey = data.pubkey ?? null;
+//     this.kind = data.kind ?? null;
+//   }
+// }
 
 export type CreatedModelType = IdlTypes<GlamProtocol>["createdModel"];
 export class CreatedModel implements CreatedModelType {
@@ -499,7 +505,7 @@ export class DelegateAcl implements DelegateAclType {
   }
 }
 
-export type Integration = IdlTypes<GlamProtocol>["integration"];
+// export type Integration = IdlTypes<GlamProtocol>["integration"];
 export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];

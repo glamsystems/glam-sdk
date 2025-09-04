@@ -58,32 +58,6 @@ export type GlamProtocol = {
           "signer": true
         },
         {
-          "name": "metadata",
-          "writable": true,
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  116,
-                  97,
-                  100,
-                  97,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }

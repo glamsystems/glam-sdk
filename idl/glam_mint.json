@@ -1025,8 +1025,7 @@
         },
         {
           "name": "extra_metas_account",
-          "writable": true,
-          "optional": true
+          "writable": true
         },
         {
           "name": "system_program",

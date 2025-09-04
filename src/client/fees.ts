@@ -1,6 +1,9 @@
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey, TransactionSignature } from "@solana/web3.js";
-import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
 import { PriceClient } from "./price";
@@ -64,8 +67,17 @@ export class FeesClient {
     const priceVaultIxs = await this.price.priceVaultIxs(
       PriceDenom.fromAsset(baseAssetMint),
     );
+    const createEscrowShareAtaIx =
+      createAssociatedTokenAccountIdempotentInstruction(
+        this.base.signer,
+        this.base.getMintAta(this.base.escrowPda),
+        this.base.escrowPda,
+        this.base.mintPda,
+        TOKEN_2022_PROGRAM_ID,
+      );
     const preInstructions = [
       ...priceVaultIxs,
+      createEscrowShareAtaIx,
       ...(txOptions.preInstructions || []),
     ];
 

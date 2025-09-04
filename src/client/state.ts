@@ -8,10 +8,8 @@ import { BN } from "@coral-xyz/anchor";
 import { BaseClient, TxOptions } from "./base";
 
 import {
-  CompanyModel,
   DelegateAcl,
   StateModel,
-  ManagerModel,
   CreatedModel,
   StateIdlModel,
 } from "../models";
