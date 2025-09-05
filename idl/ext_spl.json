@@ -1058,6 +1058,10 @@
             "type": "pubkey"
           },
           {
+            "name": "base_asset_decimals",
+            "type": "u8"
+          },
+          {
             "name": "base_asset_token_program",
             "type": "u8"
           },
@@ -1084,12 +1088,6 @@
           },
           {
             "name": "assets",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }

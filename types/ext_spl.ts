@@ -1064,6 +1064,10 @@ export type ExtSpl = {
             "type": "pubkey"
           },
           {
+            "name": "baseAssetDecimals",
+            "type": "u8"
+          },
+          {
             "name": "baseAssetTokenProgram",
             "type": "u8"
           },
@@ -1090,12 +1094,6 @@ export type ExtSpl = {
           },
           {
             "name": "assets",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }

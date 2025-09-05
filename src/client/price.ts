@@ -98,7 +98,7 @@ export class PriceClient {
     }));
 
     // @ts-ignore
-    const priceIx = await this.base.protocolProgram.methods
+    const priceIx = await this.base.mintProgram.methods
       .priceKaminoObligations(priceDenom)
       .accounts({
         glamState: this.base.statePda,
@@ -212,7 +212,7 @@ export class PriceClient {
     );
     const preInstructions = [refreshReservesIx];
 
-    const priceIx = await this.base.protocolProgram.methods
+    const priceIx = await this.base.mintProgram.methods
       .priceKaminoVaultShares(priceDenom, shareAtas.length)
       .accounts({
         glamState: this.base.statePda,
@@ -295,7 +295,7 @@ export class PriceClient {
       }),
     );
 
-    const priceDriftUsersIx = await this.base.protocolProgram.methods
+    const priceDriftUsersIx = await this.base.mintProgram.methods
       .priceDriftUsers(priceDenom, driftUsers.length)
       .accounts({
         glamState: this.base.statePda,
@@ -326,7 +326,7 @@ export class PriceClient {
         parsedVaultDepositors,
       );
 
-    const priceIx = await this.base.protocolProgram.methods
+    const priceIx = await this.base.mintProgram.methods
       .priceDriftVaultDepositors(
         priceDenom,
         parsedVaultDepositors.length,
@@ -352,7 +352,7 @@ export class PriceClient {
     const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
       priceDenom == PriceDenom.ASSET,
     );
-    const priceVaultIx = await this.base.protocolProgram.methods
+    const priceVaultIx = await this.base.mintProgram.methods
       .priceVaultTokens(priceDenom)
       .accounts({
         glamState: this.base.statePda,
@@ -378,7 +378,7 @@ export class PriceClient {
     if (stakes.length === 0) {
       return null;
     }
-    const priceStakesIx = await this.base.protocolProgram.methods
+    const priceStakesIx = await this.base.mintProgram.methods
       .priceStakeAccounts(priceDenom)
       .accounts({
         glamState: this.base.statePda,

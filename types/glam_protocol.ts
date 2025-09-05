@@ -552,19 +552,19 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "linkUnlinkMint",
+      "name": "linkUnlinkMintByMintAuthority",
       "docs": [
         "For glam mint program's use only"
       ],
       "discriminator": [
-        237,
-        235,
-        138,
-        232,
-        220,
-        182,
-        115,
-        14
+        85,
+        67,
+        58,
+        245,
+        175,
+        14,
+        122,
+        6
       ],
       "accounts": [
         {
@@ -584,795 +584,6 @@ export type GlamProtocol = {
         {
           "name": "link",
           "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "priceDriftUsers",
-      "docs": [
-        "Extra accounts for pricing N drift users under the same user stats:",
-        "- user_stats x 1",
-        "- drift_user x N",
-        "- markets and oracles used by all drift users (no specific order)"
-      ],
-      "discriminator": [
-        12,
-        5,
-        143,
-        51,
-        101,
-        81,
-        200,
-        150
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
-        },
-        {
-          "name": "numUsers",
-          "type": "u8"
-        }
-      ]
-    },
-    {
-      "name": "priceDriftVaultDepositors",
-      "docs": [
-        "Extra accounts for pricing N vault depositors:",
-        "- (vault_depositor, drift_vault, drift_user) x N",
-        "- spot_market used by drift users of vaults (no specific order)",
-        "- perp markets used by drift users of vaults (no specific order)",
-        "- oracles of spot markets and perp markets (no specific order)"
-      ],
-      "discriminator": [
-        234,
-        16,
-        238,
-        70,
-        189,
-        23,
-        98,
-        160
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
-        },
-        {
-          "name": "numVaultDepositors",
-          "type": "u8"
-        },
-        {
-          "name": "numSpotMarkets",
-          "type": "u8"
-        },
-        {
-          "name": "numPerpMarkets",
-          "type": "u8"
-        }
-      ]
-    },
-    {
-      "name": "priceKaminoObligations",
-      "discriminator": [
-        166,
-        110,
-        234,
-        179,
-        240,
-        179,
-        69,
-        246
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "kaminoLendingProgram",
-          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        },
-        {
-          "name": "pythOracle",
-          "optional": true
-        },
-        {
-          "name": "switchboardPriceOracle",
-          "optional": true
-        },
-        {
-          "name": "switchboardTwapOracle",
-          "optional": true
-        },
-        {
-          "name": "scopePrices",
-          "optional": true
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "priceKaminoVaultShares",
-      "docs": [
-        "Price Kamino vault shares.",
-        "- `num_vaults` Number of kamino vaults to price.",
-        "",
-        "Extra accounts for pricing N kamino vault shares:",
-        "- (kvault_share_ata, kvault_share_mint, kvault_state, kvault_deposit_token_oracle) x N",
-        "- reserve x M",
-        "- M = number of reserves used by all kvaults' allocations",
-        "- reserve pubkeys must follow the same order of reserves used by each allocation"
-      ],
-      "discriminator": [
-        112,
-        92,
-        238,
-        224,
-        145,
-        105,
-        38,
-        249
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
-        },
-        {
-          "name": "numVaults",
-          "type": "u8"
-        }
-      ]
-    },
-    {
-      "name": "priceStakeAccounts",
-      "discriminator": [
-        119,
-        137,
-        9,
-        15,
-        196,
-        73,
-        30,
-        27
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "priceVaultTokens",
-      "docs": [
-        "Price vault SOL balance and tokens it holds.",
-        "",
-        "Extra accounts for pricing N tokens:",
-        "- (ata, mint, oracle) x N"
-      ],
-      "discriminator": [
-        54,
-        42,
-        16,
-        199,
-        20,
-        183,
-        50,
-        137
-      ],
-      "accounts": [
-        {
-          "name": "glamState",
-          "writable": true
-        },
-        {
-          "name": "glamVault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
-        },
-        {
-          "name": "signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "solOracle"
-        },
-        {
-          "name": "glamConfig",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                10,
-                11,
-                0,
-                83,
-                72,
-                16,
-                46,
-                144,
-                46,
-                42,
-                79,
-                22,
-                157,
-                123,
-                21,
-                242,
-                192,
-                146,
-                1,
-                78,
-                88,
-                59,
-                102,
-                9,
-                190,
-                226,
-                92,
-                189,
-                187,
-                232,
-                83,
-                220
-              ]
-            }
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "denom",
-          "type": {
-            "defined": {
-              "name": "priceDenom"
-            }
-          }
         }
       ]
     },
@@ -2234,6 +1445,42 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "updatePricedProtocol",
+      "docs": [
+        "Only accessible by integration programs"
+      ],
+      "discriminator": [
+        10,
+        106,
+        94,
+        171,
+        118,
+        217,
+        62,
+        98
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "integrationAuthority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "pricedProtocol",
+          "type": {
+            "defined": {
+              "name": "pricedProtocol"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "updateState",
       "discriminator": [
         135,
@@ -2294,19 +1541,6 @@ export type GlamProtocol = {
     }
   ],
   "accounts": [
-    {
-      "name": "globalConfig",
-      "discriminator": [
-        149,
-        8,
-        156,
-        202,
-        160,
-        252,
-        176,
-        217
-      ]
-    },
     {
       "name": "stateAccount",
       "discriminator": [
@@ -2529,8 +1763,8 @@ export type GlamProtocol = {
     },
     {
       "code": 51104,
-      "name": "vaultAssetsNotPriced",
-      "msg": "Not all vault assets are priced"
+      "name": "vaultTokensNotPriced",
+      "msg": "Not all vault tokens are priced"
     },
     {
       "code": 51105,
@@ -2675,51 +1909,6 @@ export type GlamProtocol = {
           },
           {
             "name": "refund"
-          }
-        ]
-      }
-    },
-    {
-      "name": "assetMeta",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "asset",
-            "type": "pubkey"
-          },
-          {
-            "name": "decimals",
-            "type": "u8"
-          },
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracleSource",
-            "type": {
-              "defined": {
-                "name": "oracleSource"
-              }
-            }
-          },
-          {
-            "name": "maxAgeSeconds",
-            "type": "u16"
-          },
-          {
-            "name": "priority",
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                3
-              ]
-            }
           }
         ]
       }
@@ -3183,50 +2372,6 @@ export type GlamProtocol = {
       }
     },
     {
-      "name": "globalConfig",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "admin",
-            "docs": [
-              "The authority that can modify the config"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "feeAuthority",
-            "docs": [
-              "The authority that can modify fee structure of individual glam state and claim protocol fees"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "referrer",
-            "type": "pubkey"
-          },
-          {
-            "name": "baseFeeBps",
-            "type": "u16"
-          },
-          {
-            "name": "flowFeeBps",
-            "type": "u16"
-          },
-          {
-            "name": "assetMetas",
-            "type": {
-              "vec": {
-                "defined": {
-                  "name": "assetMeta"
-                }
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "hurdleType",
       "type": {
         "kind": "enum",
@@ -3414,77 +2559,6 @@ export type GlamProtocol = {
                 3
               ]
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "oracleSource",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "pyth"
-          },
-          {
-            "name": "switchboard"
-          },
-          {
-            "name": "quoteAsset"
-          },
-          {
-            "name": "pyth1K"
-          },
-          {
-            "name": "pyth1M"
-          },
-          {
-            "name": "pythStableCoin"
-          },
-          {
-            "name": "prelaunch"
-          },
-          {
-            "name": "pythPull"
-          },
-          {
-            "name": "pyth1KPull"
-          },
-          {
-            "name": "pyth1MPull"
-          },
-          {
-            "name": "pythStableCoinPull"
-          },
-          {
-            "name": "switchboardOnDemand"
-          },
-          {
-            "name": "pythLazer"
-          },
-          {
-            "name": "pythLazer1K"
-          },
-          {
-            "name": "pythLazer1M"
-          },
-          {
-            "name": "pythLazerStableCoin"
-          },
-          {
-            "name": "notSet"
-          },
-          {
-            "name": "lstPoolState"
-          },
-          {
-            "name": "marinadeState"
-          },
-          {
-            "name": "baseAsset"
-          },
-          {
-            "name": "chainlinkRwa"
           }
         ]
       }
@@ -3678,6 +2752,10 @@ export type GlamProtocol = {
             "type": "pubkey"
           },
           {
+            "name": "baseAssetDecimals",
+            "type": "u8"
+          },
+          {
             "name": "baseAssetTokenProgram",
             "type": "u8"
           },
@@ -3704,12 +2782,6 @@ export type GlamProtocol = {
           },
           {
             "name": "assets",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }
@@ -3809,18 +2881,6 @@ export type GlamProtocol = {
               "option": {
                 "vec": "pubkey"
               }
-            }
-          },
-          {
-            "name": "baseAssetMint",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "baseAssetTokenProgram",
-            "type": {
-              "option": "u8"
             }
           },
           {

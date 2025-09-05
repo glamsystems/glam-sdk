@@ -1401,6 +1401,10 @@ export type ExtStakePool = {
             "type": "pubkey"
           },
           {
+            "name": "baseAssetDecimals",
+            "type": "u8"
+          },
+          {
             "name": "baseAssetTokenProgram",
             "type": "u8"
           },
@@ -1427,12 +1431,6 @@ export type ExtStakePool = {
           },
           {
             "name": "assets",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "borrowable",
             "type": {
               "vec": "pubkey"
             }

@@ -41,9 +41,6 @@ export class StateIdlModel implements StateModelType {
   enabled: boolean | null;
 
   assets: PublicKey[] | null;
-  baseAssetMint: PublicKey | null;
-  baseAssetTokenProgram: number | null;
-
   created: CreatedModel | null;
   owner: PublicKey | null;
   portfolioManagerName: number[] | null;
@@ -61,9 +58,6 @@ export class StateIdlModel implements StateModelType {
     this.enabled = data.enabled ?? null;
 
     this.assets = data.assets ?? null;
-    this.baseAssetMint = data.baseAssetMint ?? null;
-    this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null;
-
     this.created = data.created ?? null;
     this.owner = data.owner ?? null;
     this.portfolioManagerName = data.portfolioManagerName ?? null;
@@ -82,11 +76,15 @@ export class StateModel extends StateIdlModel {
   id: PublicKey | null;
   mint: PublicKey | null;
   mintModel: MintModel | null;
+  baseAssetMint: PublicKey | null;
+  baseAssetTokenProgram: number | null;
+  baseAssetDecimals: number | null;
   pendingStateUpdates: any | null;
   pendingMintUpdates: any | null;
   timelockExpiresAt: number | null;
   externalPositions: PublicKey[] | null;
   pricedProtocols: any[] | null;
+  borrowable: PublicKey[] | null;
 
   constructor(
     data: Partial<StateModel>,
@@ -99,6 +97,9 @@ export class StateModel extends StateIdlModel {
     this.id = data.id ?? null;
     this.mint = data.mint ?? null;
     this.mintModel = data.mintModel ?? null;
+    this.baseAssetMint = data.baseAssetMint ?? null;
+    this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null; // TODO: convert to PublicKey
+    this.baseAssetDecimals = data.baseAssetDecimals ?? null;
     this.pendingStateUpdates = data.pendingStateUpdates ?? null;
     this.pendingMintUpdates = data.pendingMintUpdates ?? null;
     this.timelockExpiresAt = data.timelockExpiresAt
@@ -106,6 +107,7 @@ export class StateModel extends StateIdlModel {
       : null;
     this.externalPositions = data.externalPositions ?? null;
     this.pricedProtocols = data.pricedProtocols ?? null;
+    this.borrowable = data.borrowable ?? null;
   }
 
   get idStr() {
