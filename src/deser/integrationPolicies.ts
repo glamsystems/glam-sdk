@@ -68,18 +68,3 @@ export function encodeTransferPolicy(allowlist: PublicKey[]): Buffer {
 
   return Buffer.concat([header, allowlistBuffer]);
 }
-
-export function decodeTransferPolicy(
-  buffer: Buffer<ArrayBufferLike>,
-): TransferPolicy {
-  const allowlist = [];
-  let offset = 0;
-  const allowlistLength = buffer.readUInt32LE(offset);
-  offset += 4;
-  for (let i = 0; i < allowlistLength; i++) {
-    const publicKey = new PublicKey(buffer.subarray(offset, offset + 32));
-    offset += 32;
-    allowlist.push(publicKey);
-  }
-  return { allowlist };
-}

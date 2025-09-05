@@ -394,3 +394,7 @@ export function charsToName(chars: number[] | Buffer): string {
 export function nameToChars(name: string): number[] {
   return Array.from(Buffer.from(name).subarray(0, 32));
 }
+
+export function formatBits(bitmask: number, padding: number = 16): string {
+  return bitmask.toString(2).padStart(padding, "0");
+}

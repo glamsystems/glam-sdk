@@ -137,22 +137,22 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "emergencyUpdateState",
+      "name": "emergencyAccessUpdate",
       "docs": [
-        "Bypasses the timelock for emergency updates on access control. Allowed operations:",
+        "Bypasses the timelock for emergency updates on access control rules. Allowed operations:",
         "- removing an integration program",
         "- removing a delegate",
         "- enabling/disabling glam state"
       ],
       "discriminator": [
-        156,
-        211,
-        55,
-        70,
-        92,
-        37,
-        190,
-        66
+        207,
+        247,
+        157,
+        14,
+        87,
+        132,
+        230,
+        0
       ],
       "accounts": [
         {
@@ -603,28 +603,6 @@ export type GlamProtocol = {
         {
           "name": "glamState",
           "writable": true
-        },
-        {
-          "name": "glamVault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glamState"
-              }
-            ]
-          }
         },
         {
           "name": "glamSigner",
@@ -1568,46 +1546,51 @@ export type GlamProtocol = {
     },
     {
       "code": 48002,
-      "name": "integrationDisabled",
-      "msg": "Integration is disabled"
+      "name": "integrationNotEnabled",
+      "msg": "Integration is not enabled"
     },
     {
       "code": 48003,
+      "name": "protocolNotEnabled",
+      "msg": "Protocol is not enabled"
+    },
+    {
+      "code": 48004,
       "name": "glamStateDisabled",
       "msg": "GLAM state is disabled"
     },
     {
-      "code": 48004,
+      "code": 48005,
       "name": "invalidSignerAccount",
       "msg": "Invalid signer token account"
     },
     {
-      "code": 48005,
+      "code": 48006,
       "name": "emergencyUpdateDenied",
       "msg": "Emergency update denied"
     },
     {
-      "code": 48006,
+      "code": 48007,
       "name": "timelockStillActive",
       "msg": "Timelock still active"
     },
     {
-      "code": 48007,
+      "code": 48008,
       "name": "cannotApplyChanges",
       "msg": "Pending changes cannot be applied due to unfulfilled subscriptions or redemptions"
     },
     {
-      "code": 48008,
+      "code": 48009,
       "name": "assetNotBorrowable",
       "msg": "Asset is not allowed to borrow"
     },
     {
-      "code": 48009,
+      "code": 48010,
       "name": "invalidAccountOwner",
       "msg": "Account owned by an invalid program"
     },
     {
-      "code": 48010,
+      "code": 48011,
       "name": "invalidAuthority",
       "msg": "Invalid authority"
     },
@@ -1688,8 +1671,8 @@ export type GlamProtocol = {
     },
     {
       "code": 49015,
-      "name": "invalidProtocolBits",
-      "msg": "Invalid protocol bits"
+      "name": "invalidProtocolBitflag",
+      "msg": "Invalid protocol bitflag"
     },
     {
       "code": 50000,

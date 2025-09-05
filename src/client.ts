@@ -15,6 +15,7 @@ import { InvestClient } from "./client/invest";
 import { PriceClient } from "./client/price";
 import { FeesClient } from "./client/fees";
 import { MintClient } from "./client/mint";
+import { AccessClient } from "./client/access";
 // import { JupiterVoteClient } from "./client/jupiter";
 // import { MeteoraDlmmClient } from "./client/meteora";
 // import { ValidatorClient } from "./client/validator";
@@ -35,6 +36,7 @@ export class GlamClient extends BaseClient {
   private _staking?: StakingClient;
   private _state?: StateClient;
   private _mint?: MintClient;
+  private _access?: AccessClient;
   private _kaminoLending?: KaminoLendingClient;
   private _kaminoFarm?: KaminoFarmClient;
   private _kaminoVaults?: KaminoVaultsClient;
@@ -128,6 +130,13 @@ export class GlamClient extends BaseClient {
       this._state = new StateClient(this);
     }
     return this._state;
+  }
+
+  get access(): AccessClient {
+    if (!this._access) {
+      this._access = new AccessClient(this);
+    }
+    return this._access;
   }
 
   get mint(): MintClient {

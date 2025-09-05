@@ -269,48 +269,6 @@ export class StateModel extends StateIdlModel {
   }
 }
 
-export type FundOpenfundsModelType =
-  IdlTypes<GlamProtocol>["fundOpenfundsModel"];
-export class FundOpenfundsModel implements FundOpenfundsModelType {
-  fundDomicileAlpha2: string | null;
-  legalFundNameIncludingUmbrella: string | null;
-  fiscalYearEnd: string | null;
-  fundCurrency: string | null;
-  fundLaunchDate: string | null;
-  investmentObjective: string | null;
-  isEtc: boolean | null;
-  isEuDirectiveRelevant: boolean | null;
-  isFundOfFunds: boolean | null;
-  isPassiveFund: boolean | null;
-  isReit: boolean | null;
-  legalForm: string | null;
-  legalFundNameOnly: string | null;
-  openEndedOrClosedEndedFundStructure: string | null;
-  typeOfEuDirective: string | null;
-  ucitsVersion: string | null;
-
-  constructor(data: Partial<FundOpenfundsModelType>) {
-    this.fundDomicileAlpha2 = data.fundDomicileAlpha2 ?? null;
-    this.legalFundNameIncludingUmbrella =
-      data.legalFundNameIncludingUmbrella ?? null;
-    this.fiscalYearEnd = data.fiscalYearEnd ?? null;
-    this.fundCurrency = data.fundCurrency ?? null;
-    this.fundLaunchDate = data.fundLaunchDate ?? null;
-    this.investmentObjective = data.investmentObjective ?? null;
-    this.isEtc = data.isEtc ?? null;
-    this.isEuDirectiveRelevant = data.isEuDirectiveRelevant ?? null;
-    this.isFundOfFunds = data.isFundOfFunds ?? null;
-    this.isPassiveFund = data.isPassiveFund ?? null;
-    this.isReit = data.isReit ?? null;
-    this.legalForm = data.legalForm ?? null;
-    this.legalFundNameOnly = data.legalFundNameOnly ?? null;
-    this.openEndedOrClosedEndedFundStructure =
-      data.openEndedOrClosedEndedFundStructure ?? null;
-    this.typeOfEuDirective = data.typeOfEuDirective ?? null;
-    this.ucitsVersion = data.ucitsVersion ?? null;
-  }
-}
-
 export type MintModelType = IdlTypes<GlamProtocol>["mintModel"];
 export class MintIdlModel implements MintModelType {
   symbol: string | null;
@@ -376,49 +334,6 @@ export class MintModel extends MintIdlModel {
   }
 }
 
-// export type CompanyModelType = IdlTypes<GlamProtocol>["companyModel"];
-// export class CompanyModel implements CompanyModelType {
-//   fundGroupName: string | null;
-//   manCo: string | null;
-//   domicileOfManCo: string | null;
-//   emailAddressOfManCo: string | null;
-//   fundWebsiteOfManCo: string | null;
-
-//   constructor(data: Partial<CompanyModelType>) {
-//     this.fundGroupName = data.fundGroupName ?? null;
-//     this.manCo = data.manCo ?? null;
-//     this.domicileOfManCo = data.domicileOfManCo ?? null;
-//     this.emailAddressOfManCo = data.emailAddressOfManCo ?? null;
-//     this.fundWebsiteOfManCo = data.fundWebsiteOfManCo ?? null;
-//   }
-// }
-
-// export type MetadataType = IdlTypes<GlamProtocol>["metadata"];
-// export class Metadata implements MetadataType {
-//   template: IdlTypes<GlamProtocol>["metadataTemplate"];
-//   pubkey: PublicKey;
-//   uri: string;
-
-//   constructor(data: Partial<MetadataType>) {
-//     this.template = data.template!;
-//     this.pubkey = data.pubkey ?? new PublicKey(0);
-//     this.uri = data.uri ?? "";
-//   }
-// }
-
-// export type ManagerModelType = IdlTypes<GlamProtocol>["managerModel"];
-// export class ManagerModel implements ManagerModelType {
-//   portfolioManagerName: string | null;
-//   pubkey: PublicKey | null;
-//   kind: { wallet: {} } | { squads: {} } | null;
-
-//   constructor(data: Partial<ManagerModelType>) {
-//     this.portfolioManagerName = data.portfolioManagerName ?? null;
-//     this.pubkey = data.pubkey ?? null;
-//     this.kind = data.kind ?? null;
-//   }
-// }
-
 export type CreatedModelType = IdlTypes<GlamProtocol>["createdModel"];
 export class CreatedModel implements CreatedModelType {
   key: number[]; // Uint8Array;
@@ -432,7 +347,21 @@ export class CreatedModel implements CreatedModelType {
   }
 }
 
-export type Permission = IdlTypes<GlamProtocol>["permission"];
+export type EmergencyAccessUpdateArgsType =
+  IdlTypes<GlamProtocol>["emergencyAccessUpdateArgs"];
+export class EmergencyAccessUpdateArgs
+  implements EmergencyAccessUpdateArgsType
+{
+  disabledIntegrations: PublicKey[];
+  disabledDelegates: PublicKey[];
+  stateEnabled: boolean | null;
+
+  constructor(obj: Partial<EmergencyAccessUpdateArgsType>) {
+    this.disabledIntegrations = obj.disabledIntegrations ?? [];
+    this.disabledDelegates = obj.disabledDelegates ?? [];
+    this.stateEnabled = obj.stateEnabled ?? null;
+  }
+}
 
 export type IntegrationPermissionsType =
   IdlTypes<GlamProtocol>["integrationPermissions"];
@@ -462,11 +391,11 @@ export class ProtocolPermissions implements ProtocolPermissionsType {
 export type JupiterSwapPolicyType = IdlTypes<GlamProtocol>["jupiterSwapPolicy"];
 export class JupiterSwapPolicy implements JupiterSwapPolicyType {
   maxSlippageBps: number;
-  swapAllowlist: PublicKey[];
+  swapAllowlist: PublicKey[] | null;
 
   constructor(obj: Partial<JupiterSwapPolicyType>) {
     this.maxSlippageBps = obj.maxSlippageBps!;
-    this.swapAllowlist = obj.swapAllowlist ?? [];
+    this.swapAllowlist = obj.swapAllowlist ?? null;
   }
 }
 
@@ -507,7 +436,6 @@ export class DelegateAcl implements DelegateAclType {
   }
 }
 
-// export type Integration = IdlTypes<GlamProtocol>["integration"];
 export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
 export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
 export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];

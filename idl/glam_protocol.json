@@ -131,22 +131,22 @@
       ]
     },
     {
-      "name": "emergency_update_state",
+      "name": "emergency_access_update",
       "docs": [
-        "Bypasses the timelock for emergency updates on access control. Allowed operations:",
+        "Bypasses the timelock for emergency updates on access control rules. Allowed operations:",
         "- removing an integration program",
         "- removing a delegate",
         "- enabling/disabling glam state"
       ],
       "discriminator": [
-        156,
-        211,
-        55,
-        70,
-        92,
-        37,
-        190,
-        66
+        207,
+        247,
+        157,
+        14,
+        87,
+        132,
+        230,
+        0
       ],
       "accounts": [
         {
@@ -597,28 +597,6 @@
         {
           "name": "glam_state",
           "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
         },
         {
           "name": "glam_signer",
@@ -1562,46 +1540,51 @@
     },
     {
       "code": 48002,
-      "name": "IntegrationDisabled",
-      "msg": "Integration is disabled"
+      "name": "IntegrationNotEnabled",
+      "msg": "Integration is not enabled"
     },
     {
       "code": 48003,
+      "name": "ProtocolNotEnabled",
+      "msg": "Protocol is not enabled"
+    },
+    {
+      "code": 48004,
       "name": "GlamStateDisabled",
       "msg": "GLAM state is disabled"
     },
     {
-      "code": 48004,
+      "code": 48005,
       "name": "InvalidSignerAccount",
       "msg": "Invalid signer token account"
     },
     {
-      "code": 48005,
+      "code": 48006,
       "name": "EmergencyUpdateDenied",
       "msg": "Emergency update denied"
     },
     {
-      "code": 48006,
+      "code": 48007,
       "name": "TimelockStillActive",
       "msg": "Timelock still active"
     },
     {
-      "code": 48007,
+      "code": 48008,
       "name": "CannotApplyChanges",
       "msg": "Pending changes cannot be applied due to unfulfilled subscriptions or redemptions"
     },
     {
-      "code": 48008,
+      "code": 48009,
       "name": "AssetNotBorrowable",
       "msg": "Asset is not allowed to borrow"
     },
     {
-      "code": 48009,
+      "code": 48010,
       "name": "InvalidAccountOwner",
       "msg": "Account owned by an invalid program"
     },
     {
-      "code": 48010,
+      "code": 48011,
       "name": "InvalidAuthority",
       "msg": "Invalid authority"
     },
@@ -1682,8 +1665,8 @@
     },
     {
       "code": 49015,
-      "name": "InvalidProtocolBits",
-      "msg": "Invalid protocol bits"
+      "name": "InvalidProtocolBitflag",
+      "msg": "Invalid protocol bitflag"
     },
     {
       "code": 50000,

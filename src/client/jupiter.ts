@@ -5,24 +5,16 @@ import {
   TransactionSignature,
   VersionedTransaction,
   AccountMeta,
-  Transaction,
 } from "@solana/web3.js";
 import {
-  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
-import {
-  GOVERNANCE_PROGRAM_ID,
-  JUP,
-  JUP_VOTE_PROGRAM,
-  JUPITER_API_DEFAULT,
-  MERKLE_DISTRIBUTOR_PROGRAM,
-  WSOL,
-} from "../constants";
+import { JUPITER_API_DEFAULT, WSOL } from "../constants";
 import { STAKE_POOLS_MAP } from "./assets";
+import { JupiterSwapPolicy } from "../models";
 
 export type QuoteParams = {
   inputMint: string;
@@ -90,17 +82,17 @@ type SwapInstructions = {
   addressLookupTableAddresses: string[];
 };
 
-const BASE = new PublicKey("bJ1TRoFo2P6UHVwqdiipp6Qhp2HaaHpLowZ5LHet8Gm");
+// Jupiter API for tokens and prices
 const JUPITER_API =
   process.env.NEXT_PUBLIC_JUPITER_API ||
   process.env.JUPITER_API ||
   JUPITER_API_DEFAULT;
 
-export async function fetchProgramLabels(): Promise<{ [key: string]: string }> {
-  const res = await fetch(`${JUPITER_API}/swap/v1/program-id-to-label`);
-  const data = await res.json();
-  return data;
-}
+// Jupiter API for swap
+const JUPITER_SWAP_API =
+  process.env.NEXT_PUBLIC_JUPITER_SWAP_API ||
+  process.env.JUPITER_SWAP_API ||
+  JUPITER_API;
 
 export async function fetchTokenPrices(
   pubkeys: string[],
@@ -130,38 +122,64 @@ export async function fetchTokensList(): Promise<TokenListItem[]> {
   return tokenList;
 }
 
-export class JupiterSwapClient {
+export async function fetchProgramLabels(): Promise<{ [key: string]: string }> {
+  const res = await fetch(`${JUPITER_SWAP_API}/program-id-to-label`);
+  const data = await res.json();
+  return data;
+}
+
+export async function getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
+  const res = await fetch(
+    `${JUPITER_SWAP_API}/quote?` +
+      new URLSearchParams(
+        Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
+      ),
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error);
+  }
+  return data;
+}
+
+export async function getSwapInstructions(
+  quoteResponse: any,
+  from: PublicKey,
+): Promise<any> {
+  const res = await fetch(`${JUPITER_SWAP_API}/swap-instructions`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      quoteResponse,
+      userPublicKey: from.toBase58(),
+    }),
+  });
+
+  return await res.json();
+}
+
+class TxBuilder {
   public constructor(readonly base: BaseClient) {}
 
-  /*
-   * Client methods
-   */
-
-  public async swap(
-    options: {
-      quoteParams?: QuoteParams;
-      quoteResponse?: QuoteResponse;
-      swapInstructions?: SwapInstructions;
-    },
+  async setJupiterSwapPolicy(
+    policy: JupiterSwapPolicy,
     txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.swapTx(options, txOptions);
-    return await this.base.sendAndConfirm(tx);
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const tx = await this.base.protocolProgram.methods
+      .setJupiterSwapPolicy(policy)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+      })
+      .transaction();
+    return this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async setMaxSwapSlippage(
-    slippageBps: number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.setMaxSwapSlippageTx(slippageBps, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /*
-   * API methods
-   */
-
-  async swapTx(
+  async swap(
     options: {
       quoteParams?: QuoteParams;
       quoteResponse?: QuoteResponse;
@@ -188,7 +206,7 @@ export class JupiterSwapClient {
             "quoteParams must be specified when quoteResponse and swapInstructions are not specified.",
           );
         }
-        resolvedQuoteResponse = await this.getQuoteResponse(quoteParams);
+        resolvedQuoteResponse = await getQuoteResponse(quoteParams);
       }
 
       inputMint = new PublicKey(
@@ -199,10 +217,7 @@ export class JupiterSwapClient {
       );
       amount = new BN(quoteParams?.amount || resolvedQuoteResponse!.inAmount);
 
-      const ins = await this.getSwapInstructions(
-        resolvedQuoteResponse,
-        glamVault,
-      );
+      const ins = await getSwapInstructions(resolvedQuoteResponse, glamVault);
       swapInstruction = ins.swapInstruction;
       addressLookupTableAddresses = ins.addressLookupTableAddresses;
     } else {
@@ -272,26 +287,6 @@ export class JupiterSwapClient {
     });
   }
 
-  public async setMaxSwapSlippageTx(
-    slippageBps: number,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    // FIXME: interface has changed, fix this place holder
-    const tx = new Transaction();
-    return this.base.intoVersionedTransaction(tx, { ...txOptions });
-  }
-
-  public async setMaxSwapSlippageIx(
-    slippageBps: number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    // FIXME: interface has changed, fix this place holder
-    const tx = new Transaction();
-    return tx.instructions[0];
-  }
-
   getPreInstructions = async (
     signer: PublicKey,
     inputMint: PublicKey,
@@ -319,21 +314,6 @@ export class JupiterSwapClient {
     return preInstructions;
   };
 
-  getTokenProgram = async (mint: PublicKey) => {
-    const mintInfo = await this.base.provider.connection.getAccountInfo(mint);
-    if (!mintInfo) {
-      throw new Error(`AccountInfo not found for mint ${mint.toBase58()}`);
-    }
-    if (
-      ![TOKEN_PROGRAM_ID.toBase58(), TOKEN_2022_PROGRAM_ID.toBase58()].includes(
-        mintInfo.owner.toBase58(),
-      )
-    ) {
-      throw new Error(`Invalid mint owner: ${mintInfo.owner.toBase58()}`);
-    }
-    return mintInfo.owner;
-  };
-
   toTransactionInstruction = (
     ixPayload: InstructionFromJupiter,
     vaultStr: string,
@@ -352,340 +332,32 @@ export class JupiterSwapClient {
       data: Buffer.from(ixPayload.data, "base64"),
     });
   };
-
-  public async getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
-    const res = await fetch(
-      `${JUPITER_API}/swap/v1/quote?` +
-        new URLSearchParams(
-          Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
-        ),
-    );
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error);
-    }
-    return data;
-  }
-
-  async getSwapInstructions(quoteResponse: any, from: PublicKey): Promise<any> {
-    const res = await fetch(`${JUPITER_API}/swap/v1/swap-instructions`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        quoteResponse,
-        userPublicKey: from.toBase58(),
-      }),
-    });
-
-    return await res.json();
-  }
 }
 
-//export class JupiterVoteClient {
-//  public constructor(readonly base: BaseClient) {}
-//
-//  /*
-//   * Client methods
-//   */
-//
-//  /**
-//   * Stake JUP. The escrow account will be created if it doesn't exist.
-//   *
-//   * @param statePda
-//   * @param amount
-//   * @param txOptions
-//   * @returns
-//   */
-//  public async stakeJup(
-//    amount: BN,
-//    txOptions: TxOptions = {},
-//  ): Promise<TransactionSignature> {
-//    const vault = this.base.vaultPda;
-//    const escrow = this.getEscrowPda(vault);
-//    const escrowJupAta = this.base.getAta(JUP, escrow);
-//    const vaultJupAta = this.base.getAta(JUP, vault);
-//
-//    const escrowAccountInfo =
-//      await this.base.provider.connection.getAccountInfo(escrow);
-//    const escrowCreated = escrowAccountInfo ? true : false;
-//    const preInstructions = txOptions.preInstructions || [];
-//    if (!escrowCreated) {
-//      console.log("Will create escrow account:", escrow.toBase58());
-//      preInstructions.push(
-//        await this.base.protocolProgram.methods
-//          .jupiterVoteNewEscrow()
-//          .accounts({
-//            glamState: this.base.statePda,
-//            locker: this.stakeLocker,
-//            escrow,
-//          })
-//          .instruction(),
-//      );
-//      preInstructions.push(
-//        await this.base.protocolProgram.methods
-//          .jupiterVoteToggleMaxLock(true)
-//          .accounts({
-//            glamState: this.base.statePda,
-//            locker: this.stakeLocker,
-//            escrow,
-//          })
-//          .instruction(),
-//      );
-//    }
-//    preInstructions.push(
-//      createAssociatedTokenAccountIdempotentInstruction(
-//        this.base.getSigner(),
-//        escrowJupAta,
-//        escrow,
-//        JUP,
-//      ),
-//    );
-//
-//    const tx = await this.base.protocolProgram.methods
-//      .jupiterVoteIncreaseLockedAmount(amount)
-//      .accounts({
-//        glamState: this.base.statePda,
-//        locker: this.stakeLocker,
-//        escrow,
-//        escrowTokens: escrowJupAta,
-//        sourceTokens: vaultJupAta,
-//        tokenProgram: TOKEN_PROGRAM_ID,
-//      })
-//      .preInstructions(preInstructions)
-//      .transaction();
-//
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  /**
-//   * Unstake all staked JUP.
-//   *
-//   * @param statePda
-//   * @param txOptions
-//   * @returns
-//   */
-//  // TODO: support partial unstake
-//  public async unstakeJup(txOptions: TxOptions = {}) {
-//    const vault = this.base.vaultPda;
-//    const escrow = this.getEscrowPda(vault);
-//
-//    const tx = await this.base.protocolProgram.methods
-//      .jupiterVoteToggleMaxLock(false)
-//      .accounts({
-//        glamState: this.base.statePda,
-//        locker: this.stakeLocker,
-//        escrow,
-//      })
-//      .transaction();
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  public async withdrawJup(txOptions: TxOptions = {}) {
-//    const vault = this.base.vaultPda;
-//    const escrow = this.getEscrowPda(vault);
-//    const escrowJupAta = this.base.getAta(JUP, escrow);
-//    const vaultJupAta = this.base.getAta(JUP, vault);
-//
-//    const tx = await this.base.protocolProgram.methods
-//      .jupiterVoteWithdraw()
-//      .accounts({
-//        glamState: this.base.statePda,
-//        locker: this.stakeLocker,
-//        escrow,
-//        escrowTokens: escrowJupAta,
-//        destinationTokens: vaultJupAta,
-//        tokenProgram: TOKEN_PROGRAM_ID,
-//      })
-//      .preInstructions([
-//        createAssociatedTokenAccountIdempotentInstruction(
-//          this.base.getSigner(),
-//          vaultJupAta,
-//          vault,
-//          JUP,
-//        ),
-//      ])
-//      .transaction();
-//
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  public async claimAndStake(
-//    distributor: PublicKey,
-//    amountUnlocked: BN,
-//    amountLocked: BN,
-//    proof: number[][],
-//    txOptions: TxOptions = {},
-//  ) {
-//    const glamSigner = txOptions.signer || this.base.getSigner();
-//    const vault = this.base.vaultPda;
-//    const escrow = this.getEscrowPda(vault);
-//    const escrowJupAta = this.base.getAta(JUP, escrow);
-//    const distributorJupAta = this.base.getAta(JUP, distributor);
-//
-//    // @ts-ignore
-//    const tx = await this.base.protocolProgram.methods
-//      .merkleDistributorNewClaimAndStake(amountUnlocked, amountLocked, proof)
-//      .accounts({
-//        glamState: this.base.statePda,
-//        glamSigner,
-//        distributor,
-//        from: distributorJupAta,
-//        claimStatus: this.getClaimStatus(vault, distributor),
-//        voterProgram: JUP_VOTE_PROGRAM,
-//        locker: this.stakeLocker,
-//        tokenProgram: TOKEN_PROGRAM_ID,
-//        escrow,
-//        escrowTokens: escrowJupAta,
-//      })
-//      .transaction();
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  public async cancelUnstake(txOptions: TxOptions = {}) {
-//    const vault = this.base.vaultPda;
-//    const escrow = this.getEscrowPda(vault);
-//
-//    const tx = await this.base.protocolProgram.methods
-//      .jupiterVoteToggleMaxLock(true)
-//      .accounts({
-//        glamState: this.base.statePda,
-//        locker: this.stakeLocker,
-//        escrow,
-//      })
-//      .transaction();
-//
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  /**
-//   * Vote on a proposal. The vote account will be created if it doesn't exist.
-//   *
-//   * @param proposal
-//   * @param side
-//   * @param txOptions
-//   * @returns
-//   */
-//  public async voteOnProposal(
-//    proposal: PublicKey,
-//    side: number,
-//    txOptions: TxOptions = {},
-//  ): Promise<TransactionSignature> {
-//    const glamVault = this.base.vaultPda;
-//    const vote = this.getVotePda(proposal, glamVault);
-//    const governor = this.getGovernorPda();
-//
-//    const voteAccountInfo =
-//      await this.base.provider.connection.getAccountInfo(vote);
-//    const voteCreated = voteAccountInfo ? true : false;
-//    const preInstructions = [];
-//    if (!voteCreated) {
-//      console.log("Will create vote account:", vote.toBase58());
-//      preInstructions.push(
-//        await this.base.protocolProgram.methods
-//          .jupiterGovNewVote(glamVault)
-//          .accountsPartial({
-//            glamState: this.base.statePda,
-//            proposal,
-//            vote,
-//          })
-//          .instruction(),
-//      );
-//    }
-//
-//    const escrow = this.getEscrowPda(glamVault);
-//    const tx = await this.base.protocolProgram.methods
-//      .jupiterVoteCastVote(side)
-//      .accounts({
-//        glamState: this.base.statePda,
-//        escrow,
-//        proposal,
-//        vote,
-//        locker: this.stakeLocker,
-//        governor,
-//        governProgram: GOVERNANCE_PROGRAM_ID,
-//      })
-//      .preInstructions(preInstructions)
-//      .transaction();
-//    const vTx = await this.base.intoVersionedTransaction(tx, { ...txOptions });
-//    return await this.base.sendAndConfirm(vTx);
-//  }
-//
-//  /*
-//   * Utils
-//   */
-//  async fetchVotes(proposals: PublicKey[] | string[]) {
-//    const glamVault = this.base.vaultPda;
-//    const votes = proposals.map((proposal) =>
-//      this.getVotePda(new PublicKey(proposal), glamVault),
-//    );
-//
-//    const votesAccountInfo =
-//      await this.base.provider.connection.getMultipleAccountsInfo(votes);
-//    return votesAccountInfo
-//      .filter((accountInfo) => accountInfo !== null)
-//      .map((accountInfo) => ({
-//        // offsets:
-//        // 8 (discriminator)
-//        // 32 (proposal)
-//        // 32 (voter)
-//        // 1 (bump)
-//        // 1 (side)
-//        proposal: new PublicKey(accountInfo.data.subarray(8, 40)),
-//        voter: new PublicKey(accountInfo.data.subarray(40, 72)),
-//        side: accountInfo.data.readUInt8(73),
-//      }));
-//  }
-//
-//  get stakeLocker(): PublicKey {
-//    const [locker] = PublicKey.findProgramAddressSync(
-//      [Buffer.from("Locker"), BASE.toBuffer()],
-//      JUP_VOTE_PROGRAM,
-//    );
-//    return locker;
-//  }
-//
-//  getClaimStatus(claimant: PublicKey, distributor: PublicKey): PublicKey {
-//    const [claimStatus] = PublicKey.findProgramAddressSync(
-//      [Buffer.from("ClaimStatus"), claimant.toBuffer(), distributor.toBuffer()],
-//      MERKLE_DISTRIBUTOR_PROGRAM,
-//    );
-//    return claimStatus;
-//  }
-//
-//  getEscrowPda(owner: PublicKey): PublicKey {
-//    const [escrow] = PublicKey.findProgramAddressSync(
-//      [Buffer.from("Escrow"), this.stakeLocker.toBuffer(), owner.toBuffer()],
-//      JUP_VOTE_PROGRAM,
-//    );
-//    return escrow;
-//  }
-//
-//  getVotePda(proposal: PublicKey, voter: PublicKey): PublicKey {
-//    const [vote] = PublicKey.findProgramAddressSync(
-//      [Buffer.from("Vote"), proposal.toBuffer(), voter.toBuffer()],
-//      GOVERNANCE_PROGRAM_ID,
-//    );
-//    return vote;
-//  }
-//
-//  getGovernorPda(): PublicKey {
-//    const [governor] = PublicKey.findProgramAddressSync(
-//      [Buffer.from("Governor"), BASE.toBuffer()],
-//      GOVERNANCE_PROGRAM_ID,
-//    );
-//    return governor;
-//  }
-//}
-//
+export class JupiterSwapClient {
+  public readonly txBuilder: TxBuilder;
+
+  public constructor(readonly base: BaseClient) {
+    this.txBuilder = new TxBuilder(base);
+  }
+
+  public async swap(
+    options: {
+      quoteParams?: QuoteParams;
+      quoteResponse?: QuoteResponse;
+      swapInstructions?: SwapInstructions;
+    },
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.swap(options, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async setJupiterSwapPolicy(
+    policy: JupiterSwapPolicy,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.setJupiterSwapPolicy(policy, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+}
