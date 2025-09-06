@@ -11,6 +11,7 @@ import {
   getExtensionData,
   getTransferHook,
   Mint,
+  TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
@@ -76,9 +77,9 @@ export class StateModel extends StateIdlModel {
   id: PublicKey | null;
   mint: PublicKey | null;
   mintModel: MintModel | null;
-  baseAssetMint: PublicKey | null;
-  baseAssetTokenProgram: number | null;
-  baseAssetDecimals: number | null;
+  baseAssetMint: PublicKey;
+  baseAssetTokenProgram: number;
+  baseAssetDecimals: number;
   pendingStateUpdates: any | null;
   pendingMintUpdates: any | null;
   timelockExpiresAt: number | null;
@@ -97,9 +98,11 @@ export class StateModel extends StateIdlModel {
     this.id = data.id ?? null;
     this.mint = data.mint ?? null;
     this.mintModel = data.mintModel ?? null;
-    this.baseAssetMint = data.baseAssetMint ?? null;
-    this.baseAssetTokenProgram = data.baseAssetTokenProgram ?? null; // TODO: convert to PublicKey
-    this.baseAssetDecimals = data.baseAssetDecimals ?? null;
+
+    this.baseAssetMint = data.baseAssetMint!;
+    this.baseAssetDecimals = data.baseAssetDecimals!;
+    this.baseAssetTokenProgram = data.baseAssetTokenProgram!;
+
     this.pendingStateUpdates = data.pendingStateUpdates ?? null;
     this.pendingMintUpdates = data.pendingMintUpdates ?? null;
     this.timelockExpiresAt = data.timelockExpiresAt
