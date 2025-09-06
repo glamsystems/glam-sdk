@@ -6,7 +6,13 @@ import {
   TOKEN_2022_PROGRAM_ID,
   unpackAccount,
 } from "@solana/spl-token";
-import { MintIdlModel, MintModel, StateAccountType } from "../models";
+import {
+  EmergencyUpdateMintArgs,
+  MintIdlModel,
+  MintModel,
+  RequestType,
+  StateAccountType,
+} from "../models";
 import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
@@ -187,15 +193,68 @@ export class MintClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async emergencyUpdate(
-    mintModel: Partial<MintModel>,
-    txOptions: TxOptions = {},
-  ) {
+  public async pauseSubscription(txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.mintProgram.methods
-      .emergencyUpdateMint(new MintIdlModel(mintModel))
+      .emergencyUpdateMint({
+        requestType: RequestType.SUBSCRIPTION,
+        setPaused: true,
+      })
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
+        glamSigner,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async unpauseSubscription(txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const tx = await this.base.mintProgram.methods
+      .emergencyUpdateMint({
+        requestType: RequestType.SUBSCRIPTION,
+        setPaused: false,
+      })
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+        glamSigner,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async pauseRedemption(txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const tx = await this.base.mintProgram.methods
+      .emergencyUpdateMint({
+        requestType: RequestType.REDEMPTION,
+        setPaused: true,
+      })
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+        glamSigner,
+      })
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async unpauseRedemption(txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const tx = await this.base.mintProgram.methods
+      .emergencyUpdateMint({
+        requestType: RequestType.REDEMPTION,
+        setPaused: false,
+      })
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+        glamSigner,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);

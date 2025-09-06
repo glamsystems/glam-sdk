@@ -1176,8 +1176,7 @@
       ],
       "accounts": [
         {
-          "name": "glam_state",
-          "writable": true
+          "name": "glam_state"
         },
         {
           "name": "glam_signer",
@@ -1185,28 +1184,45 @@
           "signer": true
         },
         {
-          "name": "glam_mint",
-          "writable": true
+          "name": "glam_mint"
         },
         {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "token_2022_program",
-          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        },
-        {
-          "name": "glam_protocol",
-          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+          "name": "request_queue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  45,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_mint"
+              }
+            ]
+          }
         }
       ],
       "args": [
         {
-          "name": "mint_model",
+          "name": "args",
           "type": {
             "defined": {
-              "name": "MintModel"
+              "name": "EmergencyUpdateMintArgs"
             }
           }
         }
@@ -4463,6 +4479,26 @@
       }
     },
     {
+      "name": "EmergencyUpdateMintArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "request_type",
+            "type": {
+              "defined": {
+                "name": "RequestType"
+              }
+            }
+          },
+          {
+            "name": "set_paused",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
       "name": "EngineField",
       "type": {
         "kind": "struct",
@@ -5045,18 +5081,6 @@
             }
           },
           {
-            "name": "subscription_paused",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "redemption_paused",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
             "name": "allowlist",
             "type": {
               "option": {
@@ -5440,6 +5464,14 @@
           {
             "name": "glam_mint",
             "type": "pubkey"
+          },
+          {
+            "name": "subscription_paused",
+            "type": "bool"
+          },
+          {
+            "name": "redemption_paused",
+            "type": "bool"
           },
           {
             "name": "data",

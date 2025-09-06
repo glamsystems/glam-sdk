@@ -50,7 +50,12 @@ import {
   getGlamProtocolProgram,
 } from "../glamExports";
 import { ClusterNetwork, GlamClientConfig } from "../clientConfig";
-import { StateAccount, StateModel } from "../models";
+import {
+  RequestQueue,
+  StateAccount,
+  StateAccountType,
+  StateModel,
+} from "../models";
 import { AssetMeta, ASSETS_MAINNET, ASSETS_TESTS } from "./assets";
 import { GlamError } from "../error";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
@@ -60,6 +65,7 @@ import {
   getExtraMetasPda,
   getMintPda,
   getOpenfundsPda,
+  getRequestQueuePda,
   getVaultPda,
 } from "../utils/glamPDAs";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
@@ -580,6 +586,11 @@ export class BaseClient {
     return getExtraMetasPda(this.mintPda);
   }
 
+  // derived from mint pda
+  get requestQueuePda(): PublicKey {
+    return getRequestQueuePda(this.mintPda, this.mintProgram.programId);
+  }
+
   /**
    * Fetch all the token accounts (including token program and token 2022 program) owned by the specified account.
    *
@@ -800,6 +811,14 @@ export class BaseClient {
     );
   }
 
+  public async fetchRequestQueue(
+    requestQueuePda?: PublicKey,
+  ): Promise<RequestQueue> {
+    return this.mintProgram.account.requestQueue.fetch(
+      requestQueuePda || this.requestQueuePda,
+    );
+  }
+
   /**
    * Generates instructions to wrap SOL into wSOL if the vault doesn't have enough wSOL
    *
@@ -896,11 +915,25 @@ export class BaseClient {
       const mintPubkey = glamStatePda.equals(this.statePda)
         ? this.mintPda
         : getMintPda(glamStatePda, 0, this.mintProgram.programId);
+      const requestQueuePda = glamStatePda.equals(this.statePda)
+        ? this.requestQueuePda
+        : getRequestQueuePda(mintPubkey, this.mintProgram.programId);
+
       const { mint } = await this.fetchMintAndTokenProgram(mintPubkey);
+
+      // fetch request queue only if state account is a tokenized vault
+      const requestQueue = StateAccountType.equals(
+        stateAccount.accountType,
+        StateAccountType.TOKENIZED_VAULT,
+      )
+        ? await this.fetchRequestQueue(requestQueuePda)
+        : undefined;
+
       return StateModel.fromOnchainAccounts(
         glamStatePda,
         stateAccount,
         mint,
+        requestQueue,
         this.protocolProgram.programId,
       );
     }
@@ -908,6 +941,7 @@ export class BaseClient {
     return StateModel.fromOnchainAccounts(
       glamStatePda,
       stateAccount,
+      undefined,
       undefined,
       this.protocolProgram.programId,
     );

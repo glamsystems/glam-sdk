@@ -1182,8 +1182,7 @@ export type GlamMint = {
       ],
       "accounts": [
         {
-          "name": "glamState",
-          "writable": true
+          "name": "glamState"
         },
         {
           "name": "glamSigner",
@@ -1191,28 +1190,45 @@ export type GlamMint = {
           "signer": true
         },
         {
-          "name": "glamMint",
-          "writable": true
+          "name": "glamMint"
         },
         {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "token2022Program",
-          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        },
-        {
-          "name": "glamProtocol",
-          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+          "name": "requestQueue",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  113,
+                  117,
+                  101,
+                  115,
+                  116,
+                  45,
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamMint"
+              }
+            ]
+          }
         }
       ],
       "args": [
         {
-          "name": "mintModel",
+          "name": "args",
           "type": {
             "defined": {
-              "name": "mintModel"
+              "name": "emergencyUpdateMintArgs"
             }
           }
         }
@@ -4469,6 +4485,26 @@ export type GlamMint = {
       }
     },
     {
+      "name": "emergencyUpdateMintArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "requestType",
+            "type": {
+              "defined": {
+                "name": "requestType"
+              }
+            }
+          },
+          {
+            "name": "setPaused",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
       "name": "engineField",
       "type": {
         "kind": "struct",
@@ -5051,18 +5087,6 @@ export type GlamMint = {
             }
           },
           {
-            "name": "subscriptionPaused",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "redemptionPaused",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
             "name": "allowlist",
             "type": {
               "option": {
@@ -5446,6 +5470,14 @@ export type GlamMint = {
           {
             "name": "glamMint",
             "type": "pubkey"
+          },
+          {
+            "name": "subscriptionPaused",
+            "type": "bool"
+          },
+          {
+            "name": "redemptionPaused",
+            "type": "bool"
           },
           {
             "name": "data",

@@ -18,8 +18,8 @@ import {
 
 import { BaseClient, TxOptions } from "./base";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
-import { getAccountPolicyPda, getRequestQueuePda } from "../utils/glamPDAs";
-import { PendingRequest, RequestQueue, RequestType } from "../models";
+import { getAccountPolicyPda } from "../utils/glamPDAs";
+import { PendingRequest, RequestType } from "../models";
 
 export class InvestClient {
   public constructor(readonly base: BaseClient) {}
@@ -71,25 +71,15 @@ export class InvestClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  get requestQueuePda(): PublicKey {
-    return getRequestQueuePda(
-      this.base.mintPda,
-      this.base.mintProgram.programId,
-    );
-  }
-
-  public async fetchRequestQueue(): Promise<RequestQueue> {
-    return this.base.mintProgram.account.requestQueue.fetch(
-      this.requestQueuePda,
-    );
-  }
-
   public async fetchPendingRequest(): Promise<PendingRequest | null> {
-    const queue = await this.fetchRequestQueue();
+    const queue = await this.base.fetchRequestQueue();
     if (!queue) {
       return null;
     }
-    return queue.data.find((r) => r.user.equals(this.base.signer)) || null;
+    return (
+      queue.data.find((r: PendingRequest) => r.user.equals(this.base.signer)) ||
+      null
+    );
   }
 
   public async subscribeTx(
@@ -214,7 +204,7 @@ export class InvestClient {
         glamState: this.base.statePda,
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
-        requestQueue: this.requestQueuePda,
+        requestQueue: this.base.requestQueuePda,
         signer,
         depositAsset,
         signerDepositAta,
@@ -256,7 +246,7 @@ export class InvestClient {
         glamState: this.base.statePda,
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
-        requestQueue: this.requestQueuePda,
+        requestQueue: this.base.requestQueuePda,
         signer,
         signerMintAta: this.base.getMintAta(signer),
         escrowMintAta: this.base.getMintAta(this.base.escrowPda),
@@ -311,7 +301,7 @@ export class InvestClient {
         glamState: this.base.statePda,
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
-        requestQueue: this.requestQueuePda,
+        requestQueue: this.base.requestQueuePda,
         signer: this.base.getSigner(),
         recoverTokenMint,
         signerAta,

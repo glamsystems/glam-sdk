@@ -1,13 +1,5 @@
 import { BN } from "@coral-xyz/anchor";
-import {
-  struct,
-  u32,
-  u64,
-  vec,
-  bool,
-  publicKey,
-  option,
-} from "@coral-xyz/borsh";
+import { struct, u32, u64, vec, publicKey, option } from "@coral-xyz/borsh";
 import { PublicKey } from "@solana/web3.js";
 
 export const MintPolicyLayout = struct([
@@ -15,8 +7,6 @@ export const MintPolicyLayout = struct([
   u64("maxCap"),
   u64("minSubscription"),
   u64("minRedemption"),
-  bool("subscriptionPaused"),
-  bool("redemptionPaused"),
   u64("reserved"),
   option(vec(publicKey()), "allowlist"),
   option(vec(publicKey()), "blocklist"),
@@ -27,8 +17,6 @@ export interface MintPolicy {
   maxCap: BN;
   minSubscription: BN;
   minRedemption: BN;
-  subscriptionPaused: boolean;
-  redemptionPaused: boolean;
   reserved: BN;
   allowlist: PublicKey[] | null;
   blocklist: PublicKey[] | null;
@@ -36,7 +24,7 @@ export interface MintPolicy {
 
 export function encodeMintPolicy(policy: MintPolicy): Buffer {
   // Calculate the required buffer size
-  // Fixed fields: 4 + 8 + 8 + 8 + 1 + 1 + 8 = 38 bytes
+  // Fixed fields: 4 + 8 + 8 + 8 + 8 = 36 bytes
   // Variable fields: allowlist and blocklist (1 byte option flag + 4 bytes length + 32 bytes per pubkey)
   const allowlistSize = policy.allowlist
     ? 1 + 4 + policy.allowlist.length * 32
@@ -44,7 +32,7 @@ export function encodeMintPolicy(policy: MintPolicy): Buffer {
   const blocklistSize = policy.blocklist
     ? 1 + 4 + policy.blocklist.length * 32
     : 1;
-  const totalSize = 38 + allowlistSize + blocklistSize;
+  const totalSize = 36 + allowlistSize + blocklistSize;
 
   const buffer = Buffer.alloc(totalSize);
   MintPolicyLayout.encode(policy, buffer);

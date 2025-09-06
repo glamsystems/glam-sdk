@@ -157,6 +157,7 @@ export class StateModel extends StateIdlModel {
     statePda: PublicKey,
     stateAccount: StateAccount,
     glamMint?: Mint,
+    requestQueue?: RequestQueue,
     glamProgramId: PublicKey = GLAM_PROTOCOL_PROGRAM_ID,
   ) {
     const stateModel: Partial<StateModel> = { id: statePda };
@@ -252,6 +253,7 @@ export class StateModel extends StateIdlModel {
         mintModel["defaultAccountStateFrozen"] =
           extDefaultState.readUInt8() === 2;
       }
+
       // Parse mint policy
       const mintIntegrationPolicy = stateAccount.integrationAcls?.find(
         (acl) => acl.integrationProgram.toString() === GlamMintIdlJson.address,
@@ -263,6 +265,12 @@ export class StateModel extends StateIdlModel {
       Object.entries(mintPolicy).forEach(([key, value]) => {
         mintModel[key] = value;
       });
+
+      // Parse request queue
+      if (requestQueue) {
+        mintModel.subscriptionPaused = requestQueue.subscriptionPaused;
+        mintModel.redemptionPaused = requestQueue.redemptionPaused;
+      }
 
       // Assign mint model
       stateModel.mintModel = new MintModel(mintModel);
@@ -291,8 +299,6 @@ export class MintIdlModel implements MintModelType {
   maxCap: BN | null;
   minSubscription: BN | null;
   minRedemption: BN | null;
-  subscriptionPaused: boolean | null;
-  redemptionPaused: boolean | null;
   allowlist: PublicKey[] | null;
   blocklist: PublicKey[] | null;
 
@@ -314,8 +320,6 @@ export class MintIdlModel implements MintModelType {
     this.maxCap = data.maxCap ?? null;
     this.minSubscription = data.minSubscription ?? null;
     this.minRedemption = data.minRedemption ?? null;
-    this.subscriptionPaused = data.subscriptionPaused ?? null;
-    this.redemptionPaused = data.redemptionPaused ?? null;
     this.allowlist = data.allowlist ?? null;
     this.blocklist = data.blocklist ?? null;
   }
@@ -326,6 +330,8 @@ export class MintModel extends MintIdlModel {
   claimableFees: AccruedFees | null;
   claimedFees: AccruedFees | null;
   feeParams: FeeParams | null;
+  subscriptionPaused: boolean | null;
+  redemptionPaused: boolean | null;
 
   constructor(data: Partial<MintModel>) {
     super(data);
@@ -334,6 +340,8 @@ export class MintModel extends MintIdlModel {
     this.claimableFees = data.claimableFees ?? null;
     this.claimedFees = data.claimedFees ?? null;
     this.feeParams = data.feeParams ?? null;
+    this.subscriptionPaused = data.subscriptionPaused ?? null;
+    this.redemptionPaused = data.redemptionPaused ?? null;
   }
 }
 
@@ -364,6 +372,13 @@ export class EmergencyAccessUpdateArgs
     this.disabledDelegates = obj.disabledDelegates ?? [];
     this.stateEnabled = obj.stateEnabled ?? null;
   }
+}
+
+export type EmergencyUpdateMintArgsType =
+  IdlTypes<GlamMint>["emergencyUpdateMintArgs"];
+export class EmergencyUpdateMintArgs implements EmergencyUpdateMintArgsType {
+  requestType: RequestType;
+  setPaused: boolean;
 }
 
 export type IntegrationPermissionsType =
