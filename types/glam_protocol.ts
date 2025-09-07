@@ -1561,8 +1561,8 @@ export type GlamProtocol = {
     },
     {
       "code": 48005,
-      "name": "invalidSignerAccount",
-      "msg": "Invalid signer token account"
+      "name": "protocolPolicyViolation",
+      "msg": "Protocol policy violation"
     },
     {
       "code": 48006,

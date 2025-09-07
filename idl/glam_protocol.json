@@ -1555,8 +1555,8 @@
     },
     {
       "code": 48005,
-      "name": "InvalidSignerAccount",
-      "msg": "Invalid signer token account"
+      "name": "ProtocolPolicyViolation",
+      "msg": "Protocol policy violation"
     },
     {
       "code": 48006,

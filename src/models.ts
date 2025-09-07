@@ -11,13 +11,12 @@ import {
   getExtensionData,
   getTransferHook,
   Mint,
-  TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
 import { USDC, WSOL } from "./constants";
 import { charsToName } from "./utils/helpers";
-import { MintPolicy, MintPolicyLayout } from "./deser/integrationPolicies";
+import { MintPolicy } from "./deser/integrationPolicies";
 
 export const GlamIntegrations =
   GlamProtocolIdlJson?.types
@@ -261,7 +260,7 @@ export class StateModel extends StateIdlModel {
       const mintPolicyData = mintIntegrationPolicy?.protocolPolicies?.find(
         (policy) => policy.protocolBitflag === 1,
       )?.data;
-      const mintPolicy = MintPolicyLayout.decode(mintPolicyData) as MintPolicy;
+      const mintPolicy = MintPolicy.decode(mintPolicyData);
       Object.entries(mintPolicy).forEach(([key, value]) => {
         mintModel[key] = value;
       });
