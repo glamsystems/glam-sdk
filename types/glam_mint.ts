@@ -5061,18 +5061,6 @@ export type GlamMint = {
             }
           },
           {
-            "name": "asset",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "imageUri",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "yearInSeconds",
             "type": {
               "option": "u32"

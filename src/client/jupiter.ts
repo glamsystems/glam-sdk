@@ -92,7 +92,7 @@ const JUPITER_API =
 const JUPITER_SWAP_API =
   process.env.NEXT_PUBLIC_JUPITER_SWAP_API ||
   process.env.JUPITER_SWAP_API ||
-  JUPITER_API;
+  JUPITER_API_DEFAULT + "/swap/v1";
 
 export async function fetchTokenPrices(
   pubkeys: string[],
@@ -129,6 +129,13 @@ export async function fetchProgramLabels(): Promise<{ [key: string]: string }> {
 }
 
 export async function getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
+  console.log(
+    "fetch url",
+    `${JUPITER_SWAP_API}/quote?` +
+      new URLSearchParams(
+        Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
+      ),
+  );
   const res = await fetch(
     `${JUPITER_SWAP_API}/quote?` +
       new URLSearchParams(

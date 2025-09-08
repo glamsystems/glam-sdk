@@ -352,11 +352,27 @@ export class PriceClient {
     const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
       priceDenom == PriceDenom.ASSET,
     );
+    const aggIndexes: number[] = [];
+    const chunkSize = 3;
+    for (let i = 0; i < remainingAccounts.length; i += chunkSize) {
+      const chunk = remainingAccounts.slice(i, i + chunkSize);
+      const mint = chunk[1].pubkey;
+      const aggIndex = ASSETS_MAINNET.get(mint.toBase58())?.aggIndex || -1;
+      aggIndexes.push(aggIndex);
+    }
+    // Add oracle mapping if agg oracle is used for any token
+    if (aggIndexes.find((i) => i >= 0)) {
+      remainingAccounts.push({
+        pubkey: new PublicKey("Chpu5ZgfWX5ZzVpUx9Xvv4WPM75Xd7zPJNDPsFnCpLpk"),
+        isSigner: false,
+        isWritable: false,
+      });
+    }
+
     const priceVaultIx = await this.base.mintProgram.methods
-      .priceVaultTokens(priceDenom)
+      .priceVaultTokens(priceDenom, aggIndexes)
       .accounts({
         glamState: this.base.statePda,
-        // glamMint: this.base.mintPda,
         solOracle: SOL_ORACLE,
       })
       .remainingAccounts(remainingAccounts)

@@ -39,6 +39,7 @@ export interface AssetMeta {
   oracle: PublicKey;
   programId?: PublicKey;
   isLst?: boolean;
+  aggIndex?: number;
 }
 
 export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
@@ -189,6 +190,46 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
       decimals: 9,
       oracle: new PublicKey("9mhGNSPArRMHpLDMSmxAvuoizBqtBGqYdT8WGuqgxNdn"), // state
       isLst: true,
+    },
+  ],
+  [
+    // GOOGLx
+    "XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN",
+    {
+      decimals: 8,
+      oracle: new PublicKey("3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"), // scope prices
+      programId: TOKEN_2022_PROGRAM_ID,
+      aggIndex: 342,
+    },
+  ],
+  [
+    // AAPLx
+    "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp",
+    {
+      decimals: 8,
+      oracle: new PublicKey("3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"), // scope prices
+      programId: TOKEN_2022_PROGRAM_ID,
+      aggIndex: 343,
+    },
+  ],
+  [
+    // TSLAx
+    "XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB",
+    {
+      decimals: 8,
+      oracle: new PublicKey("3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"), // scope prices
+      programId: TOKEN_2022_PROGRAM_ID,
+      aggIndex: 335,
+    },
+  ],
+  [
+    // NVDAx
+    "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+    {
+      decimals: 8,
+      oracle: new PublicKey("3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"), // scope prices
+      programId: TOKEN_2022_PROGRAM_ID,
+      aggIndex: 341,
     },
   ],
 ]);

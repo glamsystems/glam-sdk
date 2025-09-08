@@ -5055,18 +5055,6 @@
             }
           },
           {
-            "name": "asset",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "image_uri",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
             "name": "year_in_seconds",
             "type": {
               "option": "u32"

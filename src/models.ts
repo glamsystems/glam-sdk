@@ -15,7 +15,7 @@ import {
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
 import { USDC, WSOL } from "./constants";
-import { charsToName } from "./utils/helpers";
+import { charsToName, nameToChars } from "./utils/helpers";
 import { MintPolicy } from "./deser/integrationPolicies";
 
 export const GlamIntegrations =
@@ -201,8 +201,8 @@ export class StateModel extends StateIdlModel {
     if (glamMint) {
       const mintModel = {
         statePda,
-        asset: stateAccount.baseAssetMint,
-      } as any;
+        baseAssetMint: stateAccount.baseAssetMint,
+      } as Partial<MintModel>;
 
       // Parse mint params
       stateAccount.params[1].forEach((param) => {
@@ -221,7 +221,7 @@ export class StateModel extends StateIdlModel {
         ? unpack(extMetadata)
         : ({} as TokenMetadata);
       mintModel["symbol"] = tokenMetadata?.symbol;
-      mintModel["name"] = tokenMetadata?.name;
+      mintModel["name"] = nameToChars(tokenMetadata?.name);
       mintModel["uri"] = tokenMetadata?.uri;
       if (tokenMetadata?.additionalMetadata) {
         tokenMetadata.additionalMetadata.forEach(([k, v]) => {
@@ -285,9 +285,6 @@ export class MintIdlModel implements MintModelType {
   name: number[] | null;
   uri: string | null;
 
-  asset: PublicKey | null;
-  imageUri: string | null;
-
   yearInSeconds: number | null;
   permanentDelegate: PublicKey | null;
   defaultAccountStateFrozen: boolean | null;
@@ -306,9 +303,6 @@ export class MintIdlModel implements MintModelType {
     this.name = data.name ?? null;
     this.uri = data.uri ?? null;
 
-    this.asset = data.asset ?? null;
-    this.imageUri = data.imageUri ?? null;
-
     this.yearInSeconds = data.yearInSeconds ?? null;
     this.permanentDelegate = data.permanentDelegate ?? null;
     this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
@@ -325,6 +319,7 @@ export class MintIdlModel implements MintModelType {
 }
 export class MintModel extends MintIdlModel {
   statePda: PublicKey | null;
+  baseAssetMint: PublicKey | null;
   transferHookProgram: PublicKey | null;
   claimableFees: AccruedFees | null;
   claimedFees: AccruedFees | null;
@@ -335,12 +330,17 @@ export class MintModel extends MintIdlModel {
   constructor(data: Partial<MintModel>) {
     super(data);
     this.statePda = data.statePda ?? null;
+    this.baseAssetMint = data.baseAssetMint ?? null;
     this.transferHookProgram = data.transferHookProgram ?? null;
     this.claimableFees = data.claimableFees ?? null;
     this.claimedFees = data.claimedFees ?? null;
     this.feeParams = data.feeParams ?? null;
     this.subscriptionPaused = data.subscriptionPaused ?? null;
     this.redemptionPaused = data.redemptionPaused ?? null;
+  }
+
+  get nameStr() {
+    return charsToName(this.name);
   }
 }
 
