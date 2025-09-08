@@ -1743,10 +1743,10 @@ export type GlamMint = {
       "docs": [
         "Initialize a new GLAM mint with extensions and metadata.",
         "",
-        "* `mint_model` - Configuration model containing mint parameters and metadata",
-        "* `created_key` - 8-byte key used in the GLAM state PDA derivation",
-        "* `account_type` - Fund (for tokenized vault mint) or Mint",
-        "* `decimals` - Decimals of new mint"
+        "- `mint_model` - Configuration model containing mint parameters and metadata",
+        "- `created_key` - 8-byte key used in the GLAM state PDA derivation",
+        "- `account_type` - Fund (for tokenized vault mint) or Mint",
+        "- `decimals` - Decimals of new mint"
       ],
       "discriminator": [
         209,
@@ -1975,6 +1975,12 @@ export type GlamMint = {
     },
     {
       "name": "priceDriftUsers",
+      "docs": [
+        "Extra accounts for pricing N drift users under the same user stats:",
+        "- user_stats x 1",
+        "- drift_user x N",
+        "- markets and oracles used by all drift users (no specific order)"
+      ],
       "discriminator": [
         12,
         5,
@@ -2173,6 +2179,13 @@ export type GlamMint = {
     },
     {
       "name": "priceDriftVaultDepositors",
+      "docs": [
+        "Extra accounts for pricing N vault depositors:",
+        "- (vault_depositor, drift_vault, drift_user) x N",
+        "- spot_market used by drift users of vaults (no specific order)",
+        "- perp markets used by drift users of vaults (no specific order)",
+        "- oracles of spot markets and perp markets (no specific order)"
+      ],
       "discriminator": [
         234,
         16,
@@ -2379,6 +2392,14 @@ export type GlamMint = {
     },
     {
       "name": "priceKaminoObligations",
+      "docs": [
+        "Prices Kamino obligations.",
+        "",
+        "Extra accounts for pricing N kamino obligations:",
+        "- obligation x N",
+        "- reserves used by all obligations (no specific order)",
+        "- markets used by all reserves (no specific order)"
+      ],
       "discriminator": [
         166,
         110,
@@ -2593,6 +2614,16 @@ export type GlamMint = {
     },
     {
       "name": "priceKaminoVaultShares",
+      "docs": [
+        "Prices Kamino vault shares.",
+        "- `num_vaults` Number of kamino vaults to price.",
+        "",
+        "Extra accounts for pricing N kamino vault shares:",
+        "- (kvault_share_ata, kvault_share_mint, kvault_state, kvault_deposit_token_oracle) x N",
+        "- reserve x M",
+        "- M = number of reserves used by all kvaults' allocations",
+        "- reserve pubkeys must follow the same order of reserves used by each allocation"
+      ],
       "discriminator": [
         112,
         92,
@@ -2985,6 +3016,17 @@ export type GlamMint = {
     },
     {
       "name": "priceVaultTokens",
+      "docs": [
+        "Prices vault SOL balance and tokens it holds.",
+        "",
+        "Args:",
+        "- `denom`: Denomination of the price.",
+        "- `agg_indexes`: Indexes of the aggregation oracles for the tokens (must follow the same order of mints in extra accounts). If aggregation oracle is not used for token #`i`, `agg_indexes[i]` should be set to -1.",
+        "",
+        "Extra accounts for pricing N tokens:",
+        "- (ata, mint, oracle) x N",
+        "- optional oracle mapping (only add it if any token uses an agg oracle)"
+      ],
       "discriminator": [
         54,
         42,
@@ -3173,6 +3215,12 @@ export type GlamMint = {
             "defined": {
               "name": "priceDenom"
             }
+          }
+        },
+        {
+          "name": "aggIndexes",
+          "type": {
+            "vec": "i16"
           }
         }
       ]

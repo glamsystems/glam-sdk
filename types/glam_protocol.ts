@@ -1621,7 +1621,7 @@ export type GlamProtocol = {
     },
     {
       "code": 49005,
-      "name": "glamMintNotFound",
+      "name": "invalidIxArgs",
       "msg": "Glam mint not found"
     },
     {

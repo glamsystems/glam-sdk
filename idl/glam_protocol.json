@@ -1615,7 +1615,7 @@
     },
     {
       "code": 49005,
-      "name": "GlamMintNotFound",
+      "name": "InvalidIxArgs",
       "msg": "Glam mint not found"
     },
     {
