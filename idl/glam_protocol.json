@@ -1879,6 +1879,12 @@
             "name": "DeleteExternalAccount"
           },
           {
+            "name": "DeleteExternalAccountIfZeroLamports"
+          },
+          {
+            "name": "DeleteExternalAccountIfZeroBalance"
+          },
+          {
             "name": "AddAsset"
           },
           {

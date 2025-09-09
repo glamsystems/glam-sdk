@@ -44,10 +44,9 @@ export class InvestClient {
   }
 
   public async cancel(
-    requestType: RequestType,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.cancelTx(requestType, txOptions);
+    const tx = await this.cancelTx(txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -267,9 +266,10 @@ export class InvestClient {
   }
 
   public async cancelTx(
-    requestType: RequestType,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
+    // FIXME: identify request type from request queue data
+    let requestType = RequestType.REDEMPTION;
     const signer = txOptions.signer || this.base.signer;
     let recoverTokenMint = this.base.mintPda;
     let recoverTokenProgram = TOKEN_2022_PROGRAM_ID;

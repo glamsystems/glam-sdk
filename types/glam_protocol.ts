@@ -1885,6 +1885,12 @@ export type GlamProtocol = {
             "name": "deleteExternalAccount"
           },
           {
+            "name": "deleteExternalAccountIfZeroLamports"
+          },
+          {
+            "name": "deleteExternalAccountIfZeroBalance"
+          },
+          {
             "name": "addAsset"
           },
           {
