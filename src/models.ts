@@ -11,6 +11,8 @@ import {
   getExtensionData,
   getTransferHook,
   Mint,
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
@@ -135,6 +137,17 @@ export class StateModel extends StateIdlModel {
     return (
       this.mint.equals(PublicKey.default) ? this.id : this.mint
     ).toBase58();
+  }
+
+  get baseAssetTokenProgramId() {
+    switch (this.baseAssetTokenProgram) {
+      case 0:
+        return TOKEN_PROGRAM_ID;
+      case 1:
+        return TOKEN_2022_PROGRAM_ID;
+      default:
+        throw new Error("Invalid base asset token program");
+    }
   }
 
   // A union set of assets and borrowable assets

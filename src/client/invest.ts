@@ -70,14 +70,17 @@ export class InvestClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async fetchPendingRequest(): Promise<PendingRequest | null> {
+  public async fetchPendingRequest(
+    user?: PublicKey,
+  ): Promise<PendingRequest | null> {
     const queue = await this.base.fetchRequestQueue();
     if (!queue) {
       return null;
     }
     return (
-      queue.data.find((r: PendingRequest) => r.user.equals(this.base.signer)) ||
-      null
+      queue.data.find((r: PendingRequest) =>
+        r.user.equals(user || this.base.signer),
+      ) || null
     );
   }
 
@@ -85,12 +88,9 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
-    if (!depositAsset) {
-      throw new Error("Base asset not found in glam state");
-    }
-
     const signer = txOptions.signer || this.base.getSigner();
+    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
+
     const mintTo = this.base.getMintAta(signer);
     const signerAta = this.base.getAta(depositAsset, signer);
 
@@ -151,14 +151,11 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
+    const signer = txOptions.signer || this.base.getSigner();
     const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
-    if (!depositAsset) {
-      throw new Error("Base asset not found in glam state");
-    }
     const { tokenProgram: depositTokenProgram } =
       await this.base.fetchMintAndTokenProgram(depositAsset);
 
-    const signer = txOptions.signer || this.base.getSigner();
     const signerDepositAta = this.base.getAta(
       depositAsset,
       signer,
@@ -268,21 +265,21 @@ export class InvestClient {
   public async cancelTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    // FIXME: identify request type from request queue data
-    let requestType = RequestType.REDEMPTION;
     const signer = txOptions.signer || this.base.signer;
+    const pendingRequest = await this.fetchPendingRequest(signer);
+    if (!pendingRequest) {
+      throw new Error("No pending request found to cancel.");
+    }
+
+    let requestType = pendingRequest.requestType as RequestType;
     let recoverTokenMint = this.base.mintPda;
     let recoverTokenProgram = TOKEN_2022_PROGRAM_ID;
 
     if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
-      const { baseAssetMint: baseAsset, baseAssetTokenProgram } =
+      const { baseAssetMint, baseAssetTokenProgramId } =
         await this.base.fetchStateModel();
-      if (!baseAsset) {
-        throw new Error("Base asset not found in glam state");
-      }
-      recoverTokenMint = baseAsset;
-      recoverTokenProgram =
-        baseAssetTokenProgram == 0 ? TOKEN_PROGRAM_ID : TOKEN_2022_PROGRAM_ID;
+      recoverTokenMint = baseAssetMint;
+      recoverTokenProgram = baseAssetTokenProgramId;
     }
     const signerAta = this.base.getAta(
       recoverTokenMint,
@@ -302,7 +299,7 @@ export class InvestClient {
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
         requestQueue: this.base.requestQueuePda,
-        signer: this.base.getSigner(),
+        signer,
         recoverTokenMint,
         signerAta,
         escrowAta,
@@ -317,23 +314,18 @@ export class InvestClient {
   public async fulfillTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const { baseAssetMint: baseAsset } = await this.base.fetchStateModel();
-    if (!baseAsset) {
-      throw new Error("Base asset not found in glam state");
-    }
-
     const signer = txOptions.signer || this.base.getSigner();
-    const glamMint = this.base.mintPda;
+    const { baseAssetMint } = await this.base.fetchStateModel();
 
     const { tokenProgram: depositTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(baseAsset);
+      await this.base.fetchMintAndTokenProgram(baseAssetMint);
     const tx = await this.base.mintProgram.methods
       .fulfill()
       .accounts({
         glamState: this.base.statePda,
-        glamMint,
+        glamMint: this.base.mintPda,
         signer,
-        asset: baseAsset,
+        asset: baseAssetMint,
         depositTokenProgram,
       })
       .preInstructions(txOptions.preInstructions || [])
@@ -345,22 +337,18 @@ export class InvestClient {
   public async claimTokensTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const stateModel = await this.base.fetchStateModel();
-    if (!stateModel.baseAssetMint) {
-      throw new Error("Base asset not found in glam state");
-    }
-
-    const { tokenProgram: claimTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(stateModel.baseAssetMint);
-
     const signer = txOptions.signer || this.base.getSigner();
+    const { baseAssetMint } = await this.base.fetchStateModel();
+    const { tokenProgram: claimTokenProgram } =
+      await this.base.fetchMintAndTokenProgram(baseAssetMint);
+
     const signerAta = this.base.getAta(
-      stateModel.baseAssetMint,
+      baseAssetMint,
       signer,
       claimTokenProgram,
     );
     const escrowAta = this.base.getAta(
-      stateModel.baseAssetMint,
+      baseAssetMint,
       this.base.escrowPda,
       claimTokenProgram,
     );
@@ -371,12 +359,12 @@ export class InvestClient {
         signer,
         signerAta,
         signer,
-        stateModel.baseAssetMint,
+        baseAssetMint,
       ),
     ];
 
     // Close wSOL ata so user gets SOL
-    const postInstructions = stateModel.baseAssetMint.equals(WSOL)
+    const postInstructions = baseAssetMint.equals(WSOL)
       ? [createCloseAccountInstruction(signerAta, signer, signer)]
       : [];
 
@@ -387,7 +375,7 @@ export class InvestClient {
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
         signer,
-        claimTokenMint: stateModel.baseAssetMint,
+        claimTokenMint: baseAssetMint,
         signerAta,
         escrowAta,
         signerPolicy: null, // not needed for claiming redemption
