@@ -1171,5 +1171,17 @@
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "PROTO_TOKEN",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "PROTO_TOKEN_PERM_TRANSFER",
+      "type": "u64",
+      "value": "1"
+    }
   ]
 }

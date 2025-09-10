@@ -2968,5 +2968,57 @@ export type GlamProtocol = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoJupiterSwap",
+      "type": "u16",
+      "value": "4"
+    },
+    {
+      "name": "protoJupiterSwapPermSwapAllowlisted",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "protoJupiterSwapPermSwapAny",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoJupiterSwapPermSwapLst",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoStake",
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "protoStakePermStake",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoStakePermUnstake",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoSystem",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "protoSystemPermTransfer",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoSystemPermWsol",
+      "type": "u64",
+      "value": "1"
+    }
   ]
 };

@@ -1551,5 +1551,22 @@ export type ExtMarinade = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoMarinade",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "protoMarinadePermStake",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoMarinadePermUnstake",
+      "type": "u64",
+      "value": "2"
+    }
   ]
 };

@@ -5726,5 +5726,47 @@
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "PROTO_MINT",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "PROTO_MINT_PERM_BURN_TOKENS",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "PROTO_MINT_PERM_CLAIM_FEES",
+      "type": "u64",
+      "value": "16"
+    },
+    {
+      "name": "PROTO_MINT_PERM_EMERGENCY_UPDATE",
+      "type": "u64",
+      "value": "64"
+    },
+    {
+      "name": "PROTO_MINT_PERM_FORCE_TRANSFER_TOKENS",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "PROTO_MINT_PERM_FULFILL",
+      "type": "u64",
+      "value": "32"
+    },
+    {
+      "name": "PROTO_MINT_PERM_MINT_TOKENS",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "PROTO_MINT_PERM_SET_TOKEN_ACCOUNT_STATE",
+      "type": "u64",
+      "value": "8"
+    }
   ]
 }

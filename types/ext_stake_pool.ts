@@ -1514,5 +1514,57 @@ export type ExtStakePool = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoSanctum",
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "protoStakePool",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "sanctumPermDepositSol",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "sanctumPermDepositStake",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "sanctumPermWithdrawSol",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "sanctumPermWithdrawStake",
+      "type": "u64",
+      "value": "8"
+    },
+    {
+      "name": "stakePoolPermDepositSol",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "stakePoolPermDepositStake",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "stakePoolPermWithdrawSol",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "stakePoolPermWithdrawStake",
+      "type": "u64",
+      "value": "8"
+    }
   ]
 };

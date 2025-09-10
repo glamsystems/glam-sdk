@@ -5732,5 +5732,47 @@ export type GlamMint = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoMint",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "protoMintPermBurnTokens",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoMintPermClaimFees",
+      "type": "u64",
+      "value": "16"
+    },
+    {
+      "name": "protoMintPermEmergencyUpdate",
+      "type": "u64",
+      "value": "64"
+    },
+    {
+      "name": "protoMintPermForceTransferTokens",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "protoMintPermFulfill",
+      "type": "u64",
+      "value": "32"
+    },
+    {
+      "name": "protoMintPermMintTokens",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoMintPermSetTokenAccountState",
+      "type": "u64",
+      "value": "8"
+    }
   ]
 };

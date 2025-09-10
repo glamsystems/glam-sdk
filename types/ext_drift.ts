@@ -3701,5 +3701,77 @@ export type ExtDrift = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoDriftProtocol",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "protoDriftProtocolPermBorrow",
+      "type": "u64",
+      "value": "32"
+    },
+    {
+      "name": "protoDriftProtocolPermCancelOrders",
+      "type": "u64",
+      "value": "128"
+    },
+    {
+      "name": "protoDriftProtocolPermCreateModifyOrders",
+      "type": "u64",
+      "value": "64"
+    },
+    {
+      "name": "protoDriftProtocolPermDeleteUser",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "protoDriftProtocolPermDeposit",
+      "type": "u64",
+      "value": "8"
+    },
+    {
+      "name": "protoDriftProtocolPermInitUser",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoDriftProtocolPermPerpMarkets",
+      "type": "u64",
+      "value": "256"
+    },
+    {
+      "name": "protoDriftProtocolPermSpotMarkets",
+      "type": "u64",
+      "value": "512"
+    },
+    {
+      "name": "protoDriftProtocolPermUpdateUser",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoDriftProtocolPermWithdraw",
+      "type": "u64",
+      "value": "16"
+    },
+    {
+      "name": "protoDriftVaults",
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "protoDriftVaultsPermDeposit",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoDriftVaultsPermWithdraw",
+      "type": "u64",
+      "value": "2"
+    }
   ]
 };

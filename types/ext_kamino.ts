@@ -2649,5 +2649,72 @@ export type ExtKamino = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "protoKaminoFarms",
+      "type": "u16",
+      "value": "4"
+    },
+    {
+      "name": "protoKaminoFarmsPermHarvestReward",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "protoKaminoFarmsPermStake",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoKaminoFarmsPermUnstake",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoKaminoLending",
+      "type": "u16",
+      "value": "1"
+    },
+    {
+      "name": "protoKaminoLendingPermBorrow",
+      "type": "u64",
+      "value": "8"
+    },
+    {
+      "name": "protoKaminoLendingPermDeposit",
+      "type": "u64",
+      "value": "2"
+    },
+    {
+      "name": "protoKaminoLendingPermInit",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoKaminoLendingPermRepay",
+      "type": "u64",
+      "value": "16"
+    },
+    {
+      "name": "protoKaminoLendingPermWithdraw",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "protoKaminoVaults",
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "protoKaminoVaultsPermDeposit",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "protoKaminoVaultsPermWithdraw",
+      "type": "u64",
+      "value": "2"
+    }
   ]
 };
