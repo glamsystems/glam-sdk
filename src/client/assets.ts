@@ -232,6 +232,72 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
       aggIndex: 341,
     },
   ],
+  [
+    // sUSD (Token-2022)
+    "susdabGDNbhrnCa6ncrYo81u4s9GM8ecK2UwMyZiq4X",
+    {
+      decimals: 6,
+      oracle: new PublicKey("EkHtcxYSf5hTScCgPUULtf7LR95YcEED5NQBfuKDiHS5"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
+  [
+    // JTO
+    "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+    {
+      decimals: 9,
+      oracle: new PublicKey("A9RnpLxxtAS2TR3HtSMNJfsKpRPvkLbBkGZ6gKziSPLr"),
+    },
+  ],
+  [
+    // CLOUD
+    "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+    {
+      decimals: 9,
+      oracle: new PublicKey("Ao6twJD3Ky5iX9oWWesvXGtzEimXwnJC1okSJDcaSYac"),
+    },
+  ],
+  [
+    // BONK
+    "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    {
+      decimals: 5,
+      oracle: new PublicKey("GhYg3R1V6DmJbwuc57qZeoYG6gUuvCotUF1zU3WCj98U"),
+    },
+  ],
+  [
+    // JupSOL
+    "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+    {
+      decimals: 9,
+      oracle: new PublicKey("BRCWKZ1PevwTFzBL2MLZM5hMwCNMWE8NYuS6zFPaXZ6y"),
+    },
+  ],
+  [
+    // LST (custom)
+    "LSTxxxnJzKDFSLr4dUkPcmCf5VyryEqzPLz5j4bpxFp",
+    {
+      decimals: 9,
+      oracle: new PublicKey("BWK8Wnybb7rPteNMqJs9uWoqdfYApNym6WgE59BwLe1v"),
+    },
+  ],
+  [
+    // wBTC variant (9n4n)
+    "9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E",
+    {
+      decimals: 6,
+      oracle: new PublicKey("fqPfDa6uQr9ndMvwaFp4mUBeUrHmLop8Jxfb1XJNmVm"),
+    },
+  ],
+  [
+    // JUP token-2022 variant
+    "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB",
+    {
+      decimals: 6,
+      oracle: new PublicKey("DXqKSHyhTBKEW4qgnL7ycbf3Jca5hCvUgWHFYWsh4KJa"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
 ]);
 
 export const ASSETS_TESTS: Map<string, AssetMeta> = new Map([]);
