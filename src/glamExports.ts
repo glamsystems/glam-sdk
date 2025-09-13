@@ -1,9 +1,7 @@
 import { Program, Provider } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
-
-import type { ClusterNetwork } from "./clientConfig";
 
 import type { GlamProtocol } from "../target/types/glam_protocol";
+import type { GlamConfig } from "../target/types/glam_config";
 import type { GlamMint } from "../target/types/glam_mint";
 import type { ExtSpl } from "../target/types/ext_spl";
 import type { ExtDrift } from "../target/types/ext_drift";
@@ -12,6 +10,7 @@ import type { ExtMarinade } from "../target/types/ext_marinade";
 import type { ExtStakePool } from "../target/types/ext_stake_pool";
 
 import GlamProtocolIdlJson from "../target/idl/glam_protocol.json";
+import GlamConfigIdlJson from "../target/idl/glam_config.json";
 import GlamMintIdlJson from "../target/idl/glam_mint.json";
 import ExtSplIdlJson from "../target/idl/ext_spl.json";
 import ExtDriftIdlJson from "../target/idl/ext_drift.json";
@@ -20,6 +19,7 @@ import ExtMarinadeIdlJson from "../target/idl/ext_marinade.json";
 import ExtStakePoolIdlJson from "../target/idl/ext_stake_pool.json";
 
 const GlamProtocolIdl = GlamProtocolIdlJson as GlamProtocol;
+const GlamConfigIdl = GlamConfigIdlJson as GlamConfig;
 const GlamMintIdl = GlamMintIdlJson as GlamMint;
 const ExtSplIdl = ExtSplIdlJson as ExtSpl;
 const ExtDriftIdl = ExtDriftIdlJson as ExtDrift;
@@ -34,9 +34,11 @@ export {
   GlamMint,
   GlamMintIdl,
   GlamMintIdlJson,
+  GlamConfig,
 };
 
 export type GlamProtocolProgram = Program<GlamProtocol>;
+export type GlamConfigProgram = Program<GlamConfig>;
 export type GlamMintProgram = Program<GlamMint>;
 export type ExtSplProgram = Program<ExtSpl>;
 export type ExtDriftProgram = Program<ExtDrift>;
@@ -52,6 +54,10 @@ export function getGlamProtocolProgram(
 
 export function getGlamMintProgram(provider: Provider): GlamMintProgram {
   return new Program(GlamMintIdl, provider) as GlamMintProgram;
+}
+
+export function getGlamConfigProgram(provider: Provider): GlamConfigProgram {
+  return new Program(GlamConfigIdl, provider) as GlamConfigProgram;
 }
 
 export function getExtSplProgram(provider: Provider): ExtSplProgram {
