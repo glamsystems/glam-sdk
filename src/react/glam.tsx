@@ -25,7 +25,6 @@ import {
   TokenListItem,
   TokenPrice,
 } from "../client/jupiter";
-import { charsToName } from "../utils/helpers";
 
 declare global {
   interface Window {
@@ -99,10 +98,10 @@ const deserializeGlamStateCache = (s: any) => {
 const toStateCache = (s: StateModel) => {
   return {
     pubkey: s.id,
-    owner: s.owner,
+    owner: s.owner?.pubkey || PublicKey.default,
     sparkleKey: s.sparkleKey,
     address: s.idStr,
-    name: charsToName(s.name),
+    name: s.name,
     product: s.productType,
   } as GlamStateCache;
 };
@@ -182,7 +181,7 @@ export function GlamProvider({
     // Find a list of glam states that the wallet has access to
     const glamStatesList = [] as GlamStateCache[];
     glamStateModels.forEach((s: StateModel) => {
-      if (wallet?.publicKey?.equals(s.owner)) {
+      if (wallet?.publicKey?.equals(s.owner!.pubkey!)) {
         const stateCache = toStateCache(s);
         glamStatesList.push(stateCache);
       } else {

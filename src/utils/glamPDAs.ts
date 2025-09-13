@@ -2,18 +2,17 @@ import { PublicKey } from "@solana/web3.js";
 import { StateModel } from "../models";
 import * as anchor from "@coral-xyz/anchor";
 import {
-  SEED_ACCOUNT_POLICY,
   SEED_ESCROW,
-  SEED_EXTRA_ACCOUNT_METAS,
   SEED_METADATA,
   SEED_MINT,
-  SEED_REQUEST_QUEUE,
   SEED_STATE,
   SEED_VAULT,
   TRANSFER_HOOK_PROGRAM,
 } from "../constants";
-import { charsToName } from "./helpers";
 
+/**
+ * Compute state account PDA from state model
+ */
 export function getStatePda(
   stateModel: Partial<StateModel>,
   programId: PublicKey,
@@ -24,33 +23,44 @@ export function getStatePda(
   }
 
   const createdKey = stateModel?.created?.key || [
-    ...Buffer.from(
-      anchor.utils.sha256.hash(charsToName(stateModel.name)),
-    ).subarray(0, 8),
+    ...Buffer.from(anchor.utils.sha256.hash(stateModel?.name!)).subarray(0, 8),
   ];
 
-  const stateOwner = owner || stateModel?.owner;
-  if (!stateOwner) {
+  const _owner = owner || stateModel?.owner?.pubkey;
+  if (!_owner) {
     throw new Error("Owner must be specified explicitly or set in state model");
   }
 
   const [pda, _bump] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from(SEED_STATE),
-      stateOwner.toBuffer(),
-      Uint8Array.from(createdKey),
-    ],
+    [Buffer.from(SEED_STATE), _owner.toBuffer(), Uint8Array.from(createdKey)],
     programId,
   );
   return pda;
 }
 
+/**
+ * Compute vault PDA from state PDA
+ */
 export function getVaultPda(
   statePda: PublicKey,
   programId: PublicKey,
 ): PublicKey {
   const [pda, _bump] = PublicKey.findProgramAddressSync(
     [Buffer.from(SEED_VAULT), statePda.toBuffer()],
+    programId,
+  );
+  return pda;
+}
+
+/**
+ * Compute escrow PDA from state PDA
+ */
+export function getEscrowPda(
+  statePda: PublicKey,
+  programId: PublicKey,
+): PublicKey {
+  const [pda, _bump] = PublicKey.findProgramAddressSync(
+    [Buffer.from(SEED_ESCROW), statePda.toBuffer()],
     programId,
   );
   return pda;
@@ -83,38 +93,16 @@ export function getMintPda(
   return pda;
 }
 
-export function getEscrowPda(
-  mintPda: PublicKey,
-  programId: PublicKey,
-): PublicKey {
-  const [pda, _bump] = PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_ESCROW), mintPda.toBuffer()],
-    programId,
-  );
-  return pda;
-}
-
-export function getRequestQueuePda(
-  glamMint: PublicKey,
-  programId: PublicKey,
-): PublicKey {
-  const [pda, _bump] = PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_REQUEST_QUEUE), glamMint.toBuffer()],
-    programId,
-  );
-  return pda;
-}
-
 export function getExtraMetasPda(mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_EXTRA_ACCOUNT_METAS), mint.toBuffer()],
+    [Buffer.from("extra-account-metas"), mint.toBuffer()],
     TRANSFER_HOOK_PROGRAM,
   )[0];
 }
 
 export function getAccountPolicyPda(tokenAccount: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_ACCOUNT_POLICY), tokenAccount.toBuffer()],
+    [Buffer.from("account-policy"), tokenAccount.toBuffer()],
     TRANSFER_HOOK_PROGRAM,
   )[0];
 }

@@ -21,25 +21,18 @@ import {
 export class VaultClient {
   public constructor(readonly base: BaseClient) {}
 
-  /**
-   * Wraps vault SOL to wSOL
-   *
-   * @param amount
-   * @param txOptions
+  /*
+   * Client methods
    */
+
   public async wrap(
-    amount: BN | number,
+    amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.wrapTx(new BN(amount), txOptions);
+    const tx = await this.wrapTx(amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  /**
-   * Unwraps vault wSOL to SOL
-   *
-   * @param txOptions
-   */
   public async unwrap(
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
@@ -47,13 +40,6 @@ export class VaultClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  /**
-   * Transfers SOL from vault to another account
-   *
-   * @param amount
-   * @param to
-   * @param txOptions
-   */
   public async systemTransfer(
     amount: BN | number,
     to: PublicKey | string,
@@ -67,68 +53,23 @@ export class VaultClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  /**
-   * Transfers token from vault to another account
-   *
-   * @param mint
-   * @param amount
-   * @param txOptions
-   */
-  public async tokenTransfer(
-    mint: PublicKey | string,
-    amount: number | BN,
-    to: PublicKey | string,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.tokenTransferTx(
-      new PublicKey(mint),
-      amount,
-      new PublicKey(to),
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Closes multiple vault token accounts
-   *
-   * @param tokenAccounts
-   * @param txOptions
-   */
   public async closeTokenAccounts(
-    tokenAccounts: PublicKey[] | string[],
+    tokenAccounts: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.closeTokenAccountsTx(
-      tokenAccounts.map((pubkey) => new PublicKey(pubkey)),
-      txOptions,
-    );
+    const tx = await this.closeTokenAccountsTx(tokenAccounts, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  /**
-   * Deposits token to vault
-   *
-   * @param mint Token mint
-   * @param amount
-   * @param txOptions
-   */
   public async deposit(
-    mint: PublicKey | string,
+    asset: PublicKey | string,
     amount: number | BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(new PublicKey(mint), amount, txOptions);
+    const tx = await this.depositTx(new PublicKey(asset), amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  /**
-   * Deposits SOL to vault
-   *
-   * @param lamports
-   * @param wrap Whether to wrap SOL to wSOL or not
-   * @param txOptions
-   */
   public async depositSol(
     lamports: number | BN,
     wrap = true,
@@ -138,6 +79,19 @@ export class VaultClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  public async withdraw(
+    asset: PublicKey | string,
+    amount: number | BN,
+    txOptions: TxOptions = {} as TxOptions,
+  ): Promise<TransactionSignature> {
+    const tx = await this.withdrawTx(new PublicKey(asset), amount, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /*
+   * API methods
+   */
+
   public async wrapTx(
     amount: BN,
     txOptions: TxOptions,
@@ -145,7 +99,8 @@ export class VaultClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const to = this.base.getVaultAta(WSOL);
 
-    const tx = await this.base.protocolProgram.methods
+    // @ts-ignore
+    const tx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -170,7 +125,7 @@ export class VaultClient {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tokenAccount = this.base.getVaultAta(WSOL);
 
-    const tx = await this.base.extSplProgram.methods
+    const tx = await this.base.program.methods
       .tokenCloseAccount()
       .accounts({
         glamState: this.base.statePda,
@@ -190,7 +145,8 @@ export class VaultClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
 
-    const tx = await this.base.protocolProgram.methods
+    // @ts-ignore
+    const tx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -203,61 +159,70 @@ export class VaultClient {
   }
 
   /**
-   * Returns an instruction that closes the specified vault token account
+   * Returns an instruction that closes multiple vault token accounts
+   * All token accounts must be owned by the same token program
    */
   public async closeTokenAccountIx(
-    tokenAccount: PublicKey,
+    tokenAccounts: PublicKey[],
     tokenProgram: PublicKey = TOKEN_PROGRAM_ID,
-    txOptions: TxOptions,
+    txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
-    return await this.base.extSplProgram.methods
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    return await this.base.program.methods
       .tokenCloseAccount()
       .accounts({
         glamState: this.base.statePda,
-        glamSigner: txOptions.signer || this.base.signer,
-        tokenAccount: tokenAccount,
+        glamSigner,
+        tokenAccount: tokenAccounts[0],
         cpiProgram: tokenProgram,
       })
+      .remainingAccounts(
+        tokenAccounts.slice(1).map((account) => ({
+          pubkey: account,
+          isSigner: false,
+          isWritable: true,
+        })),
+      )
       .instruction();
   }
 
   public async closeTokenAccountsTx(
-    pubkeys: PublicKey[],
+    accounts: PublicKey[],
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const accountsInfo =
-      await this.base.provider.connection.getMultipleAccountsInfo(pubkeys);
-    if (pubkeys.length !== accountsInfo.filter(Boolean).length) {
+      await this.base.provider.connection.getMultipleAccountsInfo(accounts);
+    if (accounts.length !== accountsInfo.filter((a) => !!a).length) {
       throw new Error("Some token accounts do not exist");
     }
 
     // split token accounts into 2 arrays by owner program
-    const tokenAccountsByProgram = new Map<string, PublicKey[]>([
-      [TOKEN_PROGRAM_ID.toBase58(), []],
-      [TOKEN_2022_PROGRAM_ID.toBase58(), []],
+    const tokenAccountsByProgram = new Map<PublicKey, PublicKey[]>([
+      [TOKEN_PROGRAM_ID, []],
+      [TOKEN_2022_PROGRAM_ID, []],
     ]);
     accountsInfo.forEach((accountInfo, i) => {
       [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].forEach((programId) => {
         if (accountInfo?.owner.equals(programId)) {
-          tokenAccountsByProgram.get(programId.toBase58())?.push(pubkeys[i]);
+          tokenAccountsByProgram.get(programId)?.push(accounts[i]);
         }
       });
     });
 
-    const ixs = await Promise.all(
-      Array.from(tokenAccountsByProgram.entries())
-        .filter(([_, accounts]) => accounts.length > 0)
-        .map(([programId, accounts]) => {
-          return accounts.map((account) =>
-            this.closeTokenAccountIx(
-              account,
+    const ixs = (
+      await Promise.all(
+        Array.from(tokenAccountsByProgram.entries()).map(
+          async ([programId, accounts]) => {
+            if (accounts.length === 0) return null;
+            return this.closeTokenAccountIx(
+              accounts,
               new PublicKey(programId),
               txOptions,
-            ),
-          );
-        })
-        .flat(),
-    );
+            );
+          },
+        ),
+      )
+    ).filter((ix) => ix !== null);
 
     if (ixs.length === 0) {
       throw new Error("No token accounts to close");
@@ -343,36 +308,61 @@ export class VaultClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async tokenTransferTx(
-    mint: PublicKey,
+  public async withdrawIxs(
+    asset: PublicKey,
     amount: number | BN,
-    to: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionInstruction[]> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+    const signerAta = this.base.getAta(asset, glamSigner, tokenProgram);
+
+    return [
+      createAssociatedTokenAccountIdempotentInstruction(
+        glamSigner,
+        signerAta,
+        glamSigner,
+        asset,
+        tokenProgram,
+      ),
+      await this.base.program.methods
+        .withdraw(new BN(amount))
+        .accounts({
+          glamState: this.base.statePda,
+          glamSigner,
+          asset,
+          tokenProgram,
+        })
+        .instruction(),
+    ];
+  }
+
+  public async withdrawTx(
+    asset: PublicKey,
+    amount: number | BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const { mint: mintObj, tokenProgram } =
-      await this.base.fetchMintAndTokenProgram(mint);
-    const toAta = this.base.getAta(mint, to, tokenProgram);
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+    const signerAta = this.base.getAta(asset, glamSigner, tokenProgram);
 
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
         glamSigner,
-        toAta,
-        to,
-        mint,
+        signerAta,
+        glamSigner,
+        asset,
         tokenProgram,
       ),
     ];
 
-    const tx = await this.base.extSplProgram.methods
-      .tokenTransferChecked(new BN(amount), mintObj.decimals)
+    const tx = await this.base.program.methods
+      .withdraw(new BN(amount))
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
-        from: this.base.getVaultAta(mint),
-        to: toAta,
-        mint,
-        cpiProgram: tokenProgram,
+        asset,
+        tokenProgram,
       })
       .preInstructions(preInstructions)
       .transaction();

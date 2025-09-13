@@ -1,31 +1,179 @@
 import * as anchor from "@coral-xyz/anchor";
-import { PublicKey, Transaction, TransactionSignature } from "@solana/web3.js";
+import { PublicKey, TransactionSignature } from "@solana/web3.js";
 import { BaseClient, TokenAccount, TxOptions } from "./base";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
   unpackAccount,
 } from "@solana/spl-token";
-import {
-  MintIdlModel,
-  MintModel,
-  RequestType,
-  StateAccountType,
-} from "../models";
-import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
+import { MintIdlModel, MintModel } from "../models";
+import { TRANSFER_HOOK_PROGRAM } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
-import { charsToName } from "../utils/helpers";
 
-class MintTxBuilder {
-  constructor(private base: BaseClient) {}
+export class MintClient {
+  public constructor(readonly base: BaseClient) {}
+
+  // `getTokenAccounts` is a helius only RPC endpoint, we have to hardcode the URL here
+  // We cannot use NEXT_PUBLIC_SOLANA_RPC because users may choose to use a non-helius RPC
+  public async fetchTokenHolders(): Promise<TokenAccount[]> {
+    if (!process.env.NEXT_PUBLIC_HELIUS_API_KEY) {
+      return await this.getHolders();
+    }
+
+    const cluster =
+      this.base.cluster === ClusterNetwork.Mainnet ? "mainnet" : "devnet";
+    const response = await fetch(
+      `https://${cluster}.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "1",
+          method: "getTokenAccounts",
+          params: {
+            mint: this.base.mintPda.toBase58(),
+            options: { showZeroBalance: true },
+          },
+        }),
+      },
+    );
+
+    const data = await response.json();
+    console.log("Fetched token holders:", data.result);
+
+    const { token_accounts: tokenAccounts } = data.result;
+
+    return tokenAccounts.map((ta: any) => ({
+      owner: new PublicKey(ta.owner),
+      pubkey: new PublicKey(ta.address),
+      mint: this.base.mintPda,
+      programId: TOKEN_2022_PROGRAM_ID,
+      decimals: 9,
+      amount: ta.amount,
+      uiAmount: Number(ta.amount) / 10 ** 9,
+      frozen: ta.frozen,
+    }));
+  }
+
+  // Much slower than fetchTokenHolders.
+  // Use fetchTokenHolders instead when possible.
+  public async getHolders(): Promise<TokenAccount[]> {
+    const connection = this.base.provider.connection;
+
+    // dataSize varies due to different sets of extensions enabled
+    // const dataSize = 175;
+    const accounts = await connection.getProgramAccounts(
+      TOKEN_2022_PROGRAM_ID,
+      {
+        filters: [
+          // { dataSize },
+          { memcmp: { offset: 0, bytes: this.base.mintPda.toBase58() } },
+        ],
+      },
+    );
+    return accounts.map((a) => {
+      const { pubkey, account } = a;
+      const tokenAccount = unpackAccount(
+        pubkey,
+        account,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      return {
+        owner: tokenAccount.owner,
+        pubkey: tokenAccount.address,
+        mint: tokenAccount.mint,
+        programId: TOKEN_2022_PROGRAM_ID,
+        decimals: 9, // always 9 for glam mint
+        amount: tokenAccount.amount.toString(),
+        uiAmount: Number(tokenAccount.amount) / 10 ** 9,
+        frozen: tokenAccount.isFrozen,
+      } as TokenAccount;
+    });
+  }
+
+  public async update(
+    mintModel: Partial<MintModel>,
+    txOptions: TxOptions = {},
+  ) {
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .updateMint(0, new MintIdlModel(mintModel))
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async updateApplyTimelock(txOptions: TxOptions = {}) {
+    const tx = await this.base.program.methods
+      .updateMintApplyTimelock(0)
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async emergencyUpdate(
+    mintModel: Partial<MintModel>,
+    txOptions: TxOptions = {},
+  ) {
+    const tx = await this.base.program.methods
+      .emergencyUpdateMint(0, new MintIdlModel(mintModel))
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async closeMintIx() {
+    return await this.base.program.methods
+      .closeMint(0)
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint: this.base.mintPda,
+        extraMetasAccount: this.base.extraMetasPda,
+      })
+      .instruction();
+  }
+
+  public async closeMint(txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+
+    const tx = await this.base.program.methods
+      .closeMint(0)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        glamMint: this.base.mintPda,
+        extraMetasAccount: this.base.extraMetasPda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
 
   /**
-   * Creates a glam mint token account
+   * Create a glam mint token account for the specified user
    *
    * @param owner Owner of the token account
-   * @param setFrozen If true, the token account will be frozen immediately
+   * @param setFrozen If true, the token account will be frozen
    * @param txOptions
+   * @returns Transaction signature
    */
   public async createTokenAccount(
     owner: PublicKey,
@@ -49,11 +197,12 @@ class MintTxBuilder {
   }
 
   /**
-   * Freezes or unfreezes token accounts of a glam mint
+   * Freeze or unfreeze token accounts of a glam mint
    *
    * @param tokenAccounts List of token accounts to freeze or unfreeze
    * @param frozen If true, the token accounts will be frozen; otherwise, they will be unfrozen
    * @param txOptions
+   * @returns Transaction signature
    */
   public async setTokenAccountsStates(
     tokenAccounts: PublicKey[],
@@ -61,8 +210,8 @@ class MintTxBuilder {
     txOptions: TxOptions = {},
   ) {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.mintProgram.methods
-      .setTokenAccountsStates(frozen)
+    const tx = await this.base.program.methods
+      .setTokenAccountsStates(0, frozen)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -83,12 +232,13 @@ class MintTxBuilder {
   }
 
   /**
-   * Mints tokens to recipient. Token account will be created if it does not exist.
+   * Mint tokens to recipient. Token account will be created if it does not exist.
    *
    * @param recipient Recipient public key
    * @param amount Amount of tokens to mint
    * @param forceThaw If true, automatically unfreeze the token account before minting
    * @param txOptions
+   * @returns Transaction signature
    */
   public async mint(
     recipient: PublicKey,
@@ -96,10 +246,11 @@ class MintTxBuilder {
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.base.getSigner();
     const mintTo = this.base.getMintAta(recipient);
 
-    const preInstructions = [
+    const preInstructions = [];
+    preInstructions.push(
       createAssociatedTokenAccountIdempotentInstruction(
         glamSigner,
         mintTo,
@@ -107,11 +258,11 @@ class MintTxBuilder {
         this.base.mintPda,
         TOKEN_2022_PROGRAM_ID,
       ),
-    ];
+    );
     if (forceThaw) {
       preInstructions.push(
-        await this.base.mintProgram.methods
-          .setTokenAccountsStates(false)
+        await this.base.program.methods
+          .setTokenAccountsStates(0, false)
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
@@ -128,8 +279,9 @@ class MintTxBuilder {
       ? getAccountPolicyPda(mintTo)
       : null;
 
-    const tx = await this.base.mintProgram.methods
-      .mintTokens(amount)
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .mintTokens(0, amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -145,12 +297,13 @@ class MintTxBuilder {
   }
 
   /**
-   * Burns tokens from a token account
+   * Burn tokens from a token account
    *
    * @param amount Amount of tokens to burn
    * @param from Owner of the token account
    * @param forceThaw If true, automatically unfree the token account before burning
    * @param txOptions
+   * @returns Transaction signature
    */
   public async burn(
     amount: anchor.BN,
@@ -164,8 +317,8 @@ class MintTxBuilder {
     const preInstructions = [];
     if (forceThaw) {
       preInstructions.push(
-        await this.base.mintProgram.methods
-          .setTokenAccountsStates(false)
+        await this.base.program.methods
+          .setTokenAccountsStates(0, false)
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
@@ -178,8 +331,8 @@ class MintTxBuilder {
       );
     }
 
-    const tx = await this.base.mintProgram.methods
-      .burnTokens(amount)
+    const tx = await this.base.program.methods
+      .burnTokens(0, amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -194,13 +347,14 @@ class MintTxBuilder {
   }
 
   /**
-   * Transfers tokens from one token account to another
+   * Transfer tokens from one token account to another
    *
    * @param amount Amount of tokens to transfer
    * @param from Owner of the sender token account
    * @param to Owner of the recipient token account
    * @param forceThaw If true, automatically unfree the token accounts before transfer
    * @param txOptions
+   * @returns
    */
   public async forceTransfer(
     amount: anchor.BN,
@@ -225,14 +379,15 @@ class MintTxBuilder {
     );
     if (forceThaw) {
       preInstructions.push(
-        await this.base.mintProgram.methods
-          .setTokenAccountsStates(false)
+        await this.base.program.methods
+          .setTokenAccountsStates(0, false)
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
             glamMint: this.base.mintPda,
           })
           .remainingAccounts([
+            // fromAta is already unfrozen, still add it to test the ix is idempotent
             { pubkey: fromAta, isSigner: false, isWritable: true },
             { pubkey: toAta, isSigner: false, isWritable: true },
           ])
@@ -244,15 +399,15 @@ class MintTxBuilder {
     let toPolicyAccount = null;
     if (await this.base.isLockupEnabled()) {
       const extraMetasAccount = this.base.extraMetasPda;
-      const fromPolicy = getAccountPolicyPda(fromAta);
-      const toPolicy = getAccountPolicyPda(toAta);
+      const fromPolicy = getAccountPolicyPda(this.base.getMintAta(from));
+      const toPolicy = getAccountPolicyPda(this.base.getMintAta(to));
       toPolicyAccount = toPolicy;
       remainingAccounts.push(
         ...[extraMetasAccount, fromPolicy, toPolicy, TRANSFER_HOOK_PROGRAM],
       );
     }
-    const tx = await this.base.mintProgram.methods
-      .forceTransferTokens(amount)
+    const tx = await this.base.program.methods
+      .forceTransferTokens(0, amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -272,338 +427,6 @@ class MintTxBuilder {
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-}
-
-class TxBuilder {
-  constructor(private base: BaseClient) {}
-
-  public async initialize(
-    mintModel: Partial<MintModel>,
-    accountType: StateAccountType,
-    txOptions: TxOptions = {},
-  ) {
-    if (!mintModel.name) {
-      throw new Error("Mint name must be specified");
-    }
-    if (!mintModel.baseAssetMint) {
-      throw new Error("Mint asset must be specified");
-    }
-
-    // Set glam mint decimals to the same as deposit asset
-    const { mint } = await this.base.fetchMintAndTokenProgram(
-      mintModel.baseAssetMint,
-    );
-    const glamMintDecimals = mint.decimals;
-
-    const stateInitKey = [
-      ...Buffer.from(
-        anchor.utils.sha256.hash(charsToName(mintModel.name)),
-      ).subarray(0, 8),
-    ];
-    const [statePda, _] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(SEED_STATE),
-        this.base.signer.toBuffer(),
-        Uint8Array.from(stateInitKey),
-      ],
-      this.base.protocolProgram.programId, // state account owner is the protocol program
-    );
-
-    this.base.statePda = statePda;
-    if (!mintModel.uri) {
-      mintModel.uri = `https://rest2.glam.systems/metadata/${this.base.mintPda}`;
-    }
-
-    const tx = await this.base.mintProgram.methods
-      .initializeMint(
-        new MintIdlModel(mintModel),
-        stateInitKey,
-        accountType,
-        glamMintDecimals,
-      )
-      .accounts({
-        glamState: this.base.statePda,
-        signer: txOptions.signer || this.base.signer,
-        newMint: this.base.mintPda,
-        extraMetasAccount: this.base.extraMetasPda,
-        baseAssetMint: mintModel.baseAssetMint,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async update(
-    mintModel: Partial<MintIdlModel>,
-    txOptions: TxOptions = {},
-  ) {
-    const tx = await this.base.mintProgram.methods
-      .updateMint(new MintIdlModel(mintModel))
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner: txOptions.signer || this.base.signer,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async updateApplyTimelock(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .updateMintApplyTimelock()
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async pauseSubscription(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .emergencyUpdateMint({
-        requestType: RequestType.SUBSCRIPTION,
-        setPaused: true,
-      })
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async unpauseSubscription(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .emergencyUpdateMint({
-        requestType: RequestType.SUBSCRIPTION,
-        setPaused: false,
-      })
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async pauseRedemption(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .emergencyUpdateMint({
-        requestType: RequestType.REDEMPTION,
-        setPaused: true,
-      })
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async unpauseRedemption(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .emergencyUpdateMint({
-        requestType: RequestType.REDEMPTION,
-        setPaused: false,
-      })
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async closeMintIx(signer?: PublicKey) {
-    return await this.base.mintProgram.methods
-      .closeMint()
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner: signer || this.base.signer,
-        glamMint: this.base.mintPda,
-        extraMetasAccount: this.base.extraMetasPda,
-      })
-      .instruction();
-  }
-
-  public async closeMint(txOptions: TxOptions = {}) {
-    const ixs = txOptions.preInstructions || [];
-    const glamSigner = txOptions.signer || this.base.signer;
-    ixs.push(await this.closeMintIx(glamSigner));
-
-    const tx = new Transaction();
-    tx.add(...ixs);
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-}
-
-export class MintClient {
-  // public readonly mintTxBuilder: MintTxBuilder;
-  public readonly txBuilder: TxBuilder;
-
-  public constructor(readonly base: BaseClient) {
-    // this.mintTxBuilder = new MintTxBuilder(base);
-    this.txBuilder = new TxBuilder(base);
-  }
-
-  /**
-   * Fetches token holders of the GLAM mint using helius RPC
-   */
-  public async fetchTokenHolders(
-    showZeroBalance: boolean = true,
-  ): Promise<TokenAccount[]> {
-    // `getTokenAccounts` is a helius only RPC endpoint, we hardcode the URL here
-    // in case users choose to use a non-helius RPC. Fall back to getHolders if
-    // helius API key is not provided
-
-    const heliusApiKey =
-      process.env.NEXT_PUBLIC_HELIUS_API_KEY || process.env.HELIUS_API_KEY;
-    if (!heliusApiKey) {
-      return await this.getHolders(showZeroBalance);
-    }
-
-    const cluster =
-      this.base.cluster === ClusterNetwork.Mainnet ? "mainnet" : "devnet";
-    const response = await fetch(
-      `https://${cluster}.helius-rpc.com/?api-key=${heliusApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: "1",
-          method: "getTokenAccounts",
-          params: {
-            mint: this.base.mintPda.toBase58(),
-            options: { showZeroBalance },
-          },
-        }),
-      },
-    );
-
-    const data = await response.json();
-    const { token_accounts: tokenAccounts } = data.result;
-
-    return tokenAccounts.map((ta: any) => ({
-      owner: new PublicKey(ta.owner),
-      pubkey: new PublicKey(ta.address),
-      mint: this.base.mintPda,
-      programId: TOKEN_2022_PROGRAM_ID,
-      decimals: 9,
-      amount: ta.amount,
-      uiAmount: Number(ta.amount) / 10 ** 9,
-      frozen: ta.frozen,
-    }));
-  }
-
-  // Can be very slow. Use fetchTokenHolders when possible.
-  public async getHolders(
-    showZeroBalance: boolean = true,
-  ): Promise<TokenAccount[]> {
-    const connection = this.base.provider.connection;
-
-    // FIXME: enable dataSize filter
-    // dataSize varies due to different sets of extensions enabled
-    // const dataSize = 175;
-    const accounts = await connection.getProgramAccounts(
-      TOKEN_2022_PROGRAM_ID,
-      {
-        filters: [
-          // { dataSize },
-          { memcmp: { offset: 0, bytes: this.base.mintPda.toBase58() } },
-        ],
-      },
-    );
-    return accounts
-      .map((a) => {
-        const { pubkey, account } = a;
-        const tokenAccount = unpackAccount(
-          pubkey,
-          account,
-          TOKEN_2022_PROGRAM_ID,
-        );
-        return {
-          owner: tokenAccount.owner,
-          pubkey: tokenAccount.address,
-          mint: tokenAccount.mint,
-          programId: TOKEN_2022_PROGRAM_ID,
-          decimals: 9, // always 9 for glam mint
-          amount: tokenAccount.amount.toString(),
-          uiAmount: Number(tokenAccount.amount) / 10 ** 9,
-          frozen: tokenAccount.isFrozen,
-        } as TokenAccount;
-      })
-      .filter((ta) => showZeroBalance || ta.uiAmount > 0);
-  }
-
-  public async initialize(
-    mintModel: Partial<MintModel>,
-    accountType: StateAccountType,
-    txOptions: TxOptions = {},
-  ) {
-    const vTx = await this.txBuilder.initialize(
-      mintModel,
-      accountType,
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async update(
-    mintModel: Partial<MintIdlModel>,
-    txOptions: TxOptions = {},
-  ) {
-    const vTx = await this.txBuilder.update(mintModel, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async updateApplyTimelock(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.updateApplyTimelock(txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async pauseSubscription(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.pauseSubscription(txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async unpauseSubscription(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.unpauseSubscription(txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async pauseRedemption(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.pauseRedemption(txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async unpauseRedemption(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.unpauseRedemption(txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async close(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.closeMint(txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 }

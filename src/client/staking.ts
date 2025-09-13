@@ -360,8 +360,9 @@ export class StakingClient {
 
     console.log(`stakePool ${stakePool}, programId: ${stakePoolProgram}`);
 
-    const tx = await this.base.extStakePoolProgram.methods
-      .depositSol(lamports)
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .stakePoolDepositSol(lamports)
       .accounts({
         glamSigner,
         glamState: this.base.statePda,
@@ -431,8 +432,8 @@ export class StakingClient {
       throw new Error("Stake account cannot be deposited to the pool");
     }
 
-    const tx = await this.base.extStakePoolProgram.methods
-      .depositStake()
+    const tx = await this.base.program.methods
+      .stakePoolDepositStake()
       .accounts({
         glamSigner,
         glamState: this.base.statePda,
@@ -500,7 +501,7 @@ export class StakingClient {
 
     const postInstructions = deactivate
       ? [
-          await this.base.protocolProgram.methods
+          await this.base.program.methods
             .stakeDeactivate()
             .accounts({
               glamSigner,
@@ -511,8 +512,8 @@ export class StakingClient {
         ]
       : [];
 
-    const tx = await this.base.extStakePoolProgram.methods
-      .withdrawStake(amount)
+    const tx = await this.base.program.methods
+      .stakePoolWithdrawStake(amount)
       .accounts({
         glamSigner,
         glamState: this.base.statePda,
@@ -543,7 +544,7 @@ export class StakingClient {
     const [stakeAccount, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
-    const initStakeIx = await this.base.protocolProgram.methods
+    const initStakeIx = await this.base.program.methods
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -552,7 +553,7 @@ export class StakingClient {
       })
       .instruction();
 
-    const fundStakeIx = await this.base.protocolProgram.methods
+    const fundStakeIx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -561,7 +562,7 @@ export class StakingClient {
       })
       .instruction();
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeDelegateStake()
       .accounts({
         glamState: this.base.statePda,
@@ -585,7 +586,7 @@ export class StakingClient {
     }
 
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeDeactivate()
       .accounts({
         glamState: this.base.statePda,
@@ -621,7 +622,7 @@ export class StakingClient {
     }
 
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeWithdraw(lamports)
       .accounts({
         glamSigner,
@@ -646,7 +647,7 @@ export class StakingClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeMerge()
       .accounts({
         glamSigner,
@@ -668,7 +669,7 @@ export class StakingClient {
     const [newStake, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeSplit(lamports)
       .accounts({
         glamSigner,
@@ -692,7 +693,7 @@ export class StakingClient {
     const [newStake, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeRedelegate()
       .accounts({
         glamSigner,

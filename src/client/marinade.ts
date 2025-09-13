@@ -45,10 +45,10 @@ export class MarinadeClient {
    */
 
   public async deposit(
-    amount: BN | number,
+    amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(new BN(amount), txOptions);
+    const tx = await this.depositTx(amount, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -178,19 +178,20 @@ export class MarinadeClient {
       marinadeState.msolMintAddress,
     );
 
-    const tx = await this.base.extMarinadeProgram.methods
-      .deposit(amount)
+    // @ts-ignore
+    const tx = await this.base.program.methods
+      .marinadeDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
+        reservePda: marinadeState.reserveAddress,
         state: marinadeState.marinadeStateAddress,
         msolMint: marinadeState.msolMintAddress,
-        liqPoolSolLegPda: marinadeState.solLeg,
+        msolMintAuthority: marinadeState.mSolMintAuthority,
         liqPoolMsolLeg: marinadeState.msolLeg,
         liqPoolMsolLegAuthority: marinadeState.msolLegAuthority,
-        reservePda: marinadeState.reserveAddress,
+        liqPoolSolLegPda: marinadeState.solLeg,
         mintTo: vaultMsolAta,
-        msolMintAuthority: marinadeState.mSolMintAuthority,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .preInstructions([createMsolAtaIx])
@@ -231,7 +232,7 @@ export class MarinadeClient {
     const [stakeAccount, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
-    const initStakeIx = await this.base.protocolProgram.methods
+    const initStakeIx = await this.base.program.methods
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -239,7 +240,7 @@ export class MarinadeClient {
         stake: stakeAccount,
       })
       .instruction();
-    const fundStakeIx = await this.base.protocolProgram.methods
+    const fundStakeIx = await this.base.program.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.base.statePda,
@@ -249,7 +250,7 @@ export class MarinadeClient {
       .instruction();
 
     // Then set stake authority to the marinade key
-    const tx = await this.base.protocolProgram.methods
+    const tx = await this.base.program.methods
       .stakeAuthorize(MARINADE_NATIVE_STAKE_AUTHORITY, 0)
       .accounts({
         glamState: this.base.statePda,
@@ -283,8 +284,8 @@ export class MarinadeClient {
       stakeAccountInfo.voter,
     );
 
-    const tx = await this.base.extMarinadeProgram.methods
-      .depositStakeAccount(validatorIndex)
+    const tx = await this.base.program.methods
+      .marinadeDepositStakeAccount(validatorIndex)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -388,7 +389,7 @@ export class MarinadeClient {
 
     const postInstructions = deactivate
       ? [
-          await this.base.protocolProgram.methods
+          await this.base.program.methods
             .stakeDeactivate()
             .accounts({
               glamSigner,
@@ -399,8 +400,8 @@ export class MarinadeClient {
         ]
       : [];
 
-    const tx = await this.base.extMarinadeProgram.methods
-      .withdrawStakeAccount(
+    const tx = await this.base.program.methods
+      .marinadeWithdrawStakeAccount(
         stakeIndex,
         validatorIndex,
         amount,

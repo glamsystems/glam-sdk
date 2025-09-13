@@ -2,23 +2,22 @@ import { GlamClientConfig } from "./clientConfig";
 import { BaseClient } from "./client/base";
 import { DriftClient, DriftVaultsClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
+import { JupiterVoteClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
 import { VaultClient } from "./client/vault";
 import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
+import { MintClient } from "./client/mint";
 import {
-  KaminoLendingClient,
   KaminoFarmClient,
+  KaminoLendingClient,
   KaminoVaultsClient,
 } from "./client/kamino";
+import { MeteoraDlmmClient } from "./client/meteora";
 import { InvestClient } from "./client/invest";
 import { PriceClient } from "./client/price";
+import { ValidatorClient } from "./client/validator";
 import { FeesClient } from "./client/fees";
-import { MintClient } from "./client/mint";
-import { AccessClient } from "./client/access";
-// import { JupiterVoteClient } from "./client/jupiter";
-// import { MeteoraDlmmClient } from "./client/meteora";
-// import { ValidatorClient } from "./client/validator";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -30,20 +29,19 @@ export class GlamClient extends BaseClient {
   private _driftVaults?: DriftVaultsClient;
   private _invest?: InvestClient;
   private _jupiterSwap?: JupiterSwapClient;
+  private _jupiterVote?: JupiterVoteClient;
   private _marinade?: MarinadeClient;
   private _vault?: VaultClient;
   private _price?: PriceClient;
   private _staking?: StakingClient;
   private _state?: StateClient;
   private _mint?: MintClient;
-  private _access?: AccessClient;
   private _kaminoLending?: KaminoLendingClient;
   private _kaminoFarm?: KaminoFarmClient;
   private _kaminoVaults?: KaminoVaultsClient;
+  private _meteoraDlmm?: MeteoraDlmmClient;
+  private _validator?: ValidatorClient;
   private _fees?: FeesClient;
-  // private _meteoraDlmm?: MeteoraDlmmClient;
-  // private _validator?: ValidatorClient;
-  // private _jupiterVote?: JupiterVoteClient;
 
   public constructor(config?: GlamClientConfig) {
     super(config);
@@ -84,12 +82,12 @@ export class GlamClient extends BaseClient {
     return this._jupiterSwap;
   }
 
-  // get jupiterVote(): JupiterVoteClient {
-  //   if (!this._jupiterVote) {
-  //     this._jupiterVote = new JupiterVoteClient(this);
-  //   }
-  //   return this._jupiterVote;
-  // }
+  get jupiterVote(): JupiterVoteClient {
+    if (!this._jupiterVote) {
+      this._jupiterVote = new JupiterVoteClient(this);
+    }
+    return this._jupiterVote;
+  }
 
   get marinade(): MarinadeClient {
     if (!this._marinade) {
@@ -132,13 +130,6 @@ export class GlamClient extends BaseClient {
     return this._state;
   }
 
-  get access(): AccessClient {
-    if (!this._access) {
-      this._access = new AccessClient(this);
-    }
-    return this._access;
-  }
-
   get mint(): MintClient {
     if (!this._mint) {
       this._mint = new MintClient(this);
@@ -167,17 +158,17 @@ export class GlamClient extends BaseClient {
     return this._kaminoVaults;
   }
 
-  // get meteoraDlmm(): MeteoraDlmmClient {
-  //   if (!this._meteoraDlmm) {
-  //     this._meteoraDlmm = new MeteoraDlmmClient(this);
-  //   }
-  //   return this._meteoraDlmm;
-  // }
+  get meteoraDlmm(): MeteoraDlmmClient {
+    if (!this._meteoraDlmm) {
+      this._meteoraDlmm = new MeteoraDlmmClient(this);
+    }
+    return this._meteoraDlmm;
+  }
 
-  // get validator(): ValidatorClient {
-  //   if (!this._validator) {
-  //     this._validator = new ValidatorClient(this);
-  //   }
-  //   return this._validator;
-  // }
+  get validator(): ValidatorClient {
+    if (!this._validator) {
+      this._validator = new ValidatorClient(this);
+    }
+    return this._validator;
+  }
 }
