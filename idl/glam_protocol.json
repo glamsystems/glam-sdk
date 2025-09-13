@@ -1745,7 +1745,7 @@
     },
     {
       "code": 51105,
-      "name": "VaultNotPriced",
+      "name": "PriceDivergenceTooLarge",
       "msg": "No priced assets found"
     },
     {
@@ -2049,6 +2049,9 @@
           },
           {
             "name": "ClaimedFees"
+          },
+          {
+            "name": "OracleConfigs"
           }
         ]
       }
@@ -2220,6 +2223,19 @@
                 "type": {
                   "defined": {
                     "name": "NotifyAndSettle"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "OracleConfigs",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "OracleConfigs"
                   }
                 }
               }
@@ -2540,6 +2556,37 @@
               "array": [
                 "u8",
                 3
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleConfigs",
+      "docs": [
+        "Vault-specific oracle configs. If available, these configs are preferred over the global config."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "max_ages_seconds",
+            "type": {
+              "vec": {
+                "array": [
+                  "u16",
+                  2
+                ]
+              }
+            }
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                12
               ]
             }
           }

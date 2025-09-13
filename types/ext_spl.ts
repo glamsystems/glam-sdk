@@ -424,6 +424,9 @@ export type ExtSpl = {
           },
           {
             "name": "claimedFees"
+          },
+          {
+            "name": "oracleConfigs"
           }
         ]
       }
@@ -595,6 +598,19 @@ export type ExtSpl = {
                 "type": {
                   "defined": {
                     "name": "notifyAndSettle"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "oracleConfigs",
+            "fields": [
+              {
+                "name": "val",
+                "type": {
+                  "defined": {
+                    "name": "oracleConfigs"
                   }
                 }
               }
@@ -869,6 +885,37 @@ export type ExtSpl = {
               "array": [
                 "u8",
                 3
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "oracleConfigs",
+      "docs": [
+        "Vault-specific oracle configs. If available, these configs are preferred over the global config."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxAgesSeconds",
+            "type": {
+              "vec": {
+                "array": [
+                  "u16",
+                  2
+                ]
+              }
+            }
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                12
               ]
             }
           }
