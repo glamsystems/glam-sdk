@@ -38,10 +38,14 @@ export interface AssetMeta {
   decimals: number;
   oracle: PublicKey;
   programId?: PublicKey;
-  isLst?: boolean;
   aggIndex?: number;
 }
 
+/**
+ * Asset-Oracle mapping supported by the protocol. This map is a mirror of onchain mapping stored in `global_config` https://solscan.io/account/6avract7PxKqoq6hdmpAgGKgJWoJWdiXPPzzFZ62Hck6
+ *
+ * Note that we use functional prices for LSTs, and the oracle pubkey of a LST asset is the pool state.
+ */
 export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
   [
     // SOL
@@ -92,7 +96,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
-    // USDC
+    // USD Coin - USDC
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     {
       decimals: 6,
@@ -100,7 +104,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
-    // USDT
+    // USDT - USDT
     "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
     {
       decimals: 6,
@@ -108,7 +112,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
-    // USDY
+    // Ondo US Dollar Yield - USDY
     "A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6",
     {
       decimals: 6,
@@ -116,7 +120,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
-    // USDG
+    // Global Dollar - USDG
     "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
     {
       decimals: 6,
@@ -125,7 +129,7 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     },
   ],
   [
-    // PYUSD
+    // PayPal USD - PYUSD
     "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
     {
       decimals: 6,
@@ -155,41 +159,6 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
     {
       decimals: 6,
       oracle: new PublicKey("7pT9mxKXyvfaZKeKy1oe2oV2K1RFtF7tPEJHUY3h2vVV"),
-    },
-  ],
-  [
-    // mSOL
-    "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
-    {
-      decimals: 9,
-      oracle: new PublicKey("8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC"),
-    },
-  ],
-  [
-    // jitoSOL
-    "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-    {
-      decimals: 9,
-      oracle: new PublicKey("Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb"), // state
-      isLst: true,
-    },
-  ],
-  [
-    // bonkSOL
-    "BonK1YhkXEGLZzwtcvRTip3gAL9nCeQD7ppZBLXhtTs",
-    {
-      decimals: 9,
-      oracle: new PublicKey("ArAQfbzsdotoKB5jJcZa3ajQrrPcWr2YQoDAEAiFxJAC"), // state
-      isLst: true,
-    },
-  ],
-  [
-    // dSOL
-    "Dso1bDeDjCQxTrWHqUUi63oBvV7Mdm6WaobLbQ7gnPQ",
-    {
-      decimals: 9,
-      oracle: new PublicKey("9mhGNSPArRMHpLDMSmxAvuoizBqtBGqYdT8WGuqgxNdn"), // state
-      isLst: true,
     },
   ],
   [
@@ -232,7 +201,265 @@ export const ASSETS_MAINNET: Map<string, AssetMeta> = new Map([
       aggIndex: 341,
     },
   ],
+  [
+    // Bonk - Bonk
+    "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    {
+      decimals: 6,
+      oracle: new PublicKey("BERaNi6cpEresbq6HC1EQGaB1H1UjvEo4NGnmYSSJof4"),
+    },
+  ],
+  [
+    // Raydium - RAY
+    "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+    {
+      decimals: 6,
+      oracle: new PublicKey("6VXU2P9BJkuPkfA7FJVonBtAo1c2pGnHoV9rxsdZKZyb"),
+    },
+  ],
+  [
+    // Helium Network Token - HNT
+    "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux",
+    {
+      decimals: 8,
+      oracle: new PublicKey("AEPgc6qUTCT8AwdckPcGbJXtcM9bj8mGYAyHE4BscJtm"),
+    },
+  ],
+  [
+    // Kamino - KMNO
+    "KMNo3nJsBXfcpJTVhZcXLW7RmTwTt4GVFE7suUBo9sS",
+    {
+      decimals: 6,
+      oracle: new PublicKey("6ua3DK1sHoYyNi15dsxy6RYwUcZPDDXfyChzaRMaheQF"),
+    },
+  ],
+
+  [
+    // Tensor - TNSR
+    "TNSRxcUxoT9xBG3de7PiJyTDYu7kskLqcpddxnEJAS6",
+    {
+      decimals: 9,
+      oracle: new PublicKey("EX6r1GdfsgcUsY6cQ6YsToV4RGsb4HKpjrkokK2DrmsS"),
+    },
+  ],
+  [
+    // JITO - JTO
+    "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+    {
+      decimals: 9,
+      oracle: new PublicKey("CGCz4mB8NsDddCq6BZToRUDUuktzsAfpKYh6ATgyyCGF"),
+    },
+  ],
+  [
+    // Drift - DRIFT
+    "DriFtupJYLTosbwoN8koMbEYSx54aFAVLddWsbksjwg7",
+    {
+      decimals: 6,
+      oracle: new PublicKey("5VJou4ufN2vE11zyZUaLsKLTXhyzCTgiq6QDsts2YnnD"),
+    },
+  ],
+  [
+    // Render Token - RENDER
+    "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",
+    {
+      decimals: 8,
+      oracle: new PublicKey("97EqsAGbTnShB7oYWAFFCVVAx8PWXgDYDhcpm99izNQ4"),
+    },
+  ],
+  [
+    // Wormhole Token - W
+    "85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ",
+    {
+      decimals: 6,
+      oracle: new PublicKey("CsFUXiA5dM4eCKjVBBy8tXhXzDkDRNoYjU5rjpHyfNEZ"),
+    },
+  ],
+  [
+    // Pyth Network - PYTH
+    "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+    {
+      decimals: 6,
+      oracle: new PublicKey("6Sfx8ZAt6xaEgMXTahR6GrT7oYB6nFBMoVyCmMyHmeJV"),
+    },
+  ],
+  [
+    // dogwifhat - $WIF
+    "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+    {
+      decimals: 6,
+      oracle: new PublicKey("4QXWStoyEErTZFVsvKrvxuNa6QT8zpeA8jddZunSGvYE"),
+    },
+  ],
+  [
+    // Infinity - INF
+    "5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm",
+    {
+      decimals: 9,
+      oracle: new PublicKey("B7RUYg2zF6UdUSHv2RmpnriPVJccYWojgFydNS1NY5F8"),
+    },
+  ],
+  [
+    // BlazeStake Staked SOL (bSOL) - bSOL
+    "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1",
+    {
+      decimals: 9,
+      oracle: new PublicKey("BmDWPMsytWmYkh9n6o7m79eVshVYf2B5GVaqQ2EWKnGH"),
+    },
+  ],
+  [
+    // Popcat - POPCAT
+    "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr",
+    {
+      decimals: 9,
+      oracle: new PublicKey("C5fiAmQyjdfDR4EGepZqnEL3fJwMBav5yoAk6XyKMF6u"),
+    },
+  ],
+  [
+    // Cloud - CLOUD
+    "CLoUDKc4Ane7HeQcPpE3YHnznRxhMimJ4MyaUqyHFzAu",
+    {
+      decimals: 9,
+      oracle: new PublicKey("9Ennia27iT83kNAk3JtRKxSMzuCzsVtT4MzuxpE7anME"),
+    },
+  ],
+  [
+    // Binance Staked SOL - BNSOL
+    "BNso1VUJnh4zcfpZa6986Ea66P6TCp59hvtNJ8b1X85",
+    {
+      decimals: 9,
+      oracle: new PublicKey("8DmXTfhhtb9kTcpTVfb6Ygx8WhZ8wexGqcpxfn23zooe"),
+    },
+  ],
+  [
+    // MOTHER IGGY - MOTHER
+    "3S8qX1MsMqRbiwKg2cQyx7nis1oHMgaCuc9c4VfvVdPN",
+    {
+      decimals: 6,
+      oracle: new PublicKey("469WQgfJ6AJ3eJ8FUcdhiZawf7yNChA3hseTSyhFatHZ"),
+    },
+  ],
+  [
+    // Magic Eden - ME
+    "MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u",
+    {
+      decimals: 6,
+      oracle: new PublicKey("BboTg1yT114FQkqT6MM3P3G3CcCktuM2RePgU8Gr3K4A"),
+    },
+  ],
+  [
+    // META - META
+    "METADDFL6wWMWEoKTFJwcThTbUmtarRJZjRpzUvkxhr",
+    {
+      decimals: 9,
+      oracle: new PublicKey("DwYF1yveo8XTF1oqfsqykj332rjSxAd7bR6Gu6i4iUET"),
+    },
+  ],
+  [
+    // Pudgy Penguins - PENGU
+    "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+    {
+      decimals: 6,
+      oracle: new PublicKey("4A3KroGPjZxPAeBNF287V3NyRwV2q8iBi1vX7kHxTCh7"),
+    },
+  ],
+  [
+    // ai16z - ai16z
+    "HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
+    {
+      decimals: 9,
+      oracle: new PublicKey("3BGheQVvYtBNpBKSUXSTjpyKQc3dh8iiwT91Aiq7KYCU"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
+  [
+    // OFFICIAL TRUMP - TRUMP
+    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    {
+      decimals: 6,
+      oracle: new PublicKey("FPQjZYvHRGy51guJ77p7n9u9b8eo1ktKRc2D2g5Vysth"),
+    },
+  ],
+  [
+    // Melania Meme - MELANIA
+    "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P",
+    {
+      decimals: 6,
+      oracle: new PublicKey("3RgNWYYcZCKf5uZfriK8ASUbGQErhH6YbpdvZQ7ZKDCf"),
+    },
+  ],
+  [
+    // AUSD - AUSD
+    "AUSD1jCcCyPLybk1YnvPWsHQSrZ46dxwoMniN4N2UEB9",
+    {
+      decimals: 6,
+      oracle: new PublicKey("8FZhpiM8n3mpgvENWLcEvHsKB1bBhYBAyL4Ypr4gptLZ"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
+  [
+    // zBTC - zBTC
+    "zBTCug3er3tLyffELcvDNrKkCymbPWysGcWihESYfLg",
+    {
+      decimals: 8,
+      oracle: new PublicKey("CN9QvvbGQzMnN8vJaSek2so4vFnTqgJDFrdJB8Y4tQfB"),
+    },
+  ],
+  [
+    // Fartcoin - Fartcoin
+    "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+    {
+      decimals: 6,
+      oracle: new PublicKey("2sZomfWMDuQLcFak3nuharXorHrZ3hK8iaML6ZGSHtso"),
+    },
+  ],
+  [
+    // ZEUS - ZEUS
+    "ZEUS1aR7aX8DFFJf5QjWj2ftDDdNTroMNGo8YoQm3Gq",
+    {
+      decimals: 6,
+      oracle: new PublicKey("8cH72H3vqYPArV9QvkYJkwzTdsdNPPgVPrusz9sMmgNN"),
+    },
+  ],
+  [
+    // Pump - PUMP
+    "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+    {
+      decimals: 6,
+      oracle: new PublicKey("5r8RWTaRiMgr9Lph3FTUE3sGb1vymhpCrm83Bovjfcps"),
+      programId: TOKEN_2022_PROGRAM_ID,
+    },
+  ],
+  [
+    // EURC - EURC
+    "HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr",
+    {
+      decimals: 6,
+      oracle: new PublicKey("BkdSPLmw4W6twrJjAePw2bJAwDTBtxJ9t6LvNHfcBKg1"),
+    },
+  ],
+  [
+    // DeFi Development Corp Staked SOL - dfdvSOL
+    "sctmB7GPi5L2Q5G9tUSzXvhZ4YiDMEGcRov9KfArQpx",
+    {
+      decimals: 9,
+      oracle: new PublicKey("EUQQD2fNN7h7su5TbWpUnf22zeGtF3RjEX2hgX2YPfLd"),
+    },
+  ],
+  [
+    // Syrup USDC - syrupUSDC
+    "AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj",
+    {
+      decimals: 6,
+      oracle: new PublicKey("GqqkoqHU5pqgTvL88xSCipH9txbPETyzvAvybQ3zRpzw"),
+    },
+  ],
 ]);
+STAKE_POOLS.forEach((p) => {
+  ASSETS_MAINNET.set(p.mint, {
+    decimals: p.decimals,
+    oracle: new PublicKey(p.poolState),
+  });
+});
 
 export const ASSETS_TESTS: Map<string, AssetMeta> = new Map([]);
 
