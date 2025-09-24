@@ -35,6 +35,92 @@ export type StakeAccountInfo = {
   voter?: PublicKey; // if undefined, the stake account is not delegated
 };
 
+// Example response from Helius:
+// {
+//   "jsonrpc": "2.0",
+//   "id": "1",
+//   "result": {
+//     "accounts": [
+//       {
+//         "pubkey": "CxELquR1gPP8wHe33gZ4QxqGB3sZ9RSwsJ2KshVewkFY",
+//         "account": {
+//           "lamports": 15298080,
+//           "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+//           "data": [
+//             "2R9jLfiAQ9bgdcw6h8s44439",
+//             "base64"
+//           ],
+//           "executable": false,
+//           "rentEpoch": 28,
+//           "space": 165
+//         }
+//       }
+//     ],
+//     "paginationKey": "8WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+//     "totalResults": 25000
+//   }
+// }
+export async function getProgramAccountsV2(
+  programId: PublicKey,
+  limit: number = 100,
+  filters?: any[],
+) {
+  const heliusApiKey =
+    process.env.NEXT_PUBLIC_HELIUS_API_KEY || process.env.HELIUS_API_KEY;
+
+  let allAccounts = [] as any[];
+  let paginationKey = null;
+  let encoding = "base64";
+
+  do {
+    const response: any = await fetch(
+      `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "1",
+          method: "getProgramAccountsV2",
+          params: [
+            programId.toBase58(),
+            {
+              encoding,
+              filters,
+              limit,
+              ...(paginationKey && { paginationKey }),
+            },
+          ],
+        }),
+      },
+    );
+
+    const data = await response.json();
+    data.result.accounts.forEach(({ pubkey, account }: any) => {
+      const [acountData, encoding] = account.data;
+      let decodedData;
+      if (encoding === "base64") {
+        decodedData = Buffer.from(acountData, "base64");
+      }
+      if (!decodedData) {
+        throw new Error("Failed to decode base64 account data");
+      }
+      allAccounts.push({
+        pubkey: new PublicKey(pubkey),
+        account: {
+          ...account,
+          owner: new PublicKey(account.owner),
+          data: decodedData,
+        },
+      });
+    });
+
+    paginationKey = data.result.paginationKey;
+  } while (paginationKey);
+
+  return allAccounts;
+}
+
 /**
  * Fetches all the token accounts owned by the specified pubkey.
  */

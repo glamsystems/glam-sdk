@@ -21,6 +21,16 @@ import { getAccountPolicyPda } from "../utils/glamPDAs";
 export class InvestClient {
   public constructor(readonly base: BaseClient) {}
 
+  /**
+   * Subscribe to a tokenized vault
+   *
+   * @param asset Deposit asset
+   * @param amount
+   * @param mintId
+   * @param queued by default false, set to true to subscribe in queued mode
+   * @param txOptions
+   * @returns
+   */
   public async subscribe(
     asset: PublicKey,
     amount: BN,
@@ -34,12 +44,39 @@ export class InvestClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  /**
+   * Request to redeem share tokens of a tokenized vault in queued mode
+   *
+   * @param amount
+   * @param mintId
+   * @param txOptions
+   * @returns
+   */
   public async queuedRedeem(
     amount: BN,
     mintId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.queuedRedeemTx(amount, mintId, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Redeem share tokens of a tokenized vault instantly. Preconditions:
+   * 1. The vault must allow permissionless fulfillment
+   * 2. The vault must have sufficient liquidity
+   *
+   * @param amount
+   * @param mintId
+   * @param txOptions
+   * @returns
+   */
+  public async instantRedeem(
+    amount: BN,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.instantRedeemTx(amount, mintId, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -121,7 +158,6 @@ export class InvestClient {
       );
     }
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .subscribe(0, amount)
       .accounts({
@@ -189,6 +225,91 @@ export class InvestClient {
       })
       .preInstructions(preInstructions)
       .postInstructions(postInstructions)
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async instantRedeemTx(
+    amount: BN,
+    mintId: number = 0,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    if (mintId !== 0) {
+      throw new Error("mintId must be 0");
+    }
+
+    // Instant redemption flow is realized by enqueueing a redemption, fulfilling it, and then claiming the tokens in a single transaction.
+
+    const preInstructions = txOptions.preInstructions || [];
+
+    const signer = txOptions.signer || this.base.getSigner();
+    const glamMint = this.base.mintPda;
+    const stateModel = await this.base.fetchStateModel();
+    const baseAsset = stateModel.baseAsset!;
+    const signerAta = this.base.getAta(baseAsset, signer);
+
+    const fulfillIx = await this.base.program.methods
+      .fulfill(mintId)
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint,
+        signer,
+        asset: baseAsset,
+        depositTokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    preInstructions.push(
+      createAssociatedTokenAccountIdempotentInstruction(
+        signer,
+        signerAta,
+        signer,
+        baseAsset,
+      ),
+    );
+    const claimIx = await this.base.program.methods
+      .claim(0)
+      .accounts({
+        glamState: this.base.statePda,
+        signer,
+        tokenMint: baseAsset,
+        claimTokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+
+    const remainingAccounts: PublicKey[] = [];
+    if (await this.base.isLockupEnabled()) {
+      const extraMetasAccount = this.base.extraMetasPda;
+      const signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
+      const escrow = this.base.escrowPda;
+      const escrowPolicy = getAccountPolicyPda(this.base.getMintAta(escrow));
+      remainingAccounts.push(
+        ...[
+          extraMetasAccount,
+          signerPolicy,
+          escrowPolicy,
+          TRANSFER_HOOK_PROGRAM,
+        ],
+      );
+    }
+
+    const tx = await this.base.program.methods
+      .queuedRedeem(0, amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamMint,
+        signer,
+      })
+      .remainingAccounts(
+        remainingAccounts.map((pubkey) => ({
+          pubkey,
+          isSigner: false,
+          isWritable: false,
+        })),
+      )
+      .preInstructions(preInstructions)
+      .postInstructions([fulfillIx, claimIx])
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);

@@ -283,13 +283,13 @@ export class StateModel extends StateIdlModel {
         const value = Object.values(param.value)[0].val;
 
         // Ledger is a mint param but we store it on the state model
-        if (Object.keys(stateAccount.accountType)[0] === "fund") {
-          if (name === "ledger") {
-            stateModel["ledger"] = value;
-          }
+        if (name === "ledger") {
+          stateModel["ledger"] = value;
+        } else if (name === "redemptionNotifyAndSettle") {
+          mintIdlModel["notifyAndSettle"] = value;
+        } else {
+          mintIdlModel[name] = value;
         }
-
-        mintIdlModel[name] = value;
       });
 
       if (openfundsMetadataAccount) {

@@ -97,7 +97,6 @@ export class MintClient {
     mintModel: Partial<MintModel>,
     txOptions: TxOptions = {},
   ) {
-    // @ts-ignore
     const tx = await this.base.program.methods
       .updateMint(0, new MintIdlModel(mintModel))
       .accounts({
@@ -137,6 +136,28 @@ export class MintClient {
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async setPermissionlessFulfill(
+    enabled: boolean,
+    txOptions: TxOptions = {},
+  ) {
+    const stateModel = await this.base.fetchStateModel();
+    const notifyAndSettle = stateModel.mints?.[0]?.notifyAndSettle;
+
+    if (!notifyAndSettle) {
+      throw new Error("Mint does not have notifyAndSettle configured.");
+    }
+
+    return await this.update(
+      {
+        notifyAndSettle: {
+          ...notifyAndSettle,
+          permissionlessFulfillment: enabled,
+        },
+      },
+      txOptions,
+    );
   }
 
   public async closeMintIx() {

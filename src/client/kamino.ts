@@ -30,6 +30,7 @@ import {
   KVaultState,
   KVaultStateLayout,
 } from "../deser/kaminoLayouts";
+import { getProgramAccountsV2 } from "../utils/helpers";
 
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
 const EVENT_AUTHORITY = new PublicKey(
@@ -689,7 +690,6 @@ export class KaminoLendingClient {
     const userMetadata = this.getUserMetadataPda(vault);
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .kaminoLendingInitUserMetadata(lookupTable)
       .accounts({
@@ -772,7 +772,7 @@ export class KaminoLendingClient {
       if (!obligationFarmAccount) {
         preInstructions.push(
           await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .kaminoLendingInitObligationFarmsForReserve(0) // 0 - collateral farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -822,7 +822,8 @@ export class KaminoLendingClient {
     }
 
     // If deposit asset is WSOL, wrap SOL first in case vault doesn't have enough wSOL
-    const userSourceLiquidity = this.base.getVaultAta(asset);
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+    const userSourceLiquidity = this.base.getVaultAta(asset, tokenProgram);
     if (asset.equals(WSOL)) {
       const wrapSolIxs = await this.base.maybeWrapSol(amount);
       preInstructions.unshift(...wrapSolIxs);
@@ -842,7 +843,6 @@ export class KaminoLendingClient {
       }
     }
 
-    // @ts-ignore
     const tx = await this.base.program.methods
       .kaminoLendingDepositReserveLiquidityAndObligationCollateralV2(amount)
       .accounts({
@@ -860,7 +860,7 @@ export class KaminoLendingClient {
         userSourceLiquidity,
         placeholderUserDestinationCollateral: KAMINO_LENDING_PROGRAM,
         collateralTokenProgram: TOKEN_PROGRAM_ID,
-        liquidityTokenProgram: TOKEN_PROGRAM_ID,
+        liquidityTokenProgram: tokenProgram,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         obligationFarmUserState: obligationFarm,
         reserveFarmState: depositReserve.farmCollateral,
@@ -905,7 +905,7 @@ export class KaminoLendingClient {
       if (!obligationFarmAccount) {
         preInstructions.push(
           await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .kaminoLendingInitObligationFarmsForReserve(0) // 0 - collateral farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -955,12 +955,14 @@ export class KaminoLendingClient {
     }
 
     // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const userDestinationLiquidity = this.base.getVaultAta(asset);
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
     const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
       userDestinationLiquidity,
       vault,
       asset,
+      tokenProgram,
     );
     preInstructions.unshift(createAtaIx);
 
@@ -982,12 +984,19 @@ export class KaminoLendingClient {
         userDestinationLiquidity,
         placeholderUserDestinationCollateral: null,
         collateralTokenProgram: TOKEN_PROGRAM_ID,
-        liquidityTokenProgram: TOKEN_PROGRAM_ID,
+        liquidityTokenProgram: tokenProgram,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         obligationFarmUserState: obligationFarm,
         reserveFarmState: withdrawReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
+      .remainingAccounts([
+        {
+          pubkey: SystemProgram.programId,
+          isSigner: false,
+          isWritable: false,
+        },
+      ])
       .instruction();
 
     // The final instructions in the tx:
@@ -1034,7 +1043,7 @@ export class KaminoLendingClient {
       if (!obligationFarmAccount) {
         preInstructions.push(
           await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .kaminoLendingInitObligationFarmsForReserve(1) // 1 - debt farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1085,12 +1094,14 @@ export class KaminoLendingClient {
     */
 
     // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const userDestinationLiquidity = this.base.getVaultAta(asset);
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
     const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
       userDestinationLiquidity,
       vault,
       asset,
+      tokenProgram,
     );
     preInstructions.unshift(createAtaIx);
 
@@ -1109,7 +1120,7 @@ export class KaminoLendingClient {
         userDestinationLiquidity,
         referrerTokenState: null,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram,
         obligationFarmUserState: obligationFarm,
         reserveFarmState: borrowReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
@@ -1157,7 +1168,7 @@ export class KaminoLendingClient {
       if (!obligationFarmAccount) {
         preInstructions.push(
           await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .kaminoLendingInitObligationFarmsForReserve(1) // 1 - debt farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1196,6 +1207,8 @@ export class KaminoLendingClient {
       }),
     );
 
+    const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
+
     const repayIx = await this.base.program.methods
       .kaminoLendingRepayObligationLiquidityV2(amount)
       .accounts({
@@ -1207,9 +1220,9 @@ export class KaminoLendingClient {
         repayReserve: repayReserve.address,
         reserveLiquidityMint: asset,
         reserveDestinationLiquidity: repayReserve.liquiditySupplyVault,
-        userSourceLiquidity: this.base.getVaultAta(asset),
+        userSourceLiquidity: this.base.getVaultAta(asset, tokenProgram),
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram,
         obligationFarmUserState: obligationFarm,
         reserveFarmState: repayReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
@@ -1231,22 +1244,44 @@ export class KaminoLendingClient {
 export class KaminoFarmClient {
   public constructor(readonly base: BaseClient) {}
 
-  async findAndParseFarmStates(owner: PublicKey) {
-    const accounts = await this.base.provider.connection.getProgramAccounts(
-      KAMINO_FARM_PROGRAM,
-      {
-        filters: [
-          { dataSize: 920 },
-          { memcmp: { offset: 48, bytes: owner.toBase58() } },
-        ],
-      },
-    );
-    return accounts.map((account) => {
-      const data = account.account.data;
-      const farmState = new PublicKey(data.subarray(16, 48));
+  async findAndParseUserStates(owner: PublicKey) {
+    const accounts = await getProgramAccountsV2(KAMINO_FARM_PROGRAM, 10, [
+      { dataSize: 920 },
+      { memcmp: { offset: 48, bytes: owner.toBase58() } },
+    ]);
+
+    return accounts.map(({ pubkey, account }) => {
+      // farmState: [16, 48]
+      // owner: [48, 80]
+      // isFarmDelegated + padding: [80, 88]
+      // rewardsTallyScaled: [88, 248]
+      // unclaimedRewards[0..10]: [248, 328]
+
+      const farmState = new PublicKey(account.data.subarray(16, 48));
+
+      const rewardsOffset = 248;
+      const numRewards = 10;
+      const rewardSize = 8;
+
+      const rewardsData = account.data.subarray(
+        rewardsOffset,
+        rewardsOffset + numRewards * rewardSize,
+      );
+      const unclaimedRewards: BN[] = Array.from(
+        { length: numRewards },
+        (_, i) => {
+          const rewardData = rewardsData.subarray(
+            i * rewardSize,
+            (i + 1) * rewardSize,
+          );
+          return new BN(rewardData, "le");
+        },
+      );
+
       return {
-        userFarmState: account.pubkey,
+        userState: pubkey,
         farmState,
+        unclaimedRewards,
       };
     });
   }
@@ -1339,35 +1374,39 @@ export class KaminoFarmClient {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const vault = this.base.vaultPda;
-    const farmStates = await this.findAndParseFarmStates(vault);
+    const farmStates = await this.findAndParseUserStates(this.base.vaultPda);
+
     const parsedFarms = await this.fetchAndParseFarms(
       farmStates.map((f) => f.farmState),
     );
 
     const tx = new Transaction();
-    for (const { userFarmState, farmState } of farmStates) {
+    console.log("Building transaction to harvest the following rewards:");
+    for (const { userState, farmState, unclaimedRewards } of farmStates) {
       const { globalConfig, rewards } = parsedFarms.get(farmState.toBase58());
 
       for (const { index, mint, tokenProgram, rewardsVault } of rewards) {
-        console.log("Reward token:", mint.toBase58());
+        if (unclaimedRewards[index].eq(new BN(0))) {
+          continue;
+        }
 
+        console.log(
+          `userState: ${userState}, farmState: ${farmState}, unclaimedReward: ${unclaimedRewards[index]}, token: ${mint}`,
+        );
         const vaultAta = this.base.getVaultAta(mint, tokenProgram);
-
         const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
           glamSigner,
           vaultAta,
-          vault,
+          this.base.vaultPda,
           mint,
           tokenProgram,
         );
-
         const harvestIx = await this.base.program.methods
           .kaminoFarmHarvestReward(new BN(index))
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
-            userState: userFarmState,
+            userState,
             farmState,
             globalConfig,
             rewardMint: mint,
@@ -1381,6 +1420,10 @@ export class KaminoFarmClient {
           .instruction();
         tx.add(createAtaIx, harvestIx);
       }
+    }
+
+    if (tx.instructions.length === 0) {
+      throw new Error("No rewards to harvest");
     }
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
