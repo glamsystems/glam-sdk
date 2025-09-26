@@ -24,6 +24,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { evmAddressToPublicKey } from "../utils/evm";
 
 export class VaultClient {
   public constructor(readonly base: BaseClient) {}
@@ -56,9 +57,18 @@ export class VaultClient {
 
   public async bridgeUsdc(
     amount: BN | number,
+    domain: number,
+    recipient: PublicKey,
+    params: { maxFee: BN; minFinalityThreshold: number },
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const [tx, keypair] = await this.bridgeUsdcTx(new BN(amount), txOptions);
+    const [tx, keypair] = await this.bridgeUsdcTx(
+      new BN(amount),
+      domain,
+      recipient,
+      params,
+      txOptions,
+    );
     return await this.base.sendAndConfirm(tx, [keypair]);
   }
 
@@ -444,45 +454,31 @@ export class VaultClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  evmAddressToBytes32 = (address: string): string =>
-    `0x000000000000000000000000${address.replace("0x", "")}`;
-
-  hexToBytes = (hex: string) => {
-    if (hex.startsWith("0x")) hex = hex.slice(2);
-    let bytes = [];
-    for (let c = 0; c < hex.length; c += 2)
-      bytes.push(parseInt(hex.slice(c, c + 2), 16));
-    return bytes;
-  };
-
   public async bridgeUsdcTx(
     amount: BN,
+    domain: number,
+    recipient: PublicKey,
+    params: { maxFee: BN; minFinalityThreshold: number },
     txOptions: TxOptions,
   ): Promise<[VersionedTransaction, Keypair]> {
     const signer = txOptions.signer || this.base.getSigner();
-    const evmAddress = "0xeDA1Cf07cE472BA492A9a77257a087bBF1292474";
 
     const usdcAddress = this.base.isMainnet ? USDC : USDC_DEVNET;
-    const destinationDomain = 6; // Base
     const pdas = this.getDepositForBurnPdas(
       MESSAGE_TRANSMITTER_V2,
       TOKEN_MESSENGER_MINTER_V2,
       usdcAddress,
-      destinationDomain,
-    );
-
-    const mintRecipient = new PublicKey(
-      this.hexToBytes(this.evmAddressToBytes32(evmAddress)),
+      domain,
     );
 
     const depositForBurnParams = {
       amount,
-      destinationDomain,
-      maxFee: new BN(50_000), // 0.05 USDC
-      minFinalityThreshold: 1000,
-      mintRecipient,
+      destinationDomain: domain,
+      mintRecipient: recipient,
       destinationCaller: PublicKey.default,
+      ...params,
     };
+
     const denylistAccount = PublicKey.findProgramAddressSync(
       [Buffer.from("denylist_account"), this.base.vaultPda.toBuffer()],
       TOKEN_MESSENGER_MINTER_V2,
@@ -490,7 +486,6 @@ export class VaultClient {
     const messageSentEventAccountKeypair = Keypair.generate();
 
     const burnTokenAccount = this.base.getVaultAta(usdcAddress);
-    console.log("burnTokenAccount:", burnTokenAccount.toBase58());
 
     const tx = await this.base.extCctpProgram.methods
       .depositForBurn(depositForBurnParams)
