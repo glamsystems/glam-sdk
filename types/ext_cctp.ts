@@ -282,20 +282,34 @@ export type ExtCctp = {
       }
     },
     {
+      "name": "cctpDestination",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "domain",
+            "type": "u32"
+          },
+          {
+            "name": "address",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "cctpPolicy",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "destDomains",
+            "name": "allowedDestinations",
             "type": {
-              "vec": "u32"
-            }
-          },
-          {
-            "name": "destAddresses",
-            "type": {
-              "vec": "pubkey"
+              "vec": {
+                "defined": {
+                  "name": "cctpDestination"
+                }
+              }
             }
           }
         ]

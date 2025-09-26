@@ -276,20 +276,34 @@
       }
     },
     {
+      "name": "CctpDestination",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "domain",
+            "type": "u32"
+          },
+          {
+            "name": "address",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "CctpPolicy",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "dest_domains",
+            "name": "allowed_destinations",
             "type": {
-              "vec": "u32"
-            }
-          },
-          {
-            "name": "dest_addresses",
-            "type": {
-              "vec": "pubkey"
+              "vec": {
+                "defined": {
+                  "name": "CctpDestination"
+                }
+              }
             }
           }
         ]

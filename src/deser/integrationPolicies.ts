@@ -167,28 +167,24 @@ export class DriftProtocolPolicy {
 }
 
 export class CctpPolicy {
-  destDomains: number[];
-  destAddresses: PublicKey[];
+  allowedDestinations: { domain: number; address: PublicKey }[];
 
   static _layout = struct([
-    vec(u32(), "destDomains"),
-    vec(publicKey(), "destAddresses"),
+    vec(struct([u32("domain"), publicKey("address")]), "allowedDestinations"),
   ]);
 
-  constructor(destDomains: number[], destAddresses: PublicKey[]) {
-    this.destDomains = destDomains;
-    this.destAddresses = destAddresses;
+  constructor(allowedDestinations: { domain: number; address: PublicKey }[]) {
+    this.allowedDestinations = allowedDestinations;
   }
 
   public static decode(buffer: Buffer<ArrayBufferLike>): CctpPolicy {
-    const data = CctpPolicy._layout.decode(buffer);
-    return data as CctpPolicy;
+    const data = CctpPolicy._layout.decode(buffer) as CctpPolicy;
+    return new CctpPolicy(data.allowedDestinations);
   }
 
   public encode(): Buffer {
-    const destDomainsSize = 4 + this.destDomains.length * 4;
-    const destAddressesSize = 4 + this.destAddresses.length * 32;
-    const totalSize = destDomainsSize + destAddressesSize;
+    const allowedDestinationsSize = 4 + this.allowedDestinations.length * 36; // 4 bytes (u32) + 32 bytes (Pubkey) = 36 bytes per destination
+    const totalSize = allowedDestinationsSize;
 
     const buffer = Buffer.alloc(totalSize);
     CctpPolicy._layout.encode(this, buffer);
