@@ -2,11 +2,12 @@ import {
   AccountMeta,
   PublicKey,
   TransactionInstruction,
+  TransactionSignature,
 } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 
-import { BaseClient } from "./base";
+import { BaseClient, TxOptions } from "./base";
 
 import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "./assets";
 import {
@@ -31,14 +32,15 @@ export class PriceClient {
     readonly dvaults: DriftVaultsClient,
   ) {}
 
-  get stateModel() {
+  get cachedStateModel() {
     if (!this._stateModel) {
-      throw new Error("State model not cached");
+      console.warn("State model not cached");
+      return null;
     }
     return this._stateModel;
   }
 
-  set stateModel(stateModel: StateModel) {
+  set cachedStateModel(stateModel: StateModel) {
     this._stateModel = stateModel;
   }
 
@@ -51,29 +53,52 @@ export class PriceClient {
   }
 
   /**
-   * !! This is a convenience method that calculates the AUM of the vault based on priced assets.
-   * !! It doesn't reflect the actual AUM of the vault.
-   * !! If the vault has not been priced or pricing data is outdated, the number is NOT meaningful.
+   * Calculates the Assets Under Management (AUM) based on cached pricing data.
+   *
+   * @warning This is a convenience method for testing purposes only and should NOT be used in production.
+   * @warning The returned value may be inaccurate if:
+   *   - The vault has not been priced recently
+   *   - Pricing data is stale or outdated
+   *   - Not all assets have been included in the pricing calculation
+   *
+   * @returns The total AUM in the base asset denomination as a BN
+   * @see priceVaultIxs() to update pricing data before calling this method
    */
   public async getAum() {
     console.warn(
-      "getAum() should only be used for testing. It doesn't reflect the actual AUM of the vault in production.",
+      "getAum() should only be used for testing. It may not reflect the actual AUM of the vault.",
     );
 
-    const stateModel = await this.base.fetchStateModel();
-    return (stateModel?.pricedAssets || []).reduce(
+    const stateModel =
+      this.cachedStateModel || (await this.base.fetchStateModel());
+    return (stateModel?.pricedProtocols || []).reduce(
       (sum, p) => new BN(p.amount).add(sum),
       new BN(0),
     ) as BN;
   }
 
   /**
+   * Resets the priced protocols data stored in glam state account.
+   */
+  async resetPricedProtocols(
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.base.protocolProgram.methods
+      .resetPricedProtocols()
+      .accounts({
+        glamState: this.base.statePda,
+      })
+      .transaction();
+
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  /**
    * Returns an instruction that prices Kamino obligations.
    * If there are no Kamino obligations, returns null.
    */
-  async priceKaminoObligationsIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
+  async priceKaminoObligationsIx(): Promise<TransactionInstruction | null> {
     const parsedObligations = await this.klend.findAndParseObligations(
       this.base.vaultPda,
     );
@@ -82,27 +107,41 @@ export class PriceClient {
       return null;
     }
 
-    const pubkeySet = new Set<string>([]);
+    const obligations: PublicKey[] = [];
+    const marketsSet = new Set<string>();
+    const reservesSet = new Set<string>();
+
     parsedObligations
       .filter((o) => o.lendingMarket !== null)
       .map((o) => {
-        pubkeySet.add(o.address.toBase58());
-        pubkeySet.add(o.lendingMarket!.toBase58());
-        o.deposits.forEach((d) => pubkeySet.add(d.reserve.toBase58()));
-        o.borrows.forEach((b) => pubkeySet.add(b.reserve.toBase58()));
+        obligations.push(o.address);
+        marketsSet.add(o.lendingMarket!.toBase58()); // market pubkey
+        o.deposits.forEach((d) => reservesSet.add(d.reserve.toBase58())); // reserve pubkey
+        o.borrows.forEach((b) => reservesSet.add(b.reserve.toBase58())); // reserve pubkey
       });
-    const remainingAccounts = Array.from(pubkeySet).map((k) => ({
-      pubkey: new PublicKey(k),
+    const remainingAccounts = obligations.map((pubkey) => ({
+      pubkey,
       isSigner: false,
       isWritable: true,
     }));
+    [...marketsSet, ...reservesSet].forEach((pubkey) => {
+      remainingAccounts.push({
+        pubkey: new PublicKey(pubkey),
+        isSigner: false,
+        isWritable: true,
+      });
+    });
 
-    // @ts-ignore
-    const priceIx = await this.base.program.methods
-      .priceKaminoObligations(priceDenom)
+    const priceIx = await this.base.mintProgram.methods
+      .priceKaminoObligations(
+        obligations.length,
+        marketsSet.size,
+        reservesSet.size,
+      )
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
         pythOracle: null,
         switchboardPriceOracle: null,
         switchboardTwapOracle: null,
@@ -114,9 +153,9 @@ export class PriceClient {
     return priceIx;
   }
 
-  public async priceKaminoVaultSharesIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction[] | null> {
+  public async priceKaminoVaultSharesIx(): Promise<
+    TransactionInstruction[] | null
+  > {
     const allKvaultStates = await this.kvaults.findAndParseKaminoVaults();
     const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
 
@@ -138,7 +177,7 @@ export class PriceClient {
       // otherwise skip it for pricing
       if (
         info !== null &&
-        this.stateModel.externalVaultAccounts?.find((a) =>
+        this.cachedStateModel.externalPositions?.find((a) =>
           a.equals(possibleShareAtas[i]),
         )
       ) {
@@ -212,11 +251,12 @@ export class PriceClient {
     );
     const preInstructions = [refreshReservesIx];
 
-    const priceIx = await this.base.program.methods
-      .priceKaminoVaultShares(priceDenom, shareAtas.length)
+    const priceIx = await this.base.mintProgram.methods
+      .priceKaminoVaultShares(shareAtas.length)
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -227,10 +267,8 @@ export class PriceClient {
   /**
    * Returns an instruction that prices all Drift users (aka sub-accounts) controlled by the GLAM vault.
    */
-  public async priceDriftUsersIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
-    // 1st remaining account is user_stats
+  public async priceDriftUsersIx(): Promise<TransactionInstruction | null> {
+    // 1st remaining account is user_stats, all sub accounts share the same user_stats
     const { userStats } = this.drift.getDriftUserPdas();
     const remainingAccounts = [
       { pubkey: userStats, isSigner: false, isWritable: false },
@@ -257,6 +295,10 @@ export class PriceClient {
           isWritable: false,
         });
       }
+    }
+
+    if (driftUsers.length === 0) {
+      return null;
     }
 
     // Build a set of markets and oracles that are used by all sub accounts
@@ -291,11 +333,12 @@ export class PriceClient {
       }),
     );
 
-    const priceDriftUsersIx = await this.base.program.methods
-      .priceDriftUsers(priceDenom, driftUsers.length)
+    const priceDriftUsersIx = await this.base.mintProgram.methods
+      .priceDriftUsers(driftUsers.length)
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -307,9 +350,7 @@ export class PriceClient {
    * Returns an instruction that prices a drift vault depositor.
    * If there are no vault depositor accounts, returns null.
    */
-  public async priceDriftVaultDepositorsIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
+  public async priceDriftVaultDepositorsIx(): Promise<TransactionInstruction | null> {
     const parsedVaultDepositors =
       await this.dvaults.findAndParseVaultDepositors();
 
@@ -322,16 +363,16 @@ export class PriceClient {
         parsedVaultDepositors,
       );
 
-    const priceIx = await this.base.program.methods
+    const priceIx = await this.base.mintProgram.methods
       .priceDriftVaultDepositors(
-        priceDenom,
         parsedVaultDepositors.length,
         numSpotMarkets,
         numPerpMarkets,
       )
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -340,22 +381,21 @@ export class PriceClient {
   }
 
   /**
-   * Returns an instruction that prices vault balance and tokens the vault holds
+   * Returns an instruction that prices vault balance and tokens
    */
-  async priceVaultIx(priceDenom: PriceDenom): Promise<TransactionInstruction> {
-    const remainingAccounts = await this.remainingAccountsForPricingVaultAssets(
-      priceDenom == PriceDenom.ASSET,
-    );
-    const aggIndexes: number[] = [];
+  async priceVaultTokensIx(): Promise<TransactionInstruction> {
+    const remainingAccounts =
+      await this.remainingAccountsForPricingVaultAssets();
+    const aggIndexes: number[][] = [];
     const chunkSize = 3;
     for (let i = 0; i < remainingAccounts.length; i += chunkSize) {
       const chunk = remainingAccounts.slice(i, i + chunkSize);
       const mint = chunk[1].pubkey;
       const aggIndex = ASSETS_MAINNET.get(mint.toBase58())?.aggIndex || -1;
-      aggIndexes.push(aggIndex);
+      aggIndexes.push([aggIndex, -1, -1, -1]);
     }
     // Add oracle mapping if agg oracle is used for any token
-    if (aggIndexes.find((i) => i >= 0)) {
+    if (aggIndexes.flat().find((i) => i >= 0)) {
       remainingAccounts.push({
         pubkey: new PublicKey("Chpu5ZgfWX5ZzVpUx9Xvv4WPM75Xd7zPJNDPsFnCpLpk"),
         isSigner: false,
@@ -363,11 +403,12 @@ export class PriceClient {
       });
     }
 
-    const priceVaultIx = await this.base.program.methods
-      .priceVaultTokens(priceDenom, aggIndexes)
+    const priceVaultIx = await this.base.mintProgram.methods
+      .priceVaultTokens(aggIndexes)
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -378,7 +419,7 @@ export class PriceClient {
    * Returns an instruction that prices stake accounts.
    * If there are no stake accounts, returns null.
    */
-  async priceStakesIx(
+  async priceStakeAccountsIx(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction | null> {
     const stakes = await findStakeAccounts(
@@ -388,11 +429,12 @@ export class PriceClient {
     if (stakes.length === 0) {
       return null;
     }
-    const priceStakesIx = await this.base.program.methods
-      .priceStakes(priceDenom)
+    const priceStakesIx = await this.base.mintProgram.methods
+      .priceStakeAccounts()
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
+        baseAssetUsdOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(
         stakes.map((pubkey) => ({
@@ -409,6 +451,7 @@ export class PriceClient {
    * Returns an instruction that prices Meteora positions.
    * If there are no Meteora positions, returns null.
    */
+  /*
   async priceMeteoraPositionsIx(
     priceDenom: PriceDenom,
   ): Promise<TransactionInstruction | null> {
@@ -416,64 +459,71 @@ export class PriceClient {
     if (remainingAccounts.length === 0) {
       return null;
     }
-    const priceMeteoraIx = await this.base.program.methods
+    const priceMeteoraIx = await this.base.protocolProgram.methods
       .priceMeteoraPositions(priceDenom)
       .accounts({
         glamState: this.base.statePda,
-        solOracle: SOL_ORACLE,
+        solUsdOracle: SOL_ORACLE,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
     return priceMeteoraIx;
   }
+  */
 
-  public async priceVaultIxs(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction[]> {
-    const priceVaultIx = await this.priceVaultIx(priceDenom);
+  public async priceVaultIxs(): Promise<TransactionInstruction[]> {
+    // Cache state model
+    this.cachedStateModel = await this.base.fetchStateModel();
 
-    // If priceDenom is ASSET, only priceVaultIx is returned
-    // We currently don't support pricing other assets in custom base asset
-    // due to the lack of oracles
-    if (priceDenom == PriceDenom.ASSET) {
-      return [priceVaultIx];
-    }
+    const priceVaultIx = await this.priceVaultTokensIx();
 
     // If there are no external assets, we don't need to price DeFi positions
-    const stateModel = await this.base.fetchStateModel();
-    this.stateModel = stateModel;
-    if ((this.stateModel.externalVaultAccounts || []).length === 0) {
+    if ((this.cachedStateModel.externalPositions || []).length === 0) {
       return [priceVaultIx];
     }
 
-    const integrations = (stateModel.integrations || []).map(
-      (i) => Object.keys(i)[0],
-    );
-    const integrationsToPricingFns: {
-      [key: string]: (priceDenom: PriceDenom) => Promise<any>;
-    } = {
-      drift: this.priceDriftUsersIx.bind(this),
-      kaminoLending: this.priceKaminoObligationsIx.bind(this),
-      nativeStaking: this.priceStakesIx.bind(this),
-      meteoraDlmm: this.priceMeteoraPositionsIx.bind(this),
-      driftVaults: this.priceDriftVaultDepositorsIx.bind(this),
-      kaminoVaults: this.priceKaminoVaultSharesIx.bind(this),
-    };
-
-    const pricingFns = integrations
-      .map((integration) => integrationsToPricingFns[integration])
-      .filter(Boolean);
-
     const pricingIxs = [priceVaultIx];
-    for (const fn of pricingFns) {
-      const ix = await fn(priceDenom);
-      if (Array.isArray(ix)) {
-        pricingIxs.push(...ix);
-      } else {
-        pricingIxs.push(ix);
+    const integrationAcls = this.cachedStateModel.integrationAcls || [];
+
+    const driftIntegrationAcl = integrationAcls.find((acl) =>
+      acl.integrationProgram.equals(this.base.extDriftProgram.programId),
+    );
+    if (driftIntegrationAcl) {
+      // drift protocol
+      if (driftIntegrationAcl.protocolsBitmask & 0b01) {
+        pricingIxs.push(await this.priceDriftUsersIx());
+      }
+      // drift vaults
+      if (driftIntegrationAcl.protocolsBitmask & 0b10) {
+        pricingIxs.push(await this.priceDriftVaultDepositorsIx());
       }
     }
+
+    const kaminoIntegrationAcl = integrationAcls.find((acl) =>
+      acl.integrationProgram.equals(this.base.extKaminoProgram.programId),
+    );
+    if (kaminoIntegrationAcl) {
+      // kamino lending
+      if (kaminoIntegrationAcl.protocolsBitmask & 0b01) {
+        pricingIxs.push(await this.priceKaminoObligationsIx());
+      }
+      // kamino vaults
+      if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {
+        pricingIxs.push(...(await this.priceKaminoVaultSharesIx()));
+      }
+    }
+
     return pricingIxs.filter(Boolean);
+  }
+
+  async getbaseAssetOracle() {
+    const { baseAssetMint } =
+      this.cachedStateModel || (await this.base.fetchStateModel());
+    const assetMeta = ASSETS_MAINNET.get(baseAssetMint.toBase58());
+    if (!assetMeta) {
+      throw new Error(`Unsupported base asset: ${baseAssetMint}`);
+    }
+    return assetMeta.oracle;
   }
 
   async remainingAccountsForPricingDriftVaultDepositors(
@@ -574,39 +624,20 @@ export class PriceClient {
     return chunks.flat();
   }
 
-  async remainingAccountsForPricingVaultAssets(
-    baseAssetOnly: boolean = false,
-  ): Promise<AccountMeta[]> {
+  async remainingAccountsForPricingVaultAssets(): Promise<AccountMeta[]> {
     const stateModel = await this.base.fetchStateModel();
-    if (baseAssetOnly) {
-      if (!stateModel.baseAsset) {
-        throw new Error("Base asset not configured for the vault");
-      }
-      // FIXME: support token 2022 base asset
-      const ata = this.base.getVaultAta(stateModel.baseAsset);
-      // Set oracle to default pubkey (aka system program) to indicate oracle isn't needed
-      return [ata, stateModel.baseAsset, PublicKey.default].map((k) => ({
-        pubkey: k,
-        isSigner: false,
-        isWritable: false,
-      }));
-    }
-
-    const assetsForPricing = (stateModel.borrowableAssets || []).concat(
-      stateModel.assets || [],
-    );
-    return assetsForPricing
+    return stateModel.assetsForPricing
       .map((mint) => {
         const assetMeta = ASSETS_MAINNET.get(mint.toBase58());
         if (!assetMeta) {
           throw new Error(`Asset meta not found for ${mint}`);
         }
         const ata = this.base.getVaultAta(mint, assetMeta?.programId);
-        return [ata, mint, assetMeta?.oracle!];
+        return [ata, mint, assetMeta.oracle];
       })
       .flat()
-      .map((a) => ({
-        pubkey: a,
+      .map((pubkey) => ({
+        pubkey,
         isSigner: false,
         isWritable: false,
       }));

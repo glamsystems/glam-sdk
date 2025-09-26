@@ -1,25 +1,15 @@
 import { PublicKey } from "@solana/web3.js";
-import { GlamProtocolIdlJson } from "./glamExports";
 
-export const SEED_METADATA = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_METADATA")
-    ?.value || ""
-).replace(/"/g, "");
-export const SEED_MINT = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_MINT")?.value || ""
-).replace(/"/g, "");
-export const SEED_STATE = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_STATE")?.value ||
-  ""
-).replace(/"/g, "");
-export const SEED_VAULT = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_VAULT")?.value ||
-  ""
-).replace(/"/g, "");
-export const SEED_ESCROW = (
-  GlamProtocolIdlJson.constants.find((x) => x.name === "SEED_ESCROW")?.value ||
-  ""
-).replace(/"/g, "");
+export const SEED_STATE = "state"; // protocol program
+export const SEED_VAULT = "vault"; // protocol program
+export const SEED_METADATA = "metadata"; // protocol program
+export const SEED_MINT = "mint"; // mint program
+export const SEED_ESCROW = "escrow"; // mint program
+export const SEED_REQUEST_QUEUE = "request-queue"; // mint program
+export const SEED_ACCOUNT_POLICY = "account-policy"; // policies program
+export const SEED_EXTRA_ACCOUNT_METAS = "extra-account-metas"; // policies program
+export const SEED_GLOBAL_CONFIG = "global-config";
+export const SEED_INTEGRATION_AUTHORITY = "integration-authority";
 
 export const STAKE_ACCOUNT_SIZE = 200;
 export const METEORA_POSITION_SIZE = 8120;
@@ -52,6 +42,9 @@ export const MSOL = new PublicKey(
 // USDC, 6 decimals
 export const USDC = new PublicKey(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+);
+export const USDC_DEVNET = new PublicKey(
+  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 );
 // JUP, 6 decimals
 export const JUP = new PublicKey("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN");
@@ -104,6 +97,13 @@ export const MEMO_PROGRAM = new PublicKey(
 export const ALT_PROGRAM_ID = new PublicKey(
   "AddressLookupTab1e1111111111111111111111111",
 );
+export const TOKEN_MESSENGER_MINTER_V2 = new PublicKey(
+  "CCTPV2vPZJS2u2BBsUoscuikbYjnpFmbFsvVuJdgUMQe",
+);
+export const MESSAGE_TRANSMITTER_V2 = new PublicKey(
+  "CCTPV2Sm4AdWt5296sk4P66VBZ7bEhcARwFaaS9YPbeC",
+);
+
 /**
  * Stake pools
  */

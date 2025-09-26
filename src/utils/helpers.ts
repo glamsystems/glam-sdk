@@ -68,12 +68,12 @@ export async function getProgramAccountsV2(
   const heliusApiKey =
     process.env.NEXT_PUBLIC_HELIUS_API_KEY || process.env.HELIUS_API_KEY;
 
-  let allAccounts = [] as any[];
+  let allAccounts = [];
   let paginationKey = null;
   let encoding = "base64";
 
   do {
-    const response: any = await fetch(
+    const response = await fetch(
       `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`,
       {
         method: "POST",
@@ -96,7 +96,7 @@ export async function getProgramAccountsV2(
     );
 
     const data = await response.json();
-    data.result.accounts.forEach(({ pubkey, account }: any) => {
+    data.result.accounts.forEach(({ pubkey, account }) => {
       const [acountData, encoding] = account.data;
       let decodedData;
       if (encoding === "base64") {
@@ -119,6 +119,39 @@ export async function getProgramAccountsV2(
   } while (paginationKey);
 
   return allAccounts;
+}
+
+export async function getProgramAccountsWithRetry(
+  connection: Connection,
+  programId: PublicKey,
+  filters?: any[],
+) {
+  const maxRetries = 3;
+  const delayMs = 1000;
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await connection.getProgramAccounts(programId, { filters });
+    } catch (error: any) {
+      lastError = error;
+
+      if (error.code !== -32600 || attempt === maxRetries) {
+        break;
+      }
+
+      // Increase delay for each retry
+      console.warn(
+        `Attempt ${attempt} failed, retrying in ${delayMs * attempt}ms:`,
+        error.message,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+    }
+  }
+
+  throw new Error(
+    `Failed after ${maxRetries} attempts. Last error: ${lastError.message}`,
+  );
 }
 
 /**
@@ -367,7 +400,7 @@ export function parseProgramLogs(logs?: null | string[]): string {
       log.includes("Error: insufficient funds"),
   );
 
-  console.log("error message found in program logs", errorMsgLog);
+  // console.log("error message found in program logs", errorMsgLog);
 
   if (errorMsgLog) {
     if (errorMsgLog.includes("Error Message:")) {
@@ -470,3 +503,17 @@ export const setsAreEqual = (a: Set<any>, b: Set<any>) => {
   }
   return true;
 };
+
+export function charsToName(chars: number[] | Buffer): string {
+  return String.fromCharCode(...chars)
+    .replace(/\0/g, "")
+    .trim();
+}
+
+export function nameToChars(name: string): number[] {
+  return Array.from(Buffer.from(name).subarray(0, 32));
+}
+
+export function formatBits(bitmask: number, padding: number = 16): string {
+  return bitmask.toString(2).padStart(padding, "0");
+}

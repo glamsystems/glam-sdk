@@ -1156,8 +1156,21 @@ export type OptionalOrderParams = {
 } & NecessaryOrderParams;
 
 export type ModifyOrderParams = {
-  [Property in keyof OrderParams]?: OrderParams[Property] | null;
-} & { policy?: ModifyOrderPolicy };
+  direction: PositionDirection | null;
+  baseAssetAmount: BN | null;
+  price: BN | null;
+  reduceOnly: boolean | null;
+  postOnly: PostOnlyParams | null;
+  bitFlags: number | null;
+  maxTs: BN | null;
+  triggerPrice: BN | null;
+  triggerCondition: OrderTriggerCondition | null;
+  oraclePriceOffset: number | null;
+  auctionDuration: number | null;
+  auctionStartPrice: BN | null;
+  auctionEndPrice: BN | null;
+  policy: number | null;
+};
 
 export enum ModifyOrderPolicy {
   MustModify = 1,

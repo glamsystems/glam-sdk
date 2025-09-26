@@ -28,29 +28,7 @@ export type GlamConfig = {
       "accounts": [
         {
           "name": "globalConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  103,
-                  108,
-                  111,
-                  98,
-                  97,
-                  108,
-                  45,
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "admin",
@@ -119,6 +97,10 @@ export type GlamConfig = {
       "args": [
         {
           "name": "asset",
+          "type": "pubkey"
+        },
+        {
+          "name": "oracle",
           "type": "pubkey"
         }
       ]

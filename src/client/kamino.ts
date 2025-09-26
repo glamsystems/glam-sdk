@@ -30,7 +30,7 @@ import {
   KVaultState,
   KVaultStateLayout,
 } from "../deser/kaminoLayouts";
-import { getProgramAccountsV2 } from "../utils/helpers";
+import { getProgramAccountsWithRetry } from "../utils/helpers";
 
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
 const EVENT_AUTHORITY = new PublicKey(
@@ -690,8 +690,8 @@ export class KaminoLendingClient {
     const userMetadata = this.getUserMetadataPda(vault);
     const lookupTable = new PublicKey(0); // FIXME: create lookup table
 
-    const tx = await this.base.program.methods
-      .kaminoLendingInitUserMetadata(lookupTable)
+    const tx = await this.base.extKaminoProgram.methods
+      .lendingInitUserMetadata(lookupTable)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -727,8 +727,8 @@ export class KaminoLendingClient {
       await this.base.provider.connection.getAccountInfo(userMetadata);
     if (!userMetadataAccount) {
       preInstructions.push(
-        await this.base.program.methods
-          .kaminoLendingInitUserMetadata(new PublicKey(0))
+        await this.base.extKaminoProgram.methods
+          .lendingInitUserMetadata(new PublicKey(0))
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
@@ -744,8 +744,8 @@ export class KaminoLendingClient {
       await this.base.provider.connection.getAccountInfo(obligation);
     if (!obligationAccount) {
       preInstructions.push(
-        await this.base.program.methods
-          .kaminoLendingInitObligation(DEFAULT_OBLIGATION_ARGS)
+        await this.base.extKaminoProgram.methods
+          .lendingInitObligation(DEFAULT_OBLIGATION_ARGS)
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
@@ -771,8 +771,8 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // 0 - collateral farm
+          await this.base.extKaminoProgram.methods
+            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -830,7 +830,7 @@ export class KaminoLendingClient {
 
       // Close wSOL ata automatically after deposit
       if (wrapSolIxs.length > 0) {
-        const closeIx = await this.base.program.methods
+        const closeIx = await this.base.extSplProgram.methods
           .tokenCloseAccount()
           .accounts({
             glamState: this.base.statePda,
@@ -843,8 +843,8 @@ export class KaminoLendingClient {
       }
     }
 
-    const tx = await this.base.program.methods
-      .kaminoLendingDepositReserveLiquidityAndObligationCollateralV2(amount)
+    const tx = await this.base.extKaminoProgram.methods
+      .lendingDepositReserveLiquidityAndObligationCollateralV2(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -904,8 +904,8 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(0) // 0 - collateral farm
+          await this.base.extKaminoProgram.methods
+            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -966,10 +966,11 @@ export class KaminoLendingClient {
     );
     preInstructions.unshift(createAtaIx);
 
-    const withdrawIx = await this.base.program.methods
-      .kaminoLendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(
-        amount,
-      )
+    // When all assets are being withdrawn from a market, the klend program attempts to close the
+    // obligation account, which requires the system program. We always pass the system program
+    // account as a remaining account just in case.
+    const withdrawIx = await this.base.extKaminoProgram.methods
+      .lendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1042,8 +1043,8 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(1) // 1 - debt farm
+          await this.base.extKaminoProgram.methods
+            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1105,8 +1106,8 @@ export class KaminoLendingClient {
     );
     preInstructions.unshift(createAtaIx);
 
-    const borrowIx = await this.base.program.methods
-      .kaminoLendingBorrowObligationLiquidityV2(amount)
+    const borrowIx = await this.base.extKaminoProgram.methods
+      .lendingBorrowObligationLiquidityV2(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1167,8 +1168,8 @@ export class KaminoLendingClient {
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
         preInstructions.push(
-          await this.base.program.methods
-            .kaminoLendingInitObligationFarmsForReserve(1) // 1 - debt farm
+          await this.base.extKaminoProgram.methods
+            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1209,8 +1210,8 @@ export class KaminoLendingClient {
 
     const { tokenProgram } = await this.base.fetchMintAndTokenProgram(asset);
 
-    const repayIx = await this.base.program.methods
-      .kaminoLendingRepayObligationLiquidityV2(amount)
+    const repayIx = await this.base.extKaminoProgram.methods
+      .lendingRepayObligationLiquidityV2(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1244,12 +1245,17 @@ export class KaminoLendingClient {
 export class KaminoFarmClient {
   public constructor(readonly base: BaseClient) {}
 
-  async findAndParseUserStates(owner: PublicKey) {
-    const accounts = await getProgramAccountsV2(KAMINO_FARM_PROGRAM, 10, [
-      { dataSize: 920 },
-      { memcmp: { offset: 48, bytes: owner.toBase58() } },
-    ]);
-
+  /**
+   * Finds and parses farm states for the given owner
+   * @param owner
+   * @returns
+   */
+  async findAndParseStates(owner: PublicKey) {
+    const accounts = await getProgramAccountsWithRetry(
+      this.base.provider.connection,
+      KAMINO_FARM_PROGRAM,
+      [{ dataSize: 920 }, { memcmp: { offset: 48, bytes: owner.toBase58() } }],
+    );
     return accounts.map(({ pubkey, account }) => {
       // farmState: [16, 48]
       // owner: [48, 80]
@@ -1363,25 +1369,33 @@ export class KaminoFarmClient {
       KAMINO_FARM_PROGRAM,
     )[0];
 
+  /**
+   * Harvest rewards from Kamino farms
+   *
+   * @param vaultFarmStates GLAM vault's farm states to harvest rewards from
+   */
   public async harvest(
+    vaultFarmStates: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.harvestTx(txOptions);
+    const tx = await this.harvestTx(vaultFarmStates, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
   public async harvestTx(
+    vaultFarmStates: PublicKey[],
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
-    const farmStates = await this.findAndParseUserStates(this.base.vaultPda);
+    const farmStates = (
+      await this.findAndParseStates(this.base.vaultPda)
+    ).filter((f) => vaultFarmStates.find((v) => v.equals(f.userState)));
 
     const parsedFarms = await this.fetchAndParseFarms(
       farmStates.map((f) => f.farmState),
     );
 
     const tx = new Transaction();
-    console.log("Building transaction to harvest the following rewards:");
     for (const { userState, farmState, unclaimedRewards } of farmStates) {
       const { globalConfig, rewards } = parsedFarms.get(farmState.toBase58());
 
@@ -1390,9 +1404,6 @@ export class KaminoFarmClient {
           continue;
         }
 
-        console.log(
-          `userState: ${userState}, farmState: ${farmState}, unclaimedReward: ${unclaimedRewards[index]}, token: ${mint}`,
-        );
         const vaultAta = this.base.getVaultAta(mint, tokenProgram);
         const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
           glamSigner,
@@ -1401,8 +1412,9 @@ export class KaminoFarmClient {
           mint,
           tokenProgram,
         );
-        const harvestIx = await this.base.program.methods
-          .kaminoFarmHarvestReward(new BN(index))
+
+        const harvestIx = await this.base.extKaminoProgram.methods
+          .farmsHarvestReward(new BN(index))
           .accounts({
             glamState: this.base.statePda,
             glamSigner,
@@ -1576,8 +1588,8 @@ export class KaminoVaultsClient {
       ),
     );
 
-    const tx = await this.base.program.methods
-      .kaminoVaultsDeposit(amount)
+    const tx = await this.base.extKaminoProgram.methods
+      .vaultsDeposit(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -1645,8 +1657,8 @@ export class KaminoVaultsClient {
       ),
     ];
 
-    const tx = await this.base.program.methods
-      .kaminoVaultsWithdraw(amount)
+    const tx = await this.base.extKaminoProgram.methods
+      .vaultsWithdraw(amount)
       .accounts({
         glamState: this.base.statePda,
         glamSigner,

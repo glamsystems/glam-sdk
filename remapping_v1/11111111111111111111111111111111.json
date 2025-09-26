@@ -1,0 +1,41 @@
+{
+  "program_id": "11111111111111111111111111111111",
+  "proxy_program_id": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz",
+  "instructions": [
+    {
+      "src_ix_name": "transfer",
+      "src_discriminator": [2, 0, 0, 0],
+      "dst_ix_name": "system_transfer",
+      "dst_discriminator": [167, 164, 195, 155, 219, 152, 191, 230],
+      "dynamic_accounts": [
+        {
+          "name": "glam_state",
+          "index": 0,
+          "writable": false,
+          "signer": false
+        },
+        {
+          "name": "glam_vault",
+          "index": 1,
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "glam_signer",
+          "index": 2,
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "static_accounts": [
+        {
+          "account": "11111111111111111111111111111111",
+          "index": 3,
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "index_map": [-1, 4]
+    }
+  ]
+}

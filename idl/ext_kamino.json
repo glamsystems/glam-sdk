@@ -1,23 +1,23 @@
 {
-  "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz",
+  "address": "G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde",
   "metadata": {
-    "name": "glam_protocol",
-    "version": "0.4.36",
+    "name": "ext_kamino",
+    "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Glam Protocol"
+    "description": "GLAM extension of Kamino programs"
   },
   "instructions": [
     {
-      "name": "close_state",
+      "name": "farms_harvest_reward",
       "discriminator": [
-        25,
-        1,
-        184,
-        101,
-        200,
-        245,
+        244,
+        248,
+        124,
         210,
-        246
+        194,
+        52,
+        75,
+        152
       ],
       "accounts": [
         {
@@ -43,898 +43,245 @@
                 "kind": "account",
                 "path": "glam_state"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
           }
         },
         {
           "name": "glam_signer",
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "cpi_proxy",
-      "docs": [
-        "Only accessible by integration programs"
-      ],
-      "discriminator": [
-        65,
-        134,
-        48,
-        2,
-        7,
-        232,
-        199,
-        46
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program"
         },
         {
           "name": "integration_authority",
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "data",
-          "type": "bytes"
-        },
-        {
-          "name": "extra_params",
-          "type": {
-            "vec": {
-              "defined": {
-                "name": "ExtraParams"
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
               }
-            }
+            ]
           }
-        }
-      ]
-    },
-    {
-      "name": "emergency_access_update",
-      "docs": [
-        "Bypasses the timelock for emergency updates on access control rules. Allowed operations:",
-        "- removing an integration program",
-        "- removing a delegate",
-        "- enabling/disabling glam state"
-      ],
-      "discriminator": [
-        207,
-        247,
-        157,
-        14,
-        87,
-        132,
-        230,
-        0
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
         },
         {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "EmergencyAccessUpdateArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "enable_disable_protocols",
-      "discriminator": [
-        222,
-        198,
-        164,
-        163,
-        194,
-        161,
-        11,
-        171
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
+          "name": "cpi_program",
+          "address": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr"
         },
         {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "integration_program",
-          "type": "pubkey"
-        },
-        {
-          "name": "protocols_bitmask",
-          "type": "u16"
-        },
-        {
-          "name": "set_enabled",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "extend_state",
-      "discriminator": [
-        34,
-        147,
-        151,
-        206,
-        134,
-        128,
-        82,
-        228
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
+        },
         {
-          "name": "bytes",
-          "type": "u32"
-        }
-      ]
-    },
-    {
-      "name": "grant_revoke_delegate_permissions",
-      "discriminator": [
-        162,
-        21,
-        218,
-        157,
-        218,
-        86,
-        114,
-        171
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
+          "name": "user_state",
           "writable": true
         },
         {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
+          "name": "farm_state",
+          "writable": true
+        },
+        {
+          "name": "global_config"
+        },
+        {
+          "name": "reward_mint"
+        },
+        {
+          "name": "user_reward_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "rewards_treasury_vault",
+          "writable": true
+        },
+        {
+          "name": "farm_vaults_authority"
+        },
+        {
+          "name": "scope_prices",
+          "optional": true
+        },
+        {
+          "name": "token_program"
         }
       ],
       "args": [
         {
-          "name": "delegate",
-          "type": "pubkey"
-        },
-        {
-          "name": "integration_program",
-          "type": "pubkey"
-        },
-        {
-          "name": "protocol_bitflag",
-          "type": "u16"
-        },
-        {
-          "name": "permissions_bitmask",
+          "name": "reward_index",
           "type": "u64"
-        },
-        {
-          "name": "set_granted",
-          "type": "bool"
         }
       ]
     },
     {
-      "name": "initialize_state",
+      "name": "farms_stake",
       "discriminator": [
-        190,
-        171,
         224,
-        219,
-        217,
-        72,
-        199,
-        176
+        105,
+        208,
+        179,
+        98,
+        200,
+        213,
+        238
       ],
       "accounts": [
         {
           "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  115,
-                  116,
+                  118,
                   97,
-                  116,
-                  101
+                  117,
+                  108,
+                  116
                 ]
               },
               {
                 "kind": "account",
-                "path": "glam_signer"
-              },
-              {
-                "kind": "arg",
-                "path": "state_model.created"
+                "path": "glam_state"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
           }
         },
         {
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "base_asset_mint"
-        }
-      ],
-      "args": [
-        {
-          "name": "state",
-          "type": {
-            "defined": {
-              "name": "StateModel"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "jupiter_swap",
-      "discriminator": [
-        116,
-        207,
-        0,
-        196,
-        252,
-        120,
-        243,
-        18
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
+          "name": "user_state",
           "writable": true
         },
         {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
+          "name": "farm_state",
+          "writable": true
         },
         {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
+          "name": "farm_vault",
+          "writable": true
         },
         {
-          "name": "cpi_program",
-          "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+          "name": "user_ata",
+          "writable": true
         },
         {
-          "name": "input_vault_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "glam_vault"
-              },
-              {
-                "kind": "account",
-                "path": "input_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "input_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "name": "token_mint"
         },
         {
-          "name": "output_vault_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "glam_vault"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "output_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "input_mint"
-        },
-        {
-          "name": "output_mint"
-        },
-        {
-          "name": "input_stake_pool",
+          "name": "scope_prices",
           "optional": true
         },
         {
-          "name": "output_stake_pool",
-          "optional": true
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "input_token_program"
-        },
-        {
-          "name": "output_token_program"
+          "name": "token_program"
         }
       ],
       "args": [
         {
-          "name": "data",
-          "type": "bytes"
+          "name": "amount",
+          "type": "u64"
         }
       ]
     },
     {
-      "name": "link_unlink_mint_by_mint_authority",
-      "docs": [
-        "For glam mint program's use only"
-      ],
+      "name": "farms_unstake",
       "discriminator": [
-        85,
-        67,
-        58,
-        245,
-        175,
-        14,
-        122,
-        6
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_mint"
-        },
-        {
-          "name": "glam_mint_authority",
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "link",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "reset_priced_protocols",
-      "docs": [
-        "Resets glam_state.priced_protocols to an empty vector"
-      ],
-      "discriminator": [
-        60,
-        176,
-        141,
-        208,
-        132,
-        51,
-        54,
-        9
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "signer": true
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "set_jupiter_swap_policy",
-      "discriminator": [
-        189,
-        182,
-        227,
-        165,
-        127,
-        148,
-        246,
-        189
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "policy",
-          "type": {
-            "defined": {
-              "name": "JupiterSwapPolicy"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "set_protocol_policy",
-      "discriminator": [
-        37,
-        99,
-        61,
-        122,
-        227,
-        102,
-        182,
-        180
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "integration_program",
-          "type": "pubkey"
-        },
-        {
-          "name": "protocol_bitflag",
-          "type": "u16"
-        },
-        {
-          "name": "data",
-          "type": "bytes"
-        }
-      ]
-    },
-    {
-      "name": "set_system_transfer_policy",
-      "discriminator": [
-        102,
-        21,
-        157,
-        101,
-        19,
-        4,
-        100,
-        213
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "policy",
-          "type": {
-            "defined": {
-              "name": "TransferPolicy"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "stake_authorize",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        127,
-        247,
-        88,
-        164,
-        201,
-        0,
-        79,
-        7
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "stake",
-          "writable": true
-        },
-        {
-          "name": "clock",
-          "address": "SysvarC1ock11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "new_authority",
-          "type": "pubkey"
-        },
-        {
-          "name": "staker_or_withdrawer",
-          "type": "u32"
-        }
-      ]
-    },
-    {
-      "name": "stake_deactivate",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        224,
-        10,
-        93,
-        175,
-        175,
-        145,
-        237,
-        169
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "stake",
-          "writable": true
-        },
-        {
-          "name": "clock",
-          "address": "SysvarC1ock11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "stake_delegate_stake",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        202,
-        40,
-        152,
-        239,
-        175,
-        251,
-        66,
-        228
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "stake",
-          "writable": true
-        },
-        {
-          "name": "vote"
-        },
-        {
-          "name": "clock",
-          "address": "SysvarC1ock11111111111111111111111111111111"
-        },
-        {
-          "name": "stake_history",
-          "address": "SysvarStakeHistory1111111111111111111111111"
-        },
-        {
-          "name": "stake_config"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "stake_initialize",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        68,
-        66,
-        118,
-        79,
-        15,
+        180,
+        131,
+        50,
         144,
-        190,
-        190
+        26,
+        242,
+        175,
+        242
       ],
       "accounts": [
         {
@@ -960,7 +307,11 @@
                 "kind": "account",
                 "path": "glam_state"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
           }
         },
         {
@@ -969,12 +320,493 @@
           "signer": true
         },
         {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
-          "name": "stake",
+          "name": "cpi_program",
+          "address": "FarmsPZpWu9i7Kky8tPN37rs2TpmMrAZrC7S7vJa91Hr"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "user_state",
           "writable": true
+        },
+        {
+          "name": "farm_state",
+          "writable": true
+        },
+        {
+          "name": "scope_prices",
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u128"
+        }
+      ]
+    },
+    {
+      "name": "lending_borrow_obligation_liquidity_v2",
+      "discriminator": [
+        149,
+        226,
+        84,
+        157,
+        124,
+        178,
+        35,
+        122
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "obligation",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "lending_market_authority"
+        },
+        {
+          "name": "borrow_reserve",
+          "writable": true
+        },
+        {
+          "name": "borrow_reserve_liquidity_mint"
+        },
+        {
+          "name": "reserve_source_liquidity",
+          "writable": true
+        },
+        {
+          "name": "borrow_reserve_liquidity_fee_receiver",
+          "writable": true
+        },
+        {
+          "name": "user_destination_liquidity",
+          "writable": true
+        },
+        {
+          "name": "referrer_token_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "instruction_sysvar_account"
+        },
+        {
+          "name": "obligation_farm_user_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "farms_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "liquidity_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "lending_deposit_reserve_liquidity_and_obligation_collateral_v2",
+      "discriminator": [
+        33,
+        146,
+        50,
+        121,
+        127,
+        94,
+        92,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "obligation",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "lending_market_authority"
+        },
+        {
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "reserve_liquidity_mint"
+        },
+        {
+          "name": "reserve_liquidity_supply",
+          "writable": true
+        },
+        {
+          "name": "reserve_collateral_mint",
+          "writable": true
+        },
+        {
+          "name": "reserve_destination_deposit_collateral",
+          "writable": true
+        },
+        {
+          "name": "user_source_liquidity",
+          "writable": true
+        },
+        {
+          "name": "placeholder_user_destination_collateral",
+          "optional": true
+        },
+        {
+          "name": "collateral_token_program"
+        },
+        {
+          "name": "liquidity_token_program"
+        },
+        {
+          "name": "instruction_sysvar_account"
+        },
+        {
+          "name": "obligation_farm_user_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "farms_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "liquidity_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "lending_init_obligation",
+      "discriminator": [
+        188,
+        161,
+        62,
+        142,
+        106,
+        232,
+        77,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "fee_payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "obligation",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "seed1_account"
+        },
+        {
+          "name": "seed2_account"
+        },
+        {
+          "name": "owner_user_metadata"
         },
         {
           "name": "rent",
@@ -985,227 +817,28 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
-    },
-    {
-      "name": "stake_merge",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        46,
-        181,
-        125,
-        12,
-        51,
-        179,
-        134,
-        176
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "destination_stake",
-          "writable": true
-        },
-        {
-          "name": "source_stake",
-          "writable": true
-        },
-        {
-          "name": "clock",
-          "address": "SysvarC1ock11111111111111111111111111111111"
-        },
-        {
-          "name": "stake_history",
-          "address": "SysvarStakeHistory1111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "stake_redelegate",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        134,
-        227,
-        164,
-        247,
-        120,
-        0,
-        225,
-        174
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "stake",
-          "writable": true
-        },
-        {
-          "name": "new_stake",
-          "writable": true
-        },
-        {
-          "name": "vote"
-        },
-        {
-          "name": "stake_config"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "stake_split",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
-      "discriminator": [
-        63,
-        128,
-        169,
-        206,
-        158,
-        60,
-        135,
-        48
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
-        },
-        {
-          "name": "stake",
-          "writable": true
-        },
-        {
-          "name": "split_stake",
-          "writable": true
-        }
-      ],
       "args": [
         {
-          "name": "lamports",
-          "type": "u64"
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InitObligationArgs"
+            }
+          }
         }
       ]
     },
     {
-      "name": "stake_withdraw",
-      "docs": [
-        "Out-of-scope for audit"
-      ],
+      "name": "lending_init_obligation_farms_for_reserve",
       "discriminator": [
-        199,
-        13,
-        168,
-        20,
-        92,
-        151,
-        29,
-        56
+        3,
+        234,
+        110,
+        39,
+        12,
+        147,
+        175,
+        185
       ],
       "accounts": [
         {
@@ -1231,7 +864,11 @@
                 "kind": "account",
                 "path": "glam_state"
               }
-            ]
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
           }
         },
         {
@@ -1240,20 +877,79 @@
           "signer": true
         },
         {
-          "name": "cpi_program",
-          "address": "Stake11111111111111111111111111111111111111"
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
-          "name": "stake",
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "obligation",
           "writable": true
         },
         {
-          "name": "clock",
-          "address": "SysvarC1ock11111111111111111111111111111111"
+          "name": "lending_market_authority"
         },
         {
-          "name": "stake_history",
-          "address": "SysvarStakeHistory1111111111111111111111111"
+          "name": "reserve",
+          "writable": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true
+        },
+        {
+          "name": "obligation_farm",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "farms_program"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
         },
         {
           "name": "system_program",
@@ -1262,269 +958,444 @@
       ],
       "args": [
         {
-          "name": "lamports",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "system_transfer",
-      "discriminator": [
-        167,
-        164,
-        195,
-        155,
-        219,
-        152,
-        191,
-        230
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_signer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "cpi_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "to",
-          "writable": true
-        }
-      ],
-      "args": [
-        {
-          "name": "lamports",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "token_transfer_checked_by_mint_authority",
-      "docs": [
-        "For glam mint program's use only"
-      ],
-      "discriminator": [
-        37,
-        131,
-        188,
-        85,
-        45,
-        183,
-        8,
-        81
-      ],
-      "accounts": [
-        {
-          "name": "glam_state"
-        },
-        {
-          "name": "glam_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "glam_state"
-              }
-            ]
-          }
-        },
-        {
-          "name": "glam_mint",
-          "writable": true
-        },
-        {
-          "name": "glam_mint_authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "from",
-          "writable": true
-        },
-        {
-          "name": "to",
-          "writable": true
-        },
-        {
-          "name": "mint"
-        },
-        {
-          "name": "token_program"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        },
-        {
-          "name": "decimals",
+          "name": "mode",
           "type": "u8"
         }
       ]
     },
     {
-      "name": "update_mint_params",
+      "name": "lending_init_user_metadata",
       "discriminator": [
-        45,
-        42,
-        115,
-        25,
-        179,
-        27,
-        57,
-        191
+        68,
+        236,
+        138,
+        146,
+        124,
+        228,
+        247,
+        241
       ],
       "accounts": [
         {
           "name": "glam_state",
           "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
         },
         {
           "name": "glam_signer",
           "writable": true,
           "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "vec": {
-              "defined": {
-                "name": "EngineField"
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_mint_params_by_mint_authority",
-      "docs": [
-        "For glam mint program's use only, timelock is not enforced"
-      ],
-      "discriminator": [
-        94,
-        160,
-        55,
-        53,
-        175,
-        225,
-        62,
-        118
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
-        },
-        {
-          "name": "glam_mint"
-        },
-        {
-          "name": "glam_mint_authority",
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "vec": {
-              "defined": {
-                "name": "EngineField"
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_priced_protocol",
-      "docs": [
-        "Only accessible by integration programs"
-      ],
-      "discriminator": [
-        10,
-        106,
-        94,
-        171,
-        118,
-        217,
-        62,
-        98
-      ],
-      "accounts": [
-        {
-          "name": "glam_state",
-          "writable": true
         },
         {
           "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "fee_payer",
+          "writable": true,
           "signer": true
+        },
+        {
+          "name": "user_metadata",
+          "writable": true
+        },
+        {
+          "name": "referrer_user_metadata",
+          "optional": true
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "priced_protocol",
-          "type": {
-            "defined": {
-              "name": "PricedProtocol"
-            }
-          }
+          "name": "user_lookup_table",
+          "type": "pubkey"
         }
       ]
     },
     {
-      "name": "update_state",
+      "name": "lending_repay_obligation_liquidity_v2",
       "discriminator": [
-        135,
-        112,
-        215,
-        75,
-        247,
+        79,
+        34,
+        126,
+        170,
+        174,
+        156,
+        174,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "obligation",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "repay_reserve",
+          "writable": true
+        },
+        {
+          "name": "reserve_liquidity_mint"
+        },
+        {
+          "name": "reserve_destination_liquidity",
+          "writable": true
+        },
+        {
+          "name": "user_source_liquidity",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "instruction_sysvar_account"
+        },
+        {
+          "name": "obligation_farm_user_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "lending_market_authority"
+        },
+        {
+          "name": "farms_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "liquidity_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "lending_withdraw_obligation_collateral_and_redeem_reserve_collateral_v2",
+      "discriminator": [
+        217,
+        223,
+        173,
+        35,
+        64,
+        225,
+        161,
+        222
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "obligation",
+          "writable": true
+        },
+        {
+          "name": "lending_market"
+        },
+        {
+          "name": "lending_market_authority"
+        },
+        {
+          "name": "withdraw_reserve",
+          "writable": true
+        },
+        {
+          "name": "reserve_liquidity_mint"
+        },
+        {
+          "name": "reserve_source_collateral",
+          "writable": true
+        },
+        {
+          "name": "reserve_collateral_mint",
+          "writable": true
+        },
+        {
+          "name": "reserve_liquidity_supply",
+          "writable": true
+        },
+        {
+          "name": "user_destination_liquidity",
+          "writable": true
+        },
+        {
+          "name": "placeholder_user_destination_collateral",
+          "optional": true
+        },
+        {
+          "name": "collateral_token_program"
+        },
+        {
+          "name": "liquidity_token_program"
+        },
+        {
+          "name": "instruction_sysvar_account"
+        },
+        {
+          "name": "obligation_farm_user_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "reserve_farm_state",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "farms_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "collateral_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_lending_policy",
+      "discriminator": [
+        226,
         185,
-        53,
+        23,
+        3,
+        113,
+        88,
+        118,
         176
       ],
       "accounts": [
@@ -1536,30 +1407,34 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
       ],
       "args": [
         {
-          "name": "state",
+          "name": "policy",
           "type": {
             "defined": {
-              "name": "StateModel"
+              "name": "LendingPolicy"
             }
           }
         }
       ]
     },
     {
-      "name": "update_state_apply_timelock",
+      "name": "set_vaults_policy",
       "discriminator": [
-        66,
-        12,
-        138,
-        80,
-        133,
-        85,
-        46,
-        220
+        211,
+        177,
+        22,
+        152,
+        235,
+        59,
+        192,
+        62
       ],
       "accounts": [
         {
@@ -1570,9 +1445,345 @@
           "name": "glam_signer",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "policy",
+          "type": {
+            "defined": {
+              "name": "VaultsPolicy"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "vaults_deposit",
+      "discriminator": [
+        124,
+        173,
+        191,
+        223,
+        48,
+        26,
+        84,
+        84
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "vault_state",
+          "writable": true
+        },
+        {
+          "name": "token_vault",
+          "writable": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "base_vault_authority"
+        },
+        {
+          "name": "shares_mint",
+          "writable": true
+        },
+        {
+          "name": "user_token_ata",
+          "writable": true
+        },
+        {
+          "name": "user_shares_ata",
+          "writable": true
+        },
+        {
+          "name": "klend_program"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "shares_token_program"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "vaults_withdraw",
+      "discriminator": [
+        12,
+        8,
+        236,
+        92,
+        134,
+        144,
+        196,
+        87
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glam_state"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "glam_protocol_program"
+            }
+          }
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "integration_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  116,
+                  101,
+                  103,
+                  114,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "cpi_program",
+          "address": "KvauGMspG5k6rtzrqqn7WNn3oZdyKqLKwK2XWQ8FLjd"
+        },
+        {
+          "name": "glam_protocol_program",
+          "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "withdraw_from_available_vault_state",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_vault",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_base_vault_authority"
+        },
+        {
+          "name": "withdraw_from_available_user_token_ata",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_user_shares_ata",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_shares_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_available_token_program"
+        },
+        {
+          "name": "withdraw_from_available_shares_token_program"
+        },
+        {
+          "name": "withdraw_from_available_klend_program"
+        },
+        {
+          "name": "withdraw_from_available_event_authority"
+        },
+        {
+          "name": "withdraw_from_available_program"
+        },
+        {
+          "name": "withdraw_from_reserve_vault_state",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_ctoken_vault",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_lending_market"
+        },
+        {
+          "name": "withdraw_from_reserve_lending_market_authority"
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_liquidity_supply",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_collateral_mint",
+          "writable": true
+        },
+        {
+          "name": "withdraw_from_reserve_reserve_collateral_token_program"
+        },
+        {
+          "name": "withdraw_from_reserve_instruction_sysvar_account"
+        },
+        {
+          "name": "event_authority"
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "shares_amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1588,288 +1799,6 @@
         249,
         103
       ]
-    }
-  ],
-  "errors": [
-    {
-      "code": 48000,
-      "name": "UnauthorizedSigner",
-      "msg": "Signer is not authorized"
-    },
-    {
-      "code": 48001,
-      "name": "UnauthorizedIntegrationProgram",
-      "msg": "Integration program is not authorized"
-    },
-    {
-      "code": 48002,
-      "name": "IntegrationNotEnabled",
-      "msg": "Integration is not enabled"
-    },
-    {
-      "code": 48003,
-      "name": "ProtocolNotEnabled",
-      "msg": "Protocol is not enabled"
-    },
-    {
-      "code": 48004,
-      "name": "GlamStateDisabled",
-      "msg": "GLAM state is disabled"
-    },
-    {
-      "code": 48005,
-      "name": "ProtocolPolicyViolation",
-      "msg": "Protocol policy violation"
-    },
-    {
-      "code": 48006,
-      "name": "EmergencyUpdateDenied",
-      "msg": "Emergency update denied"
-    },
-    {
-      "code": 48007,
-      "name": "TimelockStillActive",
-      "msg": "Timelock still active"
-    },
-    {
-      "code": 48008,
-      "name": "CannotApplyChanges",
-      "msg": "Pending changes cannot be applied due to unfulfilled requests"
-    },
-    {
-      "code": 48009,
-      "name": "AssetNotBorrowable",
-      "msg": "Asset is not allowed to borrow"
-    },
-    {
-      "code": 48010,
-      "name": "UnexpectedProgramOwner",
-      "msg": "Account is owned by an unexpected program"
-    },
-    {
-      "code": 48011,
-      "name": "InvalidAuthority",
-      "msg": "Invalid authority"
-    },
-    {
-      "code": 49000,
-      "name": "InvalidAccountType",
-      "msg": "Invalid account type"
-    },
-    {
-      "code": 49001,
-      "name": "InvalidName",
-      "msg": "Invalid name"
-    },
-    {
-      "code": 49002,
-      "name": "InvalidSymbol",
-      "msg": "Symbol too long: max 32 chars"
-    },
-    {
-      "code": 49003,
-      "name": "InvalidUri",
-      "msg": "Uri too long: max 128 chars"
-    },
-    {
-      "code": 49004,
-      "name": "InvalidAssetsLen",
-      "msg": "Too many assets: max 100"
-    },
-    {
-      "code": 49005,
-      "name": "InvalidIxArgs",
-      "msg": "Glam mint not found"
-    },
-    {
-      "code": 49006,
-      "name": "CannotCloseState",
-      "msg": "Glam state cannot be closed, all mints must be closed first"
-    },
-    {
-      "code": 49007,
-      "name": "InvalidMintParams",
-      "msg": "Invalid mint params"
-    },
-    {
-      "code": 49008,
-      "name": "InvalidRemainingAccounts",
-      "msg": "Invalid accounts: the transaction is malformed"
-    },
-    {
-      "code": 49009,
-      "name": "InvalidVaultTokenAccount",
-      "msg": "Invalid vault ata"
-    },
-    {
-      "code": 49010,
-      "name": "NonZeroSupply",
-      "msg": "Glam mint supply not zero"
-    },
-    {
-      "code": 49011,
-      "name": "MissingAccount",
-      "msg": "An account required by the instruction is missing"
-    },
-    {
-      "code": 49012,
-      "name": "InvalidTimestamp",
-      "msg": "Invalid timestamp"
-    },
-    {
-      "code": 49013,
-      "name": "EngineFieldNotFound",
-      "msg": "Engine field not found"
-    },
-    {
-      "code": 49014,
-      "name": "InvalidBaseAsset",
-      "msg": "Invalid base asset"
-    },
-    {
-      "code": 49015,
-      "name": "InvalidProtocolBitflag",
-      "msg": "Invalid protocol bitflag"
-    },
-    {
-      "code": 50000,
-      "name": "WithdrawDenied",
-      "msg": "Withdraw denied. Only vaults allow withdraws (funds and mints don't)"
-    },
-    {
-      "code": 50001,
-      "name": "InvalidAssetForSwap",
-      "msg": "Asset cannot be swapped"
-    },
-    {
-      "code": 50002,
-      "name": "UnsupportedSwapIx",
-      "msg": "Unsupported swap instruction"
-    },
-    {
-      "code": 50003,
-      "name": "SlippageLimitExceeded",
-      "msg": "Max slippage exceeded"
-    },
-    {
-      "code": 50004,
-      "name": "InvalidPlatformFeeForSwap",
-      "msg": "Invalid platform fee"
-    },
-    {
-      "code": 50005,
-      "name": "InvalidTokenAccount",
-      "msg": "Invalid token account"
-    },
-    {
-      "code": 50006,
-      "name": "InvalidVoteSide",
-      "msg": "Invalid vote side"
-    },
-    {
-      "code": 50007,
-      "name": "MultipleStakeAccountsDisallowed",
-      "msg": "Multiple stake accounts disallowed"
-    },
-    {
-      "code": 51000,
-      "name": "InvalidAssetPrice",
-      "msg": "Invalid asset price"
-    },
-    {
-      "code": 51001,
-      "name": "InvalidStableCoinPriceForSubscribe",
-      "msg": "Subscription not allowed: invalid stable coin price"
-    },
-    {
-      "code": 51100,
-      "name": "InvalidPricingOracle",
-      "msg": "Invalid oracle for asset price"
-    },
-    {
-      "code": 51101,
-      "name": "PricingError",
-      "msg": "Pricing error"
-    },
-    {
-      "code": 51102,
-      "name": "PriceTooOld",
-      "msg": "Price is too old"
-    },
-    {
-      "code": 51103,
-      "name": "ExternalPositionsNotPriced",
-      "msg": "Not all external vault accounts are priced"
-    },
-    {
-      "code": 51104,
-      "name": "VaultTokensNotPriced",
-      "msg": "Not all vault tokens are priced"
-    },
-    {
-      "code": 51105,
-      "name": "PriceDivergenceTooLarge",
-      "msg": "No priced assets found"
-    },
-    {
-      "code": 51106,
-      "name": "PositiveAumRequired",
-      "msg": "AUM must be positive"
-    },
-    {
-      "code": 51107,
-      "name": "MathError",
-      "msg": "Math error"
-    },
-    {
-      "code": 51108,
-      "name": "TypeCastingError",
-      "msg": "Type casting error"
-    },
-    {
-      "code": 51109,
-      "name": "BaseAssetNotSupported",
-      "msg": "Base asset must have 6 decimals."
-    },
-    {
-      "code": 51110,
-      "name": "InvalidQuoteSpotMarket",
-      "msg": "Unsupported spot market for perp quotes"
-    },
-    {
-      "code": 51111,
-      "name": "UnknownExternalVaultAsset",
-      "msg": "Unknown external vault account"
-    },
-    {
-      "code": 51112,
-      "name": "InvalidPriceDenom",
-      "msg": "Invalid price denom"
-    },
-    {
-      "code": 51113,
-      "name": "UnexpectedDiscriminator",
-      "msg": "Invalid account: discriminator mismatch"
-    },
-    {
-      "code": 52000,
-      "name": "TransfersDisabled",
-      "msg": "Policy violation: transfers disabled"
-    },
-    {
-      "code": 52001,
-      "name": "InvalidPolicyAccount",
-      "msg": "Policy account is mandatory"
-    },
-    {
-      "code": 52002,
-      "name": "AmountTooBig",
-      "msg": "Policy violation: amount too big"
-    },
-    {
-      "code": 52003,
-      "name": "LockUp",
-      "msg": "Policy violation: lock-up has not expired"
     }
   ],
   "types": [
@@ -1931,32 +1860,6 @@
       }
     },
     {
-      "name": "ActionType",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "AddExternalAccount"
-          },
-          {
-            "name": "DeleteExternalAccount"
-          },
-          {
-            "name": "DeleteExternalAccountIfZeroLamports"
-          },
-          {
-            "name": "DeleteExternalAccountIfZeroBalance"
-          },
-          {
-            "name": "AddAsset"
-          },
-          {
-            "name": "DeleteAsset"
-          }
-        ]
-      }
-    },
-    {
       "name": "CreatedModel",
       "type": {
         "kind": "struct",
@@ -2003,32 +1906,6 @@
           {
             "name": "expires_at",
             "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "EmergencyAccessUpdateArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "disabled_integrations",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "disabled_delegates",
-            "type": {
-              "vec": "pubkey"
-            }
-          },
-          {
-            "name": "state_enabled",
-            "type": {
-              "option": "bool"
-            }
           }
         ]
       }
@@ -2321,32 +2198,6 @@
       }
     },
     {
-      "name": "ExtraParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "action_type",
-            "type": {
-              "defined": {
-                "name": "ActionType"
-              }
-            }
-          },
-          {
-            "name": "pubkey",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount",
-            "type": {
-              "option": "u64"
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "FeeParams",
       "type": {
         "kind": "struct",
@@ -2445,6 +2296,22 @@
       }
     },
     {
+      "name": "InitObligationArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tag",
+            "type": "u8"
+          },
+          {
+            "name": "id",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "IntegrationAcl",
       "docs": [
         "An integration program can have multiple protocols supported.",
@@ -2500,20 +2367,20 @@
       }
     },
     {
-      "name": "JupiterSwapPolicy",
+      "name": "LendingPolicy",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "max_slippage_bps",
-            "type": "u16"
+            "name": "markets_allowlist",
+            "type": {
+              "vec": "pubkey"
+            }
           },
           {
-            "name": "swap_allowlist",
+            "name": "borrow_allowlist",
             "type": {
-              "option": {
-                "vec": "pubkey"
-              }
+              "vec": "pubkey"
             }
           }
         ]
@@ -2903,120 +2770,6 @@
       }
     },
     {
-      "name": "StateModel",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "account_type",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "AccountType"
-                }
-              }
-            }
-          },
-          {
-            "name": "name",
-            "type": {
-              "option": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
-          },
-          {
-            "name": "uri",
-            "type": {
-              "option": "string"
-            }
-          },
-          {
-            "name": "enabled",
-            "type": {
-              "option": "bool"
-            }
-          },
-          {
-            "name": "assets",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "created",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "CreatedModel"
-                }
-              }
-            }
-          },
-          {
-            "name": "owner",
-            "type": {
-              "option": "pubkey"
-            }
-          },
-          {
-            "name": "portfolio_manager_name",
-            "type": {
-              "option": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
-          },
-          {
-            "name": "borrowable",
-            "type": {
-              "option": {
-                "vec": "pubkey"
-              }
-            }
-          },
-          {
-            "name": "timelock_duration",
-            "type": {
-              "option": "u32"
-            }
-          },
-          {
-            "name": "integration_acls",
-            "type": {
-              "option": {
-                "vec": {
-                  "defined": {
-                    "name": "IntegrationAcl"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "name": "delegate_acls",
-            "type": {
-              "option": {
-                "vec": {
-                  "defined": {
-                    "name": "DelegateAcl"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "TimeUnit",
       "type": {
         "kind": "enum",
@@ -3026,20 +2779,6 @@
           },
           {
             "name": "Slot"
-          }
-        ]
-      }
-    },
-    {
-      "name": "TransferPolicy",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "allowlist",
-            "type": {
-              "vec": "pubkey"
-            }
           }
         ]
       }
@@ -3057,58 +2796,87 @@
           }
         ]
       }
+    },
+    {
+      "name": "VaultsPolicy",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vaults_allowlist",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
     }
   ],
   "constants": [
     {
-      "name": "PROTO_JUPITER_SWAP",
+      "name": "PROTO_KAMINO_FARMS",
       "type": "u16",
       "value": "4"
     },
     {
-      "name": "PROTO_JUPITER_SWAP_PERM_SWAP_ALLOWLISTED",
+      "name": "PROTO_KAMINO_FARMS_PERM_HARVEST_REWARD",
       "type": "u64",
       "value": "4"
     },
     {
-      "name": "PROTO_JUPITER_SWAP_PERM_SWAP_ANY",
+      "name": "PROTO_KAMINO_FARMS_PERM_STAKE",
       "type": "u64",
       "value": "1"
     },
     {
-      "name": "PROTO_JUPITER_SWAP_PERM_SWAP_LST",
+      "name": "PROTO_KAMINO_FARMS_PERM_UNSTAKE",
       "type": "u64",
       "value": "2"
     },
     {
-      "name": "PROTO_STAKE",
-      "type": "u16",
-      "value": "2"
-    },
-    {
-      "name": "PROTO_STAKE_PERM_STAKE",
-      "type": "u64",
-      "value": "1"
-    },
-    {
-      "name": "PROTO_STAKE_PERM_UNSTAKE",
-      "type": "u64",
-      "value": "2"
-    },
-    {
-      "name": "PROTO_SYSTEM",
+      "name": "PROTO_KAMINO_LENDING",
       "type": "u16",
       "value": "1"
     },
     {
-      "name": "PROTO_SYSTEM_PERM_TRANSFER",
+      "name": "PROTO_KAMINO_LENDING_PERM_BORROW",
+      "type": "u64",
+      "value": "8"
+    },
+    {
+      "name": "PROTO_KAMINO_LENDING_PERM_DEPOSIT",
       "type": "u64",
       "value": "2"
     },
     {
-      "name": "PROTO_SYSTEM_PERM_WSOL",
+      "name": "PROTO_KAMINO_LENDING_PERM_INIT",
       "type": "u64",
       "value": "1"
+    },
+    {
+      "name": "PROTO_KAMINO_LENDING_PERM_REPAY",
+      "type": "u64",
+      "value": "16"
+    },
+    {
+      "name": "PROTO_KAMINO_LENDING_PERM_WITHDRAW",
+      "type": "u64",
+      "value": "4"
+    },
+    {
+      "name": "PROTO_KAMINO_VAULTS",
+      "type": "u16",
+      "value": "2"
+    },
+    {
+      "name": "PROTO_KAMINO_VAULTS_PERM_DEPOSIT",
+      "type": "u64",
+      "value": "1"
+    },
+    {
+      "name": "PROTO_KAMINO_VAULTS_PERM_WITHDRAW",
+      "type": "u64",
+      "value": "2"
     }
   ]
 }
