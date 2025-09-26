@@ -154,6 +154,10 @@ export class DriftSpotMarket {
   marketIndex: number;
   padding3: number;
   oracleSource: number;
+  padding4: number[];
+  tokenProgram: number;
+  poolId: number;
+  padding5: number[];
 
   static _layout = struct([
     array(u8(), 8, "discriminator"),
@@ -173,15 +177,55 @@ export class DriftSpotMarket {
     // Padding for bytes between cumulativeBorrowInterest and decimals
     array(u8(), 680 - 496, "padding2"),
 
-    u32("decimals"),
-    u16("marketIndex"),
-    u8("padding3"),
-    u8("oracleSource"),
+    u32("decimals"), // [680, 684)
+    u16("marketIndex"), // [684, 686)
+    u8("padding3"), // [686, 687)
+    u8("oracleSource"), // [687, 688)
+    array(u8(), 46, "padding4"), // [688, 734)
+    u8("tokenProgram"), // [734, 735)
+    u8("poolId"), // [735, 736)
+    array(u8(), 40, "padding5"), // [736, 776)
   ]);
 
   static decode(buffer: Buffer): DriftSpotMarket {
     const data = DriftSpotMarket._layout.decode(buffer);
     const instance = new DriftSpotMarket();
+    Object.assign(instance, data);
+    return instance;
+  }
+
+  get nameStr(): string {
+    return charsToName(this.name);
+  }
+}
+
+export class DriftPerpMarket {
+  discriminator: number[];
+  marketPda: PublicKey;
+  oracle: PublicKey;
+  padding1: number[];
+  oracleSource: number;
+  padding2: number[];
+  name: number[];
+  padding3: number[];
+  marketIndex: number;
+
+  static _layout = struct([
+    array(u8(), 8, "discriminator"), // [0, 8)
+    publicKey("marketPda"), // [8, 40)
+    publicKey("oracle"), // [40, 72)
+
+    array(u8(), 854, "padding1"), // [72, 926)
+    u8("oracleSource"), // [926, 927)
+    array(u8(), 73, "padding2"), // [927, 1000)
+    array(u8(), 32, "name"), // [1000, 1032)
+    array(u8(), 128, "padding3"), // [1032, 1160)
+    u16("marketIndex"), // [1160, 1162)
+  ]);
+
+  static decode(buffer: Buffer): DriftPerpMarket {
+    const data = DriftPerpMarket._layout.decode(buffer);
+    const instance = new DriftPerpMarket();
     Object.assign(instance, data);
     return instance;
   }

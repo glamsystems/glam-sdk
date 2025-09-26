@@ -19,7 +19,11 @@ import {
   MarginMode,
   Order,
 } from "../utils/driftTypes";
-import { DriftVault } from "../deser/driftLayouts";
+import {
+  DriftPerpMarket,
+  DriftSpotMarket,
+  DriftVault,
+} from "../deser/driftLayouts";
 import { decodeUser } from "../utils/driftUser";
 
 import { BaseClient, TxOptions } from "./base";
@@ -53,6 +57,7 @@ interface OrderConstants {
 export interface SpotMarket {
   name: string;
   marketIndex: number;
+  poolId: number;
   marketPda: PublicKey;
   vault: PublicKey;
   oracle: PublicKey;
@@ -300,58 +305,34 @@ export class DriftClient {
   }
 
   parsePerpMarket(data: Buffer): PerpMarket {
-    const marketPda = new PublicKey(data.subarray(8, 40));
-    const oracle = new PublicKey(data.subarray(40, 72));
-
-    const name = charsToName(data.subarray(1000, 1032));
-
-    const oralceEnum = data.subarray(926, 927).readUint8();
-    const oracleSource = OracleSource.get(oralceEnum);
-
-    const marketIndex = data.subarray(1160, 1162).readUint16LE();
-
+    const perpMarket = DriftPerpMarket.decode(data);
     return {
-      name,
-      marketPda,
-      marketIndex,
-      oracle,
-      oracleSource,
+      name: perpMarket.nameStr,
+      marketPda: perpMarket.marketPda,
+      marketIndex: perpMarket.marketIndex,
+      oracle: perpMarket.oracle,
+      oracleSource: OracleSource.get(perpMarket.oracleSource),
     };
   }
 
   parseSpotMarket(data: Buffer): SpotMarket {
-    const marketPda = new PublicKey(data.subarray(8, 40));
-    const oracle = new PublicKey(data.subarray(40, 72));
-    const mint = new PublicKey(data.subarray(72, 104));
-    const vault = new PublicKey(data.subarray(104, 136));
-
-    const name = charsToName(data.subarray(136, 168));
-
-    const cumulativeDepositInterest = new BN(data.subarray(464, 480), "le");
-    const cumulativeBorrowInterest = new BN(data.subarray(480, 496), "le");
-
-    const decimals = data.subarray(680, 684).readUint32LE();
-    const marketIndex = data.subarray(684, 686).readUint16LE();
-    const oralceEnum = data.subarray(687, 688).readUint8();
-    const oracleSource = OracleSource.get(oralceEnum);
-
-    const tokenProgram =
-      data.subarray(734, 735).readUint8() == 0
-        ? TOKEN_PROGRAM_ID
-        : TOKEN_2022_PROGRAM_ID;
-
+    const driftSpotMarket = DriftSpotMarket.decode(data);
     return {
-      name,
-      marketIndex,
-      marketPda,
-      oracle,
-      oracleSource,
-      vault,
-      mint,
-      decimals,
-      tokenProgram,
-      cumulativeDepositInterest,
-      cumulativeBorrowInterest,
+      name: driftSpotMarket.nameStr,
+      marketIndex: driftSpotMarket.marketIndex,
+      poolId: driftSpotMarket.poolId,
+      marketPda: driftSpotMarket.marketPda,
+      oracle: driftSpotMarket.oracle,
+      oracleSource: OracleSource.get(driftSpotMarket.oracleSource),
+      vault: driftSpotMarket.vault,
+      mint: driftSpotMarket.mint,
+      decimals: driftSpotMarket.decimals,
+      tokenProgram:
+        driftSpotMarket.tokenProgram === 0
+          ? TOKEN_PROGRAM_ID
+          : TOKEN_2022_PROGRAM_ID,
+      cumulativeDepositInterest: driftSpotMarket.cumulativeDepositInterest,
+      cumulativeBorrowInterest: driftSpotMarket.cumulativeBorrowInterest,
     };
   }
 
@@ -537,6 +518,7 @@ export class DriftClient {
       const spotMarkets = spot.map((m: any) => ({
         name: m.symbol,
         marketIndex: m.marketIndex,
+        poolId: m.poolId,
         marketPda: new PublicKey(m.marketPDA),
         vault: new PublicKey(m.vaultPDA),
         oracle: new PublicKey(m.oracle),
@@ -1071,13 +1053,15 @@ export class DriftClient {
 
     // If drift user doesn't exist, prepend initialization ixs
     if (!(await this.fetchDriftUser(subAccountId))) {
-      preInstructions.push(
-        await this.initializeUserIx(glamSigner, subAccountId),
-      );
       // Only add ix to initialize user stats if subAccountId is 0
       if (subAccountId === 0) {
         preInstructions.push(await this.initializeUserStatsIx(glamSigner));
       }
+
+      preInstructions.push(
+        await this.initializeUserIx(glamSigner, subAccountId),
+      );
+
       // If market name ends with "-N", it means we're depositing to an isolated pool
       const isolatedPoolMatch = name.match(/-(\d+)$/);
       if (isolatedPoolMatch) {

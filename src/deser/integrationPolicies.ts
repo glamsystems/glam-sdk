@@ -107,8 +107,10 @@ export class DriftVaultsPolicy {
   }
 
   public static decode(buffer: Buffer<ArrayBufferLike>): DriftVaultsPolicy {
-    const data = DriftVaultsPolicy._layout.decode(buffer);
-    return data as DriftVaultsPolicy;
+    const { vaultsAllowlist } = DriftVaultsPolicy._layout.decode(
+      buffer,
+    ) as DriftVaultsPolicy;
+    return new DriftVaultsPolicy(vaultsAllowlist);
   }
 
   public encode(): Buffer {
@@ -146,8 +148,13 @@ export class DriftProtocolPolicy {
   }
 
   public static decode(buffer: Buffer<ArrayBufferLike>): DriftProtocolPolicy {
-    const data = DriftProtocolPolicy._layout.decode(buffer);
-    return data as DriftProtocolPolicy;
+    const { spotMarketsAllowlist, perpMarketsAllowlist, borrowAllowlist } =
+      DriftProtocolPolicy._layout.decode(buffer) as DriftProtocolPolicy;
+    return new DriftProtocolPolicy(
+      spotMarketsAllowlist,
+      perpMarketsAllowlist,
+      borrowAllowlist,
+    );
   }
 
   public encode(): Buffer {
@@ -189,5 +196,15 @@ export class CctpPolicy {
     const buffer = Buffer.alloc(totalSize);
     CctpPolicy._layout.encode(this, buffer);
     return buffer;
+  }
+
+  get domainToAddressesMap(): Map<number, PublicKey[]> {
+    const map = new Map<number, PublicKey[]>();
+    for (const { domain, address } of this.allowedDestinations) {
+      const keys = map.get(domain) || [];
+      keys.push(address);
+      map.set(domain, keys);
+    }
+    return map;
   }
 }

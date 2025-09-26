@@ -1426,10 +1426,6 @@ export type ExtDrift = {
           "signer": true
         },
         {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        },
-        {
           "name": "integrationAuthority",
           "pda": {
             "seeds": [
@@ -1469,6 +1465,10 @@ export type ExtDrift = {
         {
           "name": "glamProtocolProgram",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "user",

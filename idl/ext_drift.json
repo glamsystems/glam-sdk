@@ -1420,10 +1420,6 @@
           "signer": true
         },
         {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
           "name": "integration_authority",
           "pda": {
             "seeds": [
@@ -1463,6 +1459,10 @@
         {
           "name": "glam_protocol_program",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "user",
