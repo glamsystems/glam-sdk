@@ -11,7 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { atomWithStorage } from "jotai/utils";
 
-import type { DelegateAcl, StateModel } from "../models";
+import type { DelegateAcl, StateModel, IntegrationAcl } from "../models";
 import { GlamClient } from "../client";
 import { useAtomValue, useSetAtom } from "jotai/react";
 import { PublicKey } from "@solana/web3.js";
@@ -41,6 +41,7 @@ interface GlamProviderContext {
   activeGlamState?: GlamStateCache;
   glamStatesList: GlamStateCache[];
   delegateAcls: DelegateAcl[];
+  integrationAcls: IntegrationAcl[];
   allGlamStates: StateModel[];
   prices: TokenPrice[];
   jupTokenList?: TokenListItem[];
@@ -64,7 +65,7 @@ interface GlamStateCache {
   owner: PublicKey;
   sparkleKey: string;
   name: string;
-  product: "Mint" | "Vault" | "Fund";
+  product: "Mint" | "Vault" | "TokenizedVault";
 }
 
 const GlamContext = createContext<GlamProviderContext>(
@@ -114,6 +115,7 @@ export function GlamProvider({
   const setGlamStatesList = useSetAtom(glamStatesListAtom);
 
   const [delegateAcls, setDelegateAcls] = useState([] as DelegateAcl[]);
+  const [integrationAcls, setIntegrationAcls] = useState([] as IntegrationAcl[]);
   const [vault, setVault] = useState({} as Vault);
   const wallet = useWallet();
   const { connection } = useConnection();
@@ -229,8 +231,24 @@ export function GlamProvider({
     }
   };
 
+  const refreshIntegrationAcls = async () => {
+    if (activeGlamState?.pubkey) {
+      try {
+        const glamState = await glamClient.fetchStateModel();
+        console.log(
+          `${activeGlamState.address} integration acls:`,
+          glamState.integrationAcls,
+        );
+        setIntegrationAcls(glamState.integrationAcls || []);
+      } catch (error) {
+        setIntegrationAcls([]);
+      }
+    }
+  };
+
   useEffect(() => {
     refreshDelegateAcls();
+    refreshIntegrationAcls();
   }, [activeGlamState]);
 
   //
@@ -323,6 +341,7 @@ export function GlamProvider({
     activeGlamState,
     glamStatesList: useAtomValue(glamStatesListAtom),
     delegateAcls,
+    integrationAcls,
     allGlamStates,
     jupTokenList,
     prices: tokenPrices,
@@ -331,6 +350,7 @@ export function GlamProvider({
     refresh: async () => {
       refreshVaultHoldings();
       refreshDelegateAcls();
+      refreshIntegrationAcls();
       refetchDriftUser();
     },
     refetchGlamStates: async () => {
