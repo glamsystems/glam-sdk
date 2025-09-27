@@ -32,6 +32,7 @@ import {
   DRIFT_PROGRAM_ID,
   DRIFT_VAULT_DEPOSITOR_SIZE,
   DRIFT_VAULTS_PROGRAM_ID,
+  DRIFT_DISTRIBUTOR_PROGRAM,
   GLAM_REFERRER,
   WSOL,
 } from "../constants";
@@ -43,11 +44,6 @@ import {
 import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
 import { charsToName } from "../utils/helpers";
-
-const DRIFT_DISTRIBUTOR_PROGRAM = new PublicKey(
-  "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x",
-);
-const DRIFT = new PublicKey("DriFtupJYLTosbwoN8koMbEYSx54aFAVLddWsbksjwg7");
 
 interface OrderConstants {
   perpBaseScale: number;

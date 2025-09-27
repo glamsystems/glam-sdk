@@ -3,7 +3,7 @@ export * from "./models";
 export * from "./clientConfig";
 export * from "./client";
 export * from "./client/jupiter";
-// export * from "./client/drift";
+export * from "./client/drift";
 export * from "./deser/integrationPolicies";
 export * from "./client/base";
 export * from "./utils/glamPDAs";

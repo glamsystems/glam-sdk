@@ -61,6 +61,9 @@ export const DRIFT_PROGRAM_ID = new PublicKey(
 export const DRIFT_VAULTS_PROGRAM_ID = new PublicKey(
   "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR",
 );
+export const DRIFT_DISTRIBUTOR_PROGRAM = new PublicKey(
+  "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x",
+);
 export const JUPITER_PROGRAM_ID = new PublicKey(
   "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
 );
@@ -121,3 +124,125 @@ export const JUPSOL_STAKE_POOL = new PublicKey(
 export const GLAM_REFERRER = new PublicKey(
   "GLAMrG37ZqioqvzBNQGCfCUueDz3tsr7MwMFyRk9PS89",
 );
+
+/**
+ * Integration program mapping
+ */
+export const INTEGRATION_MAPPING: Record<string, Record<string, string>> = {
+  GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh: {
+    "0000000000000001": "GLAM Mint Protocol",
+  },
+  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
+    "0000000000000001": "CCTP",
+  },
+  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
+    "0000000000000001": "Token",
+  },
+  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
+    "0000000000000001": "Drift Protocol",
+    "0000000000000010": "Drift Vaults",
+  },
+  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
+    "0000000000000001": "Kamino Lending",
+    "0000000000000010": "Kamino Vaults",
+    "0000000000000100": "Kamino Farms",
+  },
+};
+
+/**
+ * CCTP domain to chain name mapping
+ */
+export const CCTP_DOMAIN_MAPPING: Record<number, string> = {
+  0: "Ethereum",
+  1: "Avalanche",
+  2: "OP",
+  3: "Arbitrum",
+  5: "Solana",
+  6: "Base",
+  7: "Polygon PoS",
+  10: "Unichain",
+  11: "Linea",
+  12: "Codex",
+  13: "Sonic",
+  14: "World Chain",
+  16: "Sei",
+  17: "BNB Smart Chain",
+  18: "XDC",
+  19: "HyperEVM",
+  21: "Ink",
+  22: "Plume",
+};
+
+/**
+ * Pool ID to lending pool name mapping for Drift Protocol policies
+ */
+export const DRIFT_POOL_MAPPING: Record<number, string> = {
+  0: "Main Market",
+  1: "JLP Market",
+  2: "LST Market",
+  3: "Exponent Market",
+};
+
+// Permission mappings for each protocol - maps bit positions to permission names
+export const PERMISSION_MAPPINGS: Record<
+  string,
+  Record<string, Record<number, string>>
+> = {
+  // Kamino integration program
+  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
+    // Kamino Lending (protocol bitmask: 0000000000000001)
+    "0000000000000001": {
+      0: "Init", // 1 << 0
+      1: "Deposit", // 1 << 1
+      2: "Withdraw", // 1 << 2
+      3: "Borrow", // 1 << 3
+      4: "Repay", // 1 << 4
+    },
+    // Kamino Vaults (protocol bitmask: 0000000000000010)
+    "0000000000000010": {
+      0: "Deposit", // 1 << 0
+      1: "Withdraw", // 1 << 1
+    },
+    // Kamino Farms (protocol bitmask: 0000000000000100)
+    "0000000000000100": {
+      0: "Stake", // 1 << 0
+      1: "Unstake", // 1 << 1
+      2: "HarvestReward", // 1 << 2
+    },
+  },
+  // Drift integration program
+  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
+    // Drift Protocol (protocol bitmask: 0000000000000001)
+    "0000000000000001": {
+      0: "InitUser", // 1 << 0
+      1: "UpdateUser", // 1 << 1
+      2: "DeleteUser", // 1 << 2
+      3: "Deposit", // 1 << 3
+      4: "Withdraw", // 1 << 4
+      5: "Borrow", // 1 << 5
+      6: "CreateModifyOrders", // 1 << 6
+      7: "CancelOrders", // 1 << 7
+      8: "PerpMarkets", // 1 << 8
+      9: "SpotMarkets", // 1 << 9
+    },
+    // Drift Vaults (protocol bitmask: 0000000000000010)
+    "0000000000000010": {
+      0: "Deposit", // 1 << 0
+      1: "Withdraw", // 1 << 1
+    },
+  },
+  // Token integration program
+  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
+    // Token (protocol bitmask: 0000000000000001)
+    "0000000000000001": {
+      0: "Transfer", // 1 << 0
+    },
+  },
+  // CCTP integration program
+  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
+    // CCTP (protocol bitmask: 0000000000000001)
+    "0000000000000001": {
+      0: "Transfer",
+    },
+  },
+};
