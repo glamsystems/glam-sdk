@@ -443,7 +443,7 @@ export class VaultClient {
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
-        from: this.base.getVaultAta(mint),
+        from: this.base.getVaultAta(mint, tokenProgram),
         to: toAta,
         mint,
         cpiProgram: tokenProgram,

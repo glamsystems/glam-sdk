@@ -31,8 +31,8 @@ class TxBuilder {
       })
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     this.base.statePda = statePda;
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return vTx;
   }
 
