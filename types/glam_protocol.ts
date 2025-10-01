@@ -1685,12 +1685,12 @@ export type GlamProtocol = {
     {
       "code": 49005,
       "name": "invalidIxArgs",
-      "msg": "Glam mint not found"
+      "msg": "Invalid instruction arguments"
     },
     {
       "code": 49006,
       "name": "cannotCloseState",
-      "msg": "Glam state cannot be closed, all mints must be closed first"
+      "msg": "Glam state cannot be closed: mint must be closed and state must be disabled"
     },
     {
       "code": 49007,
