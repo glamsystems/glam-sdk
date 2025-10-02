@@ -483,12 +483,13 @@ export class StakingClient {
     const poolTokensFrom = this.base.getVaultAta(poolMint, tokenProgram);
 
     // The reserve stake account should NOT be used for withdrawals unless we have no other options.
+    // And only active validator stake accounts should be used.
     const validatorStakeCandidates = (
       await getStakeAccountsWithStates(
         this.base.provider.connection,
         withdrawAuthority,
       )
-    ).filter((s) => !s.address.equals(reserveStake));
+    ).filter((s) => !s.address.equals(reserveStake) && s.state === "active");
 
     const validatorStakeAccount =
       validatorStakeCandidates.length === 0
