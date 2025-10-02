@@ -246,3 +246,115 @@ export const PERMISSION_MAPPINGS: Record<
     },
   },
 };
+
+// Permission mappings for each protocol - maps bit positions to permission names
+export const PROTOCOLS_AND_PERMISSIONS: Record<
+  string,
+  Record<string, { name: string; permissions: Record<number, string> }>
+> = {
+  // Self integration
+  GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz: {
+    "0000000000000001": {
+      name: "System Program",
+      permissions: {
+        [1 << 0]: "WSOL",
+        [1 << 1]: "Transfer",
+      },
+    },
+    "0000000000000010": {
+      name: "Stake Program",
+      permissions: {
+        [1 << 0]: "Stake",
+        [1 << 1]: "Unstake",
+      },
+    },
+    "0000000000000100": {
+      name: "Jupiter Swap",
+      permissions: {
+        [1 << 0]: "SwapAny",
+        [1 << 1]: "SwapLST",
+        [1 << 2]: "SwapAllowlisted",
+      },
+    },
+  },
+  // GLAM mint
+  GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh: {
+    "0000000000000001": {
+      name: "GLAM Mint",
+      permissions: {
+        [1 << 0]: "Mint",
+      },
+    },
+  },
+  // Kamino integration program
+  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
+    "0000000000000001": {
+      name: "Kamino Lending",
+      permissions: {
+        [1 << 0]: "Init",
+        [1 << 1]: "Deposit",
+        [1 << 2]: "Withdraw",
+        [1 << 3]: "Borrow",
+        [1 << 4]: "Repay",
+      },
+    },
+    "0000000000000010": {
+      name: "Kamino Vaults",
+      permissions: {
+        [1 << 0]: "Deposit",
+        [1 << 1]: "Withdraw",
+      },
+    },
+    "0000000000000100": {
+      name: "Kamino Farms",
+      permissions: {
+        [1 << 0]: "Stake",
+        [1 << 1]: "Unstake",
+        [1 << 2]: "HarvestReward",
+      },
+    },
+  },
+  // Drift integration program
+  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
+    "0000000000000001": {
+      name: "Drift Protocol",
+      permissions: {
+        [1 << 0]: "InitUser",
+        [1 << 1]: "UpdateUser",
+        [1 << 2]: "DeleteUser",
+        [1 << 3]: "Deposit",
+        [1 << 4]: "Withdraw",
+        [1 << 5]: "Borrow",
+        [1 << 6]: "CreateModifyOrders",
+        [1 << 7]: "CancelOrders",
+        [1 << 8]: "PerpMarkets",
+        [1 << 9]: "SpotMarkets",
+      },
+    },
+    "0000000000000010": {
+      name: "Drift Vaults",
+      permissions: {
+        [1 << 0]: "Deposit",
+        [1 << 1]: "Withdraw",
+      },
+    },
+  },
+  // Token integration program
+  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
+    "0000000000000001": {
+      name: "Token",
+      permissions: {
+        [1 << 0]: "Transfer",
+      },
+    },
+  },
+  // CCTP integration program
+  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
+    "0000000000000001": {
+      name: "CCTP",
+      permissions: {
+        [1 << 0]: "Transfer",
+      },
+    },
+  },
+};
