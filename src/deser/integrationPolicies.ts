@@ -70,6 +70,40 @@ export class MintPolicy {
   }
 }
 
+export class JupiterSwapPolicy {
+  maxSlippageBps: number;
+  swapAllowlist: PublicKey[] | null;
+
+  static _layout = struct([
+    u32("maxSlippageBps"),
+    option(vec(publicKey()), "swapAllowlist"),
+  ]);
+
+  constructor(maxSlippageBps: number, swapAllowlist: PublicKey[] | null) {
+    this.maxSlippageBps = maxSlippageBps;
+    this.swapAllowlist = swapAllowlist;
+  }
+
+  public static decode(buffer: Buffer<ArrayBufferLike>): JupiterSwapPolicy {
+    const policy = JupiterSwapPolicy._layout.decode(
+      buffer,
+    ) as JupiterSwapPolicy;
+    return new JupiterSwapPolicy(policy.maxSlippageBps, policy.swapAllowlist);
+  }
+
+  public encode(): Buffer {
+    const swapAllowlistSize = this.swapAllowlist
+      ? 1 + 4 + this.swapAllowlist.length * 32
+      : 1;
+    const totalSize = 4 + swapAllowlistSize;
+
+    const buffer = Buffer.alloc(totalSize);
+    JupiterSwapPolicy._layout.encode(this, buffer);
+    return buffer;
+  }
+}
+
+// System Program and Token Program use the same TransferPolicy struct
 export class TransferPolicy {
   allowlist: PublicKey[];
 
@@ -80,8 +114,10 @@ export class TransferPolicy {
   }
 
   public static decode(buffer: Buffer<ArrayBufferLike>): TransferPolicy {
-    const data = TransferPolicy._layout.decode(buffer);
-    return data as TransferPolicy;
+    const { allowlist } = TransferPolicy._layout.decode(
+      buffer,
+    ) as TransferPolicy;
+    return new TransferPolicy(allowlist);
   }
 
   public encode(): Buffer {
@@ -169,6 +205,63 @@ export class DriftProtocolPolicy {
 
     const buffer = Buffer.alloc(totalSize);
     DriftProtocolPolicy._layout.encode(this, buffer);
+    return buffer;
+  }
+}
+
+export class KaminoLendingPolicy {
+  marketsAllowlist: PublicKey[];
+  borrowAllowlist: PublicKey[];
+
+  static _layout = struct([
+    vec(publicKey(), "marketsAllowlist"),
+    vec(publicKey(), "borrowAllowlist"),
+  ]);
+
+  constructor(marketsAllowlist: PublicKey[], borrowAllowlist: PublicKey[]) {
+    this.marketsAllowlist = marketsAllowlist;
+    this.borrowAllowlist = borrowAllowlist;
+  }
+
+  public static decode(buffer: Buffer<ArrayBufferLike>): KaminoLendingPolicy {
+    const { marketsAllowlist, borrowAllowlist } =
+      KaminoLendingPolicy._layout.decode(buffer) as KaminoLendingPolicy;
+    return new KaminoLendingPolicy(marketsAllowlist, borrowAllowlist);
+  }
+
+  public encode(): Buffer {
+    const marketsAllowlistSize = 4 + this.marketsAllowlist.length * 32;
+    const borrowAllowlistSize = 4 + this.borrowAllowlist.length * 32;
+    const totalSize = marketsAllowlistSize + borrowAllowlistSize;
+
+    const buffer = Buffer.alloc(totalSize);
+    KaminoLendingPolicy._layout.encode(this, buffer);
+    return buffer;
+  }
+}
+
+export class KaminoVaultsPolicy {
+  vaultsAllowlist: PublicKey[];
+
+  static _layout = struct([vec(publicKey(), "vaultsAllowlist")]);
+
+  constructor(vaultsAllowlist: PublicKey[]) {
+    this.vaultsAllowlist = vaultsAllowlist;
+  }
+
+  public static decode(buffer: Buffer<ArrayBufferLike>): KaminoVaultsPolicy {
+    const { vaultsAllowlist } = KaminoVaultsPolicy._layout.decode(
+      buffer,
+    ) as KaminoVaultsPolicy;
+    return new KaminoVaultsPolicy(vaultsAllowlist);
+  }
+
+  public encode(): Buffer {
+    const vaultsAllowlistSize = 4 + this.vaultsAllowlist.length * 32;
+    const totalSize = vaultsAllowlistSize;
+
+    const buffer = Buffer.alloc(totalSize);
+    KaminoVaultsPolicy._layout.encode(this, buffer);
     return buffer;
   }
 }

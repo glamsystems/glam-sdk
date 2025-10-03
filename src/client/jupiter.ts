@@ -14,7 +14,6 @@ import {
 import { BaseClient, TxOptions } from "./base";
 import { JUPITER_API_DEFAULT, WSOL } from "../constants";
 import { STAKE_POOLS_MAP } from "./assets";
-import { JupiterSwapPolicy } from "../models";
 
 export type QuoteParams = {
   inputMint: string;
@@ -163,21 +162,6 @@ export async function getSwapInstructions(
 
 class TxBuilder {
   public constructor(readonly base: BaseClient) {}
-
-  async setJupiterSwapPolicy(
-    policy: JupiterSwapPolicy,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
-    const tx = await this.base.protocolProgram.methods
-      .setJupiterSwapPolicy(policy)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .transaction();
-    return this.base.intoVersionedTransaction(tx, txOptions);
-  }
 
   async swap(
     options: {
@@ -350,14 +334,6 @@ export class JupiterSwapClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
     const tx = await this.txBuilder.swap(options, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async setJupiterSwapPolicy(
-    policy: JupiterSwapPolicy,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.txBuilder.setJupiterSwapPolicy(policy, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 }

@@ -126,30 +126,6 @@ export const GLAM_REFERRER = new PublicKey(
 );
 
 /**
- * Integration program mapping
- */
-export const INTEGRATION_MAPPING: Record<string, Record<string, string>> = {
-  GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh: {
-    "0000000000000001": "GLAM Mint Protocol",
-  },
-  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
-    "0000000000000001": "CCTP",
-  },
-  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
-    "0000000000000001": "Token",
-  },
-  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
-    "0000000000000001": "Drift Protocol",
-    "0000000000000010": "Drift Vaults",
-  },
-  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
-    "0000000000000001": "Kamino Lending",
-    "0000000000000010": "Kamino Vaults",
-    "0000000000000100": "Kamino Farms",
-  },
-};
-
-/**
  * CCTP domain to chain name mapping
  */
 export const CCTP_DOMAIN_MAPPING: Record<number, string> = {
@@ -181,70 +157,6 @@ export const DRIFT_POOL_MAPPING: Record<number, string> = {
   1: "JLP Market",
   2: "LST Market",
   3: "Exponent Market",
-};
-
-// Permission mappings for each protocol - maps bit positions to permission names
-export const PERMISSION_MAPPINGS: Record<
-  string,
-  Record<string, Record<number, string>>
-> = {
-  // Kamino integration program
-  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
-    // Kamino Lending (protocol bitmask: 0000000000000001)
-    "0000000000000001": {
-      0: "Init", // 1 << 0
-      1: "Deposit", // 1 << 1
-      2: "Withdraw", // 1 << 2
-      3: "Borrow", // 1 << 3
-      4: "Repay", // 1 << 4
-    },
-    // Kamino Vaults (protocol bitmask: 0000000000000010)
-    "0000000000000010": {
-      0: "Deposit", // 1 << 0
-      1: "Withdraw", // 1 << 1
-    },
-    // Kamino Farms (protocol bitmask: 0000000000000100)
-    "0000000000000100": {
-      0: "Stake", // 1 << 0
-      1: "Unstake", // 1 << 1
-      2: "HarvestReward", // 1 << 2
-    },
-  },
-  // Drift integration program
-  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
-    // Drift Protocol (protocol bitmask: 0000000000000001)
-    "0000000000000001": {
-      0: "InitUser", // 1 << 0
-      1: "UpdateUser", // 1 << 1
-      2: "DeleteUser", // 1 << 2
-      3: "Deposit", // 1 << 3
-      4: "Withdraw", // 1 << 4
-      5: "Borrow", // 1 << 5
-      6: "CreateModifyOrders", // 1 << 6
-      7: "CancelOrders", // 1 << 7
-      8: "PerpMarkets", // 1 << 8
-      9: "SpotMarkets", // 1 << 9
-    },
-    // Drift Vaults (protocol bitmask: 0000000000000010)
-    "0000000000000010": {
-      0: "Deposit", // 1 << 0
-      1: "Withdraw", // 1 << 1
-    },
-  },
-  // Token integration program
-  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
-    // Token (protocol bitmask: 0000000000000001)
-    "0000000000000001": {
-      0: "Transfer", // 1 << 0
-    },
-  },
-  // CCTP integration program
-  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
-    // CCTP (protocol bitmask: 0000000000000001)
-    "0000000000000001": {
-      0: "Transfer",
-    },
-  },
 };
 
 // Permission mappings for each protocol - maps bit positions to permission names
@@ -358,3 +270,21 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
 };
+
+/**
+ * Integration program mapping - dynamically built from PROTOCOLS_AND_PERMISSIONS
+ */
+export const INTEGRATION_MAPPING = (() => {
+  const mapping: Record<string, Record<string, string>> = {};
+
+  Object.entries(PROTOCOLS_AND_PERMISSIONS).forEach(
+    ([programId, protocols]) => {
+      mapping[programId] = {};
+      Object.entries(protocols).forEach(([bitflag, protocol]) => {
+        mapping[programId][bitflag] = protocol.name;
+      });
+    },
+  );
+
+  return mapping;
+})();

@@ -72,6 +72,10 @@ import {
 } from "../utils/glamPDAs";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { getGlamLookupTableAccounts } from "../utils/glamApi";
+import {
+  DriftProtocolPolicy,
+  DriftVaultsPolicy,
+} from "../deser/integrationPolicies";
 
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 const LOOKUP_TABLES = [
@@ -964,5 +968,23 @@ export class BaseClient {
         this.protocolProgram.programId,
       );
     });
+  }
+
+  public async fetchProtocolPolicy<T>(
+    integProgramId: PublicKey,
+    protocolBitflag: number,
+    policyClass: { decode(buffer: Buffer): T },
+  ): Promise<T | null> {
+    const stateAccount = await this.fetchStateAccount();
+    const integrationPolicy = stateAccount.integrationAcls?.find((acl) =>
+      acl.integrationProgram.equals(integProgramId),
+    );
+    const policyData = integrationPolicy?.protocolPolicies?.find(
+      (policy: any) => policy.protocolBitflag === protocolBitflag,
+    )?.data;
+    if (policyData) {
+      return policyClass.decode(policyData);
+    }
+    return null;
   }
 }

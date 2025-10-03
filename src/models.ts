@@ -423,17 +423,6 @@ export class ProtocolPermissions implements ProtocolPermissionsType {
   }
 }
 
-export type JupiterSwapPolicyType = IdlTypes<GlamProtocol>["jupiterSwapPolicy"];
-export class JupiterSwapPolicy implements JupiterSwapPolicyType {
-  maxSlippageBps: number;
-  swapAllowlist: PublicKey[] | null;
-
-  constructor(obj: Partial<JupiterSwapPolicyType>) {
-    this.maxSlippageBps = obj.maxSlippageBps!;
-    this.swapAllowlist = obj.swapAllowlist ?? null;
-  }
-}
-
 export type ProtocolPolicyType = IdlTypes<GlamProtocol>["protocolPolicy"];
 export class ProtocolPolicy implements ProtocolPolicyType {
   protocolBitflag: number;
