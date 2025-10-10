@@ -15,52 +15,52 @@ import { PublicKey } from "@solana/web3.js";
 import { charsToName } from "../utils/helpers";
 
 export class DriftVault {
-  discriminator: number[];
-  name: number[];
-  pubkey: PublicKey;
-  manager: PublicKey;
-  tokenAccount: PublicKey;
-  userStats: PublicKey;
-  user: PublicKey;
-  delegate: PublicKey;
-  liquidationDelegate: PublicKey;
-  userShares: BN;
-  totalShares: BN;
-  lastFeeUpdateTs: BN;
-  liquidationStartTs: BN;
-  redeemPeriod: BN;
-  totalWithdrawRequested: BN;
-  maxTokens: BN;
-  managementFee: BN;
-  initTs: BN;
-  netDeposits: BN;
-  managerNetDeposits: BN;
-  totalDeposits: BN;
-  totalWithdraws: BN;
-  managerTotalDeposits: BN;
-  managerTotalWithdraws: BN;
-  managerTotalFee: BN;
-  managerTotalProfitShare: BN;
-  minDepositAmount: BN;
-  lastManagerWithdrawRequest: {
+  discriminator!: number[];
+  name!: number[];
+  pubkey!: PublicKey;
+  manager!: PublicKey;
+  tokenAccount!: PublicKey;
+  userStats!: PublicKey;
+  user!: PublicKey;
+  delegate!: PublicKey;
+  liquidationDelegate!: PublicKey;
+  userShares!: BN;
+  totalShares!: BN;
+  lastFeeUpdateTs!: BN;
+  liquidationStartTs!: BN;
+  redeemPeriod!: BN;
+  totalWithdrawRequested!: BN;
+  maxTokens!: BN;
+  managementFee!: BN;
+  initTs!: BN;
+  netDeposits!: BN;
+  managerNetDeposits!: BN;
+  totalDeposits!: BN;
+  totalWithdraws!: BN;
+  managerTotalDeposits!: BN;
+  managerTotalWithdraws!: BN;
+  managerTotalFee!: BN;
+  managerTotalProfitShare!: BN;
+  minDepositAmount!: BN;
+  lastManagerWithdrawRequest!: {
     shares: BN;
     amount: BN;
     ts: BN;
   };
-  sharesBase: number;
-  profitShare: number;
-  hurdleRate: number;
-  spotMarketIndex: number;
-  bump: number;
-  permissioned: boolean;
-  vaultProtocol: boolean;
-  fuelDistributionMode: number;
-  feeUpdateStatus: number;
-  padding1: number;
-  lastCumulativeFuelPerShareTs: number;
-  cumulativeFuelPerShare: BN;
-  cumulativeFuel: BN;
-  padding: BN[];
+  sharesBase!: number;
+  profitShare!: number;
+  hurdleRate!: number;
+  spotMarketIndex!: number;
+  bump!: number;
+  permissioned!: boolean;
+  vaultProtocol!: boolean;
+  fuelDistributionMode!: number;
+  feeUpdateStatus!: number;
+  padding1!: number;
+  lastCumulativeFuelPerShareTs!: number;
+  cumulativeFuelPerShare!: BN;
+  cumulativeFuel!: BN;
+  padding!: BN[];
 
   static _layout = struct([
     array(u8(), 8, "discriminator"),
@@ -140,24 +140,24 @@ export class DriftVault {
 }
 
 export class DriftSpotMarket {
-  discriminator: number[];
-  marketPda: PublicKey;
-  oracle: PublicKey;
-  mint: PublicKey;
-  vault: PublicKey;
-  name: number[];
-  padding1: number[];
-  cumulativeDepositInterest: BN;
-  cumulativeBorrowInterest: BN;
-  padding2: number[];
-  decimals: number;
-  marketIndex: number;
-  padding3: number;
-  oracleSource: number;
-  padding4: number[];
-  tokenProgram: number;
-  poolId: number;
-  padding5: number[];
+  discriminator!: number[];
+  marketPda!: PublicKey;
+  oracle!: PublicKey;
+  mint!: PublicKey;
+  vault!: PublicKey;
+  name!: number[];
+  padding1!: number[];
+  cumulativeDepositInterest!: BN;
+  cumulativeBorrowInterest!: BN;
+  padding2!: number[];
+  decimals!: number;
+  marketIndex!: number;
+  padding3!: number;
+  oracleSource!: number;
+  padding4!: number[];
+  tokenProgram!: number;
+  poolId!: number;
+  padding5!: number[];
 
   static _layout = struct([
     array(u8(), 8, "discriminator"),
@@ -200,15 +200,15 @@ export class DriftSpotMarket {
 }
 
 export class DriftPerpMarket {
-  discriminator: number[];
-  marketPda: PublicKey;
-  oracle: PublicKey;
-  padding1: number[];
-  oracleSource: number;
-  padding2: number[];
-  name: number[];
-  padding3: number[];
-  marketIndex: number;
+  discriminator!: number[];
+  marketPda!: PublicKey;
+  oracle!: PublicKey;
+  padding1!: number[];
+  oracleSource!: number;
+  padding2!: number[];
+  name!: number[];
+  padding3!: number[];
+  marketIndex!: number;
 
   static _layout = struct([
     array(u8(), 8, "discriminator"), // [0, 8)

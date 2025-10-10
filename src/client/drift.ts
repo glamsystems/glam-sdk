@@ -1366,13 +1366,14 @@ export class DriftVaultsClient {
     const connection = this.base.provider.connection;
     const accountsInfo = await connection.getMultipleAccountsInfo(driftVaults);
 
-    accountsInfo.forEach((accountInfo, i) => {
+    const validAccountsInfo = accountsInfo.map((accountInfo, i) => {
       if (!accountInfo) {
         throw new Error(`Drift vault account not found: ${driftVaults[i]}`);
       }
+      return accountInfo;
     });
 
-    return accountsInfo.map((accountInfo, i) => {
+    return validAccountsInfo.map((accountInfo) => {
       return DriftVault.decode(accountInfo.data);
     });
   }

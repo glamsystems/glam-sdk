@@ -720,7 +720,7 @@ export class BaseClient {
         mintPubkeys,
         "confirmed",
       )
-    ).filter(Boolean);
+    ).filter((info): info is AccountInfo<Buffer> => info !== null);
     if (accountsInfo.length !== mintPubkeys.length) {
       throw new Error(
         `Failed to fetch mint accounts for ${mintPubkeys.length} mints`,
@@ -741,6 +741,9 @@ export class BaseClient {
       mintPubkey,
       "confirmed",
     );
+    if (!info) {
+      throw new Error(`Failed to fetch mint account for ${mintPubkey.toBase58()}`);
+    }
     return this.parseMintAccountInfo(info, mintPubkey);
   }
 

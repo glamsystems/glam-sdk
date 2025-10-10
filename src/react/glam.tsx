@@ -103,7 +103,7 @@ const toStateCache = (s: StateModel) => {
     owner: s.owner,
     sparkleKey: s.sparkleKey,
     address: s.idStr,
-    name: charsToName(s.name),
+    name: s.nameStr,
     product: s.productType,
   } as GlamStateCache;
 };
@@ -184,7 +184,7 @@ export function GlamProvider({
     // Find a list of glam states that the wallet has access to
     const glamStatesList = [] as GlamStateCache[];
     glamStateModels.forEach((s: StateModel) => {
-      if (wallet?.publicKey?.equals(s.owner)) {
+      if (s.owner && wallet?.publicKey?.equals(s.owner)) {
         const stateCache = toStateCache(s);
         glamStatesList.push(stateCache);
       } else {

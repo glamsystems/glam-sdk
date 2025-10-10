@@ -32,7 +32,7 @@ export class PriceClient {
     readonly dvaults: DriftVaultsClient,
   ) {}
 
-  get cachedStateModel() {
+  get cachedStateModel(): StateModel | null {
     if (!this._stateModel) {
       console.warn("State model not cached");
       return null;
@@ -177,7 +177,7 @@ export class PriceClient {
       // otherwise skip it for pricing
       if (
         info !== null &&
-        this.cachedStateModel.externalPositions?.find((a) =>
+        this.cachedStateModel?.externalPositions?.find((a) =>
           a.equals(possibleShareAtas[i]),
         )
       ) {
@@ -491,11 +491,13 @@ export class PriceClient {
     if (driftIntegrationAcl) {
       // drift protocol
       if (driftIntegrationAcl.protocolsBitmask & 0b01) {
-        pricingIxs.push(await this.priceDriftUsersIx());
+        const ix = await this.priceDriftUsersIx();
+        if (ix) pricingIxs.push(ix);
       }
       // drift vaults
       if (driftIntegrationAcl.protocolsBitmask & 0b10) {
-        pricingIxs.push(await this.priceDriftVaultDepositorsIx());
+        const ix = await this.priceDriftVaultDepositorsIx();
+        if (ix) pricingIxs.push(ix);
       }
     }
 
@@ -505,11 +507,13 @@ export class PriceClient {
     if (kaminoIntegrationAcl) {
       // kamino lending
       if (kaminoIntegrationAcl.protocolsBitmask & 0b01) {
-        pricingIxs.push(await this.priceKaminoObligationsIx());
+        const ix = await this.priceKaminoObligationsIx();
+        if (ix) pricingIxs.push(ix);
       }
       // kamino vaults
       if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {
-        pricingIxs.push(...(await this.priceKaminoVaultSharesIx()));
+        const ixs = await this.priceKaminoVaultSharesIx();
+        if (ixs) pricingIxs.push(...ixs);
       }
     }
 

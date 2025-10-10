@@ -21,6 +21,9 @@ class TxBuilder {
     const stateModel = this.enrichStateModel(partialStateModel);
 
     const { id: statePda } = stateModel;
+    if (!statePda) {
+      throw new Error("State PDA not set");
+    }
 
     const tx = await this.base.protocolProgram.methods
       .initializeState(new StateIdlModel(stateModel))
@@ -101,7 +104,7 @@ class TxBuilder {
    */
   private enrichStateModel(stateModel: Partial<StateIdlModel>): StateModel {
     if (!stateModel?.name) {
-      throw new Error("Name must be specified in partial state model");
+      throw new Error("Name must be specified");
     }
 
     // stateInitKey = hash state name and get first 8 bytes
@@ -115,7 +118,8 @@ class TxBuilder {
     stateModel.owner = stateModel.owner || this.base.signer;
 
     const statePda = getStatePda(
-      stateModel,
+      stateInitKey,
+      stateModel.owner,
       this.base.protocolProgram.programId,
     );
     stateModel.uri =

@@ -69,12 +69,12 @@ export async function getProgramAccountsV2(
   const heliusApiKey =
     process.env.NEXT_PUBLIC_HELIUS_API_KEY || process.env.HELIUS_API_KEY;
 
-  let allAccounts = [];
-  let paginationKey = null;
+  let allAccounts: any[] = [];
+  let paginationKey: string | null = null;
   let encoding = "base64";
 
   do {
-    const response = await fetch(
+    const response: Response = await fetch(
       `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`,
       {
         method: "POST",
@@ -96,8 +96,8 @@ export async function getProgramAccountsV2(
       },
     );
 
-    const data = await response.json();
-    data.result.accounts.forEach(({ pubkey, account }) => {
+    const data: any = await response.json();
+    data.result.accounts.forEach(({ pubkey, account }: any) => {
       const [acountData, encoding] = account.data;
       let decodedData;
       if (encoding === "base64") {
@@ -129,7 +129,7 @@ export async function getProgramAccountsWithRetry(
 ) {
   const maxRetries = 3;
   const delayMs = 1000;
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -151,7 +151,7 @@ export async function getProgramAccountsWithRetry(
   }
 
   throw new Error(
-    `Failed after ${maxRetries} attempts. Last error: ${lastError.message}`,
+    `Failed after ${maxRetries} attempts. Last error: ${lastError?.message || "Unknown error"}`,
   );
 }
 

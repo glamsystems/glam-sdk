@@ -1,6 +1,4 @@
 import { PublicKey } from "@solana/web3.js";
-import { StateModel } from "../models";
-import * as anchor from "@coral-xyz/anchor";
 import {
   SEED_ACCOUNT_POLICY,
   SEED_ESCROW,
@@ -12,34 +10,14 @@ import {
   SEED_VAULT,
   TRANSFER_HOOK_PROGRAM,
 } from "../constants";
-import { charsToName } from "./helpers";
 
 export function getStatePda(
-  stateModel: Partial<StateModel>,
+  initKey: Uint8Array | number[],
+  owner: PublicKey,
   programId: PublicKey,
-  owner?: PublicKey,
 ): PublicKey {
-  if (!stateModel?.created?.key && !stateModel?.name) {
-    throw new Error("State model must have created key or name");
-  }
-
-  const createdKey = stateModel?.created?.key || [
-    ...Buffer.from(
-      anchor.utils.sha256.hash(charsToName(stateModel.name)),
-    ).subarray(0, 8),
-  ];
-
-  const stateOwner = owner || stateModel?.owner;
-  if (!stateOwner) {
-    throw new Error("Owner must be specified explicitly or set in state model");
-  }
-
   const [pda, _bump] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from(SEED_STATE),
-      stateOwner.toBuffer(),
-      Uint8Array.from(createdKey),
-    ],
+    [Buffer.from(SEED_STATE), owner.toBuffer(), Uint8Array.from(initKey)],
     programId,
   );
   return pda;

@@ -72,6 +72,10 @@ export class StateIdlModel implements StateModelType {
     this.integrationAcls = data.integrationAcls ?? null;
   }
 }
+
+/**
+ * Enriched state model built from multiple onchain accounts
+ */
 export class StateModel extends StateIdlModel {
   readonly glamProgramId: PublicKey;
 
@@ -120,10 +124,13 @@ export class StateModel extends StateIdlModel {
   }
 
   get nameStr() {
-    return charsToName(this.name);
+    return this.name ? charsToName(this.name) : "";
   }
 
   get vault() {
+    if (!this.id) {
+      throw new Error("State ID not initialized");
+    }
     return getVaultPda(this.id, this.glamProgramId);
   }
 
@@ -139,6 +146,9 @@ export class StateModel extends StateIdlModel {
   }
 
   get sparkleKey() {
+    if (!this.mint || !this.id) {
+      throw new Error("Mint or state pubkey not set");
+    }
     return (
       this.mint.equals(PublicKey.default) ? this.id : this.mint
     ).toBase58();
@@ -179,7 +189,7 @@ export class StateModel extends StateIdlModel {
   ) {
     const stateModel: Partial<StateModel> = { id: statePda };
     Object.entries(stateAccount).forEach(([key, value]) => {
-      stateModel[key] = value;
+      (stateModel as any)[key] = value;
     });
 
     // All fields in state_params[0] should be available on the StateModel
@@ -227,6 +237,7 @@ export class StateModel extends StateIdlModel {
         const name = Object.keys(param.name)[0];
         // @ts-ignore
         const value = Object.values(param.value)[0].val;
+        // @ts-ignore
         mintModel[name] = value;
       });
 
@@ -276,11 +287,11 @@ export class StateModel extends StateIdlModel {
         (acl) => acl.integrationProgram.toString() === GlamMintIdlJson.address,
       );
       const mintPolicyData = mintIntegrationPolicy?.protocolPolicies?.find(
-        (policy) => policy.protocolBitflag === 1,
+        (policy: any) => policy.protocolBitflag === 1,
       )?.data;
       const mintPolicy = MintPolicy.decode(mintPolicyData);
       Object.entries(mintPolicy).forEach(([key, value]) => {
-        mintModel[key] = value;
+        (mintModel as any)[key] = value;
       });
 
       // Parse request queue
@@ -358,7 +369,7 @@ export class MintModel extends MintIdlModel {
   }
 
   get nameStr() {
-    return charsToName(this.name);
+    return this.name ? charsToName(this.name) : "";
   }
 }
 
@@ -394,8 +405,8 @@ export class EmergencyAccessUpdateArgs
 export type EmergencyUpdateMintArgsType =
   IdlTypes<GlamMint>["emergencyUpdateMintArgs"];
 export class EmergencyUpdateMintArgs implements EmergencyUpdateMintArgsType {
-  requestType: RequestType;
-  setPaused: boolean;
+  requestType!: RequestType;
+  setPaused!: boolean;
 }
 
 export type IntegrationPermissionsType =

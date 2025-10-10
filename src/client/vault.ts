@@ -233,7 +233,7 @@ export class VaultClient {
   public async closeTokenAccountIx(
     tokenAccount: PublicKey,
     tokenProgram: PublicKey = TOKEN_PROGRAM_ID,
-    txOptions: TxOptions,
+    txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
     return await this.base.extSplProgram.methods
       .tokenCloseAccount()
@@ -416,6 +416,39 @@ export class VaultClient {
       tokenMessengerEventAuthority,
     };
   };
+
+  public async tokenTransferIxs(
+    mint: PublicKey,
+    amount: number | BN,
+    to: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionInstruction[]> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const { mint: mintObj, tokenProgram } =
+      await this.base.fetchMintAndTokenProgram(mint);
+    const toAta = this.base.getAta(mint, to, tokenProgram);
+
+    const preIx = createAssociatedTokenAccountIdempotentInstruction(
+      glamSigner,
+      toAta,
+      to,
+      mint,
+      tokenProgram,
+    );
+    const ix = await this.base.extSplProgram.methods
+      .tokenTransferChecked(new BN(amount), mintObj.decimals)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        from: this.base.getVaultAta(mint, tokenProgram),
+        to: toAta,
+        mint,
+        cpiProgram: tokenProgram,
+      })
+      .instruction();
+
+    return [preIx, ix];
+  }
 
   public async tokenTransferTx(
     mint: PublicKey,
