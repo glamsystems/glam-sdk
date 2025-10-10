@@ -192,16 +192,22 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
   // GLAM mint
   GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh: {
     "0000000000000001": {
-      name: "GLAM Mint",
+      name: "Glam Mint",
       permissions: {
-        [1 << 0]: "Mint",
+        [1 << 0]: "MintTokens",
+        [1 << 1]: "BurnTokens",
+        [1 << 2]: "ForceTransfer",
+        [1 << 3]: "SetTokenAccountState",
+        [1 << 4]: "ClaimFees",
+        [1 << 5]: "Fulfill",
+        [1 << 6]: "EmergencyUpdate",
       },
     },
   },
   // Kamino integration program
   G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
     "0000000000000001": {
-      name: "Kamino Lending",
+      name: "Kamino Lend",
       permissions: {
         [1 << 0]: "Init",
         [1 << 1]: "Deposit",
@@ -254,7 +260,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
   // Token integration program
   G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
     "0000000000000001": {
-      name: "Token",
+      name: "Spl Token",
       permissions: {
         [1 << 0]: "Transfer",
       },
@@ -272,9 +278,9 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
 };
 
 /**
- * Integration program mapping - dynamically built from PROTOCOLS_AND_PERMISSIONS
+ * (Program ID, Bitflag) -> Protocol Name
  */
-export const INTEGRATION_MAPPING = (() => {
+export const PROTOCOL_NAME_BY_PROGRAM_AND_BITFLAG = (() => {
   const mapping: Record<string, Record<string, string>> = {};
 
   Object.entries(PROTOCOLS_AND_PERMISSIONS).forEach(
@@ -282,6 +288,24 @@ export const INTEGRATION_MAPPING = (() => {
       mapping[programId] = {};
       Object.entries(protocols).forEach(([bitflag, protocol]) => {
         mapping[programId][bitflag] = protocol.name;
+      });
+    },
+  );
+
+  return mapping;
+})();
+
+/**
+ * Protocol Name -> (Program ID, Bitflag)
+ */
+export const PROGRAM_AND_BITFLAG_BY_PROTOCOL_NAME = (() => {
+  const mapping: Record<string, [string, string]> = {};
+
+  Object.entries(PROTOCOLS_AND_PERMISSIONS).forEach(
+    ([programId, protocols]) => {
+      Object.entries(protocols).forEach(([bitflag, protocol]) => {
+        const name = protocol.name.replace(" ", "");
+        mapping[name] = [programId, bitflag];
       });
     },
   );
