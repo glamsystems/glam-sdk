@@ -8,6 +8,7 @@ export * from "./deser/integrationPolicies";
 export * from "./client/base";
 export * from "./utils/glamPDAs";
 export * from "./utils/helpers";
+export * from "./utils/timelockUtils";
 export * from "./utils/priorityfee";
 export * from "./utils/driftOrderParams";
 export * from "./utils/driftTypes";
