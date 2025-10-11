@@ -2,6 +2,7 @@ import {
   PublicKey,
   VersionedTransaction,
   TransactionSignature,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { BaseClient, TxOptions } from "./base";
@@ -12,7 +13,7 @@ class TxBuilder {
 
   async emergencyAccessUpdate(
     args: Partial<EmergencyAccessUpdateArgs>,
-    txOptions: TxOptions,
+    txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
@@ -24,6 +25,20 @@ class TxBuilder {
       .preInstructions(txOptions.preInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  async emergencyAccessUpdateIx(
+    args: Partial<EmergencyAccessUpdateArgs>,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionInstruction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    return await this.base.protocolProgram.methods
+      .emergencyAccessUpdate(new EmergencyAccessUpdateArgs(args))
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+      })
+      .instruction();
   }
 
   async enableDisableProtocols(
@@ -68,6 +83,30 @@ class TxBuilder {
       .preInstructions(txOptions.preInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  async grantRevokeDelegatePermissionsIx(
+    delegate: PublicKey,
+    integrationProgram: PublicKey,
+    protocolBitflag: number,
+    permissionsBitmask: BN,
+    setGranted: boolean,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionInstruction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    return await this.base.protocolProgram.methods
+      .grantRevokeDelegatePermissions(
+        delegate,
+        integrationProgram,
+        protocolBitflag,
+        permissionsBitmask,
+        setGranted,
+      )
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+      })
+      .instruction();
   }
 
   async setProtocolPolicy(
