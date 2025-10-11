@@ -21,17 +21,6 @@ import { charsToName, nameToChars } from "./utils/helpers";
 import { MintPolicy } from "./deser/integrationPolicies";
 import { getVaultPda } from "./utils/glamPDAs";
 
-export const GlamIntegrations =
-  GlamProtocolIdlJson?.types
-    ?.find((t) => t.name === "Integration")
-    ?.type?.variants?.map((v) => v.name) ?? [];
-
-export const GlamPermissions =
-  GlamProtocolIdlJson?.types
-    ?.find((t) => t.name === "Permission")
-    ?.type?.variants?.map((v) => v.name)
-    .filter((v) => !v.startsWith("__")) ?? [];
-
 const GLAM_PROTOCOL_PROGRAM_ID = new PublicKey(GlamProtocolIdlJson.address);
 
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
