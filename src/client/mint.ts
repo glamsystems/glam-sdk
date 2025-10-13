@@ -1,5 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
-import { PublicKey, Transaction, TransactionSignature } from "@solana/web3.js";
+import {
+  PublicKey,
+  Transaction,
+  TransactionSignature,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import { BaseClient, TokenAccount, TxOptions } from "./base";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -16,6 +21,7 @@ import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
 import { charsToName } from "../utils/helpers";
+import { BN } from "@coral-xyz/anchor";
 
 class MintTxBuilder {
   constructor(private base: BaseClient) {}
@@ -31,7 +37,7 @@ class MintTxBuilder {
     owner: PublicKey,
     setFrozen: boolean = true,
     txOptions: TxOptions = {},
-  ) {
+  ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const glamMint = this.base.mintPda;
     const ata = this.base.getMintAta(owner);
@@ -49,7 +55,7 @@ class MintTxBuilder {
   }
 
   /**
-   * Freezes or unfreezes token accounts of a glam mint
+   * Freezes or unfreezes token accounts
    *
    * @param tokenAccounts List of token accounts to freeze or unfreeze
    * @param frozen If true, the token accounts will be frozen; otherwise, they will be unfrozen
@@ -59,7 +65,7 @@ class MintTxBuilder {
     tokenAccounts: PublicKey[],
     frozen: boolean,
     txOptions: TxOptions = {},
-  ) {
+  ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const tx = await this.base.mintProgram.methods
       .setTokenAccountsStates(frozen)
@@ -78,8 +84,7 @@ class MintTxBuilder {
       .preInstructions(txOptions.preInstructions || [])
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   /**
@@ -95,7 +100,7 @@ class MintTxBuilder {
     amount: anchor.BN,
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
+  ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const mintTo = this.base.getMintAta(recipient);
 
@@ -140,24 +145,23 @@ class MintTxBuilder {
       .preInstructions(preInstructions)
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   /**
    * Burns tokens from a token account
    *
-   * @param amount Amount of tokens to burn
    * @param from Owner of the token account
+   * @param amount Amount of tokens to burn
    * @param forceThaw If true, automatically unfree the token account before burning
    * @param txOptions
    */
   public async burn(
-    amount: anchor.BN,
     from: PublicKey,
+    amount: BN,
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
+  ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const ata = this.base.getMintAta(from);
 
@@ -189,26 +193,25 @@ class MintTxBuilder {
       .preInstructions(preInstructions)
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   /**
    * Transfers tokens from one token account to another
    *
-   * @param amount Amount of tokens to transfer
    * @param from Owner of the sender token account
    * @param to Owner of the recipient token account
+   * @param amount Amount of tokens to transfer
    * @param forceThaw If true, automatically unfree the token accounts before transfer
    * @param txOptions
    */
   public async forceTransfer(
-    amount: anchor.BN,
     from: PublicKey,
     to: PublicKey,
+    amount: BN,
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
+  ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.getSigner();
     const fromAta = this.base.getMintAta(from);
     const toAta = this.base.getMintAta(to);
@@ -271,8 +274,7 @@ class MintTxBuilder {
       .preInstructions(preInstructions)
       .transaction();
 
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 }
 
@@ -282,6 +284,7 @@ class TxBuilder {
   public async initialize(
     mintModel: Partial<MintModel>,
     accountType: StateAccountType,
+    decimals: number | null,
     txOptions: TxOptions = {},
   ) {
     if (!mintModel.name) {
@@ -291,11 +294,13 @@ class TxBuilder {
       throw new Error("Mint asset must be specified");
     }
 
-    // Set glam mint decimals to the same as deposit asset
-    const { mint } = await this.base.fetchMintAndTokenProgram(
-      mintModel.baseAssetMint,
-    );
-    const glamMintDecimals = mint.decimals;
+    // If decimals is not specified, set it to the same as the deposit asset
+    if (decimals === null) {
+      const { mint } = await this.base.fetchMintAndTokenProgram(
+        mintModel.baseAssetMint,
+      );
+      decimals = mint.decimals;
+    }
 
     const stateInitKey = [
       ...Buffer.from(
@@ -325,7 +330,7 @@ class TxBuilder {
         new MintIdlModel(mintModel),
         stateInitKey,
         accountType,
-        glamMintDecimals,
+        decimals,
       )
       .accounts({
         glamState: this.base.statePda,
@@ -335,8 +340,7 @@ class TxBuilder {
         baseAssetMint: mintModel.baseAssetMint,
       })
       .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async update(
@@ -462,11 +466,11 @@ class TxBuilder {
 }
 
 export class MintClient {
-  // public readonly mintTxBuilder: MintTxBuilder;
+  public readonly mintTxBuilder: MintTxBuilder;
   public readonly txBuilder: TxBuilder;
 
   public constructor(readonly base: BaseClient) {
-    // this.mintTxBuilder = new MintTxBuilder(base);
+    this.mintTxBuilder = new MintTxBuilder(base);
     this.txBuilder = new TxBuilder(base);
   }
 
@@ -482,14 +486,12 @@ export class MintClient {
 
     const heliusApiKey =
       process.env.NEXT_PUBLIC_HELIUS_API_KEY || process.env.HELIUS_API_KEY;
-    if (!heliusApiKey) {
+    if (!heliusApiKey || this.base.cluster !== ClusterNetwork.Mainnet) {
       return await this.getHolders(showZeroBalance);
     }
 
-    const cluster =
-      this.base.cluster === ClusterNetwork.Mainnet ? "mainnet" : "devnet";
     const response = await fetch(
-      `https://${cluster}.helius-rpc.com/?api-key=${heliusApiKey}`,
+      `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -508,14 +510,18 @@ export class MintClient {
     const data = await response.json();
     const { token_accounts: tokenAccounts } = data.result;
 
+    const { mint, tokenProgram } = await this.base.fetchMintAndTokenProgram(
+      this.base.mintPda,
+    );
+
     return tokenAccounts.map((ta: any) => ({
       owner: new PublicKey(ta.owner),
       pubkey: new PublicKey(ta.address),
       mint: this.base.mintPda,
-      programId: TOKEN_2022_PROGRAM_ID,
-      decimals: 9,
+      programId: tokenProgram,
+      decimals: mint.decimals,
       amount: ta.amount,
-      uiAmount: Number(ta.amount) / 10 ** 9,
+      uiAmount: Number(ta.amount) / 10 ** mint.decimals,
       frozen: ta.frozen,
     }));
   }
@@ -538,6 +544,9 @@ export class MintClient {
         ],
       },
     );
+    const { mint, tokenProgram } = await this.base.fetchMintAndTokenProgram(
+      this.base.mintPda,
+    );
     return accounts
       .map((a) => {
         const { pubkey, account } = a;
@@ -550,10 +559,10 @@ export class MintClient {
           owner: tokenAccount.owner,
           pubkey: tokenAccount.address,
           mint: tokenAccount.mint,
-          programId: TOKEN_2022_PROGRAM_ID,
-          decimals: 9, // always 9 for glam mint
+          programId: tokenProgram,
+          decimals: mint.decimals,
           amount: tokenAccount.amount.toString(),
-          uiAmount: Number(tokenAccount.amount) / 10 ** 9,
+          uiAmount: Number(tokenAccount.amount) / 10 ** mint.decimals,
           frozen: tokenAccount.isFrozen,
         } as TokenAccount;
       })
@@ -568,6 +577,22 @@ export class MintClient {
     const vTx = await this.txBuilder.initialize(
       mintModel,
       accountType,
+      null,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async initializeWithDecimals(
+    mintModel: Partial<MintModel>,
+    accountType: StateAccountType,
+    decimals: number,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.txBuilder.initialize(
+      mintModel,
+      accountType,
+      decimals,
       txOptions,
     );
     return await this.base.sendAndConfirm(vTx);
@@ -608,6 +633,74 @@ export class MintClient {
 
   public async close(txOptions: TxOptions = {}) {
     const vTx = await this.txBuilder.closeMint(txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async mint(
+    to: PublicKey,
+    amount: BN | number,
+    unfreeze: boolean = false,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.mintTxBuilder.mint(to, amount, unfreeze, txOptions);
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async burn(
+    from: PublicKey,
+    amount: BN | number,
+    unfreeze: boolean = false,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.mintTxBuilder.burn(
+      from,
+      amount,
+      unfreeze,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async createTokenAccount(
+    owner: PublicKey,
+    setFrozen: boolean,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.mintTxBuilder.createTokenAccount(
+      owner,
+      setFrozen,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async setTokenAccountsStates(
+    tokenAccounts: PublicKey[],
+    frozen: boolean,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.mintTxBuilder.setTokenAccountsStates(
+      tokenAccounts,
+      frozen,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async forceTransfer(
+    from: PublicKey,
+    to: PublicKey,
+    amount: BN | number,
+    unfreeze: boolean = false,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.mintTxBuilder.forceTransfer(
+      from,
+      to,
+      amount,
+      unfreeze,
+      txOptions,
+    );
     return await this.base.sendAndConfirm(vTx);
   }
 }
