@@ -287,6 +287,7 @@ export class StateModel extends StateIdlModel {
       if (requestQueue) {
         mintModel.subscriptionPaused = requestQueue.subscriptionPaused;
         mintModel.redemptionPaused = requestQueue.redemptionPaused;
+        mintModel.pendingRequests = requestQueue.data;
       }
 
       // Assign mint model
@@ -344,6 +345,7 @@ export class MintModel extends MintIdlModel {
   feeParams: FeeParams | null;
   subscriptionPaused: boolean | null;
   redemptionPaused: boolean | null;
+  pendingRequests: any[] | null;
 
   constructor(data: Partial<MintModel>) {
     super(data);
@@ -355,6 +357,7 @@ export class MintModel extends MintIdlModel {
     this.feeParams = data.feeParams ?? null;
     this.subscriptionPaused = data.subscriptionPaused ?? null;
     this.redemptionPaused = data.redemptionPaused ?? null;
+    this.pendingRequests = data.pendingRequests ?? null;
   }
 
   get nameStr() {

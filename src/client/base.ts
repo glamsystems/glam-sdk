@@ -742,7 +742,9 @@ export class BaseClient {
       "confirmed",
     );
     if (!info) {
-      throw new Error(`Failed to fetch mint account for ${mintPubkey.toBase58()}`);
+      throw new Error(
+        `Failed to fetch mint account for ${mintPubkey.toBase58()}`,
+      );
     }
     return this.parseMintAccountInfo(info, mintPubkey);
   }
@@ -963,11 +965,24 @@ export class BaseClient {
       mintsCache.set(mintPubkeys[i].toBase58(), mints[i].mint);
     }
 
+    // { publicKey, account: RequestQueue }[]
+    const requestQueues = await this.mintProgram.account.requestQueue.all();
+    const requestQueueMap = new Map(
+      requestQueues.map((r) => [r.publicKey.toBase58(), r.account]),
+    );
+
     return filteredStateAccounts.map(({ publicKey, account: stateAccount }) => {
+      const mint = mintsCache.get(stateAccount.mint.toBase58());
+      const requestQueuePda = mint
+        ? getRequestQueuePda(stateAccount.mint, this.mintProgram.programId)
+        : PublicKey.default;
+      const requestQueue = requestQueueMap.get(requestQueuePda.toBase58());
+
       return StateModel.fromOnchainAccounts(
         publicKey,
         stateAccount,
-        mintsCache.get(stateAccount.mint.toBase58()),
+        mint,
+        requestQueue,
         this.protocolProgram.programId,
       );
     });
