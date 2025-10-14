@@ -339,6 +339,7 @@ class TxBuilder {
         extraMetasAccount: this.base.extraMetasPda,
         baseAssetMint: mintModel.baseAssetMint,
       })
+      .postInstructions(txOptions.postInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }

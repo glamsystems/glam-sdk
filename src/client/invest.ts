@@ -407,13 +407,7 @@ export class InvestClient {
       }
     }
 
-    if (
-      !claimUserAta ||
-      !claimUserPolicy ||
-      !claimTokenMint ||
-      !claimTokenProgram ||
-      !escrowAta
-    ) {
+    if (!claimUserAta || !claimTokenMint || !claimTokenProgram || !escrowAta) {
       throw new Error("Missing required accounts.");
     }
 

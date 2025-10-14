@@ -96,6 +96,7 @@ export type TxOptions = {
   useMaxFee?: boolean;
   jitoTipLamports?: number;
   preInstructions?: TransactionInstruction[];
+  postInstructions?: TransactionInstruction[];
   lookupTables?: PublicKey[] | AddressLookupTableAccount[];
   simulate?: boolean;
 };

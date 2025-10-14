@@ -3,6 +3,7 @@ import {
   VersionedTransaction,
   TransactionSignature,
   PublicKey,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { BaseClient, TxOptions } from "./base";
 import { StateModel, CreatedModel, StateIdlModel } from "../models";
@@ -53,6 +54,20 @@ class TxBuilder {
       .preInstructions(txOptions.preInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  async updateIx(
+    updated: Partial<StateIdlModel>,
+    txOptions: TxOptions,
+  ): Promise<TransactionInstruction> {
+    const glamSigner = txOptions.signer || this.base.getSigner();
+    return await this.base.protocolProgram.methods
+      .updateState(new StateIdlModel(updated))
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+      })
+      .instruction();
   }
 
   async updateApplyTimelock(
