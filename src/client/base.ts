@@ -349,10 +349,12 @@ export class BaseClient {
       lookupTableAccounts.push(...accounts);
     }
 
-    const glamLookupTableAccounts = await getGlamLookupTableAccounts(
-      this.statePda,
-    );
-    lookupTableAccounts.push(...glamLookupTableAccounts);
+    if (this._statePda) {
+      const glamLookupTableAccounts = await getGlamLookupTableAccounts(
+        this.statePda,
+      );
+      lookupTableAccounts.push(...glamLookupTableAccounts);
+    }
 
     // console.log(
     //   "lookupTableAccounts:",

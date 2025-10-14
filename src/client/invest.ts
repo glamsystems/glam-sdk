@@ -13,7 +13,6 @@ import {
   TOKEN_2022_PROGRAM_ID,
   createCloseAccountInstruction,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 import { BaseClient, TxOptions } from "./base";
@@ -51,22 +50,28 @@ export class InvestClient {
   }
 
   public async fulfill(
+    limit: number | null,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.fulfillTx(txOptions);
+    const tx = await this.fulfillTx(limit, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async claim(
-    requestType: RequestType,
+  /**
+   * Claims the pending request for the signer.
+   * @param txOptions
+   * @returns
+   */
+  public async claim(txOptions: TxOptions = {}): Promise<TransactionSignature> {
+    const tx = await this.claimTx(null, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async claimForUser(
+    user: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
-      const tx = await this.claimSharesTx(txOptions);
-      return await this.base.sendAndConfirm(tx);
-    }
-
-    const tx = await this.claimTokensTx(txOptions);
+    const tx = await this.claimTx(user, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -312,6 +317,7 @@ export class InvestClient {
   }
 
   public async fulfillTx(
+    limit: number | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.getSigner();
@@ -320,7 +326,7 @@ export class InvestClient {
     const { tokenProgram: depositTokenProgram } =
       await this.base.fetchMintAndTokenProgram(baseAssetMint);
     const tx = await this.base.mintProgram.methods
-      .fulfill()
+      .fulfill(limit)
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
@@ -334,85 +340,81 @@ export class InvestClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async claimTokensTx(
+  public async claimTx(
+    user: PublicKey | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
-    const { baseAssetMint } = await this.base.fetchStateModel();
-    const { tokenProgram: claimTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(baseAssetMint);
+    const signer = txOptions.signer || this.base.signer;
+    const claimUser = user || signer;
 
-    const signerAta = this.base.getAta(
-      baseAssetMint,
-      signer,
-      claimTokenProgram,
-    );
-    const escrowAta = this.base.getAta(
-      baseAssetMint,
-      this.base.escrowPda,
-      claimTokenProgram,
-    );
+    const pendingRequest = await this.fetchPendingRequest(claimUser);
+    if (!pendingRequest) {
+      throw new Error("No eligible request found to claim.");
+    }
+    const requestType = pendingRequest.requestType as RequestType;
 
-    const preInstructions = [
-      ...(txOptions.preInstructions || []),
-      createAssociatedTokenAccountIdempotentInstruction(
-        signer,
-        signerAta,
-        signer,
-        baseAssetMint,
-      ),
-    ];
-
-    // Close wSOL ata so user gets SOL
-    const postInstructions = baseAssetMint.equals(WSOL)
-      ? [createCloseAccountInstruction(signerAta, signer, signer)]
-      : [];
-
-    const tx = await this.base.mintProgram.methods
-      .claim()
-      .accountsPartial({
-        glamState: this.base.statePda,
-        glamEscrow: this.base.escrowPda,
-        glamMint: this.base.mintPda,
-        signer,
-        claimTokenMint: baseAssetMint,
-        signerAta,
-        escrowAta,
-        signerPolicy: null, // not needed for claiming redemption
-        claimTokenProgram,
-      })
-      .preInstructions(preInstructions)
-      .postInstructions(postInstructions)
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  public async claimSharesTx(
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
-    const signerShareAta = this.base.getMintAta();
-    const escrowShareAta = this.base.getMintAta(this.base.escrowPda);
-
-    let signerPolicy = null;
+    let claimUserAta = null;
+    let claimUserPolicy = null;
+    let claimTokenMint = null;
+    let claimTokenProgram = null;
+    let escrowAta = null;
     const remainingAccounts: AccountMeta[] = [];
-    if (await this.base.isLockupEnabled()) {
-      const extraMetasAccount = this.base.extraMetasPda;
-      const escrowPolicy = getAccountPolicyPda(signerShareAta);
-      signerPolicy = getAccountPolicyPda(signerShareAta);
-      remainingAccounts.push(
-        ...[
+    const postInstructions: TransactionInstruction[] = [];
+
+    // Claim redemption, user gets base asset back
+    if (RequestType.equals(requestType, RequestType.REDEMPTION)) {
+      const { baseAssetMint, baseAssetTokenProgramId } =
+        await this.base.fetchStateModel();
+      claimTokenProgram = baseAssetTokenProgramId;
+      claimTokenMint = baseAssetMint;
+      claimUserAta = this.base.getAta(
+        baseAssetMint,
+        claimUser,
+        claimTokenProgram,
+      );
+      escrowAta = this.base.getAta(
+        baseAssetMint,
+        this.base.escrowPda,
+        claimTokenProgram,
+      );
+      // Close wSOL ata so user gets SOL, only possible if signer is claiming for themselves
+      baseAssetMint.equals(WSOL) &&
+        claimUser.equals(this.base.signer) &&
+        postInstructions.push(
+          createCloseAccountInstruction(claimUserAta, claimUser, claimUser),
+        );
+    } else if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
+      claimTokenMint = this.base.mintPda;
+      claimTokenProgram = TOKEN_2022_PROGRAM_ID;
+      claimUserAta = this.base.getMintAta(claimUser);
+      escrowAta = this.base.getMintAta(this.base.escrowPda);
+      if (await this.base.isLockupEnabled()) {
+        const extraMetasAccount = this.base.extraMetasPda;
+        const escrowPolicy = getAccountPolicyPda(escrowAta);
+        claimUserPolicy = getAccountPolicyPda(claimUserAta);
+        [
           extraMetasAccount,
           escrowPolicy,
-          signerPolicy,
+          claimUserPolicy,
           TRANSFER_HOOK_PROGRAM,
-        ].map((pubkey) => ({
-          pubkey,
-          isSigner: false,
-          isWritable: false,
-        })),
-      );
+        ].forEach((pubkey) =>
+          remainingAccounts.push({
+            pubkey,
+            isSigner: false,
+            isWritable: false,
+          }),
+        );
+      }
+    }
+
+    if (
+      !claimUserAta ||
+      !claimUserPolicy ||
+      !claimTokenMint ||
+      !claimTokenProgram ||
+      !escrowAta
+    ) {
+      throw new Error("Missing required accounts.");
     }
 
     const tx = await this.base.mintProgram.methods
@@ -422,11 +424,12 @@ export class InvestClient {
         glamEscrow: this.base.escrowPda,
         glamMint: this.base.mintPda,
         signer,
-        claimTokenMint: this.base.mintPda,
-        signerAta: signerShareAta,
-        escrowAta: escrowShareAta,
-        signerPolicy,
-        claimTokenProgram: TOKEN_2022_PROGRAM_ID,
+        claimTokenMint,
+        claimUser,
+        claimUserAta,
+        escrowAta,
+        claimUserPolicy,
+        claimTokenProgram,
       })
       .remainingAccounts(remainingAccounts)
       .transaction();

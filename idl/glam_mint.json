@@ -391,16 +391,19 @@
           "signer": true
         },
         {
+          "name": "claim_user"
+        },
+        {
           "name": "claim_token_mint"
         },
         {
-          "name": "signer_ata",
+          "name": "claim_user_ata",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "claim_user"
               },
               {
                 "kind": "account",
@@ -508,7 +511,7 @@
           }
         },
         {
-          "name": "signer_policy",
+          "name": "claim_user_policy",
           "writable": true,
           "optional": true
         },
@@ -1730,7 +1733,14 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "limit",
+          "type": {
+            "option": "u32"
+          }
+        }
+      ]
     },
     {
       "name": "initialize_mint",
@@ -4430,6 +4440,16 @@
       "code": 6010,
       "name": "RequestQueueNotEmpty",
       "msg": "Request queue not empty"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidRequestQueueData",
+      "msg": "Invalid request queue data"
+    },
+    {
+      "code": 6012,
+      "name": "RequestQueueFull",
+      "msg": "Request queue full"
     }
   ],
   "types": [

@@ -397,16 +397,19 @@ export type GlamMint = {
           "signer": true
         },
         {
+          "name": "claimUser"
+        },
+        {
           "name": "claimTokenMint"
         },
         {
-          "name": "signerAta",
+          "name": "claimUserAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "claimUser"
               },
               {
                 "kind": "account",
@@ -514,7 +517,7 @@ export type GlamMint = {
           }
         },
         {
-          "name": "signerPolicy",
+          "name": "claimUserPolicy",
           "writable": true,
           "optional": true
         },
@@ -1736,7 +1739,14 @@ export type GlamMint = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "limit",
+          "type": {
+            "option": "u32"
+          }
+        }
+      ]
     },
     {
       "name": "initializeMint",
@@ -4436,6 +4446,16 @@ export type GlamMint = {
       "code": 6010,
       "name": "requestQueueNotEmpty",
       "msg": "Request queue not empty"
+    },
+    {
+      "code": 6011,
+      "name": "invalidRequestQueueData",
+      "msg": "Invalid request queue data"
+    },
+    {
+      "code": 6012,
+      "name": "requestQueueFull",
+      "msg": "Request queue full"
     }
   ],
   "types": [
