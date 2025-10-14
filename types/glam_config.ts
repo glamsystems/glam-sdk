@@ -8,7 +8,7 @@ export type GlamConfig = {
   "address": "gConFzxKL9USmwTdJoeQJvfKmqhJ2CyUaXTyQ8v9TGX",
   "metadata": {
     "name": "glamConfig",
-    "version": "0.1.1",
+    "version": "1.0.0",
     "spec": "0.1.0",
     "description": "Configuration program for GLAM protocol"
   },

@@ -2,7 +2,7 @@
   "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh",
   "metadata": {
     "name": "glam_mint",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "spec": "0.1.0",
     "description": "GLAM mint program"
   },

@@ -8,7 +8,7 @@ export type GlamPolicies = {
   "address": "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
   "metadata": {
     "name": "glamPolicies",
-    "version": "0.1.2",
+    "version": "1.0.0",
     "spec": "0.1.0",
     "description": "Policies program for GLAM protocol"
   },
