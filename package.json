@@ -1,6 +1,6 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
