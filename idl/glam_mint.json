@@ -5868,6 +5868,11 @@
       "value": "16"
     },
     {
+      "name": "PROTO_MINT_PERM_CLAIM_REQUEST",
+      "type": "u64",
+      "value": "256"
+    },
+    {
       "name": "PROTO_MINT_PERM_EMERGENCY_UPDATE",
       "type": "u64",
       "value": "64"

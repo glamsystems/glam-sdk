@@ -5874,6 +5874,11 @@ export type GlamMint = {
       "value": "16"
     },
     {
+      "name": "protoMintPermClaimRequest",
+      "type": "u64",
+      "value": "256"
+    },
+    {
       "name": "protoMintPermEmergencyUpdate",
       "type": "u64",
       "value": "64"
