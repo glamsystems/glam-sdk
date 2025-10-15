@@ -189,16 +189,19 @@ export type GlamMint = {
           "signer": true
         },
         {
+          "name": "user"
+        },
+        {
           "name": "recoverTokenMint"
         },
         {
-          "name": "signerAta",
+          "name": "userAta",
           "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "path": "signer"
+                "path": "user"
               },
               {
                 "kind": "account",
@@ -5859,6 +5862,11 @@ export type GlamMint = {
       "name": "protoMintPermBurnTokens",
       "type": "u64",
       "value": "2"
+    },
+    {
+      "name": "protoMintPermCancelRequest",
+      "type": "u64",
+      "value": "128"
     },
     {
       "name": "protoMintPermClaimFees",

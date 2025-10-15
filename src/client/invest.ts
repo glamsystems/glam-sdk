@@ -45,7 +45,15 @@ export class InvestClient {
   public async cancel(
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.cancelTx(txOptions);
+    const tx = await this.cancelTx(null, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async cancelForUser(
+    user: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.cancelTx(user, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 
@@ -268,10 +276,13 @@ export class InvestClient {
   }
 
   public async cancelTx(
+    pubkey: PublicKey | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const signer = txOptions.signer || this.base.signer;
-    const pendingRequest = await this.fetchPendingRequest(signer);
+    const user = pubkey || signer;
+
+    const pendingRequest = await this.fetchPendingRequest(user);
     if (!pendingRequest) {
       throw new Error("No pending request found to cancel.");
     }
@@ -286,9 +297,9 @@ export class InvestClient {
       recoverTokenMint = baseAssetMint;
       recoverTokenProgram = baseAssetTokenProgramId;
     }
-    const signerAta = this.base.getAta(
+    const userAta = this.base.getAta(
       recoverTokenMint,
-      signer,
+      user,
       recoverTokenProgram,
     );
     const escrowAta = this.base.getAta(
@@ -305,8 +316,9 @@ export class InvestClient {
         glamMint: this.base.mintPda,
         requestQueue: this.base.requestQueuePda,
         signer,
+        user,
         recoverTokenMint,
-        signerAta,
+        userAta,
         escrowAta,
         systemProgram: SystemProgram.programId,
         recoverTokenProgram,
