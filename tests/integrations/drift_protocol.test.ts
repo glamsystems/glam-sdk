@@ -122,15 +122,14 @@ describe("drift_protocol", () => {
     }
   });
 
-  it("Deposit 10 SOL", async () => {
+  it("Deposit 10 SOL - fail due to policy violation", async () => {
     const amount = new BN(10_000_000_000);
 
     try {
       const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
-      console.log("driftDeposit", txSig);
+      expect(txSig).toBeUndefined();
     } catch (e) {
-      console.error(e);
-      throw e;
+      expect(e.message).toEqual("Protocol policy violation");
     }
   });
 
@@ -138,7 +137,6 @@ describe("drift_protocol", () => {
     const amount = new BN(11_000_000_000);
     try {
       const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
-      console.log("driftWithdraw", txSig);
       expect(txSig).toBeUndefined();
     } catch (e) {
       expect(e.message).toEqual("Protocol policy violation");
@@ -161,11 +159,22 @@ describe("drift_protocol", () => {
     }
   });
 
+  it("Deposit 10 SOL", async () => {
+    const amount = new BN(10_000_000_000);
+
+    try {
+      const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
+      console.log("driftDeposit", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
   it("Withdraw 11 SOL (effectively borrow 1 SOL)", async () => {
     const amount = new BN(11_000_000_000);
     try {
       const txSig = await glamClient.drift.withdraw(amount, 1, 1);
-      console.log("driftWithdraw", txSig);
       expect(txSig).toBeUndefined();
     } catch (e) {
       expect(e.message).toEqual("Insufficient collateral.");
