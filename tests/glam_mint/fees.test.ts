@@ -1,3 +1,4 @@
+import { Transaction } from "@solana/web3.js";
 import { GlamClient, nameToChars, StateAccountType, WSOL } from "../../src";
 import { airdrop, sleep } from "../test-utils";
 import { BN } from "@coral-xyz/anchor";
@@ -63,44 +64,39 @@ describe("fees", () => {
     );
   }, 25_000);
 
-  it("Set protocol fees", async () => {
+  it("Set protocol fees: fail before fees crystallized", async () => {
+    try {
+      const setIx = await glamClient.fees.setProtocolFeesIx(2, 4000);
+      const vTx = await glamClient.intoVersionedTransaction(
+        new Transaction().add(setIx),
+        txOptions,
+      );
+      const txSig = await glamClient.sendAndConfirm(vTx);
+      expect(txSig).toBeUndefined();
+    } catch (e) {
+      expect(e.message).toContain(
+        "Protocol fees should be crystallized before updating",
+      );
+    }
+  });
+
+  it("First-time crystallize fees and set protocol fees", async () => {
     try {
       const txSig = await glamClient.fees.setProtocolFees(2, 4000, txOptions);
-      console.log("Set protocol fees txSig", txSig);
+      console.log("Crystallize fees and set protocol fees:", txSig);
     } catch (e) {
       console.error(e);
       throw e;
     }
+
+    // Protocol fees should be updated
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.mintModel?.feeStructure.protocol.baseFeeBps).toEqual(2);
     expect(stateModel.mintModel?.feeStructure.protocol.flowFeeBps).toEqual(
       4000,
     );
-  });
-
-  it("First-time crystallize fees", async () => {
-    try {
-      // Airdrop 1000 SOL to vault and wrap it (vault pays fees in wSOL)
-      // This make AUM > 0, otherwise the ix fails due to GlamError::PositiveAumRequired
-      await airdrop(
-        glamClient.provider.connection,
-        glamClient.vaultPda,
-        1_000_000_000_000,
-      );
-      const txWrapSolSig = await glamClient.vault.wrap(
-        new BN(1_000_000_000_000),
-      );
-      console.log("Wrap vault SOL -> wSOL:", txWrapSolSig);
-
-      const txSig = await glamClient.fees.crystallizeFees(txOptions);
-      console.log("First-time crystallize fees:", txSig);
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
 
     // After first-time crystallization, all fees should be 0
-    const stateModel = await glamClient.fetchStateModel();
     const { claimableFees, claimedFees, feeParams } = stateModel.mintModel!;
     Object.values(claimableFees).forEach((fee) => {
       expect(new BN(fee).eq(new BN(0))).toBeTruthy();
@@ -117,6 +113,15 @@ describe("fees", () => {
   });
 
   it("Crystallize fees", async () => {
+    // Airdrop 1000 SOL to vault and wrap it (vault pays fees in wSOL)
+    await airdrop(
+      glamClient.provider.connection,
+      glamClient.vaultPda,
+      1_000_000_000_000,
+    );
+    const txWrapSolSig = await glamClient.vault.wrap(new BN(1_000_000_000_000));
+    console.log("Wrap vault SOL -> wSOL:", txWrapSolSig);
+
     await sleep(10_000); // more time elapsed, more fees generated
 
     try {

@@ -4453,6 +4453,11 @@
       "code": 6012,
       "name": "RequestQueueFull",
       "msg": "Request queue full"
+    },
+    {
+      "code": 6013,
+      "name": "ProtocolFeesNotCrystallized",
+      "msg": "Protocol fees should be crystallized before updating"
     }
   ],
   "types": [

@@ -1,5 +1,9 @@
 import { BN } from "@coral-xyz/anchor";
-import { PublicKey, TransactionSignature } from "@solana/web3.js";
+import {
+  PublicKey,
+  TransactionInstruction,
+  TransactionSignature,
+} from "@solana/web3.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
@@ -64,6 +68,7 @@ export class FeesClient {
       throw new Error("Base asset not found");
     }
 
+    const postInstructions = txOptions.postInstructions || [];
     const priceVaultIxs = await this.price.priceVaultIxs();
     const createEscrowShareAtaIx =
       createAssociatedTokenAccountIdempotentInstruction(
@@ -86,6 +91,7 @@ export class FeesClient {
         glamMint: this.base.mintPda,
       })
       .preInstructions(preInstructions)
+      .postInstructions(postInstructions)
       .transaction();
 
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -160,20 +166,28 @@ export class FeesClient {
     return await this.base.sendAndConfirm(vTx);
   }
 
-  public async setProtocolFees(
+  public async setProtocolFeesIx(
     baseFeeBps: number,
     flowFeeBps: number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.base.mintProgram.methods
+  ): Promise<TransactionInstruction> {
+    return await this.base.mintProgram.methods
       .setProtocolFees(baseFeeBps, flowFeeBps)
       .accounts({
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
       })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    const txSig = await this.base.sendAndConfirm(vTx);
-    return txSig;
+      .instruction();
+  }
+
+  public async setProtocolFees(
+    baseFeeBps: number,
+    flowFeeBps: number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const setIx = await this.setProtocolFeesIx(baseFeeBps, flowFeeBps);
+    return await this.crystallizeFees({
+      ...txOptions,
+      postInstructions: [setIx],
+    });
   }
 }

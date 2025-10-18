@@ -4459,6 +4459,11 @@ export type GlamMint = {
       "code": 6012,
       "name": "requestQueueFull",
       "msg": "Request queue full"
+    },
+    {
+      "code": 6013,
+      "name": "protocolFeesNotCrystallized",
+      "msg": "Protocol fees should be crystallized before updating"
     }
   ],
   "types": [
