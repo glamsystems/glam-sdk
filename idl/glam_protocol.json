@@ -8,6 +8,31 @@
   },
   "instructions": [
     {
+      "name": "cancel_timelock",
+      "discriminator": [
+        158,
+        180,
+        47,
+        81,
+        133,
+        231,
+        168,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "glam_state",
+          "writable": true
+        },
+        {
+          "name": "glam_signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close_state",
       "discriminator": [
         25,

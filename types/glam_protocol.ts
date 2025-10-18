@@ -14,6 +14,31 @@ export type GlamProtocol = {
   },
   "instructions": [
     {
+      "name": "cancelTimelock",
+      "discriminator": [
+        158,
+        180,
+        47,
+        81,
+        133,
+        231,
+        168,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "closeState",
       "discriminator": [
         25,
