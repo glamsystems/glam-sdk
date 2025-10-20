@@ -1,4 +1,3 @@
-import { BN } from "@coral-xyz/anchor";
 import {
   PublicKey,
   TransactionInstruction,
@@ -11,7 +10,6 @@ import {
 
 import { BaseClient, TxOptions } from "./base";
 import { PriceClient } from "./price";
-import { PriceDenom } from "../models";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
 
 export class FeesClient {

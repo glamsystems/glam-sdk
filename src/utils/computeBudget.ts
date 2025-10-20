@@ -60,7 +60,7 @@ export async function buildComputeBudgetInstructions(
       } else {
         priorityFeeMicroLamports = Math.ceil(feeEstimate);
       }
-    } catch (e) {}
+    } catch {}
   }
 
   if (process.env.NODE_ENV === "development") {

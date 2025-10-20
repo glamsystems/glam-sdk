@@ -12,7 +12,6 @@ import {
 } from "../../src";
 
 const key1 = Keypair.fromSeed(str2seed("acl_test_key1"));
-const key2 = Keypair.fromSeed(str2seed("acl_test_key2"));
 
 describe("state_ops", () => {
   const glamClient = new GlamClient(); // statePda will be set once glam state is created
@@ -26,7 +25,7 @@ describe("state_ops", () => {
   });
 
   it("Initialize glam state", async () => {
-    const { statePda, vaultPda, mintPda } =
+    const { statePda, vaultPda } =
       await createGlamStateForTest(glamClient);
     console.log("State PDA:", statePda.toBase58());
     console.log("Vault PDA:", vaultPda.toBase58());

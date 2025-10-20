@@ -254,7 +254,6 @@ class TxBuilder {
       inputMint,
       outputMint,
       amount,
-      inputTokenProgram,
       outputTokenProgram,
     );
     const tx = await this.base.protocolProgram.methods
@@ -284,7 +283,6 @@ class TxBuilder {
     inputMint: PublicKey,
     outputMint: PublicKey,
     amount: BN,
-    inputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
     outputTokenProgram: PublicKey = TOKEN_PROGRAM_ID,
   ): Promise<TransactionInstruction[]> => {
     const preInstructions = [

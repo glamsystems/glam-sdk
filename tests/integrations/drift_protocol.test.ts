@@ -87,7 +87,6 @@ describe("drift_protocol", () => {
       throw e;
     }
 
-    const { user } = glamClient.drift.getDriftUserPdas();
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.externalPositions).toEqual([]);
   }, 15_000);

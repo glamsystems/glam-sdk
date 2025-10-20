@@ -1,5 +1,5 @@
 import { BN } from "@coral-xyz/anchor";
-import { GlamClient, nameToChars, PriceDenom } from "../../src";
+import { GlamClient, nameToChars } from "../../src";
 import {
   airdrop,
   buildAndSendTx,

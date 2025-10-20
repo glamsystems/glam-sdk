@@ -41,7 +41,6 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
 import { charsToName } from "../utils/common";
 import { VaultClient } from "./vault";
@@ -661,36 +660,13 @@ export class DriftClient {
     });
 
     // Prefetch market configs
-    const marketConfigs = await this.fetchMarketConfigs(skipCache);
+    await this.fetchMarketConfigs(skipCache);
 
     return await Promise.all(
       subAccountsInfoAndIds.map(([accountInfo, subAccountId]) =>
         this.parseDriftUser(accountInfo, subAccountId),
       ),
     );
-  }
-
-  /**
-   * @deprecated
-   */
-  async fetchPolicyConfig(stateModel: StateModel) {
-    const driftUserAccount = await this.fetchDriftUser();
-
-    let delegate = driftUserAccount?.delegate;
-    if (delegate && delegate.equals(PublicKey.default)) {
-      delegate = undefined;
-    }
-    return {
-      driftAccessControl: delegate ? 0 : 1,
-      driftDelegatedAccount: delegate || null,
-      driftMarketIndexesPerp: [],
-      driftOrderTypes: [],
-      driftMaxLeverage: driftUserAccount?.maxMarginRatio
-        ? DRIFT_MARGIN_PRECISION / driftUserAccount?.maxMarginRatio
-        : null,
-      driftEnableSpot: driftUserAccount?.isMarginTradingEnabled || false,
-      driftMarketIndexesSpot: [],
-    };
   }
 
   marketTypeEquals = (a: MarketType | undefined, b: MarketType) =>

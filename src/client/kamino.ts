@@ -1034,7 +1034,6 @@ export class KaminoLendingClient {
     const vault = this.base.vaultPda;
 
     const preInstructions = [];
-    const postInstructions = [];
     const borrowReserve = await this.findAndParseReserve(market, asset);
 
     const obligation = this.getObligationPda(

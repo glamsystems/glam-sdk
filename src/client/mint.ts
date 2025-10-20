@@ -2,7 +2,6 @@ import * as anchor from "@coral-xyz/anchor";
 import {
   PublicKey,
   Transaction,
-  TransactionSignature,
   VersionedTransaction,
 } from "@solana/web3.js";
 import { BaseClient, TokenAccount, TxOptions } from "./base";

@@ -398,7 +398,6 @@ export class StakingClient {
     const {
       programId: stakePoolProgram,
       poolMint,
-      depositAuthority,
       withdrawAuthority,
       feeAccount,
       validatorList,

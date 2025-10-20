@@ -25,7 +25,6 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { evmAddressToPublicKey } from "../utils/evm";
 
 export class VaultClient {
   public constructor(readonly base: BaseClient) {}
@@ -183,7 +182,7 @@ export class VaultClient {
           await this.base.connection.getTokenAccountBalance(vaultWsolAta)
         ).value.amount,
       );
-    } catch (err) {}
+    } catch {}
     const solBalance = new BN(
       await this.base.connection.getBalance(this.base.vaultPda),
     );

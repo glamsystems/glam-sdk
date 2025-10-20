@@ -33,7 +33,7 @@ import {
   getExtensionData,
   ExtensionType,
 } from "@solana/spl-token";
-import { WSOL, USDC, JITO_TIP_DEFAULT, ALT_PROGRAM_ID } from "../constants";
+import { JITO_TIP_DEFAULT, ALT_PROGRAM_ID } from "../constants";
 
 import {
   ExtCctpProgram,

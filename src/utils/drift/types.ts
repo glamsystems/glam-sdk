@@ -701,7 +701,7 @@ export type FuelSweepRecord = {
   fuelOverflowFuelMaker: BN;
 };
 
-type StateAccount = {
+export type DriftStateAccount = {
   admin: PublicKey;
   exchangeStatus: number;
   whitelistMint: PublicKey;

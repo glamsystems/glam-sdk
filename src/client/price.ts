@@ -10,14 +10,9 @@ import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 import { BaseClient, TxOptions } from "./base";
 
 import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "../assets";
-import {
-  findStakeAccounts,
-} from "../utils/accounts";
-import {
-  fetchMeteoraPositions,
-  parseMeteoraPosition,
-} from "../utils/meteora";
-import { PriceDenom, StateModel } from "../models";
+import { findStakeAccounts } from "../utils/accounts";
+import { fetchMeteoraPositions, parseMeteoraPosition } from "../utils/meteora";
+import { StateModel } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
 import { DriftClient, DriftUser, DriftVaultsClient } from "./drift";
 
@@ -421,9 +416,7 @@ export class PriceClient {
    * Returns an instruction that prices stake accounts.
    * If there are no stake accounts, returns null.
    */
-  async priceStakeAccountsIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
+  async priceStakeAccountsIx(): Promise<TransactionInstruction | null> {
     const stakes = await findStakeAccounts(
       this.base.provider.connection,
       this.base.vaultPda,

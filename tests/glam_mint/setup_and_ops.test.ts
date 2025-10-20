@@ -1,7 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import {
-  charsToName,
   GlamClient,
   nameToChars,
   StateAccountType,

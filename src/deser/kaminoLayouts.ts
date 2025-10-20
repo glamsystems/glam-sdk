@@ -1,12 +1,8 @@
 import {
   struct,
   u8,
-  u16,
-  u32,
   u64,
   u128,
-  i64,
-  bool,
   publicKey,
   array,
 } from "@coral-xyz/borsh";

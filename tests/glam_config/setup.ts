@@ -1,8 +1,6 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
 import { Connection } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
-import { GlamConfig } from "../../target/types/glam_config";
 import { SEED_GLOBAL_CONFIG } from "../../src/constants";
 import { getGlamConfigProgram } from "../../src/glamExports";
 

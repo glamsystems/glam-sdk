@@ -1,5 +1,5 @@
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
-import { AnchorProvider, BN } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import {
   ClusterNetwork,
