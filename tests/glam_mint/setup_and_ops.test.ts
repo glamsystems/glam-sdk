@@ -6,6 +6,7 @@ import {
   nameToChars,
   StateAccountType,
   WSOL,
+  getTokenAccountsByOwner,
 } from "../../src";
 import { expectPublicKeyArrayEqual, sleep, str2seed } from "../test-utils";
 import {
@@ -160,7 +161,7 @@ describe("setup_and_ops", () => {
       txSig,
     );
     const tokenAccount = (
-      await glamClient.getTokenAccountsByOwner(alice.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(true);
   });
@@ -218,7 +219,7 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccount = (
-      await glamClient.getTokenAccountsByOwner(bob.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(false);
     expect(tokenAccount?.amount).toBe(amount.toString());
@@ -227,7 +228,7 @@ describe("setup_and_ops", () => {
   it("Freeze bob's token account", async () => {
     // Before: token account is not frozen
     const tokenAccount = (
-      await glamClient.getTokenAccountsByOwner(bob.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(false);
 
@@ -243,7 +244,7 @@ describe("setup_and_ops", () => {
 
     // After: token account is frozen
     const tokenAccountAfter = (
-      await glamClient.getTokenAccountsByOwner(bob.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountAfter?.frozen).toBe(true);
   });
@@ -264,10 +265,10 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccountAlice = (
-      await glamClient.getTokenAccountsByOwner(alice.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     const tokenAccountBob = (
-      await glamClient.getTokenAccountsByOwner(bob.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
 
     expect(tokenAccountAlice?.amount).toBe(amount.toString()); // 0 + 0.5 = 0.5
@@ -287,12 +288,12 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccountAlice = (
-      await glamClient.getTokenAccountsByOwner(alice.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountAlice?.amount).toEqual("0");
 
     const tokenAccountBob = (
-      await glamClient.getTokenAccountsByOwner(alice.publicKey)
+      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountBob?.amount).toEqual("0");
   });

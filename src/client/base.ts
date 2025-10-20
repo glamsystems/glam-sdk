@@ -2,9 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import {
-  AccountInfo,
   AddressLookupTableAccount,
-  ComputeBudgetProgram,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
@@ -17,17 +15,21 @@ import {
   VersionedTransaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { getSimulationResult, parseProgramLogs } from "../utils/helpers";
+import { getSimulationResult, parseProgramLogs } from "../utils/transaction";
+import { buildComputeBudgetInstructions } from "../utils/computeBudget";
+import { fetchAddressLookupTableAccounts } from "../utils/lookupTables";
+import {
+  fetchMintAndTokenProgram,
+  fetchMintsAndTokenPrograms,
+  getTokenAccountsByOwner,
+} from "../utils/accounts";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TokenAccountNotFoundError,
   getAccount,
   getAssociatedTokenAddressSync,
-  unpackMint,
   Mint,
-  createAssociatedTokenAccountIdempotentInstruction,
-  createSyncNativeInstruction,
   getExtensionData,
   ExtensionType,
 } from "@solana/spl-token";
@@ -58,7 +60,6 @@ import {
   StateAccountType,
   StateModel,
 } from "../models";
-import { AssetMeta, ASSETS_MAINNET, ASSETS_TESTS } from "./assets";
 import { GlamError } from "../error";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { BlockhashWithCache } from "../utils/blockhash";
@@ -72,21 +73,12 @@ import {
 } from "../utils/glamPDAs";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { getGlamLookupTableAccounts } from "../utils/glamApi";
-import {
-  DriftProtocolPolicy,
-  DriftVaultsPolicy,
-} from "../deser/integrationPolicies";
 
-const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 const LOOKUP_TABLES = [
   new PublicKey("284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2"), // kamino lending
   new PublicKey("D9cnvzswDikQDf53k4HpQ3KJ9y1Fv3HGGDFYMXnK5T6c"), // drift
   new PublicKey("EiWSskK5HXnBTptiS5DH6gpAJRVNQ3cAhTKBGaiaysAb"), // drift
 ];
-
-export const isBrowser =
-  process.env.ANCHOR_BROWSER ||
-  (typeof window !== "undefined" && !window.process?.hasOwnProperty("type"));
 
 export type TxOptions = {
   signer?: PublicKey;
@@ -117,14 +109,14 @@ export class BaseClient {
   provider: anchor.Provider;
   blockhashWithCache: BlockhashWithCache;
 
-  protocolProgram: GlamProtocolProgram;
-  mintProgram: GlamMintProgram;
-  extSplProgram: ExtSplProgram;
-  extDriftProgram: ExtDriftProgram;
-  extKaminoProgram: ExtKaminoProgram;
-  extMarinadeProgram: ExtMarinadeProgram;
-  extStakePoolProgram: ExtStakePoolProgram;
-  extCctpProgram: ExtCctpProgram;
+  private _protocolProgram?: GlamProtocolProgram;
+  private _mintProgram?: GlamMintProgram;
+  private _extSplProgram?: ExtSplProgram;
+  private _extDriftProgram?: ExtDriftProgram;
+  private _extKaminoProgram?: ExtKaminoProgram;
+  private _extMarinadeProgram?: ExtMarinadeProgram;
+  private _extStakePoolProgram?: ExtStakePoolProgram;
+  private _extCctpProgram?: ExtCctpProgram;
 
   private _statePda?: PublicKey;
 
@@ -147,15 +139,9 @@ export class BaseClient {
       anchor.setProvider(this.provider);
     }
 
-    this.cluster = config?.cluster || this.detectedCluster;
-    this.protocolProgram = getGlamProtocolProgram(this.provider);
-    this.mintProgram = getGlamMintProgram(this.provider);
-    this.extSplProgram = getExtSplProgram(this.provider);
-    this.extDriftProgram = getExtDriftProgram(this.provider);
-    this.extKaminoProgram = getExtKaminoProgram(this.provider);
-    this.extMarinadeProgram = getExtMarinadeProgram(this.provider);
-    this.extStakePoolProgram = getExtStakePoolProgram(this.provider);
-    this.extCctpProgram = getExtCctpProgram(this.provider);
+    this.cluster =
+      config?.cluster ||
+      ClusterNetwork.fromUrl(this.provider.connection.rpcEndpoint);
 
     if (config?.statePda) {
       this.statePda = config.statePda;
@@ -167,15 +153,60 @@ export class BaseClient {
     );
   }
 
-  get detectedCluster(): ClusterNetwork {
-    const rpcUrl = this.provider.connection.rpcEndpoint;
-    if (rpcUrl.includes("devnet")) {
-      return ClusterNetwork.Devnet;
+  get protocolProgram(): GlamProtocolProgram {
+    if (!this._protocolProgram) {
+      this._protocolProgram = getGlamProtocolProgram(this.provider);
     }
-    if (rpcUrl.includes("localhost") || rpcUrl.includes("127.0.0.1")) {
-      return ClusterNetwork.Custom;
+    return this._protocolProgram;
+  }
+
+  get mintProgram(): GlamMintProgram {
+    if (!this._mintProgram) {
+      this._mintProgram = getGlamMintProgram(this.provider);
     }
-    return ClusterNetwork.Mainnet;
+    return this._mintProgram;
+  }
+
+  get extSplProgram(): ExtSplProgram {
+    if (!this._extSplProgram) {
+      this._extSplProgram = getExtSplProgram(this.provider);
+    }
+    return this._extSplProgram;
+  }
+
+  get extDriftProgram(): ExtDriftProgram {
+    if (!this._extDriftProgram) {
+      this._extDriftProgram = getExtDriftProgram(this.provider);
+    }
+    return this._extDriftProgram;
+  }
+
+  get extKaminoProgram(): ExtKaminoProgram {
+    if (!this._extKaminoProgram) {
+      this._extKaminoProgram = getExtKaminoProgram(this.provider);
+    }
+    return this._extKaminoProgram;
+  }
+
+  get extMarinadeProgram(): ExtMarinadeProgram {
+    if (!this._extMarinadeProgram) {
+      this._extMarinadeProgram = getExtMarinadeProgram(this.provider);
+    }
+    return this._extMarinadeProgram;
+  }
+
+  get extStakePoolProgram(): ExtStakePoolProgram {
+    if (!this._extStakePoolProgram) {
+      this._extStakePoolProgram = getExtStakePoolProgram(this.provider);
+    }
+    return this._extStakePoolProgram;
+  }
+
+  get extCctpProgram(): ExtCctpProgram {
+    if (!this._extCctpProgram) {
+      this._extCctpProgram = getExtCctpProgram(this.provider);
+    }
+    return this._extCctpProgram;
   }
 
   get statePda(): PublicKey {
@@ -193,7 +224,12 @@ export class BaseClient {
     return this.cluster === ClusterNetwork.Mainnet;
   }
 
-  isPhantomConnected(): boolean {
+  get isPhantomConnected(): boolean {
+    const isBrowser =
+      process.env.ANCHOR_BROWSER ||
+      (typeof window !== "undefined" &&
+        !window.process?.hasOwnProperty("type"));
+
     if (!isBrowser) return false;
 
     // Phantom automatically estimates fees
@@ -207,79 +243,9 @@ export class BaseClient {
   }
 
   /**
-   * Get metadata of an asset for pricing
-   *
-   * @param assetMint Token mint of the asset
-   * @returns Metadata of the asset
-   */
-  getAssetMeta(assetMint: string): AssetMeta {
-    let assetMeta = ASSETS_MAINNET.get(assetMint);
-    if (!assetMeta && !this.isMainnet) {
-      assetMeta = ASSETS_TESTS.get(assetMint);
-    }
-    if (!assetMeta) {
-      throw new Error("Invalid asset: " + assetMint);
-    }
-    return assetMeta;
-  }
-
-  private async getComputeBudgetIxs(
-    vTx: VersionedTransaction,
-    computeUnitLimit: number,
-    getPriorityFeeMicroLamports?: (tx: VersionedTransaction) => Promise<number>,
-    maxFeeLamports?: number,
-    useMaxFee?: boolean,
-  ): Promise<Array<TransactionInstruction>> {
-    // ComputeBudgetProgram.setComputeUnitLimit costs 150 CUs
-    // Add 20% more CUs to account for variable execution
-    computeUnitLimit += 150;
-    computeUnitLimit *= 1.2;
-
-    let priorityFeeMicroLamports = DEFAULT_PRIORITY_FEE;
-    if (useMaxFee && maxFeeLamports) {
-      priorityFeeMicroLamports = Math.ceil(
-        (maxFeeLamports * 1_000_000) / computeUnitLimit,
-      );
-    } else if (getPriorityFeeMicroLamports) {
-      try {
-        const feeEstimate = await getPriorityFeeMicroLamports(vTx);
-        if (
-          maxFeeLamports &&
-          feeEstimate * computeUnitLimit > maxFeeLamports * 1_000_000
-        ) {
-          priorityFeeMicroLamports = Math.ceil(
-            (maxFeeLamports * 1_000_000) / computeUnitLimit,
-          );
-          console.log(
-            `Estimated priority fee: (${feeEstimate} microLamports per CU, ${computeUnitLimit} CUs, total ${(feeEstimate * computeUnitLimit) / 1_000_000} lamports)`,
-          );
-          console.log(
-            `Estimated total fee is than max fee (${maxFeeLamports} lamports). Overriding priority fee to ${priorityFeeMicroLamports} microLamports.`,
-          );
-        } else {
-          priorityFeeMicroLamports = Math.ceil(feeEstimate);
-        }
-      } catch (e) {}
-    }
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `Final priority fee to use: ${priorityFeeMicroLamports} microLamports`,
-      );
-    }
-
-    return [
-      ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: priorityFeeMicroLamports,
-      }),
-      ComputeBudgetProgram.setComputeUnitLimit({ units: computeUnitLimit }),
-    ];
-  }
-
-  /**
    * Fetches lookup tables for the current GLAM instance
    */
-  public async findLookupTables(): Promise<AddressLookupTableAccount[]> {
+  public async findGlamLookupTables(): Promise<AddressLookupTableAccount[]> {
     const glamLookupTableAccounts = await getGlamLookupTableAccounts(
       this.statePda,
     );
@@ -321,7 +287,7 @@ export class BaseClient {
       simulate = false,
     }: TxOptions,
   ): Promise<VersionedTransaction> {
-    signer = signer || this.getSigner();
+    signer = signer || this.signer;
 
     const instructions = tx.instructions;
 
@@ -336,31 +302,29 @@ export class BaseClient {
       );
     }
 
+    // Fetch custom lookup tables and default lookup tables
     const lookupTableAccounts: AddressLookupTableAccount[] = [];
     if (lookupTables.every((t) => t instanceof AddressLookupTableAccount)) {
-      const accounts = await this.fetchAddressLookupTableAccounts([
-        ...LOOKUP_TABLES,
-      ]);
+      const accounts = await fetchAddressLookupTableAccounts(
+        this.provider.connection,
+        LOOKUP_TABLES,
+      );
       lookupTableAccounts.push(...lookupTables, ...accounts);
     } else {
-      const accounts = await this.fetchAddressLookupTableAccounts([
-        ...lookupTables,
-        ...LOOKUP_TABLES,
-      ]);
+      const accounts = await fetchAddressLookupTableAccounts(
+        this.provider.connection,
+        [...lookupTables, ...LOOKUP_TABLES],
+      );
       lookupTableAccounts.push(...accounts);
     }
 
     if (this._statePda) {
+      // Fetch GLAM specific lookup tables
       const glamLookupTableAccounts = await getGlamLookupTableAccounts(
         this.statePda,
       );
       lookupTableAccounts.push(...glamLookupTableAccounts);
     }
-
-    // console.log(
-    //   "lookupTableAccounts:",
-    //   lookupTableAccounts.map((t) => t.key.toBase58()),
-    // );
 
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
@@ -384,7 +348,8 @@ export class BaseClient {
       throw error;
     }
 
-    if (computeUnitLimit) {
+    // Add CU instructions if jitoTipLamports is not provided and computeUnitLimit is provided
+    if (!jitoTipLamports && computeUnitLimit) {
       const vTx = new VersionedTransaction(
         new TransactionMessage({
           payerKey: signer,
@@ -392,12 +357,14 @@ export class BaseClient {
           instructions,
         }).compileToV0Message(lookupTableAccounts),
       );
-      const cuIxs = await this.getComputeBudgetIxs(
+      const cuIxs = await buildComputeBudgetInstructions(
         vTx,
         computeUnitLimit,
-        getPriorityFeeMicroLamports,
-        maxFeeLamports,
-        useMaxFee,
+        {
+          getPriorityFeeMicroLamports,
+          maxFeeLamports,
+          useMaxFee,
+        },
       );
       instructions.unshift(...cuIxs);
     }
@@ -411,7 +378,7 @@ export class BaseClient {
     );
   }
 
-  async sendAndConfirm(
+  public async sendAndConfirm(
     tx: VersionedTransaction | Transaction,
     additionalSigners: Keypair[] = [],
   ): Promise<TransactionSignature> {
@@ -447,7 +414,7 @@ export class BaseClient {
 
     // Anchor provider.sendAndConfirm forces a signature with the wallet, which we don't want
     // https://github.com/coral-xyz/anchor/blob/v0.30.0/ts/packages/anchor/src/provider.ts#L159
-    const wallet = this.getWallet();
+    const wallet = this.wallet;
     const signedTx = await wallet.signTransaction(tx);
     if (additionalSigners && additionalSigners.length > 0) {
       signedTx.sign(additionalSigners);
@@ -485,46 +452,11 @@ export class BaseClient {
     return txSig;
   }
 
-  /**
-   * Fetches multiple address lookup table accounts.
-   *
-   * @param pubkeys Array of lookup table public keys.
-   * @returns
-   */
-  public async fetchAddressLookupTableAccounts(
-    pubkeys?: string[] | PublicKey[],
-  ): Promise<AddressLookupTableAccount[]> {
-    if (!pubkeys) {
-      throw new Error("addressLookupTableAddresses is undefined");
-    }
-
-    if (pubkeys.length === 0) {
-      return [];
-    }
-
-    const addressLookupTableAccountInfos =
-      await this.provider.connection.getMultipleAccountsInfo(
-        pubkeys.map((key: string | PublicKey) => new PublicKey(key)),
-      );
-
-    return addressLookupTableAccountInfos.reduce((acc, accountInfo, index) => {
-      const tableAddress = pubkeys[index];
-      if (accountInfo) {
-        const tableAccount = new AddressLookupTableAccount({
-          key: new PublicKey(tableAddress),
-          state: AddressLookupTableAccount.deserialize(accountInfo.data),
-        });
-        acc.push(tableAccount);
-      }
-      return acc;
-    }, new Array<AddressLookupTableAccount>());
+  get connection(): Connection {
+    return this.provider.connection;
   }
 
-  getWallet(): Wallet {
-    return (this.provider as AnchorProvider).wallet as Wallet;
-  }
-
-  getSigner(): PublicKey {
+  get signer(): PublicKey {
     const publicKey = this.provider?.publicKey;
     if (!publicKey) {
       throw new Error(
@@ -534,12 +466,12 @@ export class BaseClient {
     return publicKey;
   }
 
-  get signer(): PublicKey {
-    return this.getSigner();
-  }
-
   get wallet(): Wallet {
-    return this.getWallet();
+    const anchorProvider = this.provider as AnchorProvider;
+    if (!anchorProvider?.wallet) {
+      throw new Error("Wallet cannot be retrieved from anchor provider");
+    }
+    return anchorProvider.wallet as Wallet;
   }
 
   // derived from state pda
@@ -547,6 +479,7 @@ export class BaseClient {
     return getVaultPda(this.statePda, this.protocolProgram.programId);
   }
 
+  // @deprecated
   // derived from state pda
   get openfundsPda(): PublicKey {
     return getOpenfundsPda(this.statePda, this.protocolProgram.programId);
@@ -573,51 +506,14 @@ export class BaseClient {
   }
 
   /**
-   * Fetch all the token accounts (including token program and token 2022 program) owned by the specified account.
-   *
-   * @param owner
-   * @returns
-   */
-  async getTokenAccountsByOwner(owner: PublicKey): Promise<TokenAccount[]> {
-    const [tokenAccounts, token2022Accounts] = await Promise.all(
-      [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map(
-        async (programId) =>
-          await this.provider.connection.getParsedTokenAccountsByOwner(owner, {
-            programId,
-          }),
-      ),
-    );
-    const parseTokenAccountInfo = (accountInfo: any) => {
-      const accountData = accountInfo.account.data.parsed.info;
-      return {
-        owner,
-        pubkey: new PublicKey(accountInfo.pubkey),
-        mint: new PublicKey(accountData.mint),
-        decimals: accountData.tokenAmount.decimals, // number
-        amount: accountData.tokenAmount.amount, // string
-        uiAmount: accountData.tokenAmount.uiAmount, // number
-        frozen: accountData.state === "frozen",
-      };
-    };
-    return tokenAccounts.value
-      .map((accountInfo) => ({
-        ...parseTokenAccountInfo(accountInfo),
-        programId: TOKEN_PROGRAM_ID,
-      }))
-      .concat(
-        token2022Accounts.value.map((accountInfo) => ({
-          ...parseTokenAccountInfo(accountInfo),
-          programId: TOKEN_2022_PROGRAM_ID,
-        })),
-      );
-  }
-
-  /**
-   * Returns user's SOL and token balances
+   * Returns SOL and token balances of the given owner pubkey
    */
   public async getSolAndTokenBalances(owner: PublicKey) {
     const balanceLamports = await this.provider.connection.getBalance(owner);
-    const tokenAccounts = await this.getTokenAccountsByOwner(owner);
+    const tokenAccounts = await getTokenAccountsByOwner(
+      this.provider.connection,
+      owner,
+    );
     const uiAmount = balanceLamports / LAMPORTS_PER_SOL;
 
     return {
@@ -660,7 +556,7 @@ export class BaseClient {
    * Returns glam vault's SOL balance
    */
   public async getVaultBalance(): Promise<number> {
-    const lamports = await this.provider.connection.getBalance(this.vaultPda);
+    const lamports = await this.getVaultLamports();
     return lamports / LAMPORTS_PER_SOL;
   }
 
@@ -677,8 +573,10 @@ export class BaseClient {
   public async getVaultTokenBalance(
     mintPubkey: PublicKey,
   ): Promise<{ amount: BN; uiAmount: number }> {
-    const { mint, tokenProgram } =
-      await this.fetchMintAndTokenProgram(mintPubkey);
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(
+      this.provider.connection,
+      mintPubkey,
+    );
     const ata = this.getVaultAta(mintPubkey, tokenProgram);
 
     try {
@@ -698,58 +596,6 @@ export class BaseClient {
       }
       throw e;
     }
-  }
-
-  private parseMintAccountInfo(
-    accountInfo: AccountInfo<Buffer>,
-    pubkey: PublicKey,
-  ): { mint: Mint; tokenProgram: PublicKey } {
-    if (!accountInfo) {
-      throw new Error(`Mint ${pubkey} not found`);
-    }
-    const tokenProgram = accountInfo.owner;
-    const mint = unpackMint(pubkey, accountInfo, tokenProgram);
-    return { mint, tokenProgram };
-  }
-
-  /**
-   * Fetches mint accounts and token program IDs for the given mint pubkeys
-   */
-  public async fetchMintsAndTokenPrograms(
-    mintPubkeys: PublicKey[],
-  ): Promise<{ mint: Mint; tokenProgram: PublicKey }[]> {
-    const accountsInfo = (
-      await this.provider.connection.getMultipleAccountsInfo(
-        mintPubkeys,
-        "confirmed",
-      )
-    ).filter((info): info is AccountInfo<Buffer> => info !== null);
-    if (accountsInfo.length !== mintPubkeys.length) {
-      throw new Error(
-        `Failed to fetch mint accounts for ${mintPubkeys.length} mints`,
-      );
-    }
-    return accountsInfo.map((info, i) =>
-      this.parseMintAccountInfo(info, mintPubkeys[i]),
-    );
-  }
-
-  /**
-   * Fetches mint account and token program ID for the given mint pubkey
-   */
-  public async fetchMintAndTokenProgram(
-    mintPubkey: PublicKey,
-  ): Promise<{ mint: Mint; tokenProgram: PublicKey }> {
-    const info = await this.provider.connection.getAccountInfo(
-      mintPubkey,
-      "confirmed",
-    );
-    if (!info) {
-      throw new Error(
-        `Failed to fetch mint account for ${mintPubkey.toBase58()}`,
-      );
-    }
-    return this.parseMintAccountInfo(info, mintPubkey);
   }
 
   /**
@@ -775,7 +621,10 @@ export class BaseClient {
       throw new Error("State PDA is not specified");
     }
 
-    const { mint } = await this.fetchMintAndTokenProgram(this.mintPda);
+    const { mint } = await fetchMintAndTokenProgram(
+      this.provider.connection,
+      this.mintPda,
+    );
     const extMetadata = getExtensionData(
       ExtensionType.TokenMetadata,
       mint.tlvData,
@@ -806,89 +655,6 @@ export class BaseClient {
   }
 
   /**
-   * Generates instructions to wrap SOL into wSOL if the vault doesn't have enough wSOL
-   *
-   * @param lamports Desired amount of wSOL
-   * @returns Array of instructions, null if no instructions are needed
-   */
-  public async maybeWrapSol(
-    lamports: number | BN,
-    signer?: PublicKey,
-  ): Promise<TransactionInstruction[]> {
-    const glamSigner = signer || this.getSigner();
-    const vaultWsolAta = this.getAta(WSOL, this.vaultPda);
-    let wsolBalance = new BN(0);
-    try {
-      wsolBalance = new BN(
-        (
-          await this.provider.connection.getTokenAccountBalance(vaultWsolAta)
-        ).value.amount,
-      );
-    } catch (err) {}
-    const solBalance = new BN(
-      await this.provider.connection.getBalance(this.vaultPda),
-    );
-    const delta = new BN(lamports).sub(wsolBalance); // wSOL amount needed
-    if (solBalance.lt(delta)) {
-      throw new Error(
-        `Insufficient funds in vault to complete the transaction. SOL balance (lamports): ${solBalance}, lamports needed: ${lamports}`,
-      );
-    }
-    if (delta.gt(new BN(0)) && solBalance.gte(delta)) {
-      return [
-        createAssociatedTokenAccountIdempotentInstruction(
-          glamSigner,
-          vaultWsolAta,
-          this.vaultPda,
-          WSOL,
-        ),
-        await this.protocolProgram.methods
-          .systemTransfer(delta)
-          .accounts({
-            glamState: this.statePda,
-            glamSigner,
-            to: vaultWsolAta,
-          })
-          .instruction(),
-        createSyncNativeInstruction(vaultWsolAta),
-      ];
-    }
-
-    return [];
-  }
-
-  /**
-   * @deprecated
-   */
-  getAssetIdFromCurrency(currency: string): string {
-    switch (currency.toUpperCase()) {
-      case "SOL":
-      case "WSOL":
-        return WSOL.toBase58();
-      case "USD":
-      case "USDC":
-        return USDC.toBase58();
-    }
-    return "";
-  }
-
-  /**
-   * @deprecated
-   */
-  public async listGlamStates(): Promise<PublicKey[]> {
-    const bytes = Uint8Array.from([
-      0x31, 0x68, 0xa8, 0xd6, 0x86, 0xb4, 0xad, 0x9a,
-    ]);
-    const accounts = await this.provider.connection.getProgramAccounts(
-      this.protocolProgram.programId,
-      {
-        filters: [{ memcmp: { offset: 0, bytes: bs58.encode(bytes) } }],
-      },
-    );
-    return accounts.map((a) => a.pubkey);
-  }
-
-  /**
    * Builds a StateModel from onchain accounts (state, mint, etc)
    *
    * @param statePda Optional state PDA
@@ -905,7 +671,10 @@ export class BaseClient {
         ? this.requestQueuePda
         : getRequestQueuePda(mintPubkey, this.mintProgram.programId);
 
-      const { mint } = await this.fetchMintAndTokenProgram(mintPubkey);
+      const { mint } = await fetchMintAndTokenProgram(
+        this.provider.connection,
+        mintPubkey,
+      );
 
       // fetch request queue only if state account is a tokenized vault
       const requestQueue = StateAccountType.equals(
@@ -963,7 +732,10 @@ export class BaseClient {
     const mintPubkeys = filteredStateAccounts
       .map((s) => s.account.mint)
       .filter((p) => !p.equals(PublicKey.default));
-    const mints = await this.fetchMintsAndTokenPrograms(mintPubkeys);
+    const mints = await fetchMintsAndTokenPrograms(
+      this.provider.connection,
+      mintPubkeys,
+    );
     for (let i = 0; i < mintPubkeys.length; i++) {
       mintsCache.set(mintPubkeys[i].toBase58(), mints[i].mint);
     }

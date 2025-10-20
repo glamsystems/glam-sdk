@@ -8,7 +8,7 @@ import {
 import { BaseClient, TxOptions } from "./base";
 import { StateModel, CreatedModel, StateIdlModel } from "../models";
 import { getStatePda } from "../utils/glamPDAs";
-import { charsToName } from "../utils/helpers";
+import { charsToName } from "../utils/common";
 
 class TxBuilder {
   constructor(private base: BaseClient) {}
@@ -44,7 +44,7 @@ class TxBuilder {
     updated: Partial<StateIdlModel>,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .updateState(new StateIdlModel(updated))
       .accounts({
@@ -60,7 +60,7 @@ class TxBuilder {
     updated: Partial<StateIdlModel>,
     txOptions: TxOptions,
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     return await this.base.protocolProgram.methods
       .updateState(new StateIdlModel(updated))
       .accounts({
@@ -73,7 +73,7 @@ class TxBuilder {
   async updateApplyTimelock(
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .updateStateApplyTimelock()
       .accounts({
@@ -100,7 +100,7 @@ class TxBuilder {
   }
 
   async close(txOptions: TxOptions = {}): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
 
     const tx = await this.base.protocolProgram.methods
       .closeState()

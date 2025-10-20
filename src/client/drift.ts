@@ -18,13 +18,13 @@ import {
   SpotBalanceType,
   MarginMode,
   Order,
-} from "../utils/driftTypes";
+} from "../utils/drift/types";
 import {
   DriftPerpMarket,
   DriftSpotMarket,
   DriftVault,
 } from "../deser/driftLayouts";
-import { decodeUser } from "../utils/driftUser";
+import { decodeUser } from "../utils/drift/user";
 
 import { BaseClient, TxOptions } from "./base";
 import { AccountMeta } from "@solana/web3.js";
@@ -43,7 +43,8 @@ import {
 } from "@solana/spl-token";
 import { StateModel } from "../models";
 import { BN } from "@coral-xyz/anchor";
-import { charsToName } from "../utils/helpers";
+import { charsToName } from "../utils/common";
+import { VaultClient } from "./vault";
 
 interface OrderConstants {
   perpBaseScale: number;
@@ -108,7 +109,10 @@ export class DriftClient {
   private perpMarkets = new Map<number, PerpMarket>();
   private marketConfigs: DriftMarketConfigs | null = null;
 
-  public constructor(readonly base: BaseClient) {}
+  public constructor(
+    readonly base: BaseClient,
+    readonly vault: VaultClient,
+  ) {}
 
   /*
    * Client methods
@@ -785,7 +789,7 @@ export class DriftClient {
   //   proof: number[][],
   //   txOptions: TxOptions = {},
   // ) {
-  //   const glamSigner = txOptions.signer || this.base.getSigner();
+  //   const glamSigner = txOptions.signer || this.base.signer;
   //   const vault = this.base.vaultPda;
   //   const vaultAta = this.base.getVaultAta(DRIFT);
   //   const distributorAta = this.base.getAta(DRIFT, distributor);
@@ -882,7 +886,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = new Transaction();
 
     // Create userStats account if it doesn't exist
@@ -904,7 +908,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     // https://github.com/drift-labs/protocol-v2/blob/babed162b08b1fe34e49a81c5aa3e4ec0a88ecdf/programs/drift/src/math/constants.rs#L183-L184
@@ -942,7 +946,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     return await this.base.extDriftProgram.methods
@@ -977,7 +981,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     return await this.base.extDriftProgram.methods
@@ -1006,7 +1010,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user, userStats } = this.getDriftUserPdas(subAccountId);
 
     const tx = await this.base.extDriftProgram.methods
@@ -1029,7 +1033,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user, userStats } = this.getDriftUserPdas(subAccountId);
 
     const {
@@ -1069,7 +1073,7 @@ export class DriftClient {
     }
 
     if (mint.equals(WSOL)) {
-      const wrapSolIxs = await this.base.maybeWrapSol(amount, glamSigner);
+      const wrapSolIxs = await this.vault.maybeWrapSol(amount, glamSigner);
       preInstructions.push(...wrapSolIxs);
 
       // If we need to wrap SOL, it means the wSOL balance will be drained,
@@ -1125,7 +1129,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
 
     const { user, userStats } = this.getDriftUserPdas(subAccountId);
     const {
@@ -1199,7 +1203,7 @@ export class DriftClient {
       { pubkey: referrerStats, isWritable: true, isSigner: false },
     ]);
 
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     const tx = await this.base.extDriftProgram.methods
@@ -1230,7 +1234,7 @@ export class DriftClient {
       marketIndex,
     );
 
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     const tx = await this.base.extDriftProgram.methods
@@ -1254,7 +1258,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     const remainingAccounts = await this.composeRemainingAccounts(
@@ -1282,7 +1286,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     const remainingAccounts = await this.composeRemainingAccounts(subAccountId);
@@ -1306,7 +1310,7 @@ export class DriftClient {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const { user } = this.getDriftUserPdas(subAccountId);
 
     const { vault: driftVault } = await this.fetchAndParseSpotMarket(0);
@@ -1451,7 +1455,7 @@ export class DriftVaultsClient {
     driftVault: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const vaultDepositor = this.getDepositorPda(driftVault);
 
     const tx = await this.base.extDriftProgram.methods
@@ -1473,7 +1477,7 @@ export class DriftVaultsClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
 
     const {
       user: driftUser,
@@ -1544,7 +1548,7 @@ export class DriftVaultsClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const vaultDepositor = this.getDepositorPda(driftVault);
 
     const { user: driftUser, userStats: driftUserStats } =
@@ -1573,7 +1577,7 @@ export class DriftVaultsClient {
     driftVault: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const vaultDepositor = this.getDepositorPda(driftVault);
 
     const { user: driftUser, userStats: driftUserStats } =
@@ -1602,7 +1606,7 @@ export class DriftVaultsClient {
     driftVault: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const vaultDepositor = this.getDepositorPda(driftVault);
 
     const {

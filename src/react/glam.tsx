@@ -25,7 +25,7 @@ import {
   TokenListItem,
   TokenPrice,
 } from "../client/jupiter";
-import { charsToName } from "../utils/helpers";
+import { charsToName } from "../utils/common";
 
 declare global {
   interface Window {

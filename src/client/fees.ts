@@ -12,6 +12,7 @@ import {
 import { BaseClient, TxOptions } from "./base";
 import { PriceClient } from "./price";
 import { PriceDenom } from "../models";
+import { fetchMintAndTokenProgram } from "../utils/accounts";
 
 export class FeesClient {
   public constructor(
@@ -101,7 +102,7 @@ export class FeesClient {
   public async claimFees(
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
     const stateModel = await this.base.fetchStateModel();
     const { baseAssetMint: baseAsset } = stateModel;
     if (!baseAsset) {
@@ -118,7 +119,7 @@ export class FeesClient {
     }
 
     const { tokenProgram } =
-      await this.base.fetchMintAndTokenProgram(baseAsset);
+      await fetchMintAndTokenProgram(this.base.provider.connection, baseAsset);
 
     const protocolFeeAuthorityAta = this.base.getAta(
       baseAsset,

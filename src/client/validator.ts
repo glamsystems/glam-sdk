@@ -28,7 +28,7 @@
 //     voteAuthorize: VoteAuthorizeEnum,
 //     txOptions: TxOptions = {},
 //   ): Promise<TransactionSignature> {
-//     const glamSigner = txOptions.signer || this.base.getSigner();
+//     const glamSigner = txOptions.signer || this.base.signer;
 //     // @ts-ignore
 //     const tx = await this.base.protocolProgram.methods
 //       .voteAuthorize(newAuthority, voteAuthorize)
@@ -51,7 +51,7 @@
 //     identity: Keypair,
 //     txOptions: TxOptions = {},
 //   ): Promise<TransactionSignature> {
-//     const glamSigner = txOptions.signer || this.base.getSigner();
+//     const glamSigner = txOptions.signer || this.base.signer;
 //     const tx = await this.base.protocolProgram.methods
 //       .voteUpdateValidatorIdentity()
 //       .accounts({
@@ -75,7 +75,7 @@
 //     newCommission: number,
 //     txOptions: TxOptions = {},
 //   ): Promise<TransactionSignature> {
-//     const glamSigner = txOptions.signer || this.base.getSigner();
+//     const glamSigner = txOptions.signer || this.base.signer;
 //     const tx = await this.base.protocolProgram.methods
 //       .voteUpdateCommission(newCommission)
 //       .accounts({
@@ -98,7 +98,7 @@
 //     lamports: BN | number,
 //     txOptions: TxOptions = {},
 //   ): Promise<TransactionSignature> {
-//     const glamSigner = txOptions.signer || this.base.getSigner();
+//     const glamSigner = txOptions.signer || this.base.signer;
 //     const tx = await this.base.protocolProgram.methods
 //       .voteWithdraw(new BN(lamports))
 //       .accounts({

@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { IntegrationAcl, DelegateAcl } from "../models";
-import { parseProtocolsBitmask, parseProtocolPermissionsBitmask } from "./helpers";
+import { parseProtocolsBitmask, parseProtocolPermissionsBitmask } from "./bitmask";
 
 /**
  * Get protocol names from a bitmask for a given integration program

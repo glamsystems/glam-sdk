@@ -10,10 +10,10 @@ import {
   SpotBalanceType,
   SpotPosition,
   UserAccount,
-} from "./driftTypes";
+  ZERO,
+} from "./types";
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { ZERO } from "./driftTypes";
 
 function readUnsignedBigInt64LE(buffer: Buffer, offset: number): BN {
   return new BN(buffer.subarray(offset, offset + 8), 10, "le");

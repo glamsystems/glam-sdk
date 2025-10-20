@@ -13,7 +13,9 @@ import {
 
 import { BaseClient, TxOptions } from "./base";
 import { JUPITER_API_DEFAULT, WSOL } from "../constants";
-import { STAKE_POOLS_MAP } from "./assets";
+import { STAKE_POOLS_MAP } from "../assets";
+import { fetchMintsAndTokenPrograms } from "../utils/accounts";
+import { VaultClient } from "./vault";
 
 export type QuoteParams = {
   inputMint: string;
@@ -161,7 +163,10 @@ export async function getSwapInstructions(
 }
 
 class TxBuilder {
-  public constructor(readonly base: BaseClient) {}
+  public constructor(
+    readonly base: BaseClient,
+    readonly vault: VaultClient,
+  ) {}
 
   async swap(
     options: {
@@ -171,7 +176,7 @@ class TxBuilder {
     },
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const glamVault = this.base.vaultPda;
 
     let swapInstruction: InstructionFromJupiter;
@@ -233,7 +238,10 @@ class TxBuilder {
       this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
     const [inputTokenProgram, outputTokenProgram] = (
-      await this.base.fetchMintsAndTokenPrograms([inputMint, outputMint])
+      await fetchMintsAndTokenPrograms(this.base.provider.connection, [
+        inputMint,
+        outputMint,
+      ])
     ).map((x) => x.tokenProgram);
 
     const inputStakePool =
@@ -291,7 +299,7 @@ class TxBuilder {
 
     // Transfer SOL to wSOL ATA if needed for the vault
     if (inputMint.equals(WSOL)) {
-      const wrapSolIxs = await this.base.maybeWrapSol(amount, signer);
+      const wrapSolIxs = await this.vault.maybeWrapSol(amount, signer);
       preInstructions.push(...wrapSolIxs);
     }
 
@@ -321,8 +329,11 @@ class TxBuilder {
 export class JupiterSwapClient {
   public readonly txBuilder: TxBuilder;
 
-  public constructor(readonly base: BaseClient) {
-    this.txBuilder = new TxBuilder(base);
+  public constructor(
+    readonly base: BaseClient,
+    readonly vault: VaultClient,
+  ) {
+    this.txBuilder = new TxBuilder(base, vault);
   }
 
   public async swap(

@@ -6,14 +6,9 @@ export * from "./client/jupiter";
 export * from "./client/drift";
 export * from "./deser/integrationPolicies";
 export * from "./client/base";
-export * from "./utils/glamPDAs";
-export * from "./utils/helpers";
-export * from "./utils/timelockUtils";
-export * from "./utils/priorityfee";
-export * from "./utils/driftOrderParams";
-export * from "./utils/driftTypes";
-export * from "./utils/driftUser";
+export * from "./assets";
 export * from "./constants";
 export * from "./error";
-export * from "./client/assets";
-export * from "./utils/evm";
+
+// Export all utilities through centralized barrel export
+export * from "./utils";

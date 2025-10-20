@@ -47,7 +47,7 @@ class TxBuilder {
     setEnabled: boolean,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .enableDisableProtocols(integrationProgram, protocolBitmask, setEnabled)
       .accounts({
@@ -67,7 +67,7 @@ class TxBuilder {
     setGranted: boolean,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .grantRevokeDelegatePermissions(
         delegate,
@@ -93,7 +93,7 @@ class TxBuilder {
     setGranted: boolean,
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     return await this.base.protocolProgram.methods
       .grantRevokeDelegatePermissions(
         delegate,
@@ -115,7 +115,7 @@ class TxBuilder {
     data: Buffer,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .setProtocolPolicy(integrationProgram, protocolBitflag, data)
       .accounts({

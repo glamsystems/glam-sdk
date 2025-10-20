@@ -51,7 +51,7 @@ export class GlamClient extends BaseClient {
 
   get drift(): DriftClient {
     if (!this._drift) {
-      this._drift = new DriftClient(this);
+      this._drift = new DriftClient(this, this.vault);
     }
     return this._drift;
   }
@@ -79,7 +79,7 @@ export class GlamClient extends BaseClient {
 
   get jupiterSwap(): JupiterSwapClient {
     if (!this._jupiterSwap) {
-      this._jupiterSwap = new JupiterSwapClient(this);
+      this._jupiterSwap = new JupiterSwapClient(this, this.vault);
     }
     return this._jupiterSwap;
   }
@@ -148,7 +148,7 @@ export class GlamClient extends BaseClient {
 
   get kaminoLending(): KaminoLendingClient {
     if (!this._kaminoLending) {
-      this._kaminoLending = new KaminoLendingClient(this);
+      this._kaminoLending = new KaminoLendingClient(this, this.vault);
     }
     return this._kaminoLending;
   }

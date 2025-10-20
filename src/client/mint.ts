@@ -18,9 +18,10 @@ import {
   StateAccountType,
 } from "../models";
 import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
+import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
-import { charsToName } from "../utils/helpers";
+import { charsToName } from "../utils/common";
 import { BN } from "@coral-xyz/anchor";
 
 class MintTxBuilder {
@@ -38,7 +39,7 @@ class MintTxBuilder {
     setFrozen: boolean = true,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const glamMint = this.base.mintPda;
     const ata = this.base.getMintAta(owner);
     const ixCreateAta = createAssociatedTokenAccountIdempotentInstruction(
@@ -66,7 +67,7 @@ class MintTxBuilder {
     frozen: boolean,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.mintProgram.methods
       .setTokenAccountsStates(frozen)
       .accounts({
@@ -162,7 +163,7 @@ class MintTxBuilder {
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const ata = this.base.getMintAta(from);
 
     const preInstructions = [];
@@ -212,14 +213,14 @@ class MintTxBuilder {
     forceThaw: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const fromAta = this.base.getMintAta(from);
     const toAta = this.base.getMintAta(to);
 
     const preInstructions = [];
     preInstructions.push(
       createAssociatedTokenAccountIdempotentInstruction(
-        this.base.getSigner(),
+        this.base.signer,
         toAta,
         to,
         this.base.mintPda,
@@ -296,7 +297,7 @@ class TxBuilder {
 
     // If decimals is not specified, set it to the same as the deposit asset
     if (decimals === null) {
-      const { mint } = await this.base.fetchMintAndTokenProgram(
+      const { mint } = await fetchMintAndTokenProgram(this.base.provider.connection, 
         mintModel.baseAssetMint,
       );
       decimals = mint.decimals;
@@ -511,7 +512,7 @@ export class MintClient {
     const data = await response.json();
     const { token_accounts: tokenAccounts } = data.result;
 
-    const { mint, tokenProgram } = await this.base.fetchMintAndTokenProgram(
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(this.base.provider.connection, 
       this.base.mintPda,
     );
 
@@ -545,7 +546,7 @@ export class MintClient {
         ],
       },
     );
-    const { mint, tokenProgram } = await this.base.fetchMintAndTokenProgram(
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(this.base.provider.connection, 
       this.base.mintPda,
     );
     return accounts

@@ -76,7 +76,7 @@
 
 //     const position = this.getPositionPda(
 //       new PublicKey(pool),
-//       this.base.getSigner(), // use signer as base key
+//       this.base.signer, // use signer as base key
 //       minBinId,
 //       width,
 //     );
@@ -109,7 +109,7 @@
 //       throw new Error("Only imbalanced strategy types are supported");
 //     }
 
-//     const glamSigner = txOptions.signer || this.base.getSigner();
+//     const glamSigner = txOptions.signer || this.base.signer;
 
 //     const { lbPair, lowerBinId, upperBinId, binArrayLower, binArrayUpper } =
 //       await parseMeteoraPosition(
@@ -299,7 +299,7 @@
 //       .accounts({
 //         glamState: this.base.statePda,
 //         position: new PublicKey(position),
-//         rentReceiver: this.base.getSigner(),
+//         rentReceiver: this.base.signer,
 //         eventAuthority: EVENT_AUTHORITY,
 //         program: METEORA_DLMM_PROGRAM,
 //       })

@@ -1,6 +1,7 @@
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { LstList } from "@glamsystems/sanctum-lst-list";
+import { ClusterNetwork } from "./clientConfig";
 
 export const STAKE_POOLS = LstList.filter(
   (lst) =>
@@ -469,3 +470,24 @@ export const SOL_ORACLE = ASSETS_MAINNET.get(
 export const USDC_ORACLE = ASSETS_MAINNET.get(
   "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
 )!.oracle;
+
+/**
+ * Get metadata of an asset for pricing
+ *
+ * @param assetMint Token mint of the asset
+ * @param cluster The cluster network (defaults to mainnet)
+ * @returns Metadata of the asset
+ */
+export function getAssetMeta(
+  assetMint: string,
+  cluster: ClusterNetwork = ClusterNetwork.Mainnet,
+): AssetMeta {
+  let assetMeta = ASSETS_MAINNET.get(assetMint);
+  if (!assetMeta && cluster !== ClusterNetwork.Mainnet) {
+    assetMeta = ASSETS_TESTS.get(assetMint);
+  }
+  if (!assetMeta) {
+    throw new Error("Invalid asset: " + assetMint);
+  }
+  return assetMeta;
+}

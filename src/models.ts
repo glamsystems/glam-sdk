@@ -17,7 +17,7 @@ import {
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
 import { USDC, WSOL } from "./constants";
-import { charsToName, nameToChars } from "./utils/helpers";
+import { charsToName, nameToChars } from "./utils/common";
 import { MintPolicy } from "./deser/integrationPolicies";
 import { getVaultPda } from "./utils/glamPDAs";
 

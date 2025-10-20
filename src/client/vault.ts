@@ -10,6 +10,7 @@ import {
 } from "@solana/web3.js";
 
 import { BaseClient, TxOptions } from "./base";
+import { fetchMintAndTokenProgram } from "../utils/accounts";
 import {
   MESSAGE_TRANSMITTER_V2,
   TOKEN_MESSENGER_MINTER_V2,
@@ -163,11 +164,63 @@ export class VaultClient {
     return await this.base.sendAndConfirm(tx);
   }
 
+  /**
+   * Generates instructions to wrap SOL into wSOL if the vault doesn't have enough wSOL
+   *
+   * @param lamports Desired amount of wSOL
+   * @returns Array of instructions, null if no instructions are needed
+   */
+  public async maybeWrapSol(
+    lamports: number | BN,
+    signer?: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const glamSigner = signer || this.base.signer;
+    const vaultWsolAta = this.base.getAta(WSOL, this.base.vaultPda);
+    let wsolBalance = new BN(0);
+    try {
+      wsolBalance = new BN(
+        (
+          await this.base.connection.getTokenAccountBalance(vaultWsolAta)
+        ).value.amount,
+      );
+    } catch (err) {}
+    const solBalance = new BN(
+      await this.base.connection.getBalance(this.base.vaultPda),
+    );
+    const delta = new BN(lamports).sub(wsolBalance); // wSOL amount needed
+    if (solBalance.lt(delta)) {
+      throw new Error(
+        `Insufficient funds in vault to complete the transaction. SOL balance (lamports): ${solBalance}, lamports needed: ${lamports}`,
+      );
+    }
+    if (delta.gt(new BN(0)) && solBalance.gte(delta)) {
+      return [
+        createAssociatedTokenAccountIdempotentInstruction(
+          glamSigner,
+          vaultWsolAta,
+          this.base.vaultPda,
+          WSOL,
+        ),
+        await this.base.protocolProgram.methods
+          .systemTransfer(delta)
+          .accounts({
+            glamState: this.base.statePda,
+            glamSigner,
+            to: vaultWsolAta,
+          })
+          .instruction(),
+        createSyncNativeInstruction(vaultWsolAta),
+      ];
+    }
+
+    return [];
+  }
+
   public async wrapTx(
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const to = this.base.getVaultAta(WSOL);
 
     const tx = await this.base.protocolProgram.methods
@@ -192,7 +245,7 @@ export class VaultClient {
   }
 
   public async unwrapTx(txOptions: TxOptions): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tokenAccount = this.base.getVaultAta(WSOL);
 
     const tx = await this.base.extSplProgram.methods
@@ -213,7 +266,7 @@ export class VaultClient {
     to: PublicKey,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
 
     const tx = await this.base.protocolProgram.methods
       .systemTransfer(amount)
@@ -299,7 +352,7 @@ export class VaultClient {
     wrap = true,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
 
     const _lamports =
       lamports instanceof BN ? BigInt(lamports.toString()) : lamports;
@@ -337,10 +390,12 @@ export class VaultClient {
     amount: number | BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
 
-    const { mint, tokenProgram } =
-      await this.base.fetchMintAndTokenProgram(asset);
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      asset,
+    );
 
     const signerAta = this.base.getAta(asset, signer, tokenProgram);
     const vaultAta = this.base.getAta(asset, this.base.vaultPda, tokenProgram);
@@ -424,8 +479,10 @@ export class VaultClient {
     txOptions: TxOptions = {},
   ): Promise<TransactionInstruction[]> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const { mint: mintObj, tokenProgram } =
-      await this.base.fetchMintAndTokenProgram(mint);
+    const { mint: mintObj, tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      mint,
+    );
     const toAta = this.base.getAta(mint, to, tokenProgram);
 
     const preIx = createAssociatedTokenAccountIdempotentInstruction(
@@ -457,8 +514,10 @@ export class VaultClient {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const { mint: mintObj, tokenProgram } =
-      await this.base.fetchMintAndTokenProgram(mint);
+    const { mint: mintObj, tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      mint,
+    );
     const toAta = this.base.getAta(mint, to, tokenProgram);
 
     const preInstructions = [
@@ -494,7 +553,7 @@ export class VaultClient {
     params: { maxFee: BN; minFinalityThreshold: number },
     txOptions: TxOptions,
   ): Promise<[VersionedTransaction, Keypair]> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
 
     const usdcAddress = this.base.isMainnet ? USDC : USDC_DEVNET;
     const pdas = this.getDepositForBurnPdas(

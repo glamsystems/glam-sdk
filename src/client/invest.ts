@@ -18,6 +18,7 @@ import {
 import { BaseClient, TxOptions } from "./base";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
+import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { PendingRequest, RequestType } from "../models";
 
 export class InvestClient {
@@ -101,7 +102,7 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
     const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
 
     const mintTo = this.base.getMintAta(signer);
@@ -142,7 +143,7 @@ export class InvestClient {
     }
 
     const { tokenProgram: depositTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(depositAsset);
+      await fetchMintAndTokenProgram(this.base.provider.connection, depositAsset);
     const tx = await this.base.mintProgram.methods
       .subscribe(amount)
       .accounts({
@@ -164,10 +165,10 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
     const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
     const { tokenProgram: depositTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(depositAsset);
+      await fetchMintAndTokenProgram(this.base.provider.connection, depositAsset);
 
     const signerDepositAta = this.base.getAta(
       depositAsset,
@@ -231,7 +232,7 @@ export class InvestClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
 
     const remainingAccounts: PublicKey[] = [];
     if (await this.base.isLockupEnabled()) {
@@ -332,11 +333,11 @@ export class InvestClient {
     limit: number | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.getSigner();
+    const signer = txOptions.signer || this.base.signer;
     const { baseAssetMint } = await this.base.fetchStateModel();
 
     const { tokenProgram: depositTokenProgram } =
-      await this.base.fetchMintAndTokenProgram(baseAssetMint);
+      await fetchMintAndTokenProgram(this.base.provider.connection, baseAssetMint);
     const tx = await this.base.mintProgram.methods
       .fulfill(limit)
       .accounts({

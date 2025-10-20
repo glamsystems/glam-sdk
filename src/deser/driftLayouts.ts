@@ -12,7 +12,7 @@ import {
 } from "@coral-xyz/borsh";
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { charsToName } from "../utils/helpers";
+import { charsToName } from "../utils/common";
 
 export class DriftVault {
   discriminator!: number[];

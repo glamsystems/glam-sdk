@@ -14,8 +14,8 @@ import { BaseClient, TxOptions } from "./base";
 import { MarinadeClient } from "./marinade";
 import { getStakePoolAccount } from "@solana/spl-stake-pool";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
-import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
-import { STAKE_POOLS } from "./assets";
+import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/accounts";
+import { STAKE_POOLS } from "../assets";
 
 interface StakePoolAccountData {
   programId: PublicKey;
@@ -345,7 +345,7 @@ export class StakingClient {
     lamports: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const {
       programId: stakePoolProgram,
       poolMint,
@@ -394,7 +394,7 @@ export class StakingClient {
     stakeAccount: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const {
       programId: stakePoolProgram,
       poolMint,
@@ -469,7 +469,7 @@ export class StakingClient {
     deactivate: boolean = false,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const {
       programId: stakePoolProgram,
       poolMint,
@@ -540,7 +540,7 @@ export class StakingClient {
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const [stakeAccount, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
@@ -585,7 +585,7 @@ export class StakingClient {
       throw new Error("At least one stake account is required");
     }
 
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .stakeDeactivate()
       .accounts({
@@ -621,7 +621,7 @@ export class StakingClient {
       lamports = accontInfo ? new BN(accontInfo.lamports) : new BN(0);
     }
 
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .stakeWithdraw(lamports)
       .accounts({
@@ -646,7 +646,7 @@ export class StakingClient {
     sourceStake: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
       .stakeMerge()
       .accounts({
@@ -665,7 +665,7 @@ export class StakingClient {
     lamports: BN,
     txOptions: TxOptions = {},
   ) {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const [newStake, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 
@@ -689,7 +689,7 @@ export class StakingClient {
     vote: PublicKey,
     txOptions: TxOptions = {},
   ) {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const [newStake, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
 

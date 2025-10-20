@@ -9,12 +9,14 @@ import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 
 import { BaseClient, TxOptions } from "./base";
 
-import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "./assets";
+import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "../assets";
 import {
   findStakeAccounts,
+} from "../utils/accounts";
+import {
   fetchMeteoraPositions,
   parseMeteoraPosition,
-} from "../utils/helpers";
+} from "../utils/meteora";
 import { PriceDenom, StateModel } from "../models";
 import { KAMINO_SCOPE_PRICES } from "../constants";
 import { DriftClient, DriftUser, DriftVaultsClient } from "./drift";

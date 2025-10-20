@@ -1,9 +1,9 @@
 import {
   GlamClient,
   nameToChars,
-  RequestType,
   StateAccountType,
   WSOL,
+  fetchMintAndTokenProgram,
 } from "../../src";
 import { airdrop, sleep, str2seed } from "../test-utils";
 import { BN, Wallet } from "@coral-xyz/anchor";
@@ -32,7 +32,8 @@ describe("invest", () => {
   const glamClientRich = new GlamClient({ wallet: new Wallet(rich) });
 
   const fetchGlamMintSupply = async () => {
-    const { mint } = await glamClientManager.fetchMintAndTokenProgram(
+    const { mint } = await fetchMintAndTokenProgram(
+      glamClientAlice.connection,
       glamClientManager.mintPda,
     );
     return Number(mint.supply.toString());
@@ -231,7 +232,8 @@ describe("invest", () => {
     // Alice is the first investor, getting 1 share per SOL
     // share_supply == alice_deposit_amount - 0.1% shares burned as vault subscription fee
     // also share_supply == alice_share + escrow_share (manager subscription fee)
-    const { mint: glamMint } = await glamClientAlice.fetchMintAndTokenProgram(
+    const { mint: glamMint } = await fetchMintAndTokenProgram(
+      glamClientAlice.connection,
       glamClientAlice.mintPda,
     );
     const aliceShares = await glamClientAlice.getMintTokenBalance(

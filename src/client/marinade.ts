@@ -26,7 +26,7 @@ import {
   MSOL,
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
-import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/helpers";
+import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/accounts";
 import { ClusterNetwork } from "../clientConfig";
 
 export type Ticket = {
@@ -166,7 +166,7 @@ export class MarinadeClient {
     amount: BN,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const vault = this.base.vaultPda;
     const marinadeState = this.marinadeStateStatic;
     const vaultMsolAta = this.base.getVaultAta(marinadeState.msolMintAddress);
@@ -226,7 +226,7 @@ export class MarinadeClient {
   }
 
   public async depositNativeTx(amount: BN, txOptions: TxOptions): Promise<any> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     // Create and fund the stake account
     const [stakeAccount, createStakeAccountIx] =
       await this.createStakeAccount(glamSigner);
@@ -265,7 +265,7 @@ export class MarinadeClient {
     stakeAccount: PublicKey,
     txOptions: TxOptions,
   ): Promise<any> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
 
     const stakeAccountInfo = await this.getParsedStakeAccountInfo(stakeAccount);
 
@@ -356,7 +356,7 @@ export class MarinadeClient {
     deactivate: boolean = false,
     txOptions: TxOptions,
   ): Promise<[VersionedTransaction, Keypair]> {
-    const glamSigner = txOptions.signer || this.base.getSigner();
+    const glamSigner = txOptions.signer || this.base.signer;
     const marinadeState = await this.fetchMarinadeState();
 
     // Get mariande stake withdraw authority

@@ -4,7 +4,7 @@ import {
   OrderParams,
   OrderTriggerCondition,
   OrderType,
-} from "./driftTypes";
+} from "./types";
 import { BN } from "@coral-xyz/anchor";
 
 export function getLimitOrderParams(

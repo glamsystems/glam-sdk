@@ -177,7 +177,7 @@ describe("state_ops", () => {
       throw e;
     }
     glamState = await glamClient.fetchStateAccount();
-    expect(glamState.owner).toEqual(glamClient.getSigner());
+    expect(glamState.owner).toEqual(glamClient.signer);
   }, 25_000);
 
   it("Close state account - should fail due to not disabled", async () => {

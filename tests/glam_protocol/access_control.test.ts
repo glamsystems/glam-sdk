@@ -1,26 +1,8 @@
-import {
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
-import { BN, Wallet } from "@coral-xyz/anchor";
+import { Keypair } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 
-import {
-  airdrop,
-  createGlamStateForTest,
-  stateModelForTest,
-  str2seed,
-} from "./setup";
-import {
-  GlamClient,
-  GlamError,
-  MSOL,
-  MintModel,
-  USDC,
-  WSOL,
-  nameToChars,
-} from "../../src";
+import { airdrop, createGlamStateForTest, str2seed } from "./setup";
+import { GlamClient, WSOL } from "../../src";
 
 const key1 = Keypair.fromSeed(str2seed("acl_test_key1"));
 const key2 = Keypair.fromSeed(str2seed("acl_test_key2"));
@@ -203,6 +185,11 @@ describe("access_control", () => {
 
   it("Close state account", async () => {
     try {
+      const txSigDisable = await glamClient.access.emergencyAccessUpdate({
+        stateEnabled: false,
+      });
+      console.log("State disabled", txSigDisable);
+
       const txSig = await glamClient.state.close();
       console.log("Close state account:", txSig);
     } catch (e) {
