@@ -3926,12 +3926,12 @@ export type ExtDrift = {
     {
       "name": "protoDriftProtocolPermCancelOrders",
       "type": "u64",
-      "value": "128"
+      "value": "256"
     },
     {
       "name": "protoDriftProtocolPermCreateModifyOrders",
       "type": "u64",
-      "value": "64"
+      "value": "128"
     },
     {
       "name": "protoDriftProtocolPermDeleteUser",
@@ -3951,12 +3951,17 @@ export type ExtDrift = {
     {
       "name": "protoDriftProtocolPermPerpMarkets",
       "type": "u64",
-      "value": "256"
+      "value": "512"
+    },
+    {
+      "name": "protoDriftProtocolPermRepay",
+      "type": "u64",
+      "value": "64"
     },
     {
       "name": "protoDriftProtocolPermSpotMarkets",
       "type": "u64",
-      "value": "512"
+      "value": "1024"
     },
     {
       "name": "protoDriftProtocolPermUpdateUser",

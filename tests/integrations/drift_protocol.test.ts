@@ -14,6 +14,7 @@ import {
 import {
   airdrop,
   createGlamStateForTest,
+  mintUSDC,
   stateModelForTest,
 } from "../glam_protocol/setup";
 import { DriftProtocolPolicy } from "../../src/deser/integrationPolicies";
@@ -28,6 +29,35 @@ describe("drift_protocol", () => {
     return (driftUser?.orders || []).filter(
       (o) => o.status === OrderStatus.OPEN,
     );
+  };
+
+  // spot market allowlist: [0, 1] (USDC, SOL)
+  // perp market allowlist: [0] (SOL)
+  // borrowable: [WSOL]
+  const restoreDefaultPolicy = async () => {
+    const policy = new DriftProtocolPolicy([0, 1], [0], [WSOL]);
+    await setPolicy(policy);
+  };
+
+  // allows nothing
+  const setEmptyPolicy = async () => {
+    const policy = new DriftProtocolPolicy([], [], []);
+    await setPolicy(policy);
+  };
+
+  const setPolicy = async (policy: DriftProtocolPolicy) => {
+    try {
+      const txSig = await glamClient.access.setProtocolPolicy(
+        glamClient.extDriftProgram.programId,
+        0b01, // drift protocol
+        policy.encode(),
+        txOptions,
+      );
+      console.log("setProtocolPolicy", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   };
 
   it("Create and initialize glam state", async () => {
@@ -60,8 +90,11 @@ describe("drift_protocol", () => {
     const state = await glamClient.fetchStateAccount();
     expect(state.integrationAcls.length).toEqual(3);
 
-    // Airdrop 10 SOL to vault
-    await airdrop(glamClient.provider.connection, vaultPda, 10_000_000_000);
+    // Airdrop 100 SOL to vault
+    await airdrop(glamClient.provider.connection, vaultPda, 100_000_000_000);
+
+    // Mint USDC to vault (used as collateral)
+    await mintUSDC(glamClient.provider.connection, vaultPda, 1_000_000);
   }, 30_000);
 
   it("Initialize user stats and create user #0", async () => {
@@ -105,90 +138,126 @@ describe("drift_protocol", () => {
     expect(stateModel.externalPositions).toEqual([user]);
   }, 15_000);
 
-  it("Update protocol policy and allowlist nothing", async () => {
-    const policy = new DriftProtocolPolicy([], [], []);
-    try {
-      const txSig = await glamClient.access.setProtocolPolicy(
-        glamClient.extDriftProgram.programId,
-        0b01, // drift protocol
-        policy.encode(),
-        txOptions,
-      );
-      console.log("setProtocolPolicy", txSig);
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
-  });
+  it("Set empty policy - deposit and borrow fail", async () => {
+    await setEmptyPolicy();
 
-  it("Deposit 10 SOL - fail due to policy violation", async () => {
     const amount = new BN(10_000_000_000);
-
     try {
       const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
     } catch (e) {
       expect(e.message).toEqual("Protocol policy violation");
     }
-  });
 
-  it("Withdraw 11 SOL (effectively borrow 1 SOL) - fail due to policy violation", async () => {
-    const amount = new BN(11_000_000_000);
+    // At this point there's no SOL deposited, so withdraw == borrow
     try {
       const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
     } catch (e) {
       expect(e.message).toEqual("Protocol policy violation");
     }
+
+    await restoreDefaultPolicy();
   });
 
-  it("Update protocol policy and allow borrowing SOL", async () => {
-    const policy = new DriftProtocolPolicy([1], [0], [WSOL]);
-    try {
-      const txSig = await glamClient.access.setProtocolPolicy(
-        glamClient.extDriftProgram.programId,
-        0b01, // drift protocol
-        policy.encode(),
-        txOptions,
-      );
-      console.log("setProtocolPolicy", txSig);
-    } catch (e) {
-      console.error(e);
-      throw e;
-    }
-  });
-
-  it("Deposit 10 SOL", async () => {
+  it("Deposit 10 SOL and 10_000 USDC", async () => {
     const amount = new BN(10_000_000_000);
-
     try {
-      const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
-      console.log("driftDeposit", txSig);
+      const txSig1 = await glamClient.drift.deposit(amount, 1, 1, txOptions);
+      console.log("driftDeposit SOL", txSig1);
+
+      const txSig2 = await glamClient.drift.deposit(amount, 0, 1, txOptions);
+      console.log("driftDeposit USDC", txSig2);
     } catch (e) {
       console.error(e);
       throw e;
     }
   });
 
-  it("Withdraw 11 SOL (effectively borrow 1 SOL)", async () => {
-    const amount = new BN(11_000_000_000);
+  it("Withdraw 10 SOL (closing position)", async () => {
+    const amount = new BN(10_000_000_000);
     try {
       const txSig = await glamClient.drift.withdraw(amount, 1, 1);
-      expect(txSig).toBeUndefined();
-    } catch (e) {
-      expect(e.message).toEqual("Insufficient collateral.");
-    }
-  });
-
-  it("Withdraw 1 SOL", async () => {
-    const amount = new BN(1_000_000_000);
-    try {
-      const txId = await glamClient.drift.withdraw(amount, 1, 1);
-      console.log("driftWithdraw", txId);
+      console.log("driftWithdraw", txSig);
     } catch (e) {
       console.error(e);
       throw e;
     }
+  });
+
+  it("Borrow 1 SOL without market in spot_markets_allowlist - fail", async () => {
+    // At this point, user has 0 SOL deposited, withdrawing 1 SOL => borrowing 1 SOL
+
+    // Update policy to remove market 1 from spot_markets_allowlist but keep borrow allowlist
+    const policy = new DriftProtocolPolicy([], [0], [WSOL]);
+    await setPolicy(policy);
+
+    try {
+      const amount = new BN(1_000_000_000);
+      const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
+      expect(txSig).toBeUndefined();
+    } catch (e) {
+      expect(e.message).toEqual("Protocol policy violation");
+    }
+
+    await restoreDefaultPolicy();
+  });
+
+  it("Borrow 1 SOL without asset in borrow_allowlist - fail", async () => {
+    // At this point, user has 0 SOL deposited, withdrawing 1 SOL => borrowing 1 SOL
+
+    // Update policy to remove WSOL from borrow allowlist
+    const policy = new DriftProtocolPolicy([1], [0], []);
+    await setPolicy(policy);
+
+    try {
+      const amount = new BN(10_000_000_000); // Withdraw 10 SOL (9 deposit + 1 borrow)
+      const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
+      expect(txSig).toBeUndefined();
+    } catch (e) {
+      expect(e.message).toEqual("Protocol policy violation");
+    }
+
+    await restoreDefaultPolicy();
+  });
+
+  it("Deposit 5 SOL to create initial position for borrow test", async () => {
+    const amount = new BN(5_000_000_000);
+    try {
+      const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
+      console.log("driftDeposit for borrow setup", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
+  it("Borrow 3 SOL (withdraw 8 SOL total from 5 SOL deposit)", async () => {
+    const amount = new BN(8_000_000_000);
+    try {
+      const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
+      console.log("driftBorrow", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  });
+
+  it("Repay borrow (deposit 3 SOL to close borrow position)", async () => {
+    // Remove market 1 from spot_markets_allowlist to ensure repay bypasses the allowlist
+    const policy = new DriftProtocolPolicy([], [0], [WSOL]);
+    await setPolicy(policy);
+
+    try {
+      const amount = new BN(3_000_000_000); // Repay 3 SOL borrow
+      const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
+      console.log("driftRepay", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
+    await restoreDefaultPolicy();
   });
 
   it("Place perp order", async () => {
