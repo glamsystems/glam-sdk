@@ -134,7 +134,7 @@ describe("spl", () => {
         delegate.publicKey,
         glamClient.extSplProgram.programId,
         0b01, // token program
-        new BN(0b10), // TRANSFER_TO_ALLOWLISTED
+        new BN(0b01), // TRANSFER_TO_ALLOWLISTED
       );
       console.log(
         "Grant delegate token TransferToAllowlisted permission:",

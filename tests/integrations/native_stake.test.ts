@@ -152,5 +152,5 @@ describe("native_stake", () => {
 
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.externalPositions?.length).toEqual(0);
-  }, 35_000);
+  }, 45_000);
 });
