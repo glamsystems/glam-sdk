@@ -10,7 +10,7 @@ export type GlamConfig = {
     "name": "glamConfig",
     "version": "1.0.0",
     "spec": "0.1.0",
-    "description": "Configuration program for GLAM protocol"
+    "description": "GLAM config program"
   },
   "instructions": [
     {

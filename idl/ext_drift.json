@@ -2,9 +2,9 @@
   "address": "G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F",
   "metadata": {
     "name": "ext_drift",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "spec": "0.1.0",
-    "description": "GLAM extension of Drift programs"
+    "description": "Drift integration for GLAM Protocol"
   },
   "instructions": [
     {

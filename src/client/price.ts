@@ -416,6 +416,7 @@ export class PriceClient {
    * Returns an instruction that prices stake accounts.
    * If there are no stake accounts, returns null.
    */
+  /*
   async priceStakeAccountsIx(): Promise<TransactionInstruction | null> {
     const stakes = await findStakeAccounts(
       this.base.provider.connection,
@@ -441,6 +442,7 @@ export class PriceClient {
       .instruction();
     return priceStakesIx;
   }
+  */
 
   /**
    * Returns an instruction that prices Meteora positions.
