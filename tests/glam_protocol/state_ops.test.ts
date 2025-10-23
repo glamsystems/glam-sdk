@@ -25,8 +25,7 @@ describe("state_ops", () => {
   });
 
   it("Initialize glam state", async () => {
-    const { statePda, vaultPda } =
-      await createGlamStateForTest(glamClient);
+    const { statePda, vaultPda } = await createGlamStateForTest(glamClient);
     console.log("State PDA:", statePda.toBase58());
     console.log("Vault PDA:", vaultPda.toBase58());
 

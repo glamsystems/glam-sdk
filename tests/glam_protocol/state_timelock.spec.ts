@@ -1,5 +1,6 @@
-import { createGlamStateForTest, sleep, stateModelForTest } from "./setup";
+import { createGlamStateForTest, sleep, defaultInitStateParams } from "./setup";
 import { charsToName, GlamClient, nameToChars } from "../../src";
+import { PublicKey } from "@solana/web3.js";
 
 const txOptions = {
   simulate: true,
@@ -9,12 +10,10 @@ describe("state_timelock", () => {
   const glamClient = new GlamClient();
 
   it("Initialize glam state", async () => {
-    const stateForTest = { ...stateModelForTest, timelockDuration: 10 };
-
-    const { statePda, vaultPda } = await createGlamStateForTest(
-      glamClient,
-      stateForTest,
-    );
+    const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
+      ...defaultInitStateParams,
+      timelockDuration: 10,
+    });
 
     console.log("State PDA:", statePda.toBase58());
     console.log("Vault PDA:", vaultPda.toBase58());
@@ -22,6 +21,38 @@ describe("state_timelock", () => {
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.timelockDuration).toEqual(10);
   }, 25_000);
+
+  it("Update owner - changes staged due to timelock", async () => {
+    try {
+      const txSig = await glamClient.state.update(
+        { owner: PublicKey.default },
+        txOptions,
+      );
+      console.log("Update owner", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
+    // Changes have not take effect yet due to timelock
+    const stateModel = await glamClient.fetchStateModel();
+    expect(stateModel.owner).toEqual(glamClient.signer);
+    expect(stateModel.timelockExpiresAt).toBeGreaterThan(0);
+  }, 15_000);
+
+  it("Cancel timelock", async () => {
+    try {
+      const txSig = await glamClient.timelock.cancel();
+      console.log("Cancel timelock", txSig);
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+    const stateModel = await glamClient.fetchStateModel();
+    expect(stateModel.timelockExpiresAt).toEqual(0);
+    expect(stateModel.pendingStateUpdates).toEqual({});
+    expect(stateModel.pendingMintUpdates).toEqual({});
+  }, 15_000);
 
   it("Update name - changes staged due to timelock", async () => {
     try {
@@ -34,8 +65,12 @@ describe("state_timelock", () => {
       console.error(e);
       throw e;
     }
+
+    // Name change has not take effect yet due to timelock
     const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.nameStr).toEqual(charsToName(stateModelForTest.name!)); // not changed due to timelock
+    expect(stateModel.nameStr).toEqual(
+      charsToName(defaultInitStateParams.name!),
+    );
   }, 15_000);
 
   it("Update integration ACL - changes staged due to timelock", async () => {
@@ -56,9 +91,9 @@ describe("state_timelock", () => {
 
   it("Apply timelock - fail due to timelock still active", async () => {
     try {
-      const txSig = await glamClient.state.updateApplyTimelock();
+      const txSig = await glamClient.timelock.apply();
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Timelock still active.");
     }
   }, 15_000);
@@ -66,7 +101,7 @@ describe("state_timelock", () => {
   it("Apply timelock - success after timelock expires", async () => {
     await sleep(10000);
     try {
-      const txSig = await glamClient.state.updateApplyTimelock();
+      const txSig = await glamClient.timelock.apply();
       console.log("Apply timelock txSig", txSig);
     } catch (e) {
       expect(e).toBeUndefined();

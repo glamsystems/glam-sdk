@@ -5,38 +5,28 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { BaseClient, TxOptions } from "./base";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { EmergencyAccessUpdateArgs } from "../models";
 
-class TxBuilder {
-  constructor(private base: BaseClient) {}
-
+class TxBuilder extends BaseTxBuilder {
   async emergencyAccessUpdate(
     args: Partial<EmergencyAccessUpdateArgs>,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
-      .emergencyAccessUpdate(new EmergencyAccessUpdateArgs(args))
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
+    const ix = await this.emergencyAccessUpdateIx(args, txOptions.signer);
+    const tx = this.build(ix, txOptions);
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   async emergencyAccessUpdateIx(
     args: Partial<EmergencyAccessUpdateArgs>,
-    txOptions: TxOptions = {},
+    signer?: PublicKey,
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.signer;
     return await this.base.protocolProgram.methods
       .emergencyAccessUpdate(new EmergencyAccessUpdateArgs(args))
       .accounts({
         glamState: this.base.statePda,
-        glamSigner,
+        glamSigner: signer || this.base.signer,
       })
       .instruction();
   }

@@ -4,65 +4,92 @@ import {
   TransactionSignature,
   PublicKey,
   TransactionInstruction,
+  Transaction,
 } from "@solana/web3.js";
-import { BaseClient, TxOptions } from "./base";
-import { StateModel, CreatedModel, StateIdlModel } from "../models";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
+import { CreatedModel, StateIdlModel, StateAccountType } from "../models";
 import { getStatePda } from "../utils/glamPDAs";
 import { charsToName } from "../utils/common";
 
-class TxBuilder {
-  constructor(private base: BaseClient) {}
+export type InitStateParams = {
+  accountType: StateAccountType;
+  name: number[];
+  baseAssetMint: PublicKey;
+} & Partial<StateIdlModel>;
 
-  async create(
-    partialStateModel: Partial<StateIdlModel>,
-    baseAssetMint: PublicKey,
+/**
+ * A subset of StateIdlModel fields that are updatable using updateState instruction
+ */
+export type UpdateStateParams = {
+  name?: number[];
+  owner?: PublicKey;
+  portfolioManagerName?: number[];
+  timelockDuration?: number;
+  assets?: PublicKey[];
+  borrowable?: PublicKey[];
+};
+
+class TxBuilder extends BaseTxBuilder {
+  async initialize(
+    params: InitStateParams,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const stateModel = this.enrichStateModel(partialStateModel);
 
-    const { id: statePda } = stateModel;
-    if (!statePda) {
-      throw new Error("State PDA not set");
-    }
+    // stateInitKey = hash state name and get first 8 bytes
+    // useful for re-computing state account PDA in the future
+    const stateInitKey = [
+      ...Buffer.from(
+        anchor.utils.sha256.hash(charsToName(params.name)),
+      ).subarray(0, 8),
+    ];
+    const created = new CreatedModel({ key: stateInitKey });
+    const owner = params.owner || glamSigner;
+    const statePda = getStatePda(
+      stateInitKey,
+      owner,
+      this.base.protocolProgram.programId,
+    );
+    const uri = params.uri || `https://gui.glam.systems/products/${statePda}`;
 
+    // create a StateIdlModel object, baseAssetMint is dropped
+    const stateIdlModel = new StateIdlModel({
+      ...params,
+      created,
+      owner,
+      uri,
+    });
     const tx = await this.base.protocolProgram.methods
-      .initializeState(new StateIdlModel(stateModel))
+      .initializeState(stateIdlModel)
       .accountsPartial({
         glamState: statePda,
         glamSigner,
-        baseAssetMint,
+        baseAssetMint: params.baseAssetMint,
       })
+      .preInstructions(txOptions.preInstructions || [])
+      .postInstructions(txOptions.postInstructions || [])
       .transaction();
 
     this.base.statePda = statePda;
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   async update(
-    updated: Partial<StateIdlModel>,
+    params: UpdateStateParams,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
-      .updateState(new StateIdlModel(updated))
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
+    const ix = await this.updateIx(params, txOptions.signer);
+    const tx = this.build(ix, txOptions);
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
   async updateIx(
-    updated: Partial<StateIdlModel>,
-    txOptions: TxOptions,
+    params: UpdateStateParams,
+    signer?: PublicKey,
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = signer || this.base.signer;
     return await this.base.protocolProgram.methods
-      .updateState(new StateIdlModel(updated))
+      .updateState(new StateIdlModel(params))
       .accounts({
         glamState: this.base.statePda,
         glamSigner,
@@ -81,6 +108,7 @@ class TxBuilder {
         glamSigner,
       })
       .preInstructions(txOptions.preInstructions || [])
+      .postInstructions(txOptions.postInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
@@ -95,6 +123,8 @@ class TxBuilder {
         glamState: this.base.statePda,
         glamSigner: this.base.signer,
       })
+      .preInstructions(txOptions.preInstructions || [])
+      .postInstructions(txOptions.postInstructions || [])
       .transaction();
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
@@ -109,41 +139,10 @@ class TxBuilder {
         glamSigner,
       })
       .preInstructions(txOptions.preInstructions || [])
+      .postInstructions(txOptions.postInstructions || [])
       .transaction();
 
     return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  /**
-   * Create an enriched state model from a partial IDL state model
-   */
-  private enrichStateModel(stateModel: Partial<StateIdlModel>): StateModel {
-    if (!stateModel?.name) {
-      throw new Error("Name must be specified");
-    }
-
-    // stateInitKey = hash state name and get first 8 bytes
-    // useful for computing state account PDA in the future
-    const stateInitKey = [
-      ...Buffer.from(
-        anchor.utils.sha256.hash(charsToName(stateModel.name)),
-      ).subarray(0, 8),
-    ];
-    stateModel.created = new CreatedModel({ key: stateInitKey });
-    stateModel.owner = stateModel.owner || this.base.signer;
-
-    const statePda = getStatePda(
-      stateInitKey,
-      stateModel.owner,
-      this.base.protocolProgram.programId,
-    );
-    stateModel.uri =
-      stateModel.uri || `https://gui.glam.systems/products/${statePda}`;
-
-    return new StateModel(
-      { ...stateModel, id: statePda },
-      this.base.protocolProgram.programId,
-    );
   }
 }
 
@@ -157,27 +156,27 @@ export class StateClient {
   /**
    * Creates a new GLAM state
    */
-  public async create(
-    partialStateModel: Partial<StateIdlModel>,
-    baseAssetMint: PublicKey,
+  public async initialize(
+    params: InitStateParams,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.create(
-      partialStateModel,
-      baseAssetMint,
-      txOptions,
-    );
+    const vTx = await this.txBuilder.initialize(params, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
   /**
-   * Updates GLAM state
+   * Updates the GLAM state account.
+   *
+   * If no timelock , the updates will be applied immediately.
+   * If timelock is enabled, the updates will be staged and can be applied after the timelock period.
+   *
+   * Only the fields provided in `params` will be updated; omitted fields remain unchanged.
    */
   public async update(
-    updated: Partial<StateIdlModel>,
+    params: UpdateStateParams,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.update(updated, txOptions);
+    const vTx = await this.txBuilder.update(params, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 

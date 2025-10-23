@@ -98,6 +98,7 @@ const deserializeGlamStateCache = (s: any) => {
 };
 
 const toStateCache = (s: StateModel) => {
+  console.log("toStateCache", s);
   return {
     pubkey: s.id,
     owner: s.owner,
@@ -115,7 +116,9 @@ export function GlamProvider({
   const setGlamStatesList = useSetAtom(glamStatesListAtom);
 
   const [delegateAcls, setDelegateAcls] = useState([] as DelegateAcl[]);
-  const [integrationAcls, setIntegrationAcls] = useState([] as IntegrationAcl[]);
+  const [integrationAcls, setIntegrationAcls] = useState(
+    [] as IntegrationAcl[],
+  );
   const [vault, setVault] = useState({} as Vault);
   const wallet = useWallet();
   const { connection } = useConnection();

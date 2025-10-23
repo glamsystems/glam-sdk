@@ -689,7 +689,6 @@ export class BaseClient {
         stateAccount,
         mint,
         requestQueue,
-        this.protocolProgram.programId,
       );
     }
 
@@ -698,7 +697,6 @@ export class BaseClient {
       stateAccount,
       undefined,
       undefined,
-      this.protocolProgram.programId,
     );
   }
 
@@ -758,7 +756,6 @@ export class BaseClient {
         stateAccount,
         mint,
         requestQueue,
-        this.protocolProgram.programId,
       );
     });
   }
@@ -779,5 +776,18 @@ export class BaseClient {
       return policyClass.decode(policyData);
     }
     return null;
+  }
+}
+
+export class BaseTxBuilder {
+  constructor(readonly base: BaseClient) {}
+
+  build(ix: TransactionInstruction, txOptions: TxOptions = {}): Transaction {
+    const tx = new Transaction().add(
+      ...(txOptions.preInstructions || []),
+      ix,
+      ...(txOptions.postInstructions || []),
+    );
+    return tx;
   }
 }

@@ -6,12 +6,15 @@ import {
   StateAccountType,
   WSOL,
   getTokenAccountsByOwner,
+  charsToName,
+  fetchMintAndTokenProgram,
 } from "../../src";
 import { expectPublicKeyArrayEqual, sleep, str2seed } from "../test-utils";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
+import { InitMintParams } from "../../src/client/mint";
 
 const txOptions = {
   simulate: true,
@@ -24,22 +27,18 @@ describe("setup_and_ops", () => {
   const glamClient = new GlamClient();
 
   it("Initialize mint (no permanent delegate, no lockup, default_account_state_frozen=false)", async () => {
-    const name = "GLAM Mint Test #0 No PD";
-
-    const mintModel = {
-      name: nameToChars(name),
+    const params = {
+      name: nameToChars("GLAM Mint Test #0 No PD"),
       symbol: "GMT",
       uri: "https://glam.systems",
       defaultAccountStateFrozen: false,
+      accountType: StateAccountType.MINT,
       baseAssetMint: WSOL,
+      decimals: 0,
     };
 
     try {
-      const txSig = await glamClient.mint.initialize(
-        mintModel,
-        StateAccountType.MINT,
-        txOptions,
-      );
+      const txSig = await glamClient.mint.initialize(params, txOptions);
       console.log("Initialize mint #0", txSig);
     } catch (e) {
       console.error(e);
@@ -47,11 +46,10 @@ describe("setup_and_ops", () => {
     }
 
     const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.nameStr).toEqual(name);
-    expect(stateModel.integrationAcls?.length).toEqual(1);
-
-    expect(stateModel.mintModel?.nameStr).toEqual(name);
-    expect(stateModel.mintModel?.symbol).toEqual("GMT");
+    expect(stateModel.nameStr).toEqual(charsToName(params.name));
+    expect(stateModel.integrationAcls?.length).toEqual(1); // mint program is an integration
+    expect(stateModel.mintModel?.nameStr).toEqual(charsToName(params.name));
+    expect(stateModel.mintModel?.symbol).toEqual(params.symbol);
     expect(stateModel.mintModel?.baseAssetMint).toEqual(WSOL);
     expect(stateModel.mintModel?.defaultAccountStateFrozen).toEqual(false);
     expect(stateModel.mintModel?.permanentDelegate).toBeNull();
@@ -60,12 +58,21 @@ describe("setup_and_ops", () => {
     expect(stateModel.mintModel?.minRedemption.toNumber()).toEqual(0);
     expect(stateModel.mintModel?.allowlist).toBeNull();
     expect(stateModel.mintModel?.blocklist).toBeNull();
+
+    expect(stateModel.mint).toEqual(glamClient.mintPda);
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(
+      glamClient.connection,
+      stateModel.mint!,
+    );
+    expect(tokenProgram).toEqual(TOKEN_2022_PROGRAM_ID);
+    expect(mint.decimals).toBe(params.decimals);
   }, 25_000);
 
   it("Initialize mint (permanent delegate, lockup, default_account_state_frozen=true)", async () => {
     const name = "GLAM Mint Test #1";
 
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.MINT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
@@ -81,11 +88,7 @@ describe("setup_and_ops", () => {
     };
 
     try {
-      const txSig = await glamClient.mint.initialize(
-        mintModel,
-        StateAccountType.MINT,
-        txOptions,
-      );
+      const txSig = await glamClient.mint.initialize(params, txOptions);
       console.log("Initialize mint #1", txSig);
     } catch (e) {
       console.error(e);
@@ -101,40 +104,37 @@ describe("setup_and_ops", () => {
     expect(stateModel.mintModel?.baseAssetMint).toEqual(WSOL);
     expect(stateModel.mintModel?.defaultAccountStateFrozen).toEqual(true);
     expect(stateModel.mintModel?.permanentDelegate).toEqual(
-      mintModel.permanentDelegate,
+      params.permanentDelegate,
     );
-    expect(stateModel.mintModel?.lockupPeriod).toEqual(mintModel.lockupPeriod);
+    expect(stateModel.mintModel?.lockupPeriod).toEqual(params.lockupPeriod);
     expect(stateModel.mintModel?.maxCap.toNumber()).toEqual(
-      mintModel.maxCap.toNumber(),
+      params.maxCap.toNumber(),
     );
     expect(stateModel.mintModel?.minSubscription.toNumber()).toEqual(
-      mintModel.minSubscription.toNumber(),
+      params.minSubscription.toNumber(),
     );
     expect(stateModel.mintModel?.minRedemption.toNumber()).toEqual(
-      mintModel.minRedemption.toNumber(),
+      params.minRedemption.toNumber(),
     );
-    expect(stateModel.mintModel?.allowlist).toEqual(mintModel.allowlist);
-    expect(stateModel.mintModel?.blocklist).toEqual(mintModel.blocklist);
+    expect(stateModel.mintModel?.allowlist).toEqual(params.allowlist);
+    expect(stateModel.mintModel?.blocklist).toEqual(params.blocklist);
   }, 25_000);
 
   it("Initialize mint self permanent delegate", async () => {
     const name = "GLAM Mint Test #2";
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.MINT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
       defaultAccountStateFrozen: true,
       permanentDelegate: new PublicKey(0), // set permanent delegate to the mint itself
-      lockUpPeriod: 3600,
+      lockupPeriod: 3600,
       baseAssetMint: WSOL,
     };
 
     try {
-      const txSig = await glamClient.mint.initialize(
-        mintModel,
-        StateAccountType.MINT,
-        txOptions,
-      );
+      const txSig = await glamClient.mint.initialize(params, txOptions);
       console.log("Initialize mint #2", txSig);
     } catch (e) {
       console.error(e);
@@ -160,7 +160,10 @@ describe("setup_and_ops", () => {
       txSig,
     );
     const tokenAccount = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        alice.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(true);
   });
@@ -197,7 +200,7 @@ describe("setup_and_ops", () => {
         new BN(1_000_000_000),
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.programLogs).toContain("Program log: Error: Account is frozen");
     }
   }, 15_000);
@@ -218,7 +221,10 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccount = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        bob.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(false);
     expect(tokenAccount?.amount).toBe(amount.toString());
@@ -227,7 +233,10 @@ describe("setup_and_ops", () => {
   it("Freeze bob's token account", async () => {
     // Before: token account is not frozen
     const tokenAccount = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        bob.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccount?.frozen).toBe(false);
 
@@ -243,7 +252,10 @@ describe("setup_and_ops", () => {
 
     // After: token account is frozen
     const tokenAccountAfter = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        bob.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountAfter?.frozen).toBe(true);
   });
@@ -264,10 +276,16 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccountAlice = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        alice.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     const tokenAccountBob = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, bob.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        bob.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
 
     expect(tokenAccountAlice?.amount).toBe(amount.toString()); // 0 + 0.5 = 0.5
@@ -287,12 +305,18 @@ describe("setup_and_ops", () => {
     }
 
     const tokenAccountAlice = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        alice.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountAlice?.amount).toEqual("0");
 
     const tokenAccountBob = (
-      await getTokenAccountsByOwner(glamClient.provider.connection, alice.publicKey)
+      await getTokenAccountsByOwner(
+        glamClient.provider.connection,
+        alice.publicKey,
+      )
     ).find((ta) => ta.mint.equals(glamClient.mintPda));
     expect(tokenAccountBob?.amount).toEqual("0");
   });
@@ -319,6 +343,6 @@ describe("setup_and_ops", () => {
 
     // Verify glam state is updated
     const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.mint).toEqual(PublicKey.default);
+    expect(stateModel.mint).toBeNull();
   });
 });

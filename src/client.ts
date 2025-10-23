@@ -16,6 +16,7 @@ import { PriceClient } from "./client/price";
 import { FeesClient } from "./client/fees";
 import { MintClient } from "./client/mint";
 import { AccessClient } from "./client/access";
+import { TimelockClient } from "./client/timelock";
 // import { JupiterVoteClient } from "./client/jupiter";
 // import { MeteoraDlmmClient } from "./client/meteora";
 // import { ValidatorClient } from "./client/validator";
@@ -41,6 +42,7 @@ export class GlamClient extends BaseClient {
   private _kaminoFarm?: KaminoFarmClient;
   private _kaminoVaults?: KaminoVaultsClient;
   private _fees?: FeesClient;
+  private _timelock?: TimelockClient;
   // private _meteoraDlmm?: MeteoraDlmmClient;
   // private _validator?: ValidatorClient;
   // private _jupiterVote?: JupiterVoteClient;
@@ -165,6 +167,13 @@ export class GlamClient extends BaseClient {
       this._kaminoVaults = new KaminoVaultsClient(this, this.kaminoLending);
     }
     return this._kaminoVaults;
+  }
+
+  get timelock(): TimelockClient {
+    if (!this._timelock) {
+      this._timelock = new TimelockClient(this, this.state);
+    }
+    return this._timelock;
   }
 
   // get meteoraDlmm(): MeteoraDlmmClient {

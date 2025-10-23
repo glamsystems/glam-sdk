@@ -8,6 +8,7 @@ import {
 } from "../../src";
 import { MintPolicy } from "../../src/deser/integrationPolicies";
 import { sleep } from "../test-utils";
+import { InitMintParams } from "../../src/client/mint";
 
 const txOptions = {
   simulate: true,
@@ -18,7 +19,8 @@ describe("mint_timelock", () => {
 
   it("Initialize mint", async () => {
     const name = "GLAM Mint Timelock Test";
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.MINT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
@@ -26,11 +28,7 @@ describe("mint_timelock", () => {
     };
 
     try {
-      const txSig = await glamClient.mint.initialize(
-        mintModel,
-        StateAccountType.MINT,
-        txOptions,
-      );
+      const txSig = await glamClient.mint.initialize(params, txOptions);
       console.log("Initialize mint:", txSig);
     } catch (e) {
       console.error(e);
@@ -46,10 +44,7 @@ describe("mint_timelock", () => {
 
   it("Enable timelock and update mint lockup=30", async () => {
     try {
-      const txSig = await glamClient.state.update(
-        { timelockDuration: 10 },
-        txOptions,
-      );
+      const txSig = await glamClient.timelock.set(10, txOptions);
       console.log("Enable timelock:", txSig);
 
       const txUpdate = await glamClient.mint.update(
@@ -76,9 +71,9 @@ describe("mint_timelock", () => {
 
   it("Apply update immediately", async () => {
     try {
-      const txSig = await glamClient.mint.updateApplyTimelock(txOptions);
+      const txSig = await glamClient.timelock.apply(txOptions);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Timelock still active");
     }
   }, 15_000);
@@ -87,8 +82,8 @@ describe("mint_timelock", () => {
     await sleep(11_000);
 
     try {
-      const txSig = await glamClient.mint.updateApplyTimelock(txOptions);
-      console.log("updateApplyTimelock:", txSig);
+      const txSig = await glamClient.timelock.apply(txOptions);
+      console.log("apply:", txSig);
     } catch (e) {
       console.error(e);
       throw e;
@@ -105,10 +100,7 @@ describe("mint_timelock", () => {
 
   it("Disable timelock and update mint lockup=0", async () => {
     try {
-      const txSig = await glamClient.state.update(
-        { timelockDuration: 0 },
-        txOptions,
-      );
+      const txSig = await glamClient.timelock.set(0, txOptions);
       console.log("Disable timelock:", txSig);
 
       const txUpdate = await glamClient.mint.update(
@@ -126,8 +118,8 @@ describe("mint_timelock", () => {
     await sleep(11_000);
 
     try {
-      const txSig = await glamClient.mint.updateApplyTimelock(txOptions);
-      console.log("updateApplyTimelock:", txSig);
+      const txSig = await glamClient.timelock.apply(txOptions);
+      console.log("apply:", txSig);
     } catch (e) {
       console.error(e);
       throw e;

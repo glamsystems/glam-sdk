@@ -1,10 +1,5 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import {
-  GlamProtocol,
-  GlamMint,
-  GlamProtocolIdlJson,
-  GlamMintIdlJson,
-} from "./glamExports";
+import { GlamProtocol, GlamMintIdlJson } from "../glamExports";
 import { PublicKey } from "@solana/web3.js";
 import {
   ExtensionType,
@@ -16,16 +11,19 @@ import {
 } from "@solana/spl-token";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { BN } from "@coral-xyz/anchor";
-import { USDC, WSOL } from "./constants";
-import { charsToName, nameToChars } from "./utils/common";
-import { MintPolicy } from "./deser/integrationPolicies";
-import { getVaultPda } from "./utils/glamPDAs";
-
-const GLAM_PROTOCOL_PROGRAM_ID = new PublicKey(GlamProtocolIdlJson.address);
+import { charsToName, nameToChars } from "../utils/common";
+import { MintPolicy } from "../deser/integrationPolicies";
+import { MintModel } from "./mint";
+import type { RequestQueue } from "./types";
+import type { IntegrationAcl, DelegateAcl } from "./acl";
 
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 
 export type StateModelType = IdlTypes<GlamProtocol>["stateModel"];
+
+/**
+ * State model class as defined in the IDL.
+ */
 export class StateIdlModel implements StateModelType {
   accountType: StateAccountType | null;
   name: number[] | null;
@@ -37,7 +35,6 @@ export class StateIdlModel implements StateModelType {
   owner: PublicKey | null;
   portfolioManagerName: number[] | null;
 
-  // Configs / ACLs
   borrowable: PublicKey[] | null;
   timelockDuration: number | null;
   integrationAcls: IntegrationAcl[] | null;
@@ -54,7 +51,6 @@ export class StateIdlModel implements StateModelType {
     this.owner = data.owner ?? null;
     this.portfolioManagerName = data.portfolioManagerName ?? null;
 
-    // Configs / ACLs
     this.borrowable = data.borrowable ?? null;
     this.timelockDuration = data.timelockDuration ?? null;
     this.delegateAcls = data.delegateAcls ?? null;
@@ -66,32 +62,40 @@ export class StateIdlModel implements StateModelType {
  * Enriched state model built from multiple onchain accounts
  */
 export class StateModel extends StateIdlModel {
-  readonly glamProgramId: PublicKey;
+  // Override nullable fields from StateIdlModel with non-nullable
+  accountType!: StateAccountType;
+  name!: number[];
+  enabled!: boolean;
+  assets!: PublicKey[];
+  created!: CreatedModel;
+  owner!: PublicKey;
+  portfolioManagerName!: number[];
+  timelockDuration!: number;
+  integrationAcls!: IntegrationAcl[];
+  delegateAcls!: DelegateAcl[];
 
   // Fields not available on StateIdlModel but can be derived from state account
-  id: PublicKey | null;
+  id!: PublicKey;
+  vault!: PublicKey;
   mint: PublicKey | null;
   mintModel: MintModel | null;
-  baseAssetMint: PublicKey;
-  baseAssetTokenProgram: number;
-  baseAssetDecimals: number;
+  baseAssetMint!: PublicKey;
+  baseAssetTokenProgram!: number;
+  baseAssetDecimals!: number;
   pendingStateUpdates: any | null;
   pendingMintUpdates: any | null;
   timelockExpiresAt: number | null;
-  externalPositions: PublicKey[] | null;
-  pricedProtocols: any[] | null;
-  borrowable: PublicKey[] | null;
+  externalPositions!: PublicKey[];
+  pricedProtocols!: any[];
 
-  constructor(
-    data: Partial<StateModel>,
-    glamProgramId = GLAM_PROTOCOL_PROGRAM_ID,
-  ) {
+  constructor(data: Partial<StateModel>) {
     super(data);
-    this.glamProgramId = glamProgramId;
 
     // Will be set from state params
-    this.id = data.id ?? null;
-    this.mint = data.mint ?? null;
+    this.id = data.id!;
+    this.vault = data.vault!;
+    this.mint =
+      data.mint && !data.mint.equals(PublicKey.default) ? data.mint : null;
     this.mintModel = data.mintModel ?? null;
 
     this.baseAssetMint = data.baseAssetMint!;
@@ -103,8 +107,8 @@ export class StateModel extends StateIdlModel {
     this.timelockExpiresAt = data.timelockExpiresAt
       ? Number(data.timelockExpiresAt.toString())
       : null;
-    this.externalPositions = data.externalPositions ?? null;
-    this.pricedProtocols = data.pricedProtocols ?? null;
+    this.externalPositions = data.externalPositions ?? [];
+    this.pricedProtocols = data.pricedProtocols ?? [];
     this.borrowable = data.borrowable ?? null;
   }
 
@@ -114,13 +118,6 @@ export class StateModel extends StateIdlModel {
 
   get nameStr() {
     return this.name ? charsToName(this.name) : "";
-  }
-
-  get vault() {
-    if (!this.id) {
-      throw new Error("State ID not initialized");
-    }
-    return getVaultPda(this.id, this.glamProgramId);
   }
 
   get productType(): string {
@@ -135,12 +132,14 @@ export class StateModel extends StateIdlModel {
   }
 
   get sparkleKey() {
-    if (!this.mint || !this.id) {
-      throw new Error("Mint or state pubkey not set");
+    if (!this.mint && !this.id) {
+      throw new Error("Cannot generate sparkle key");
     }
+    // An edge case is mint is closed but state account is not
+    // this.mint would be `null`
     return (
-      this.mint.equals(PublicKey.default) ? this.id : this.mint
-    ).toBase58();
+      !this.mint?.equals(PublicKey.default) ? this.id : this.mint
+    )?.toBase58();
   }
 
   get baseAssetTokenProgramId() {
@@ -174,7 +173,6 @@ export class StateModel extends StateIdlModel {
     stateAccount: StateAccount,
     glamMint?: Mint,
     requestQueue?: RequestQueue,
-    glamProgramId: PublicKey = GLAM_PROTOCOL_PROGRAM_ID,
   ) {
     const stateModel: Partial<StateModel> = { id: statePda };
     Object.entries(stateAccount).forEach(([key, value]) => {
@@ -294,74 +292,7 @@ export class StateModel extends StateIdlModel {
       stateModel.mintModel = new MintModel(mintModel);
     }
 
-    return new StateModel(stateModel, glamProgramId);
-  }
-}
-
-export type MintModelType = IdlTypes<GlamProtocol>["mintModel"];
-export class MintIdlModel implements MintModelType {
-  symbol: string | null;
-  name: number[] | null;
-  uri: string | null;
-
-  yearInSeconds: number | null;
-  permanentDelegate: PublicKey | null;
-  defaultAccountStateFrozen: boolean | null;
-  feeStructure: FeeStructure | null;
-  notifyAndSettle: NotifyAndSettle | null;
-
-  lockupPeriod: number | null;
-  maxCap: BN | null;
-  minSubscription: BN | null;
-  minRedemption: BN | null;
-  allowlist: PublicKey[] | null;
-  blocklist: PublicKey[] | null;
-
-  constructor(data: Partial<MintModelType>) {
-    this.symbol = data.symbol ?? null;
-    this.name = data.name ?? null;
-    this.uri = data.uri ?? null;
-
-    this.yearInSeconds = data.yearInSeconds ?? null;
-    this.permanentDelegate = data.permanentDelegate ?? null;
-    this.defaultAccountStateFrozen = data.defaultAccountStateFrozen ?? null;
-    this.feeStructure = data.feeStructure ?? null;
-    this.notifyAndSettle = data.notifyAndSettle ?? null;
-
-    this.lockupPeriod = data.lockupPeriod ?? null;
-    this.maxCap = data.maxCap ?? null;
-    this.minSubscription = data.minSubscription ?? null;
-    this.minRedemption = data.minRedemption ?? null;
-    this.allowlist = data.allowlist ?? null;
-    this.blocklist = data.blocklist ?? null;
-  }
-}
-export class MintModel extends MintIdlModel {
-  statePda: PublicKey | null;
-  baseAssetMint: PublicKey | null;
-  transferHookProgram: PublicKey | null;
-  claimableFees: AccruedFees | null;
-  claimedFees: AccruedFees | null;
-  feeParams: FeeParams | null;
-  subscriptionPaused: boolean | null;
-  redemptionPaused: boolean | null;
-  pendingRequests: any[] | null;
-
-  constructor(data: Partial<MintModel>) {
-    super(data);
-    this.statePda = data.statePda ?? null;
-    this.baseAssetMint = data.baseAssetMint ?? null;
-    this.transferHookProgram = data.transferHookProgram ?? null;
-    this.claimableFees = data.claimableFees ?? null;
-    this.claimedFees = data.claimedFees ?? null;
-    this.feeParams = data.feeParams ?? null;
-    this.subscriptionPaused = data.subscriptionPaused ?? null;
-    this.redemptionPaused = data.redemptionPaused ?? null;
-    this.pendingRequests = data.pendingRequests ?? null;
-  }
-
-  get nameStr() {
-    return this.name ? charsToName(this.name) : "";
+    return new StateModel(stateModel);
   }
 }
 
@@ -372,101 +303,11 @@ export class CreatedModel implements CreatedModelType {
   createdAt: BN;
 
   constructor(obj: Partial<CreatedModelType>) {
-    this.key = obj.key ?? [0, 0, 0, 0, 0, 0, 0, 0];
+    this.key = obj.key!;
     this.createdBy = obj.createdBy ?? new PublicKey(0);
     this.createdAt = obj.createdAt ?? new BN(0);
   }
 }
-
-export type EmergencyAccessUpdateArgsType =
-  IdlTypes<GlamProtocol>["emergencyAccessUpdateArgs"];
-export class EmergencyAccessUpdateArgs
-  implements EmergencyAccessUpdateArgsType
-{
-  disabledIntegrations: PublicKey[];
-  disabledDelegates: PublicKey[];
-  stateEnabled: boolean | null;
-
-  constructor(obj: Partial<EmergencyAccessUpdateArgsType>) {
-    this.disabledIntegrations = obj.disabledIntegrations ?? [];
-    this.disabledDelegates = obj.disabledDelegates ?? [];
-    this.stateEnabled = obj.stateEnabled ?? null;
-  }
-}
-
-export type EmergencyUpdateMintArgsType =
-  IdlTypes<GlamMint>["emergencyUpdateMintArgs"];
-export class EmergencyUpdateMintArgs implements EmergencyUpdateMintArgsType {
-  requestType!: RequestType;
-  setPaused!: boolean;
-}
-
-export type IntegrationPermissionsType =
-  IdlTypes<GlamProtocol>["integrationPermissions"];
-export type ProtocolPermissionsType =
-  IdlTypes<GlamProtocol>["protocolPermissions"];
-
-export class IntegrationPermissions implements IntegrationPermissionsType {
-  integrationProgram: PublicKey;
-  protocolPermissions: ProtocolPermissionsType[];
-
-  constructor(obj: Partial<IntegrationPermissionsType>) {
-    this.integrationProgram = obj.integrationProgram!;
-    this.protocolPermissions = obj.protocolPermissions ?? [];
-  }
-}
-
-export class ProtocolPermissions implements ProtocolPermissionsType {
-  protocolBitflag: number;
-  permissionsBitmask: BN;
-
-  constructor(obj: Partial<ProtocolPermissionsType>) {
-    this.protocolBitflag = obj.protocolBitflag!;
-    this.permissionsBitmask = obj.permissionsBitmask!;
-  }
-}
-
-export type ProtocolPolicyType = IdlTypes<GlamProtocol>["protocolPolicy"];
-export class ProtocolPolicy implements ProtocolPolicyType {
-  protocolBitflag: number;
-  data: Buffer;
-
-  constructor(obj: Partial<ProtocolPolicyType>) {
-    this.protocolBitflag = obj.protocolBitflag!;
-    this.data = obj.data!;
-  }
-}
-
-export type IntegrationAclType = IdlTypes<GlamProtocol>["integrationAcl"];
-export class IntegrationAcl implements IntegrationAclType {
-  integrationProgram: PublicKey;
-  protocolsBitmask: number;
-  protocolPolicies: ProtocolPolicy[];
-
-  constructor(obj: Partial<IntegrationAclType>) {
-    this.integrationProgram = obj.integrationProgram!;
-    this.protocolsBitmask = obj.protocolsBitmask!;
-    this.protocolPolicies = obj.protocolPolicies ?? [];
-  }
-}
-
-export type DelegateAclType = IdlTypes<GlamProtocol>["delegateAcl"];
-export class DelegateAcl implements DelegateAclType {
-  pubkey: PublicKey;
-  integrationPermissions: IntegrationPermissions[];
-  expiresAt: BN;
-
-  constructor(obj: Partial<DelegateAclType>) {
-    this.pubkey = obj.pubkey!;
-    this.integrationPermissions = obj.integrationPermissions ?? [];
-    this.expiresAt = obj.expiresAt ?? new BN(0);
-  }
-}
-
-export type FeeStructure = IdlTypes<GlamProtocol>["feeStructure"];
-export type FeeParams = IdlTypes<GlamProtocol>["feeParams"];
-export type AccruedFees = IdlTypes<GlamProtocol>["accruedFees"];
-export type NotifyAndSettle = IdlTypes<GlamProtocol>["notifyAndSettle"];
 
 export class StateAccountType {
   static readonly VAULT = { vault: {} };
@@ -477,62 +318,3 @@ export class StateAccountType {
     return Object.keys(a)[0] === Object.keys(b)[0];
   }
 }
-
-export class RequestType {
-  static readonly SUBSCRIPTION = { subscription: {} };
-  static readonly REDEMPTION = { redemption: {} };
-
-  static equals(a: RequestType, b: RequestType) {
-    return Object.keys(a)[0] === Object.keys(b)[0];
-  }
-
-  static fromInt(int: number) {
-    switch (int) {
-      case 0:
-        return RequestType.SUBSCRIPTION;
-      case 1:
-        return RequestType.REDEMPTION;
-      default:
-        throw new Error("Invalid request type");
-    }
-  }
-}
-
-export class PriceDenom {
-  static readonly SOL = { sol: {} };
-  static readonly USD = { usd: {} };
-  static readonly ASSET = { asset6: {} };
-
-  static fromAsset(asset: PublicKey) {
-    if (asset.equals(WSOL)) {
-      return PriceDenom.SOL;
-    }
-    if (asset.equals(USDC)) {
-      return PriceDenom.USD;
-    }
-    return PriceDenom.ASSET;
-  }
-
-  static fromString(str: string) {
-    if (str === "SOL") {
-      return PriceDenom.SOL;
-    }
-    if (str === "USD") {
-      return PriceDenom.USD;
-    }
-    throw new Error("Invalid price denomination");
-  }
-}
-
-export class TimeUnit {
-  static readonly Slot = { slot: {} };
-  static readonly Second = { second: {} };
-}
-
-export class VoteAuthorize {
-  static readonly Voter = { voter: {} };
-  static readonly Withdrawer = { withdrawer: {} };
-}
-
-export type RequestQueue = IdlTypes<GlamMint>["requestQueue"];
-export type PendingRequest = IdlTypes<GlamMint>["pendingRequest"];

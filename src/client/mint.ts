@@ -1,31 +1,40 @@
 import * as anchor from "@coral-xyz/anchor";
-import {
-  PublicKey,
-  Transaction,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import { BaseClient, TokenAccount, TxOptions } from "./base";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { BaseClient, BaseTxBuilder, TokenAccount, TxOptions } from "./base";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
   unpackAccount,
 } from "@solana/spl-token";
-import {
-  MintIdlModel,
-  MintModel,
-  RequestType,
-  StateAccountType,
-} from "../models";
-import { SEED_STATE, TRANSFER_HOOK_PROGRAM } from "../constants";
+import { MintIdlModel, RequestType, StateAccountType } from "../models";
+import { TRANSFER_HOOK_PROGRAM } from "../constants";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
-import { getAccountPolicyPda } from "../utils/glamPDAs";
+import { getAccountPolicyPda, getStatePda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
 import { charsToName } from "../utils/common";
 import { BN } from "@coral-xyz/anchor";
 
-class MintTxBuilder {
-  constructor(private base: BaseClient) {}
+export type InitMintParams = {
+  accountType: StateAccountType;
+  name: number[];
+  symbol: string;
+  uri: string;
+  baseAssetMint: PublicKey;
+  decimals?: number;
+} & Partial<MintIdlModel>;
 
+export type UpdateMintParams = {
+  permanentDelegate?: PublicKey;
+  defaultAccountStateFrozen?: boolean;
+  lockupPeriod?: number;
+  maxCap?: BN;
+  minSubscription?: BN;
+  minRedemption?: BN;
+  allowlist?: PublicKey[];
+  blocklist?: PublicKey[];
+};
+
+class MintTxBuilder extends BaseTxBuilder {
   /**
    * Creates a glam mint token account
    *
@@ -278,66 +287,35 @@ class MintTxBuilder {
   }
 }
 
-class TxBuilder {
-  constructor(private base: BaseClient) {}
+class TxBuilder extends BaseTxBuilder {
+  public async initialize(params: InitMintParams, txOptions: TxOptions = {}) {
+    const glamSigner = txOptions.signer || this.base.signer;
 
-  public async initialize(
-    mintModel: Partial<MintModel>,
-    accountType: StateAccountType,
-    decimals: number | null,
-    txOptions: TxOptions = {},
-  ) {
-    if (!mintModel.name) {
-      throw new Error("Mint name must be specified");
-    }
-    if (!mintModel.baseAssetMint) {
-      throw new Error("Mint asset must be specified");
-    }
-
-    // If decimals is not specified, set it to the same as the deposit asset
-    if (decimals === null) {
-      const { mint } = await fetchMintAndTokenProgram(this.base.provider.connection, 
-        mintModel.baseAssetMint,
-      );
-      decimals = mint.decimals;
-    }
+    const decimals: number | null =
+      typeof params.decimals === "number" ? params.decimals : null;
 
     const stateInitKey = [
       ...Buffer.from(
-        anchor.utils.sha256.hash(charsToName(mintModel.name)),
+        anchor.utils.sha256.hash(charsToName(params.name)),
       ).subarray(0, 8),
     ];
-    const [statePda, _] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(SEED_STATE),
-        this.base.signer.toBuffer(),
-        Uint8Array.from(stateInitKey),
-      ],
-      this.base.protocolProgram.programId, // state account owner is the protocol program
+    const statePda = getStatePda(
+      stateInitKey,
+      glamSigner,
+      this.base.protocolProgram.programId,
     );
 
     this.base.statePda = statePda;
-    if (!mintModel.uri) {
-      const glamApi =
-        process.env.NEXT_PUBLIC_GLAM_API ||
-        process.env.GLAM_API ||
-        "https://api.glam.systems";
-      mintModel.uri = `${glamApi}/v0/token/2022/mint?key=${this.base.mintPda}`;
-    }
 
+    const mintIdlModel = new MintIdlModel(params); // acconType, baseAssetMint, and decmials are dropped
     const tx = await this.base.mintProgram.methods
-      .initializeMint(
-        new MintIdlModel(mintModel),
-        stateInitKey,
-        accountType,
-        decimals,
-      )
+      .initializeMint(mintIdlModel, stateInitKey, params.accountType, decimals)
       .accounts({
         glamState: this.base.statePda,
         signer: txOptions.signer || this.base.signer,
         newMint: this.base.mintPda,
         extraMetasAccount: this.base.extraMetasPda,
-        baseAssetMint: mintModel.baseAssetMint,
+        baseAssetMint: params.baseAssetMint,
       })
       .postInstructions(txOptions.postInstructions || [])
       .transaction();
@@ -354,20 +332,6 @@ class TxBuilder {
         glamState: this.base.statePda,
         glamMint: this.base.mintPda,
         glamSigner: txOptions.signer || this.base.signer,
-      })
-      .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async updateApplyTimelock(txOptions: TxOptions = {}) {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
-      .updateMintApplyTimelock()
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        glamSigner,
       })
       .transaction();
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
@@ -455,14 +419,9 @@ class TxBuilder {
   }
 
   public async closeMint(txOptions: TxOptions = {}) {
-    const ixs = txOptions.preInstructions || [];
-    const glamSigner = txOptions.signer || this.base.signer;
-    ixs.push(await this.closeMintIx(glamSigner));
-
-    const tx = new Transaction();
-    tx.add(...ixs);
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
+    const ix = await this.closeMintIx(txOptions.signer);
+    const tx = this.build(ix, txOptions);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 }
 
@@ -511,7 +470,8 @@ export class MintClient {
     const data = await response.json();
     const { token_accounts: tokenAccounts } = data.result;
 
-    const { mint, tokenProgram } = await fetchMintAndTokenProgram(this.base.provider.connection, 
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
       this.base.mintPda,
     );
 
@@ -545,7 +505,8 @@ export class MintClient {
         ],
       },
     );
-    const { mint, tokenProgram } = await fetchMintAndTokenProgram(this.base.provider.connection, 
+    const { mint, tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
       this.base.mintPda,
     );
     return accounts
@@ -570,32 +531,8 @@ export class MintClient {
       .filter((ta) => showZeroBalance || ta.uiAmount > 0);
   }
 
-  public async initialize(
-    mintModel: Partial<MintModel>,
-    accountType: StateAccountType,
-    txOptions: TxOptions = {},
-  ) {
-    const vTx = await this.txBuilder.initialize(
-      mintModel,
-      accountType,
-      null,
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async initializeWithDecimals(
-    mintModel: Partial<MintModel>,
-    accountType: StateAccountType,
-    decimals: number,
-    txOptions: TxOptions = {},
-  ) {
-    const vTx = await this.txBuilder.initialize(
-      mintModel,
-      accountType,
-      decimals,
-      txOptions,
-    );
+  public async initialize(params: InitMintParams, txOptions: TxOptions = {}) {
+    const vTx = await this.txBuilder.initialize(params, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -604,11 +541,6 @@ export class MintClient {
     txOptions: TxOptions = {},
   ) {
     const vTx = await this.txBuilder.update(mintModel, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async updateApplyTimelock(txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.updateApplyTimelock(txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 

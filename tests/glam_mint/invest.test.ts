@@ -5,6 +5,7 @@ import {
   WSOL,
   fetchMintAndTokenProgram,
 } from "../../src";
+import { InitMintParams } from "../../src/client/mint";
 import { airdrop, str2seed } from "../test-utils";
 import { BN, Wallet } from "@coral-xyz/anchor";
 import { Keypair } from "@solana/web3.js";
@@ -52,7 +53,8 @@ describe("invest", () => {
 
   it("Initialize mint", async () => {
     const name = "GLAM Mint Test Investor Flows";
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.TOKENIZED_VAULT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
@@ -99,11 +101,7 @@ describe("invest", () => {
     };
 
     try {
-      const txSig = await glamClientManager.mint.initialize(
-        mintModel,
-        StateAccountType.TOKENIZED_VAULT,
-        txOptions,
-      );
+      const txSig = await glamClientManager.mint.initialize(params, txOptions);
       console.log("Initialize mint txSig", txSig);
     } catch (e) {
       console.error(e);
@@ -152,7 +150,7 @@ describe("invest", () => {
         { ...txOptions, preInstructions },
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe("Requested action is paused.");
     }
   });
@@ -176,7 +174,7 @@ describe("invest", () => {
         { ...txOptions, preInstructions },
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain(
         "Invalid amount for subscription or redemption",
       );
@@ -192,7 +190,7 @@ describe("invest", () => {
         { ...txOptions, preInstructions },
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain("Signer is not authorized");
     }
   });
@@ -206,7 +204,7 @@ describe("invest", () => {
         { ...txOptions, preInstructions },
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain("Max cap exceeded");
     }
   });
@@ -323,7 +321,7 @@ describe("invest", () => {
         txOptions,
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe("Requested action is paused.");
     }
   });
@@ -365,7 +363,7 @@ describe("invest", () => {
         txOptions,
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe("New request is not allowed.");
     }
 
@@ -403,7 +401,7 @@ describe("invest", () => {
         preInstructions,
       });
       expect(txFulfill).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain("Signer is not authorized");
     }
   });
@@ -521,7 +519,7 @@ describe("invest", () => {
         txOptions,
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain("Signer is not authorized");
     }
 
@@ -563,7 +561,7 @@ describe("invest", () => {
         txOptions,
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain("Signer is not authorized");
     }
 

@@ -12,12 +12,14 @@ import {
   StateModel,
   nameToChars,
   StateIdlModel,
+  StateAccountType,
 } from "../../src";
 import { Connection } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 import { airdrop } from "../test-utils";
+import { InitStateParams } from "../../src/client/state";
 
 export const JITO_STAKE_POOL = new PublicKey(
   "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb",
@@ -133,19 +135,19 @@ export const mintToken = async (
   );
 };
 
-export const stateModelForTest = {
-  accountType: { vault: {} },
+export const defaultInitStateParams = {
+  accountType: StateAccountType.VAULT,
   name: nameToChars("Glam Vault Test"),
+  baseAssetMint: WSOL,
   enabled: true,
   assets: [WSOL, MSOL],
-} as Partial<StateModel>;
+};
 
 export const createGlamStateForTest = async (
   glamClient: GlamClient = new GlamClient(),
-  stateForTest: Partial<StateIdlModel> = stateModelForTest,
-  baseAssetMint: PublicKey = WSOL,
+  params: InitStateParams = defaultInitStateParams,
 ) => {
-  const txSig = await glamClient.state.create(stateForTest, baseAssetMint);
+  const txSig = await glamClient.state.initialize(params);
   return {
     txSig,
     statePda: glamClient.statePda,

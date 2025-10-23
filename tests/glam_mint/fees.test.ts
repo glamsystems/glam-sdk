@@ -2,6 +2,7 @@ import { Transaction } from "@solana/web3.js";
 import { GlamClient, nameToChars, StateAccountType, WSOL } from "../../src";
 import { airdrop, sleep } from "../test-utils";
 import { BN } from "@coral-xyz/anchor";
+import { InitMintParams } from "../../src/client/mint";
 
 const txOptions = {
   simulate: true,
@@ -12,7 +13,8 @@ describe("fees", () => {
 
   it("Initialize mint", async () => {
     const name = "GLAM Mint Test Fees";
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.TOKENIZED_VAULT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
@@ -43,11 +45,7 @@ describe("fees", () => {
     };
 
     try {
-      const txSig = await glamClient.mint.initialize(
-        mintModel,
-        StateAccountType.TOKENIZED_VAULT,
-        txOptions,
-      );
+      const txSig = await glamClient.mint.initialize(params, txOptions);
       console.log("Initialize mint txSig", txSig);
     } catch (e) {
       console.error(e);
@@ -73,7 +71,7 @@ describe("fees", () => {
       );
       const txSig = await glamClient.sendAndConfirm(vTx);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toContain(
         "Protocol fees should be crystallized before updating",
       );

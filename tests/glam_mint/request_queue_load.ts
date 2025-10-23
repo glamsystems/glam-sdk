@@ -1,6 +1,7 @@
 import { GlamClient, nameToChars, StateAccountType, WSOL } from "../../src";
 import { BN, Wallet } from "@coral-xyz/anchor";
 import { Keypair, SystemProgram, Transaction } from "@solana/web3.js";
+import { InitMintParams } from "../../src/client/mint";
 
 const txOptions = {
   simulate: true,
@@ -67,7 +68,8 @@ describe("request_queue_load", () => {
 
   it("Initialize mint", async () => {
     const name = "GLAM Mint Test Investor Flows";
-    const mintModel = {
+    const params = {
+      accountType: StateAccountType.TOKENIZED_VAULT,
       name: nameToChars(name),
       symbol: "GMT",
       uri: "https://glam.systems",
@@ -113,11 +115,7 @@ describe("request_queue_load", () => {
     };
 
     try {
-      const txSig = await glamClientManager.mint.initialize(
-        mintModel,
-        StateAccountType.TOKENIZED_VAULT,
-        txOptions,
-      );
+      const txSig = await glamClientManager.mint.initialize(params, txOptions);
       console.log("Initialize mint txSig", txSig);
     } catch (e) {
       console.error(e);
@@ -265,10 +263,10 @@ describe("request_queue_load", () => {
     }
   });
 
-  it("Test update_mint_apply_timelock still works", async () => {
+  it("Test apply timelock still works", async () => {
     try {
-      const txSig = await glamClientManager.mint.updateApplyTimelock(txOptions);
-      console.log("Manager update_mint_apply_timelock:", txSig);
+      const txSig = await glamClientManager.timelock.apply(txOptions);
+      console.log("Manager apply:", txSig);
     } catch (e) {
       console.error(e);
       throw e;
