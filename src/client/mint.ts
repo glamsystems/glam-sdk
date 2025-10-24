@@ -6,13 +6,19 @@ import {
   TOKEN_2022_PROGRAM_ID,
   unpackAccount,
 } from "@solana/spl-token";
-import { MintIdlModel, RequestType, StateAccountType } from "../models";
+import {
+  MintIdlModel,
+  RequestType,
+  StateAccountType,
+  StateIdlModel,
+} from "../models";
 import { TRANSFER_HOOK_PROGRAM } from "../constants";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { getAccountPolicyPda, getStatePda } from "../utils/glamPDAs";
 import { ClusterNetwork } from "../clientConfig";
 import { charsToName } from "../utils/common";
 import { BN } from "@coral-xyz/anchor";
+import { UpdateStateParams } from "./state";
 
 export type InitMintParams = {
   accountType: StateAccountType;
@@ -288,15 +294,21 @@ class MintTxBuilder extends BaseTxBuilder {
 }
 
 class TxBuilder extends BaseTxBuilder {
-  public async initialize(params: InitMintParams, txOptions: TxOptions = {}) {
+  public async initialize(
+    initMintParams: InitMintParams,
+    stateParams: UpdateStateParams | null,
+    txOptions: TxOptions = {},
+  ) {
     const glamSigner = txOptions.signer || this.base.signer;
 
     const decimals: number | null =
-      typeof params.decimals === "number" ? params.decimals : null;
+      typeof initMintParams.decimals === "number"
+        ? initMintParams.decimals
+        : null;
 
     const stateInitKey = [
       ...Buffer.from(
-        anchor.utils.sha256.hash(charsToName(params.name)),
+        anchor.utils.sha256.hash(charsToName(initMintParams.name)),
       ).subarray(0, 8),
     ];
     const statePda = getStatePda(
@@ -305,21 +317,44 @@ class TxBuilder extends BaseTxBuilder {
       this.base.protocolProgram.programId,
     );
 
-    this.base.statePda = statePda;
+    const postInstructions = txOptions.postInstructions || [];
 
-    const mintIdlModel = new MintIdlModel(params); // acconType, baseAssetMint, and decmials are dropped
-    const tx = await this.base.mintProgram.methods
-      .initializeMint(mintIdlModel, stateInitKey, params.accountType, decimals)
-      .accounts({
-        glamState: this.base.statePda,
-        signer: txOptions.signer || this.base.signer,
-        newMint: this.base.mintPda,
-        extraMetasAccount: this.base.extraMetasPda,
-        baseAssetMint: params.baseAssetMint,
-      })
-      .postInstructions(txOptions.postInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    // If stateParams is provided and is not empty, update the state account as a post instruction
+    if (stateParams && Object.keys(stateParams).length > 0) {
+      const updateStateIx = await this.base.protocolProgram.methods
+        .updateState(new StateIdlModel(stateParams))
+        .accounts({
+          glamState: statePda,
+          glamSigner,
+        })
+        .instruction();
+      postInstructions.push(updateStateIx);
+    }
+
+    try {
+      this.base.statePda = statePda;
+      const tx = await this.base.mintProgram.methods
+        .initializeMint(
+          new MintIdlModel(initMintParams), // acconType, baseAssetMint, and decmials are dropped,
+          stateInitKey,
+          initMintParams.accountType,
+          decimals,
+        )
+        .accounts({
+          glamState: this.base.statePda,
+          signer: txOptions.signer || this.base.signer,
+          newMint: this.base.mintPda,
+          extraMetasAccount: this.base.extraMetasPda,
+          baseAssetMint: initMintParams.baseAssetMint,
+        })
+        .postInstructions(postInstructions)
+        .transaction();
+      return await this.base.intoVersionedTransaction(tx, txOptions);
+    } catch (error) {
+      // @ts-ignore force resetting statePda to undefined
+      this.base.statePda = undefined;
+      throw error;
+    }
   }
 
   public async update(
@@ -531,8 +566,28 @@ export class MintClient {
       .filter((ta) => showZeroBalance || ta.uiAmount > 0);
   }
 
-  public async initialize(params: InitMintParams, txOptions: TxOptions = {}) {
-    const vTx = await this.txBuilder.initialize(params, txOptions);
+  public async initialize(
+    initMintParams: InitMintParams,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.txBuilder.initialize(
+      initMintParams,
+      null,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  public async initializeWithStateParams(
+    initMintParams: InitMintParams,
+    stateParams: UpdateStateParams,
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.txBuilder.initialize(
+      initMintParams,
+      stateParams,
+      txOptions,
+    );
     return await this.base.sendAndConfirm(vTx);
   }
 
