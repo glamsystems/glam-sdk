@@ -4,7 +4,6 @@ import { DriftClient, DriftVaultsClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
 import { VaultClient } from "./client/vault";
-import { StakingClient } from "./client/staking";
 import { StateClient } from "./client/state";
 import {
   KaminoLendingClient,
@@ -17,6 +16,7 @@ import { FeesClient } from "./client/fees";
 import { MintClient } from "./client/mint";
 import { AccessClient } from "./client/access";
 import { TimelockClient } from "./client/timelock";
+import { StakingClient } from "./client/staking";
 // import { JupiterVoteClient } from "./client/jupiter";
 // import { MeteoraDlmmClient } from "./client/meteora";
 // import { ValidatorClient } from "./client/validator";
@@ -157,7 +157,7 @@ export class GlamClient extends BaseClient {
 
   get kaminoFarm(): KaminoFarmClient {
     if (!this._kaminoFarm) {
-      this._kaminoFarm = new KaminoFarmClient(this);
+      this._kaminoFarm = new KaminoFarmClient(this, this.kaminoLending);
     }
     return this._kaminoFarm;
   }

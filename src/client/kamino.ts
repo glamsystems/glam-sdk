@@ -92,6 +92,27 @@ interface ParsedObligation {
   borrows: { reserve: PublicKey }[];
 }
 
+interface ParsedFarmState {
+  globalConfig: PublicKey;
+  farmTokenMint: PublicKey;
+  farmTokenDecimals: BN;
+  farmTokenProgram: PublicKey;
+  farmVault: PublicKey;
+  rewards: {
+    index: number;
+    mint: PublicKey;
+    minClaimDurationSeconds: BN;
+    tokenProgram: PublicKey;
+    rewardsVault: PublicKey;
+  }[];
+}
+
+interface ParsedFarmUser {
+  pubkey: PublicKey;
+  farmState: PublicKey;
+  unclaimedRewards: BN[];
+}
+
 export class KaminoLendingClient {
   private reserves: Map<string, ParsedReserve> = new Map();
   private obligations: Map<string, ParsedObligation> = new Map();
@@ -240,9 +261,12 @@ export class KaminoLendingClient {
     return obligation;
   }
 
-  getObligationFarmState(obligation: PublicKey, farm: PublicKey) {
+  // seeds = [BASE_SEED_USER_STATE, farm_state.key().as_ref(), delegatee.key().as_ref()],
+  // for a delegated farm, the delegatee is the obligation, the owner (of farm user state) is the vault PDA
+  // for an un-delegated farm, the delegatee and the owner are the same (vault PDA)
+  getFarmUserState(farmUser: PublicKey, farm: PublicKey) {
     const [obligationFarm] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), farm.toBuffer(), obligation.toBuffer()],
+      [Buffer.from("user"), farm.toBuffer(), farmUser.toBuffer()],
       KAMINO_FARM_PROGRAM,
     );
     return obligationFarm;
@@ -396,7 +420,7 @@ export class KaminoLendingClient {
         return [farmCollateral]
           .filter((farm) => !!farm)
           .map((farm) => {
-            const obligationFarmUserState = this.getObligationFarmState(
+            const obligationFarmUserState = this.getFarmUserState(
               obligation,
               farm,
             );
@@ -434,7 +458,7 @@ export class KaminoLendingClient {
         return [farmDebt]
           .filter((farm) => !!farm)
           .map((farm) => {
-            const obligationFarmUserState = this.getObligationFarmState(
+            const obligationFarmUserState = this.getFarmUserState(
               obligation,
               farm,
             );
@@ -768,7 +792,7 @@ export class KaminoLendingClient {
     // If reserve has collateral farm but obligation farm state doesn't exist, initialize it
     let obligationFarm = null;
     if (depositReserve.farmCollateral) {
-      obligationFarm = this.getObligationFarmState(
+      obligationFarm = this.getFarmUserState(
         obligation,
         depositReserve.farmCollateral,
       );
@@ -904,7 +928,7 @@ export class KaminoLendingClient {
 
     // If reserve has debt farm but obligation farm state doesn't exist, initialize it
     if (withdrawReserve.farmCollateral) {
-      obligationFarm = this.getObligationFarmState(
+      obligationFarm = this.getFarmUserState(
         obligation,
         withdrawReserve.farmCollateral,
       );
@@ -1045,7 +1069,7 @@ export class KaminoLendingClient {
 
     // If reserve has debt farm but obligation farm state doesn't exist, initialize it
     if (borrowReserve.farmDebt) {
-      obligationFarm = this.getObligationFarmState(
+      obligationFarm = this.getFarmUserState(
         obligation,
         borrowReserve.farmDebt,
       );
@@ -1173,10 +1197,7 @@ export class KaminoLendingClient {
 
     // If reserve has debt farm but obligation farm state doesn't exist, initialize it
     if (repayReserve.farmDebt) {
-      obligationFarm = this.getObligationFarmState(
-        obligation,
-        repayReserve.farmDebt,
-      );
+      obligationFarm = this.getFarmUserState(obligation, repayReserve.farmDebt);
       const obligationFarmAccount =
         await this.base.provider.connection.getAccountInfo(obligationFarm);
       if (!obligationFarmAccount) {
@@ -1259,14 +1280,17 @@ export class KaminoLendingClient {
 }
 
 export class KaminoFarmClient {
-  public constructor(readonly base: BaseClient) {}
+  public constructor(
+    readonly base: BaseClient,
+    readonly kaminoLending: KaminoLendingClient,
+  ) {}
 
   /**
    * Finds and parses farm states for the given owner
-   * @param owner
-   * @returns
    */
-  async findAndParseStates(owner: PublicKey) {
+  async findAndParseFarmUserStates(
+    owner: PublicKey,
+  ): Promise<ParsedFarmUser[]> {
     const accounts = await getProgramAccountsWithRetry(
       this.base.provider.connection,
       KAMINO_FARM_PROGRAM,
@@ -1301,15 +1325,18 @@ export class KaminoFarmClient {
       );
 
       return {
-        userState: pubkey,
+        pubkey,
         farmState,
         unclaimedRewards,
       };
     });
   }
 
-  async parseFarm(data: Buffer) {
+  async parseFarmState(data: Buffer): Promise<ParsedFarmState> {
     const globalConfig = new PublicKey(data.subarray(40, 72));
+    const farmTokenMint = new PublicKey(data.subarray(72, 104));
+    const farmTokenDecimals = new BN(data.subarray(104, 112), "le");
+    const farmTokenProgram = new PublicKey(data.subarray(112, 144));
     const rewardsOffset = 192;
     const numRewards = 10;
     const rewardSize = 704;
@@ -1351,14 +1378,26 @@ export class KaminoFarmClient {
       return true;
     });
 
-    return { globalConfig, rewards };
+    const farmVaultOffset = rewardsOffset + numRewards * rewardSize + 24;
+    const farmVault = new PublicKey(
+      data.subarray(farmVaultOffset, farmVaultOffset + 32),
+    );
+
+    return {
+      globalConfig,
+      farmTokenMint,
+      farmTokenDecimals,
+      farmTokenProgram,
+      farmVault,
+      rewards,
+    };
   }
 
-  async fetchAndParseFarms(farms: PublicKey[]) {
+  async fetchAndParseFarmStates(farms: PublicKey[]) {
     const farmAccounts =
       await this.base.provider.connection.getMultipleAccountsInfo(farms);
 
-    const map = new Map();
+    const map = new Map<string, ParsedFarmState>();
 
     for (let i = 0; i < farmAccounts.length; i++) {
       const account = farmAccounts[i];
@@ -1367,18 +1406,25 @@ export class KaminoFarmClient {
       }
 
       const data = account.data;
-      const parsedFarm = await this.parseFarm(data);
+      const parsedFarm = await this.parseFarmState(data);
       map.set(farms[i].toBase58(), parsedFarm);
     }
 
     return map;
   }
 
+  farmVaultTokenAccount = (farm: PublicKey, mint: PublicKey) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), farm.toBuffer(), mint.toBuffer()],
+      KAMINO_FARM_PROGRAM,
+    )[0];
+
   farmVaultsAuthority = (farm: PublicKey) =>
     PublicKey.findProgramAddressSync(
       [Buffer.from("authority"), farm.toBuffer()],
       KAMINO_FARM_PROGRAM,
     )[0];
+
   rewardsTreasuryVault = (globalConfig: PublicKey, mint: PublicKey) =>
     PublicKey.findProgramAddressSync(
       [Buffer.from("tvault"), globalConfig.toBuffer(), mint.toBuffer()],
@@ -1398,22 +1444,161 @@ export class KaminoFarmClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async harvestTx(
-    vaultFarmStates: PublicKey[],
+  public async stake(
+    amount: BN,
+    farmState: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.stakeTx(amount, farmState, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async unstake(
+    amount: BN,
+    farmState: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.unstakeTx(amount, farmState, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * farmState.isFarmDelegated = 0
+   * farmState.token.mint !== PublicKey.default
+   */
+  public async stakeTx(
+    amount: BN,
+    farmState: PublicKey,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const farmStates = (
-      await this.findAndParseStates(this.base.vaultPda)
-    ).filter((f) => vaultFarmStates.find((v) => v.equals(f.userState)));
 
-    const parsedFarms = await this.fetchAndParseFarms(
-      farmStates.map((f) => f.farmState),
+    const farms = await this.fetchAndParseFarmStates([farmState]);
+    const parsedFarmState = farms.get(farmState.toBase58());
+    if (!parsedFarmState) {
+      throw new Error("Farm state not found");
+    }
+    const { farmTokenMint, farmTokenProgram, farmVault } = parsedFarmState;
+    if (farmTokenMint.equals(PublicKey.default)) {
+      throw new Error("Delegated farm is not supported");
+    }
+
+    const farmUserState = this.kaminoLending.getFarmUserState(
+      this.base.vaultPda,
+      farmState,
+    );
+    const farmUserStateAccountInfo =
+      await this.base.connection.getAccountInfo(farmUserState);
+    const preInstructions = [];
+    if (!farmUserStateAccountInfo) {
+      const initUserIx = await this.base.extKaminoProgram.methods
+        .farmsInitializeUser()
+        .accounts({
+          glamState: this.base.statePda,
+          glamSigner,
+          userState: farmUserState,
+          farmState,
+        })
+        .instruction();
+      preInstructions.push(initUserIx);
+    }
+
+    const tx = await this.base.extKaminoProgram.methods
+      .farmsStake(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        userState: farmUserState,
+        farmState,
+        farmVault,
+        userAta: this.base.getVaultAta(farmTokenMint, farmTokenProgram),
+        tokenMint: farmTokenMint,
+        scopePrices: null,
+        tokenProgram: farmTokenProgram,
+      })
+      .preInstructions(preInstructions)
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return vTx;
+  }
+
+  public async unstakeTx(
+    amount: BN,
+    farmState: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+
+    const farms = await this.fetchAndParseFarmStates([farmState]);
+    const parsedFarmState = farms.get(farmState.toBase58());
+    if (!parsedFarmState) {
+      throw new Error("Farm state not found");
+    }
+    const { farmTokenMint, farmTokenProgram, farmVault } = parsedFarmState;
+    if (farmTokenMint.equals(PublicKey.default)) {
+      throw new Error("Delegated farm is not supported");
+    }
+
+    const farmUserState = this.kaminoLending.getFarmUserState(
+      this.base.vaultPda,
+      farmState,
+    );
+    const userAta = this.base.getVaultAta(farmTokenMint, farmTokenProgram);
+    const withdrawIx = await this.base.extKaminoProgram.methods
+      .farmsWithdrawUnstakedDeposits()
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        userState: farmUserState,
+        farmState,
+        userAta,
+        farmVault,
+        farmVaultsAuthority: this.farmVaultsAuthority(farmState),
+        tokenProgram: farmTokenProgram,
+      })
+      .instruction();
+
+    const tx = await this.base.extKaminoProgram.methods
+      .farmsUnstake(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        userState: farmUserState,
+        farmState,
+        scopePrices: null,
+      })
+      .postInstructions([withdrawIx])
+      .transaction();
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return vTx;
+  }
+
+  public async harvestTx(
+    farmUesrStates: PublicKey[],
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const farmUserStates = (
+      await this.findAndParseFarmUserStates(this.base.vaultPda)
+    ).filter((farmUser) =>
+      farmUesrStates.find((v) => v.equals(farmUser.pubkey)),
+    );
+
+    const parsedFarmStates = await this.fetchAndParseFarmStates(
+      farmUserStates.map((f) => f.farmState),
     );
 
     const tx = new Transaction();
-    for (const { userState, farmState, unclaimedRewards } of farmStates) {
-      const { globalConfig, rewards } = parsedFarms.get(farmState.toBase58());
+    for (const {
+      pubkey: userState,
+      farmState,
+      unclaimedRewards,
+    } of farmUserStates) {
+      const parsedFarmState = parsedFarmStates.get(farmState.toBase58());
+      if (!parsedFarmState) {
+        throw new Error("Farm state not found");
+      }
+      const { globalConfig, rewards } = parsedFarmState;
 
       for (const { index, mint, tokenProgram, rewardsVault } of rewards) {
         if (unclaimedRewards[index].eq(new BN(0))) {
