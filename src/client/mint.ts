@@ -178,7 +178,7 @@ class MintTxBuilder extends BaseTxBuilder {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
-    const ata = this.base.getMintAta(from);
+    const fromAta = this.base.getMintAta(from);
 
     const preInstructions = [];
     if (forceThaw) {
@@ -191,7 +191,7 @@ class MintTxBuilder extends BaseTxBuilder {
             glamMint: this.base.mintPda,
           })
           .remainingAccounts([
-            { pubkey: ata, isSigner: false, isWritable: true },
+            { pubkey: fromAta, isSigner: false, isWritable: true },
           ])
           .instruction(),
       );
@@ -203,6 +203,7 @@ class MintTxBuilder extends BaseTxBuilder {
         glamState: this.base.statePda,
         glamSigner,
         glamMint: this.base.mintPda,
+        fromTokenAccount: fromAta,
         from,
       })
       .preInstructions(preInstructions)
@@ -275,6 +276,7 @@ class MintTxBuilder extends BaseTxBuilder {
         glamState: this.base.statePda,
         glamSigner,
         glamMint: this.base.mintPda,
+        fromTokenAccount: fromAta,
         from,
         to,
         toPolicyAccount,
