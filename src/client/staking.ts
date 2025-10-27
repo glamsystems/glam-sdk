@@ -14,7 +14,10 @@ import { BaseClient, TxOptions } from "./base";
 import { MarinadeClient } from "./marinade";
 import { getStakePoolAccount } from "@solana/spl-stake-pool";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
-import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/accounts";
+import {
+  getStakeAccountsWithStates,
+  StakeAccountInfo,
+} from "../utils/accounts";
 import { STAKE_POOLS } from "../assets";
 
 interface StakePoolAccountData {
@@ -501,6 +504,7 @@ export class StakingClient {
     const postInstructions = deactivate
       ? [
           await this.base.protocolProgram.methods
+            // @ts-ignore
             .stakeDeactivate()
             .accounts({
               glamSigner,
@@ -544,6 +548,7 @@ export class StakingClient {
       await this.createStakeAccount(glamSigner);
 
     const initStakeIx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -562,6 +567,7 @@ export class StakingClient {
       .instruction();
 
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeDelegateStake()
       .accounts({
         glamState: this.base.statePda,
@@ -586,6 +592,7 @@ export class StakingClient {
 
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeDeactivate()
       .accounts({
         glamState: this.base.statePda,
@@ -622,6 +629,7 @@ export class StakingClient {
 
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeWithdraw(lamports)
       .accounts({
         glamSigner,
@@ -647,6 +655,7 @@ export class StakingClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeMerge()
       .accounts({
         glamSigner,
@@ -669,6 +678,7 @@ export class StakingClient {
       await this.createStakeAccount(glamSigner);
 
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeSplit(lamports)
       .accounts({
         glamSigner,
@@ -693,6 +703,7 @@ export class StakingClient {
       await this.createStakeAccount(glamSigner);
 
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeRedelegate()
       .accounts({
         glamSigner,

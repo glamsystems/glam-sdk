@@ -26,7 +26,10 @@ import {
   MSOL,
   STAKE_ACCOUNT_SIZE,
 } from "../constants";
-import { getStakeAccountsWithStates, StakeAccountInfo } from "../utils/accounts";
+import {
+  getStakeAccountsWithStates,
+  StakeAccountInfo,
+} from "../utils/accounts";
 import { ClusterNetwork } from "../clientConfig";
 
 export type Ticket = {
@@ -232,6 +235,7 @@ export class MarinadeClient {
       await this.createStakeAccount(glamSigner);
 
     const initStakeIx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -250,6 +254,7 @@ export class MarinadeClient {
 
     // Then set stake authority to the marinade key
     const tx = await this.base.protocolProgram.methods
+      // @ts-ignore
       .stakeAuthorize(MARINADE_NATIVE_STAKE_AUTHORITY, 0)
       .accounts({
         glamState: this.base.statePda,
@@ -389,6 +394,7 @@ export class MarinadeClient {
     const postInstructions = deactivate
       ? [
           await this.base.protocolProgram.methods
+            // @ts-ignore
             .stakeDeactivate()
             .accounts({
               glamSigner,
