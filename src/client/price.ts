@@ -50,6 +50,8 @@ export class PriceClient {
   }
 
   /**
+   * @deprecated
+   *
    * Calculates the Assets Under Management (AUM) based on cached pricing data.
    *
    * @warning This is a convenience method for testing purposes only and should NOT be used in production.
@@ -72,23 +74,6 @@ export class PriceClient {
       (sum, p) => new BN(p.amount).add(sum),
       new BN(0),
     ) as BN;
-  }
-
-  /**
-   * Resets the priced protocols data stored in glam state account.
-   */
-  async resetPricedProtocols(
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.base.protocolProgram.methods
-      .resetPricedProtocols()
-      .accounts({
-        glamState: this.base.statePda,
-      })
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
   }
 
   /**

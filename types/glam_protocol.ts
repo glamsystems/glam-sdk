@@ -616,19 +616,19 @@ export type GlamProtocol = {
       ]
     },
     {
-      "name": "resetPricedProtocols",
+      "name": "resetPricedProtocolsByMintAuthority",
       "docs": [
-        "Resets glam_state.priced_protocols to an empty vector"
+        "For glam mint program's use only"
       ],
       "discriminator": [
-        60,
-        176,
-        141,
-        208,
-        132,
-        51,
-        54,
-        9
+        86,
+        95,
+        153,
+        145,
+        179,
+        181,
+        107,
+        235
       ],
       "accounts": [
         {
@@ -636,7 +636,10 @@ export type GlamProtocol = {
           "writable": true
         },
         {
-          "name": "glamSigner",
+          "name": "glamMint"
+        },
+        {
+          "name": "glamMintAuthority",
           "signer": true
         }
       ],
