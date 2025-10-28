@@ -1489,7 +1489,7 @@ export class KaminoFarmClient {
     );
     const farmUserStateAccountInfo =
       await this.base.connection.getAccountInfo(farmUserState);
-    const preInstructions = [];
+    const preInstructions = txOptions.preInstructions || [];
     if (!farmUserStateAccountInfo) {
       const initUserIx = await this.base.extKaminoProgram.methods
         .farmsInitializeUser()
