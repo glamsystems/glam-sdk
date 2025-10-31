@@ -123,7 +123,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
         pythOracle: null,
         switchboardPriceOracle: null,
         switchboardTwapOracle: null,
@@ -238,7 +238,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -320,7 +320,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -354,7 +354,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -390,7 +390,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -415,7 +415,7 @@ export class PriceClient {
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
-        baseAssetUsdOracle: await this.getbaseAssetOracle(),
+        baseAssetOracle: await this.getbaseAssetOracle(),
       })
       .remainingAccounts(
         stakes.map((pubkey) => ({

@@ -1964,7 +1964,7 @@
           "name": "sol_usd_oracle"
         },
         {
-          "name": "base_asset_usd_oracle"
+          "name": "base_asset_oracle"
         },
         {
           "name": "integration_authority",
@@ -2164,7 +2164,7 @@
           "name": "sol_usd_oracle"
         },
         {
-          "name": "base_asset_usd_oracle"
+          "name": "base_asset_oracle"
         },
         {
           "name": "integration_authority",
@@ -2380,7 +2380,7 @@
           "name": "sol_usd_oracle"
         },
         {
-          "name": "base_asset_usd_oracle"
+          "name": "base_asset_oracle"
         },
         {
           "name": "integration_authority",
@@ -2607,7 +2607,7 @@
           "name": "sol_usd_oracle"
         },
         {
-          "name": "base_asset_usd_oracle"
+          "name": "base_asset_oracle"
         },
         {
           "name": "integration_authority",
@@ -2811,7 +2811,7 @@
           "name": "sol_usd_oracle"
         },
         {
-          "name": "base_asset_usd_oracle"
+          "name": "base_asset_oracle"
         },
         {
           "name": "integration_authority",

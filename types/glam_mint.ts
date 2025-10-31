@@ -1970,7 +1970,7 @@ export type GlamMint = {
           "name": "solUsdOracle"
         },
         {
-          "name": "baseAssetUsdOracle"
+          "name": "baseAssetOracle"
         },
         {
           "name": "integrationAuthority",
@@ -2170,7 +2170,7 @@ export type GlamMint = {
           "name": "solUsdOracle"
         },
         {
-          "name": "baseAssetUsdOracle"
+          "name": "baseAssetOracle"
         },
         {
           "name": "integrationAuthority",
@@ -2386,7 +2386,7 @@ export type GlamMint = {
           "name": "solUsdOracle"
         },
         {
-          "name": "baseAssetUsdOracle"
+          "name": "baseAssetOracle"
         },
         {
           "name": "integrationAuthority",
@@ -2613,7 +2613,7 @@ export type GlamMint = {
           "name": "solUsdOracle"
         },
         {
-          "name": "baseAssetUsdOracle"
+          "name": "baseAssetOracle"
         },
         {
           "name": "integrationAuthority",
@@ -2817,7 +2817,7 @@ export type GlamMint = {
           "name": "solUsdOracle"
         },
         {
-          "name": "baseAssetUsdOracle"
+          "name": "baseAssetOracle"
         },
         {
           "name": "integrationAuthority",
