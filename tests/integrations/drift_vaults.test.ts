@@ -4,8 +4,8 @@ import {
   airdrop,
   buildAndSendTx,
   createGlamStateForTest,
+  defaultInitStateParams,
   mintUSDC,
-  stateModelForTest,
 } from "../glam_protocol/setup";
 import { PublicKey } from "@solana/web3.js";
 import { DriftVaultsPolicy } from "../../src/deser/integrationPolicies";
@@ -35,7 +35,7 @@ describe("glam_drift_vaults", () => {
 
   it("Initialize glam state", async () => {
     const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
-      ...stateModelForTest,
+      ...defaultInitStateParams,
       name: nameToChars("Drift Vaults Tests"),
       integrationAcls: [
         {
@@ -92,7 +92,7 @@ describe("glam_drift_vaults", () => {
         txOptions,
       );
       expect(txSig).toBeDefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe("Protocol policy violation");
     }
   });
