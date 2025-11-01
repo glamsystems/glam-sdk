@@ -103,3 +103,12 @@ export class RequestType {
     }
   }
 }
+
+export type OracleConfigsType = IdlTypes<GlamProtocol>["oracleConfigs"];
+export class OracleConfigs implements OracleConfigsType {
+  padding: number[]; // 12 bytes padding
+
+  constructor(readonly maxAgesSeconds: number[][]) {
+    this.padding = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  }
+}

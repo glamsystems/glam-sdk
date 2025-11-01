@@ -8,7 +8,7 @@ import {
 } from "../../src";
 import { MintPolicy } from "../../src/deser/integrationPolicies";
 import { sleep } from "../test-utils";
-import { InitMintParams } from "../../src/client/mint";
+import { OracleConfigs } from "../../src/models/mint";
 
 const txOptions = {
   simulate: true,
@@ -67,6 +67,34 @@ describe("mint_timelock", () => {
         .data;
     const stagedMintPolicy = MintPolicy.decode(stagedMintPolicyData);
     expect(stagedMintPolicy.lockupPeriod).toEqual(30);
+  });
+
+  it("Stage oracle configs changes", async () => {
+    const engineFields = [
+      {
+        name: {
+          oracleConfigs: {},
+        },
+        value: {
+          oracleConfigs: {
+            val: new OracleConfigs([
+              [1, 60],
+              [2, 30],
+            ]),
+          },
+        },
+      },
+    ];
+
+    const tx = await glamClient.protocolProgram.methods
+      .updateMintParams(engineFields)
+      .accounts({
+        glamState: glamClient.statePda,
+      })
+      .transaction();
+    const vTx = await glamClient.intoVersionedTransaction(tx, txOptions);
+    const txSig = await glamClient.sendAndConfirm(vTx);
+    console.log("Update oracle configs:", txSig);
   });
 
   it("Apply update immediately", async () => {
