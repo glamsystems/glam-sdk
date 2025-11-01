@@ -441,6 +441,16 @@
       "code": 6003,
       "name": "InvalidParameters",
       "msg": "Invalid parameters"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidOracleSource",
+      "msg": "Invalid oracle source"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidGlobalConfig",
+      "msg": "Invalid global config"
     }
   ],
   "types": [

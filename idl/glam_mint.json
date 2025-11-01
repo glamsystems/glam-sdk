@@ -2064,6 +2064,41 @@
         {
           "name": "glam_protocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2264,6 +2299,41 @@
         {
           "name": "glam_protocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2284,15 +2354,10 @@
     {
       "name": "price_kamino_obligations",
       "docs": [
-        "Prices Kamino obligations.",
-        "- `num_obligations` Number of kamino obligations to price.",
-        "- `num_markets` Number of unique markets used by obligations.",
-        "- `num_reserves` Number of unique reserves used by obligations.",
+        "Prices Kamino obligations. Reserves and obligations must be refreshed in the same slot before calling this ix.",
         "",
         "Extra accounts for pricing N kamino obligations:",
-        "- obligation x num_obligations",
-        "- reserve x num_reserves: no specific order",
-        "- market x num_markets: no specific order"
+        "- obligations x N"
       ],
       "discriminator": [
         166,
@@ -2371,10 +2436,6 @@
           "name": "signer",
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "kamino_lending_program",
-          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "sol_usd_oracle"
@@ -2482,36 +2543,42 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
-          "name": "pyth_oracle",
-          "optional": true
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
-          "name": "switchboard_price_oracle",
-          "optional": true
-        },
-        {
-          "name": "switchboard_twap_oracle",
-          "optional": true
-        },
-        {
-          "name": "scope_prices",
-          "optional": true
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
-      "args": [
-        {
-          "name": "num_obligations",
-          "type": "u8"
-        },
-        {
-          "name": "num_markets",
-          "type": "u8"
-        },
-        {
-          "name": "num_reserves",
-          "type": "u8"
-        }
-      ]
+      "args": []
     },
     {
       "name": "price_kamino_vault_shares",
@@ -2707,6 +2774,41 @@
         {
           "name": "glam_protocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2911,6 +3013,41 @@
         {
           "name": "glam_protocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -4051,6 +4188,68 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "validate_aum",
+      "docs": [
+        "Validates AUM of the vault and emits AumRecord event."
+      ],
+      "discriminator": [
+        101,
+        15,
+        233,
+        89,
+        134,
+        123,
+        224,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "glam_state"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "event_authority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "event_program",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -4091,6 +4290,34 @@
         133,
         249,
         103
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AumRecord",
+      "discriminator": [
+        162,
+        116,
+        55,
+        29,
+        223,
+        230,
+        239,
+        205
+      ]
+    },
+    {
+      "name": "PricedProtocolRecord",
+      "discriminator": [
+        232,
+        89,
+        187,
+        82,
+        49,
+        200,
+        127,
+        132
       ]
     }
   ],
@@ -4265,6 +4492,18 @@
                 3
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AumRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_asset_amount",
+            "type": "i128"
           }
         ]
       }
@@ -5289,6 +5528,18 @@
             "type": {
               "vec": "pubkey"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PricedProtocolRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_asset_amount",
+            "type": "i128"
           }
         ]
       }

@@ -115,19 +115,11 @@ export class PriceClient {
     });
 
     const priceIx = await this.base.mintProgram.methods
-      .priceKaminoObligations(
-        obligations.length,
-        marketsSet.size,
-        reservesSet.size,
-      )
+      .priceKaminoObligations()
       .accounts({
         glamState: this.base.statePda,
         solUsdOracle: SOL_ORACLE,
         baseAssetOracle: await this.getbaseAssetOracle(),
-        pythOracle: null,
-        switchboardPriceOracle: null,
-        switchboardTwapOracle: null,
-        scopePrices: KAMINO_SCOPE_PRICES,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -500,6 +492,15 @@ export class PriceClient {
     }
 
     return pricingIxs.filter(Boolean);
+  }
+
+  public async validateAumIx(): Promise<TransactionInstruction> {
+    return await this.base.mintProgram.methods
+      .validateAum()
+      .accounts({
+        glamState: this.base.statePda,
+      })
+      .instruction();
   }
 
   async getbaseAssetOracle() {

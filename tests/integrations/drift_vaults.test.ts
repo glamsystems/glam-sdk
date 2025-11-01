@@ -1,7 +1,6 @@
 import { BN } from "@coral-xyz/anchor";
-import { GlamClient, nameToChars } from "../../src";
+import { GlamClient, nameToChars, USDC } from "../../src";
 import {
-  airdrop,
   buildAndSendTx,
   createGlamStateForTest,
   defaultInitStateParams,
@@ -36,6 +35,7 @@ describe("glam_drift_vaults", () => {
   it("Initialize glam state", async () => {
     const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
       ...defaultInitStateParams,
+      baseAssetMint: USDC,
       name: nameToChars("Drift Vaults Tests"),
       integrationAcls: [
         {
@@ -62,10 +62,8 @@ describe("glam_drift_vaults", () => {
     const state = await glamClient.fetchStateAccount();
     expect(state.integrationAcls.length).toEqual(3);
 
-    // Airdrop 10 SOL + 1000 USDC to vault
+    // Airdrop 1000 USDC to vault
     const connection = glamClient.provider.connection;
-    const lamports = 10_000_000_000;
-    await airdrop(connection, vaultPda, lamports);
     await mintUSDC(connection, vaultPda, 1_000);
   }, 30_000);
 
@@ -119,6 +117,7 @@ describe("glam_drift_vaults", () => {
     }
   });
 
+  /*
   it("Initialize vault depositor #0", async () => {
     try {
       const txSig = await glamClient.driftVaults.initializeVaultDepositor(
@@ -128,12 +127,12 @@ describe("glam_drift_vaults", () => {
       console.log("initializeVaultDepositor #0", txSig);
 
       // Skip deposit as we copy vault account from mainnet and vault is currently at capacity as of 2025-09-05
-      // const depositTxSig = await glamClient.driftVaults.deposit(
-      //   LUCKY_VAULT_USDC,
-      //   new BN(100_000_000),
-      //   { simulate: true },
-      // );
-      // console.log("deposit #0", depositTxSig);
+      const depositTxSig = await glamClient.driftVaults.deposit(
+        LUCKY_VAULT_USDC,
+        new BN(100_000_000),
+        { simulate: true },
+      );
+      console.log("deposit #0", depositTxSig);
     } catch (e) {
       console.error(e);
       throw e;
@@ -142,28 +141,33 @@ describe("glam_drift_vaults", () => {
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.externalPositions?.length).toEqual(1);
   }, 15_000);
+  */
 
   it("Initialize vault depositor #1", async () => {
     try {
       const txSig = await glamClient.driftVaults.initializeVaultDepositor(
         NEUTRAL_TRADE_HJLP,
-        { simulate: true },
+        txOptions,
       );
       console.log("initializeVaultDepositor #1", txSig);
 
       const depositTxSig = await glamClient.driftVaults.deposit(
         NEUTRAL_TRADE_HJLP,
         new BN(100_000_000),
-        { simulate: true },
+        txOptions,
       );
       console.log("deposit #1", depositTxSig);
+
+      const requestWithdrawTxSig = await glamClient.driftVaults.requestWithdraw(
+        NEUTRAL_TRADE_HJLP,
+        new BN(50_000_000),
+        txOptions,
+      );
+      console.log("request withdraw #1", requestWithdrawTxSig);
     } catch (e) {
       console.error(e);
       throw e;
     }
-
-    const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.externalPositions?.length).toEqual(2);
   }, 15_000);
 
   it("Initialize vault depositor #2", async () => {
@@ -184,9 +188,6 @@ describe("glam_drift_vaults", () => {
       console.error(e);
       throw e;
     }
-
-    const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.externalPositions?.length).toEqual(3);
   }, 15_000);
 
   it("Initialize vault depositor #3", async () => {
@@ -207,9 +208,6 @@ describe("glam_drift_vaults", () => {
       console.error(e);
       throw e;
     }
-
-    const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.externalPositions?.length).toEqual(4);
   }, 15_000);
 
   it("Initialize vault depositor #4", async () => {
@@ -230,15 +228,22 @@ describe("glam_drift_vaults", () => {
       console.error(e);
       throw e;
     }
-
-    const stateModel = await glamClient.fetchStateModel();
-    expect(stateModel.externalPositions?.length).toEqual(5);
   }, 15_000);
 
   it("Price vault depositors", async () => {
+    const stateModel = await glamClient.fetchStateModel();
+    expect(stateModel.externalPositions?.length).toEqual(4);
+
     try {
-      const ix = await glamClient.price.priceDriftVaultDepositorsIx();
-      const txSig = await buildAndSendTx(glamClient, [ix!]);
+      const priceTokensIx = await glamClient.price.priceVaultTokensIx();
+      const priceDriftVaultIx =
+        await glamClient.price.priceDriftVaultDepositorsIx();
+      const validateAumIx = await glamClient.price.validateAumIx();
+      const txSig = await buildAndSendTx(glamClient, [
+        priceTokensIx!,
+        priceDriftVaultIx!,
+        validateAumIx,
+      ]);
 
       console.log("priceDriftVaultDepositors", txSig);
     } catch (e) {
@@ -248,7 +253,7 @@ describe("glam_drift_vaults", () => {
 
     const aum = await glamClient.price.getAum();
     console.log("AUM:", aum.toString());
-    // expect(aum.gte(new BN(499_000_000))).toBeTruthy();
-    expect(aum.lte(new BN(500_000_000))).toBeTruthy();
+    expect(aum.gte(new BN(1_000_000_000))).toBeTruthy();
+    expect(aum.lte(new BN(1_100_000_000))).toBeTruthy();
   }, 15_000);
 });

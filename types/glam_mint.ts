@@ -2070,6 +2070,41 @@ export type GlamMint = {
         {
           "name": "glamProtocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2270,6 +2305,41 @@ export type GlamMint = {
         {
           "name": "glamProtocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2290,15 +2360,10 @@ export type GlamMint = {
     {
       "name": "priceKaminoObligations",
       "docs": [
-        "Prices Kamino obligations.",
-        "- `num_obligations` Number of kamino obligations to price.",
-        "- `num_markets` Number of unique markets used by obligations.",
-        "- `num_reserves` Number of unique reserves used by obligations.",
+        "Prices Kamino obligations. Reserves and obligations must be refreshed in the same slot before calling this ix.",
         "",
         "Extra accounts for pricing N kamino obligations:",
-        "- obligation x num_obligations",
-        "- reserve x num_reserves: no specific order",
-        "- market x num_markets: no specific order"
+        "- obligations x N"
       ],
       "discriminator": [
         166,
@@ -2377,10 +2442,6 @@ export type GlamMint = {
           "name": "signer",
           "writable": true,
           "signer": true
-        },
-        {
-          "name": "kaminoLendingProgram",
-          "address": "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD"
         },
         {
           "name": "solUsdOracle"
@@ -2488,36 +2549,42 @@ export type GlamMint = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
-          "name": "pythOracle",
-          "optional": true
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
         },
         {
-          "name": "switchboardPriceOracle",
-          "optional": true
-        },
-        {
-          "name": "switchboardTwapOracle",
-          "optional": true
-        },
-        {
-          "name": "scopePrices",
-          "optional": true
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
-      "args": [
-        {
-          "name": "numObligations",
-          "type": "u8"
-        },
-        {
-          "name": "numMarkets",
-          "type": "u8"
-        },
-        {
-          "name": "numReserves",
-          "type": "u8"
-        }
-      ]
+      "args": []
     },
     {
       "name": "priceKaminoVaultShares",
@@ -2713,6 +2780,41 @@ export type GlamMint = {
         {
           "name": "glamProtocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -2917,6 +3019,41 @@ export type GlamMint = {
         {
           "name": "glamProtocol",
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
+        },
+        {
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
         }
       ],
       "args": [
@@ -4057,6 +4194,68 @@ export type GlamMint = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "validateAum",
+      "docs": [
+        "Validates AUM of the vault and emits AumRecord event."
+      ],
+      "discriminator": [
+        101,
+        15,
+        233,
+        89,
+        134,
+        123,
+        224,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "eventAuthority",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventProgram",
+          "optional": true,
+          "address": "GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh"
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -4097,6 +4296,34 @@ export type GlamMint = {
         133,
         249,
         103
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "aumRecord",
+      "discriminator": [
+        162,
+        116,
+        55,
+        29,
+        223,
+        230,
+        239,
+        205
+      ]
+    },
+    {
+      "name": "pricedProtocolRecord",
+      "discriminator": [
+        232,
+        89,
+        187,
+        82,
+        49,
+        200,
+        127,
+        132
       ]
     }
   ],
@@ -4271,6 +4498,18 @@ export type GlamMint = {
                 3
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "aumRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseAssetAmount",
+            "type": "i128"
           }
         ]
       }
@@ -5295,6 +5534,18 @@ export type GlamMint = {
             "type": {
               "vec": "pubkey"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "pricedProtocolRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "baseAssetAmount",
+            "type": "i128"
           }
         ]
       }

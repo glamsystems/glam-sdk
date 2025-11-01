@@ -447,6 +447,16 @@ export type GlamConfig = {
       "code": 6003,
       "name": "invalidParameters",
       "msg": "Invalid parameters"
+    },
+    {
+      "code": 6004,
+      "name": "invalidOracleSource",
+      "msg": "Invalid oracle source"
+    },
+    {
+      "code": 6005,
+      "name": "invalidGlobalConfig",
+      "msg": "Invalid global config"
     }
   ],
   "types": [
