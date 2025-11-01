@@ -15,7 +15,7 @@ import {
   airdrop,
   createGlamStateForTest,
   mintUSDC,
-  stateModelForTest,
+  defaultInitStateParams,
 } from "../glam_protocol/setup";
 import { DriftProtocolPolicy } from "../../src/deser/integrationPolicies";
 
@@ -62,7 +62,7 @@ describe("drift_protocol", () => {
 
   it("Create and initialize glam state", async () => {
     const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
-      ...stateModelForTest,
+      ...defaultInitStateParams,
       name: nameToChars("Drift Protocol Tests"),
       integrationAcls: [
         {
@@ -145,7 +145,7 @@ describe("drift_protocol", () => {
     try {
       const txSig = await glamClient.drift.deposit(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Protocol policy violation");
     }
 
@@ -153,7 +153,7 @@ describe("drift_protocol", () => {
     try {
       const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Protocol policy violation");
     }
 
@@ -196,7 +196,7 @@ describe("drift_protocol", () => {
       const amount = new BN(1_000_000_000);
       const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Protocol policy violation");
     }
 
@@ -214,7 +214,7 @@ describe("drift_protocol", () => {
       const amount = new BN(10_000_000_000); // Withdraw 10 SOL (9 deposit + 1 borrow)
       const txSig = await glamClient.drift.withdraw(amount, 1, 1, txOptions);
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toEqual("Protocol policy violation");
     }
 
