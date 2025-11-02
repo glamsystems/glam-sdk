@@ -14,6 +14,7 @@ export const SEED_INTEGRATION_AUTHORITY = "integration-authority";
 export const STAKE_ACCOUNT_SIZE = 200;
 export const METEORA_POSITION_SIZE = 8120;
 export const KAMINO_OBTRIGATION_SIZE = 3344;
+export const KAMINO_RESERVE_SIZE = 8624;
 export const DRIFT_VAULT_DEPOSITOR_SIZE = 272;
 
 export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";

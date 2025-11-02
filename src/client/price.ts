@@ -80,39 +80,58 @@ export class PriceClient {
    * Returns an instruction that prices Kamino obligations.
    * If there are no Kamino obligations, returns null.
    */
-  async priceKaminoObligationsIx(): Promise<TransactionInstruction | null> {
+  async priceKaminoObligationsIxs(): Promise<TransactionInstruction[]> {
     const parsedObligations = await this.klend.findAndParseObligations(
       this.base.vaultPda,
     );
-
     if (parsedObligations.length === 0) {
-      return null;
+      return [];
     }
 
-    const obligations: PublicKey[] = [];
-    const marketsSet = new Set<string>();
-    const reservesSet = new Set<string>();
+    const ixs: TransactionInstruction[] = [];
 
-    parsedObligations
-      .filter((o) => o.lendingMarket !== null)
-      .map((o) => {
-        obligations.push(o.address);
-        marketsSet.add(o.lendingMarket!.toBase58()); // market pubkey
-        o.deposits.forEach((d) => reservesSet.add(d.reserve.toBase58())); // reserve pubkey
-        o.borrows.forEach((b) => reservesSet.add(b.reserve.toBase58())); // reserve pubkey
+    const obligationReservesMap: Map<string, Set<string>> = new Map();
+    const reservesSet = new Set<string>();
+    parsedObligations.map(({ address, deposits, borrows }) => {
+      obligationReservesMap.set(address.toBase58(), new Set());
+      deposits.forEach(({ reserve }) => {
+        const reserveKey = reserve.toBase58();
+        reservesSet.add(reserveKey);
+        obligationReservesMap.get(address.toBase58())?.add(reserveKey);
       });
-    const remainingAccounts = obligations.map((pubkey) => ({
-      pubkey,
-      isSigner: false,
-      isWritable: true,
-    }));
-    [...marketsSet, ...reservesSet].forEach((pubkey) => {
-      remainingAccounts.push({
+      borrows.forEach(({ reserve }) => {
+        const reserveKey = reserve.toBase58();
+        reservesSet.add(reserveKey);
+        obligationReservesMap.get(address.toBase58())?.add(reserveKey);
+      });
+    });
+
+    // Refresh reserves in batch
+    const parsedReserves = await this.klend.fetchAndParseReserves(
+      Array.from(reservesSet).map((k) => new PublicKey(k)),
+    );
+    ixs.push(this.klend.refreshReservesBatchIxV2(parsedReserves, false));
+
+    // Refresh obligations
+    parsedObligations.forEach(({ address, lendingMarket }) => {
+      ixs.push(
+        this.klend.refreshObligationIx({
+          obligation: address,
+          lendingMarket,
+          reserves: Array.from(
+            obligationReservesMap.get(address.toBase58()) || [],
+          ).map((k) => new PublicKey(k)),
+        }),
+      );
+    });
+
+    const remainingAccounts = Array.from(obligationReservesMap.keys()).map(
+      (pubkey) => ({
         pubkey: new PublicKey(pubkey),
         isSigner: false,
         isWritable: true,
-      });
-    });
+      }),
+    );
 
     const priceIx = await this.base.mintProgram.methods
       .priceKaminoObligations()
@@ -123,8 +142,9 @@ export class PriceClient {
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
+    ixs.push(priceIx);
 
-    return priceIx;
+    return ixs;
   }
 
   public async priceKaminoVaultSharesIx(): Promise<
@@ -481,8 +501,8 @@ export class PriceClient {
     if (kaminoIntegrationAcl) {
       // kamino lending
       if (kaminoIntegrationAcl.protocolsBitmask & 0b01) {
-        const ix = await this.priceKaminoObligationsIx();
-        if (ix) pricingIxs.push(ix);
+        const ixs = await this.priceKaminoObligationsIxs();
+        pricingIxs.push(...ixs);
       }
       // kamino vaults
       if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {

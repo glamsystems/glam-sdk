@@ -13,8 +13,9 @@ import {
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { charsToName } from "../utils/common";
+import { Decodable } from "./base";
 
-export class DriftVault {
+export class DriftVault extends Decodable {
   discriminator!: number[];
   name!: number[];
   pubkey!: PublicKey;
@@ -127,19 +128,12 @@ export class DriftVault {
     array(u64(), 3, "padding"), // [u64; 3]
   ]);
 
-  static decode(buffer: Buffer): DriftVault {
-    const data = DriftVault._layout.decode(buffer);
-    const instance = new DriftVault();
-    Object.assign(instance, data);
-    return instance;
-  }
-
   get nameStr(): string {
     return charsToName(this.name);
   }
 }
 
-export class DriftSpotMarket {
+export class DriftSpotMarket extends Decodable {
   discriminator!: number[];
   marketPda!: PublicKey;
   oracle!: PublicKey;
@@ -187,19 +181,12 @@ export class DriftSpotMarket {
     array(u8(), 40, "padding5"), // [736, 776)
   ]);
 
-  static decode(buffer: Buffer): DriftSpotMarket {
-    const data = DriftSpotMarket._layout.decode(buffer);
-    const instance = new DriftSpotMarket();
-    Object.assign(instance, data);
-    return instance;
-  }
-
   get nameStr(): string {
     return charsToName(this.name);
   }
 }
 
-export class DriftPerpMarket {
+export class DriftPerpMarket extends Decodable {
   discriminator!: number[];
   marketPda!: PublicKey;
   oracle!: PublicKey;
@@ -222,13 +209,6 @@ export class DriftPerpMarket {
     array(u8(), 128, "padding3"), // [1032, 1160)
     u16("marketIndex"), // [1160, 1162)
   ]);
-
-  static decode(buffer: Buffer): DriftPerpMarket {
-    const data = DriftPerpMarket._layout.decode(buffer);
-    const instance = new DriftPerpMarket();
-    Object.assign(instance, data);
-    return instance;
-  }
 
   get nameStr(): string {
     return charsToName(this.name);

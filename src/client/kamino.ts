@@ -22,6 +22,7 @@ import {
   KAMINO_FARM_PROGRAM,
   KAMINO_LENDING_PROGRAM,
   KAMINO_OBTRIGATION_SIZE,
+  KAMINO_RESERVE_SIZE,
   KAMINO_SCOPE_PRICES,
   KAMINO_VAULTS_PROGRAM,
   WSOL,
@@ -29,7 +30,8 @@ import {
 import {
   KVaultAllocation,
   KVaultState,
-  KVaultStateLayout,
+  Reserve,
+  Obligation,
 } from "../deser/kaminoLayouts";
 import { getProgramAccountsWithRetry } from "../utils/rpc";
 import { VaultClient } from "./vault";
@@ -55,7 +57,7 @@ interface RefreshReserveAccounts {
 }
 
 interface RefreshObligationFarmsForReserveArgs {
-  mode: number;
+  mode: number; // 0 collateral farm, 1 debt farm
 }
 
 interface RefreshObligationFarmsForReserveAccounts {
@@ -82,12 +84,13 @@ interface ParsedReserve {
   liquiditySupplyVault: PublicKey;
   collateralMint: PublicKey;
   collateralSupplyVault: PublicKey;
+  scopePriceFeed: PublicKey;
   feeVault: PublicKey;
 }
 
 interface ParsedObligation {
   address: PublicKey;
-  lendingMarket: PublicKey | null;
+  lendingMarket: PublicKey;
   deposits: { reserve: PublicKey }[];
   borrows: { reserve: PublicKey }[];
 }
@@ -396,6 +399,42 @@ export class KaminoLendingClient {
     return new TransactionInstruction({ keys, programId, data });
   }
 
+  refreshReservesBatchIxV2(
+    reserves: ParsedReserve[],
+    skipPriceUpdates: boolean,
+    programId: PublicKey = KAMINO_LENDING_PROGRAM,
+  ) {
+    const keys: Array<AccountMeta> = [];
+    for (const { address, market, scopePriceFeed } of reserves) {
+      keys.push({
+        pubkey: address,
+        isSigner: false,
+        isWritable: true,
+      });
+      keys.push({
+        pubkey: market,
+        isSigner: false,
+        isWritable: true,
+      });
+      if (!skipPriceUpdates) {
+        [
+          KAMINO_LENDING_PROGRAM, // pyth oracle, null
+          KAMINO_LENDING_PROGRAM, // switchboard price oracle, null
+          KAMINO_LENDING_PROGRAM, // switchboard twap oracle, null
+          scopePriceFeed,
+        ].forEach((p) =>
+          keys.push({ pubkey: p, isSigner: false, isWritable: false }),
+        );
+      }
+    }
+    const identifier = Buffer.from([144, 110, 26, 103, 162, 204, 252, 147]);
+    const buffer = Buffer.alloc(1000);
+    const layout = borsh.struct([borsh.bool("skipPriceUpdates")]);
+    const len = layout.encode({ skipPriceUpdates }, buffer);
+    const data = Buffer.concat([identifier, buffer]).subarray(0, 8 + len);
+    return new TransactionInstruction({ keys, programId, data });
+  }
+
   refreshReserveIxs(lendingMarket: PublicKey, reserves: PublicKey[]) {
     return reserves.map((reserve) =>
       this.refreshReserveIx({
@@ -405,6 +444,19 @@ export class KaminoLendingClient {
         switchboardPriceOracle: KAMINO_LENDING_PROGRAM,
         switchboardTwapOracle: KAMINO_LENDING_PROGRAM,
         scopePrices: KAMINO_SCOPE_PRICES,
+      }),
+    );
+  }
+
+  refreshReserveIxsV2(lendingMarket: PublicKey, reserves: ParsedReserve[]) {
+    return reserves.map(({ address, scopePriceFeed }) =>
+      this.refreshReserveIx({
+        reserve: address,
+        lendingMarket,
+        pythOracle: KAMINO_LENDING_PROGRAM,
+        switchboardPriceOracle: KAMINO_LENDING_PROGRAM,
+        switchboardTwapOracle: KAMINO_LENDING_PROGRAM,
+        scopePrices: scopePriceFeed,
       }),
     );
   }
@@ -463,7 +515,7 @@ export class KaminoLendingClient {
               farm,
             );
             return this.refreshObligationFarmsForReserveIx(
-              { mode: 0 },
+              { mode: 1 },
               {
                 crank: this.base.signer, // Must be signer
                 baseAccounts: {
@@ -519,45 +571,21 @@ export class KaminoLendingClient {
   }
 
   parseObligation(obligation: PublicKey, data: Buffer): ParsedObligation {
-    const lendingMarket = new PublicKey(data.subarray(32, 64));
+    const decoded = Obligation.decode(data);
 
-    // read deposits
-    let depositsOffset = 96;
-    let depositSize = 136;
-    let numDeposits = 8;
-    const depositsData = data.subarray(
-      depositsOffset,
-      depositsOffset + numDeposits * depositSize,
-    );
-    const deposits = Array.from({ length: numDeposits }, (_, i) => {
-      const depositData = depositsData.subarray(
-        i * depositSize,
-        (i + 1) * depositSize,
-      );
-      const reserve = new PublicKey(depositData.subarray(0, 32));
-      return { reserve };
-    }).filter((d) => !d.reserve.equals(PublicKey.default));
+    // Map decoded deposits to the expected format, filtering out empty deposits
+    const deposits = decoded.deposits
+      .map((d) => ({ reserve: d.depositReserve }))
+      .filter((d) => !d.reserve.equals(PublicKey.default));
 
-    // read borrows
-    let borrowsOffset = 1208;
-    let borrowSize = 200;
-    let numBorrows = 5;
-    const borrowsData = data.subarray(
-      borrowsOffset,
-      borrowsOffset + numBorrows * borrowSize,
-    );
-    const borrows = Array.from({ length: numBorrows }, (_, i) => {
-      const borrowData = borrowsData.subarray(
-        i * borrowSize,
-        (i + 1) * borrowSize,
-      );
-      const reserve = new PublicKey(borrowData.subarray(0, 32));
-      return { reserve };
-    }).filter((d) => !d.reserve.equals(PublicKey.default));
+    // Map decoded borrows to the expected format, filtering out empty borrows
+    const borrows = decoded.borrows
+      .map((b) => ({ reserve: b.borrowReserve }))
+      .filter((b) => !b.reserve.equals(PublicKey.default));
 
     return {
       address: obligation,
-      lendingMarket,
+      lendingMarket: decoded.lendingMarket,
       deposits,
       borrows,
     };
@@ -577,12 +605,7 @@ export class KaminoLendingClient {
     const obligationAccount =
       await this.base.provider.connection.getAccountInfo(obligation);
     if (!obligationAccount) {
-      return {
-        address: obligation,
-        lendingMarket: null,
-        deposits: [],
-        borrows: [],
-      };
+      throw new Error("Obligation account not found");
     }
 
     const parsedObligation = this.parseObligation(
@@ -594,28 +617,29 @@ export class KaminoLendingClient {
     return parsedObligation;
   }
 
-  pubkeyArraysEqual = (a: PublicKey[], b: PublicKey[]) => {
-    if (a.length !== b.length) return false;
-    a.sort();
-    b.sort();
-    return a.every((p, i) => p.equals(b[i]));
-  };
-
-  parseReserveAccount(reserve: PublicKey, data: Buffer): ParsedReserve {
-    const market = new PublicKey(data.subarray(32, 64));
-    const farmCollateral = new PublicKey(data.subarray(64, 96));
-    const farmDebt = new PublicKey(data.subarray(96, 128));
-    const liquidityMint = new PublicKey(data.subarray(128, 160));
+  parseReserveAccount(pubkey: PublicKey, data: Buffer): ParsedReserve {
+    const {
+      lendingMarket,
+      farmCollateral,
+      farmDebt,
+      liquidity: { mintPubkey },
+      config: {
+        tokenInfo: {
+          scopeConfiguration: { priceFeed },
+        },
+      },
+    } = Reserve.decode(data);
 
     return {
-      address: reserve,
-      market,
+      address: pubkey,
+      market: lendingMarket,
       farmCollateral: farmCollateral.equals(PublicKey.default)
         ? null
         : farmCollateral,
       farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
-      liquidityMint,
-      ...this.reservePdas(market, liquidityMint),
+      liquidityMint: mintPubkey,
+      scopePriceFeed: priceFeed,
+      ...this.reservePdas(lendingMarket, mintPubkey),
     };
   }
 
@@ -648,17 +672,27 @@ export class KaminoLendingClient {
     if (reserveAccounts.some((a) => !a)) {
       throw new Error("Not all reserves can be found");
     }
-
-    return reserveAccounts.map((account, i) => {
+    reserveAccounts.forEach((account, i) => {
       const parsedReserve = this.parseReserveAccount(
-        reserves[i],
+        reservesToFetch[i],
         account!.data,
       );
-      this.reserves.set(reserves[i].toBase58(), parsedReserve);
-      return parsedReserve;
+      this.reserves.set(reservesToFetch[i].toBase58(), parsedReserve);
     });
+
+    // Return requested reserves
+    return Array.from(this.reserves.values()).filter((r) =>
+      requestReservesSet.has(r.address.toBase58()),
+    );
   }
 
+  /**
+   * Finds and parses a reserve account for a given market and asset
+   *
+   * @param market The lending market public key
+   * @param asset The asset public key
+   * @returns The parsed reserve account
+   */
   async findAndParseReserve(
     market: PublicKey,
     asset: PublicKey,
@@ -667,7 +701,7 @@ export class KaminoLendingClient {
       KAMINO_LENDING_PROGRAM,
       {
         filters: [
-          { dataSize: 8624 },
+          { dataSize: KAMINO_RESERVE_SIZE },
           { memcmp: { offset: 32, bytes: market.toBase58() } },
           { memcmp: { offset: 128, bytes: asset.toBase58() } },
         ],
@@ -742,18 +776,18 @@ export class KaminoLendingClient {
     const glamSigner = txOptions.signer || this.base.signer;
     const vault = this.base.vaultPda;
     const userMetadata = this.getUserMetadataPda(vault);
-    const obligation = this.getObligationPda(
-      vault,
-      market,
-      DEFAULT_OBLIGATION_ARGS,
-    );
+    const obligation = this.getObligationPda(vault, market);
 
-    const preInstructions = [];
-    const postInstructions = [];
+    const preInstructions = txOptions.preInstructions || [];
+    const postInstructions = txOptions.postInstructions || [];
+
+    const [userMetadataAccount, obligationAccount] =
+      await this.base.provider.connection.getMultipleAccountsInfo([
+        userMetadata,
+        obligation,
+      ]);
 
     // If user metadata doesn't exist, initialize it
-    const userMetadataAccount =
-      await this.base.provider.connection.getAccountInfo(userMetadata);
     if (!userMetadataAccount) {
       preInstructions.push(
         await this.base.extKaminoProgram.methods
@@ -768,9 +802,7 @@ export class KaminoLendingClient {
       );
     }
 
-    // If obligation doesn't exist, initialize & refresh obligation and collateral farm state first
-    const obligationAccount =
-      await this.base.provider.connection.getAccountInfo(obligation);
+    // If obligation doesn't exist, initialize it
     if (!obligationAccount) {
       preInstructions.push(
         await this.base.extKaminoProgram.methods
@@ -789,19 +821,20 @@ export class KaminoLendingClient {
     }
 
     const depositReserve = await this.findAndParseReserve(market, asset);
-    // If reserve has collateral farm but obligation farm state doesn't exist, initialize it
-    let obligationFarm = null;
+
+    // If reserve has collateral farm but obligation farm user doesn't exist, initialize it
+    let obligationFarmUser = null;
     if (depositReserve.farmCollateral) {
-      obligationFarm = this.getFarmUserState(
+      obligationFarmUser = this.getFarmUserState(
         obligation,
         depositReserve.farmCollateral,
       );
-      const obligationFarmAccount =
-        await this.base.provider.connection.getAccountInfo(obligationFarm);
-      if (!obligationFarmAccount) {
+      const farmUserAccount =
+        await this.base.provider.connection.getAccountInfo(obligationFarmUser);
+      if (!farmUserAccount) {
         preInstructions.push(
           await this.base.extKaminoProgram.methods
-            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .lendingInitObligationFarmsForReserve(0) // 0 - collateral farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -809,7 +842,7 @@ export class KaminoLendingClient {
               lendingMarketAuthority: this.getMarketAuthority(market),
               reserve: depositReserve.address,
               reserveFarmState: depositReserve.farmCollateral,
-              obligationFarm,
+              obligationFarm: obligationFarmUser,
               lendingMarket: market,
               farmsProgram: KAMINO_FARM_PROGRAM,
             })
@@ -818,18 +851,22 @@ export class KaminoLendingClient {
       }
     }
 
-    const reservesToRefresh = [];
+    // Get a set of reserves to refresh
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits.concat(borrows).map((d) => d.reserve);
-    if (reservesInUse.find((r) => r.equals(depositReserve.address))) {
-      reservesToRefresh.push(...reservesInUse);
-    } else {
-      reservesToRefresh.push(depositReserve.address, ...reservesInUse);
-    }
+    const reservesInUse = deposits
+      .concat(borrows)
+      .map(({ reserve }) => reserve);
+    const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
+    reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
+    reservesSet.add(depositReserve.address.toBase58());
 
-    // Refresh reserves, including deposit reserve and reserves in use
-    preInstructions.push(...this.refreshReserveIxs(market, reservesToRefresh));
+    // Refresh all reserves in the set
+    const reservesToRefresh = Array.from(reservesSet).map(
+      (pubkey) => new PublicKey(pubkey),
+    );
+    const parsedReserves = await this.fetchAndParseReserves(reservesToRefresh);
+    preInstructions.push(this.refreshReservesBatchIxV2(parsedReserves, false));
 
     // Refresh obligation with reserves in use
     preInstructions.push(
@@ -894,7 +931,7 @@ export class KaminoLendingClient {
         collateralTokenProgram: TOKEN_PROGRAM_ID,
         liquidityTokenProgram: tokenProgram,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        obligationFarmUserState: obligationFarm,
+        obligationFarmUserState: obligationFarmUser,
         reserveFarmState: depositReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -914,30 +951,26 @@ export class KaminoLendingClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const vault = this.base.vaultPda;
+    const obligation = this.getObligationPda(vault, market);
 
     const preInstructions = [];
     const postInstructions = [];
+
     const withdrawReserve = await this.findAndParseReserve(market, asset);
 
-    const obligation = this.getObligationPda(
-      vault,
-      market,
-      DEFAULT_OBLIGATION_ARGS,
-    );
-    let obligationFarm = null;
-
-    // If reserve has debt farm but obligation farm state doesn't exist, initialize it
+    // If reserve has collateral farm but obligation farm user doesn't exist, initialize it
+    let obligationFarmUser = null;
     if (withdrawReserve.farmCollateral) {
-      obligationFarm = this.getFarmUserState(
+      obligationFarmUser = this.getFarmUserState(
         obligation,
         withdrawReserve.farmCollateral,
       );
-      const obligationFarmAccount =
-        await this.base.provider.connection.getAccountInfo(obligationFarm);
-      if (!obligationFarmAccount) {
+      const farmUserAccount =
+        await this.base.provider.connection.getAccountInfo(obligationFarmUser);
+      if (!farmUserAccount) {
         preInstructions.push(
           await this.base.extKaminoProgram.methods
-            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .lendingInitObligationFarmsForReserve(0) // 0 - collateral farm
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -945,7 +978,7 @@ export class KaminoLendingClient {
               lendingMarketAuthority: this.getMarketAuthority(market),
               reserve: withdrawReserve.address,
               reserveFarmState: withdrawReserve.farmCollateral,
-              obligationFarm,
+              obligationFarm: obligationFarmUser,
               lendingMarket: market,
               farmsProgram: KAMINO_FARM_PROGRAM,
             })
@@ -954,18 +987,22 @@ export class KaminoLendingClient {
       }
     }
 
-    const reservesToRefresh = [];
+    // Get a set of reserves to refresh
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits.concat(borrows).map((d) => d.reserve);
-    if (reservesInUse.find((r) => r.equals(withdrawReserve.address))) {
-      reservesToRefresh.push(...reservesInUse);
-    } else {
-      reservesToRefresh.push(withdrawReserve.address, ...reservesInUse);
-    }
+    const reservesInUse = deposits
+      .concat(borrows)
+      .map(({ reserve }) => reserve);
+    const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
+    reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
+    reservesSet.add(withdrawReserve.address.toBase58());
 
-    // Refresh reserves, including deposit reserve and reserves in use
-    preInstructions.push(...this.refreshReserveIxs(market, reservesToRefresh));
+    // Refresh all reserves in the set
+    const reservesToRefresh = Array.from(reservesSet).map(
+      (pubkey) => new PublicKey(pubkey),
+    );
+    const parsedReserves = await this.fetchAndParseReserves(reservesToRefresh);
+    preInstructions.push(this.refreshReservesBatchIxV2(parsedReserves, false));
 
     // Refresh obligation with reserves in use
     preInstructions.push(
@@ -1022,7 +1059,7 @@ export class KaminoLendingClient {
         collateralTokenProgram: TOKEN_PROGRAM_ID,
         liquidityTokenProgram: tokenProgram,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        obligationFarmUserState: obligationFarm,
+        obligationFarmUserState: obligationFarmUser,
         reserveFarmState: withdrawReserve.farmCollateral,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -1056,29 +1093,25 @@ export class KaminoLendingClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const vault = this.base.vaultPda;
+    const obligation = this.getObligationPda(vault, market);
 
     const preInstructions = [];
+    const postInstructions = [];
     const borrowReserve = await this.findAndParseReserve(market, asset);
 
-    const obligation = this.getObligationPda(
-      vault,
-      market,
-      DEFAULT_OBLIGATION_ARGS,
-    );
-    let obligationFarm = null;
-
-    // If reserve has debt farm but obligation farm state doesn't exist, initialize it
+    // If reserve has debt farm but obligation farm user doesn't exist, initialize it
+    let obligationFarmUser = null;
     if (borrowReserve.farmDebt) {
-      obligationFarm = this.getFarmUserState(
+      obligationFarmUser = this.getFarmUserState(
         obligation,
         borrowReserve.farmDebt,
       );
-      const obligationFarmAccount =
-        await this.base.provider.connection.getAccountInfo(obligationFarm);
-      if (!obligationFarmAccount) {
+      const farmUserAccount =
+        await this.base.provider.connection.getAccountInfo(obligationFarmUser);
+      if (!farmUserAccount) {
         preInstructions.push(
           await this.base.extKaminoProgram.methods
-            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .lendingInitObligationFarmsForReserve(1)
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1086,7 +1119,7 @@ export class KaminoLendingClient {
               lendingMarketAuthority: this.getMarketAuthority(market),
               reserve: borrowReserve.address,
               reserveFarmState: borrowReserve.farmDebt,
-              obligationFarm,
+              obligationFarm: obligationFarmUser,
               lendingMarket: market,
               farmsProgram: KAMINO_FARM_PROGRAM,
             })
@@ -1095,18 +1128,22 @@ export class KaminoLendingClient {
       }
     }
 
-    const reservesToRefresh = [];
+    // Get a set of reserves to refresh
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits.concat(borrows).map((d) => d.reserve);
-    if (reservesInUse.find((r) => r.equals(borrowReserve.address))) {
-      reservesToRefresh.push(...reservesInUse);
-    } else {
-      reservesToRefresh.push(borrowReserve.address, ...reservesInUse);
-    }
+    const reservesInUse = deposits
+      .concat(borrows)
+      .map(({ reserve }) => reserve);
+    const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
+    reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
+    reservesSet.add(borrowReserve.address.toBase58());
 
-    // Refresh reserves, including deposit reserve and reserves in use
-    preInstructions.push(...this.refreshReserveIxs(market, reservesToRefresh));
+    // Refresh all reserves in the set
+    const reservesToRefresh = Array.from(reservesSet).map(
+      (pubkey) => new PublicKey(pubkey),
+    );
+    const parsedReserves = await this.fetchAndParseReserves(reservesToRefresh);
+    preInstructions.push(this.refreshReservesBatchIxV2(parsedReserves, false));
 
     // Refresh obligation with reserves in use
     preInstructions.push(
@@ -1117,16 +1154,15 @@ export class KaminoLendingClient {
       }),
     );
 
-    // FIXME: Don't need to refresh debt farm for borrow?
-    /*
     if (borrowReserve.farmDebt) {
-      const ixs = this.refreshObligationFarmsForReserveIxs(obligation, market, [
-        borrowReserve,
-      ]);
+      const ixs = this.refreshObligationDebtFarmsForReservesIxs(
+        obligation,
+        market,
+        [borrowReserve],
+      );
       preInstructions.push(...ixs);
       postInstructions.push(...ixs); // farms must be refreshed after deposit
     }
-    */
 
     // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
     const { tokenProgram } = await fetchMintAndTokenProgram(
@@ -1159,7 +1195,7 @@ export class KaminoLendingClient {
         referrerTokenState: null,
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram,
-        obligationFarmUserState: obligationFarm,
+        obligationFarmUserState: obligationFarmUser,
         reserveFarmState: borrowReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -1184,26 +1220,24 @@ export class KaminoLendingClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const vault = this.base.vaultPda;
+    const obligation = this.getObligationPda(vault, market);
 
     const preInstructions = [];
     const repayReserve = await this.findAndParseReserve(market, asset);
 
-    const obligation = this.getObligationPda(
-      vault,
-      market,
-      DEFAULT_OBLIGATION_ARGS,
-    );
-    let obligationFarm = null;
-
     // If reserve has debt farm but obligation farm state doesn't exist, initialize it
+    let obligationFarmUser = null;
     if (repayReserve.farmDebt) {
-      obligationFarm = this.getFarmUserState(obligation, repayReserve.farmDebt);
-      const obligationFarmAccount =
-        await this.base.provider.connection.getAccountInfo(obligationFarm);
-      if (!obligationFarmAccount) {
+      obligationFarmUser = this.getFarmUserState(
+        obligation,
+        repayReserve.farmDebt,
+      );
+      const farmUserAccount =
+        await this.base.provider.connection.getAccountInfo(obligationFarmUser);
+      if (!farmUserAccount) {
         preInstructions.push(
           await this.base.extKaminoProgram.methods
-            .lendingInitObligationFarmsForReserve(0) // TODO: What does mode do?
+            .lendingInitObligationFarmsForReserve(1)
             .accounts({
               glamState: this.base.statePda,
               glamSigner,
@@ -1211,7 +1245,7 @@ export class KaminoLendingClient {
               lendingMarketAuthority: this.getMarketAuthority(market),
               reserve: repayReserve.address,
               reserveFarmState: repayReserve.farmDebt,
-              obligationFarm,
+              obligationFarm: obligationFarmUser,
               lendingMarket: market,
               farmsProgram: KAMINO_FARM_PROGRAM,
             })
@@ -1220,18 +1254,22 @@ export class KaminoLendingClient {
       }
     }
 
-    const reservesToRefresh = [];
+    // Get a set of reserves to refresh
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits.concat(borrows).map((d) => d.reserve);
-    if (reservesInUse.find((r) => r.equals(repayReserve.address))) {
-      reservesToRefresh.push(...reservesInUse);
-    } else {
-      reservesToRefresh.push(repayReserve.address, ...reservesInUse);
-    }
+    const reservesInUse = deposits
+      .concat(borrows)
+      .map(({ reserve }) => reserve);
+    const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
+    reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
+    reservesSet.add(repayReserve.address.toBase58());
 
-    // Refresh reserves, including deposit reserve and reserves in use
-    preInstructions.push(...this.refreshReserveIxs(market, reservesToRefresh));
+    // Refresh all reserves in the set
+    const reservesToRefresh = Array.from(reservesSet).map(
+      (pubkey) => new PublicKey(pubkey),
+    );
+    const parsedReserves = await this.fetchAndParseReserves(reservesToRefresh);
+    preInstructions.push(this.refreshReservesBatchIxV2(parsedReserves, false));
 
     // Refresh obligation with reserves in use
     preInstructions.push(
@@ -1261,7 +1299,7 @@ export class KaminoLendingClient {
         userSourceLiquidity: this.base.getVaultAta(asset, tokenProgram),
         instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         tokenProgram,
-        obligationFarmUserState: obligationFarm,
+        obligationFarmUserState: obligationFarmUser,
         reserveFarmState: repayReserve.farmDebt,
         farmsProgram: KAMINO_FARM_PROGRAM,
       })
@@ -1685,9 +1723,7 @@ export class KaminoVaultsClient {
       throw new Error("Kamino vaults not found");
     }
     return accounts.map((a) => {
-      const vaultState = KVaultStateLayout.decode(
-        a.account.data,
-      ) as KVaultState;
+      const vaultState = KVaultState.decode(a.account.data) as KVaultState;
 
       this.vaultStates.set(a.pubkey.toBase58(), vaultState);
       this.shareMintToVaultPdaMap.set(
@@ -1715,8 +1751,7 @@ export class KaminoVaultsClient {
     if (!vaultAccount) {
       throw new Error(`Kamino vault account not found:, ${vault}`);
     }
-    const vaultState = KVaultStateLayout.decode(vaultAccount.data);
-
+    const vaultState = KVaultState.decode(vaultAccount.data);
     this.vaultStates.set(vault.toBase58(), vaultState);
     this.shareMintToVaultPdaMap.set(vaultState.sharesMint.toBase58(), vault);
     return vaultState as KVaultState;
