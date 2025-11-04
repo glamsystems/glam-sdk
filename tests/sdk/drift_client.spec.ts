@@ -48,7 +48,7 @@ describe("drift_client", () => {
     const perpMarketData = Buffer.from(solPerpMarket.account.data[0], "base64");
 
     const { name, marketPda, marketIndex, oracle, oracleSource } =
-      glamClient.drift.parsePerpMarket(perpMarketData);
+      glamClient.drift.parsePerpMarket(solPerpMarket.pubkey, perpMarketData);
     expect(name).toEqual("SOL-PERP");
     expect(marketPda).toEqual(
       new PublicKey("8UJgxaiQx5nTrdDgph5FiahMmzduuLTLf5WmsPegYA6W"),
@@ -72,7 +72,7 @@ describe("drift_client", () => {
       mint,
       decimals,
       tokenProgram,
-    } = glamClient.drift.parseSpotMarket(spotMarketData);
+    } = glamClient.drift.parseSpotMarket(solSpotMarket.pubkey, spotMarketData);
 
     expect(name).toEqual("SOL");
     expect(marketPda).toEqual(

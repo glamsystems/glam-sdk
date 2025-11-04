@@ -17,9 +17,9 @@ import { MintClient } from "./client/mint";
 import { AccessClient } from "./client/access";
 import { TimelockClient } from "./client/timelock";
 import { StakingClient } from "./client/staking";
+import { CctpClient } from "./client/cctp";
 // import { JupiterVoteClient } from "./client/jupiter";
 // import { MeteoraDlmmClient } from "./client/meteora";
-// import { ValidatorClient } from "./client/validator";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -43,8 +43,8 @@ export class GlamClient extends BaseClient {
   private _kaminoVaults?: KaminoVaultsClient;
   private _fees?: FeesClient;
   private _timelock?: TimelockClient;
+  private _cctp?: CctpClient;
   // private _meteoraDlmm?: MeteoraDlmmClient;
-  // private _validator?: ValidatorClient;
   // private _jupiterVote?: JupiterVoteClient;
 
   public constructor(config?: GlamClientConfig) {
@@ -122,6 +122,7 @@ export class GlamClient extends BaseClient {
         this.kaminoVaults,
         this.drift,
         this.driftVaults,
+        this.cctp,
       );
     }
     return this._price;
@@ -176,17 +177,17 @@ export class GlamClient extends BaseClient {
     return this._timelock;
   }
 
+  get cctp(): CctpClient {
+    if (!this._cctp) {
+      this._cctp = new CctpClient(this);
+    }
+    return this._cctp;
+  }
+
   // get meteoraDlmm(): MeteoraDlmmClient {
   //   if (!this._meteoraDlmm) {
   //     this._meteoraDlmm = new MeteoraDlmmClient(this);
   //   }
   //   return this._meteoraDlmm;
-  // }
-
-  // get validator(): ValidatorClient {
-  //   if (!this._validator) {
-  //     this._validator = new ValidatorClient(this);
-  //   }
-  //   return this._validator;
   // }
 }

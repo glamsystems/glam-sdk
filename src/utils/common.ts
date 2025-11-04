@@ -1,3 +1,5 @@
+import { BN } from "@coral-xyz/anchor";
+
 /**
  * Compares two sets for equality
  */
@@ -23,4 +25,8 @@ export function charsToName(chars: number[] | Buffer): string {
  */
 export function nameToChars(name: string): number[] {
   return Array.from(Buffer.from(name).subarray(0, 32));
+}
+
+export function toUiAmount(amount: BN, decimals: number): number {
+  return amount.toNumber() / 10 ** decimals;
 }

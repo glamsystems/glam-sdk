@@ -29,7 +29,11 @@ describe("kamino_deser", () => {
 
   it("Deserialize main market USDC reserve", () => {
     const data = Buffer.from(mainMarketUsdcReserve.account.data[0], "base64");
-    const reserve = Reserve.decode(data);
+    const address = new PublicKey(mainMarketUsdcReserve.pubkey);
+    const reserve = Reserve.decode(address, data);
+
+    console.log("collateralExchangeRate:", reserve.collateralExchangeRate);
+
     expect(reserve.config.tokenInfo.scopeConfiguration.priceFeed).toEqual(
       new PublicKey("3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C"),
     );
@@ -37,8 +41,9 @@ describe("kamino_deser", () => {
 
   it("Deserialize vault state", () => {
     const data = Buffer.from(usdcVaultState.account.data[0], "base64");
+    const address = new PublicKey(usdcVaultState.pubkey);
     const { tokenMint, sharesMint, vaultLookupTable, nameStr } =
-      KVaultState.decode(data);
+      KVaultState.decode(address, data);
 
     expect(nameStr).toEqual("USDC Max Yield");
     expect(tokenMint).toEqual(
@@ -54,7 +59,8 @@ describe("kamino_deser", () => {
 
   it("Deserialize main market obligation", () => {
     const data = Buffer.from(mainMarketObligation.account.data[0], "base64");
-    const obligation = Obligation.decode(data);
+    const address = new PublicKey(mainMarketObligation.pubkey);
+    const obligation = Obligation.decode(address, data);
 
     // Verify the obligation was decoded successfully
     expect(obligation.lendingMarket).toEqual(

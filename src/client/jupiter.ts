@@ -54,6 +54,7 @@ export type TokenListItem = {
   decimals: number;
   logoURI: string;
   tags: string[];
+  usdPrice: number;
 };
 
 export type TokenPrice = {
@@ -119,6 +120,7 @@ export async function fetchTokensList(): Promise<TokenListItem[]> {
     decimals: t.decimals,
     logoURI: t.icon,
     tags: t.tags,
+    usdPrice: t.usdPrice,
   }));
   return tokenList;
 }

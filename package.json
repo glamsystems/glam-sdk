@@ -1,6 +1,6 @@
 {
   "name": "@glamsystems/glam-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "TypeScript SDK for the GLAM Protocol",
   "main": "./index.cjs",
   "module": "./index.esm.js",
@@ -20,15 +20,16 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@coral-xyz/borsh": "^0.31.1",
+    "@glamsystems/sanctum-lst-list": "^0.2.54",
     "@marinade.finance/marinade-ts-sdk": "^5.0.15",
     "@meteora-ag/dlmm": "^1.4.11",
     "@solana/spl-stake-pool": "^1.1.5",
     "@solana/spl-token": "^0.4.9",
     "@solana/spl-token-metadata": "^0.1.4",
     "@solana/web3.js": "^1.98.0",
-    "@glamsystems/sanctum-lst-list": "^0.2.54",
     "bs58": "^5.0.0",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "decimal.js": "^10.6.0"
   },
   "engines": {
     "node": ">=20.18.0"

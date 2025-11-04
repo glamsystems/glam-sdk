@@ -11,8 +11,9 @@ import {
 } from "@coral-xyz/borsh";
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { charsToName } from "../utils";
+import { bfToDecimal, BigFractionBytes, charsToName, Fraction } from "../utils";
 import { Decodable } from "./base";
+import Decimal from "decimal.js";
 
 const MAX_RESERVES = 25;
 
@@ -131,11 +132,6 @@ export class KVaultState extends Decodable {
 //
 // Kamino Lending Reserve
 //
-
-interface BigFractionBytes {
-  value: BN[];
-  padding: BN[];
-}
 
 interface LastUpdate {
   slot: BN;
@@ -428,6 +424,48 @@ export class Reserve extends Decodable {
     array(u64(), 32, "borrowedAmountsAgainstThisReserveInElevationGroups"),
     array(u64(), 207, "padding"),
   ]);
+
+  get cumulativeBorrowRate(): Decimal {
+    return bfToDecimal(this.liquidity.cumulativeBorrowRateBsf);
+  }
+
+  /**
+   * @returns the stale exchange rate between the collateral tokens and the liquidity - this is a decimal number scaled by 1e18
+   */
+  get collateralExchangeRate(): Decimal {
+    const totalSupply = this.totalSupply;
+    const mintTotalSupply = this.collateral.mintTotalSupply;
+
+    if (totalSupply.isZero() || mintTotalSupply.isZero()) {
+      return new Decimal(1); // initial exchange rate
+    }
+
+    return new Decimal(mintTotalSupply.toString()).div(totalSupply.toString());
+  }
+
+  get totalSupply(): Decimal {
+    return new Decimal(this.liquidity.availableAmount.toString())
+      .add(this.borrowedAmount)
+      .sub(this.accumulatedProtocolFees)
+      .sub(this.accumulatedReferrerFees)
+      .sub(this.pendingReferrerFees);
+  }
+
+  get borrowedAmount(): Decimal {
+    return new Fraction(this.liquidity.borrowedAmountSf).toDecimal();
+  }
+
+  get accumulatedProtocolFees(): Decimal {
+    return new Fraction(this.liquidity.accumulatedProtocolFeesSf).toDecimal();
+  }
+
+  get accumulatedReferrerFees(): Decimal {
+    return new Fraction(this.liquidity.accumulatedReferrerFeesSf).toDecimal();
+  }
+
+  get pendingReferrerFees(): Decimal {
+    return new Fraction(this.liquidity.pendingReferrerFeesSf).toDecimal();
+  }
 }
 
 //
@@ -497,12 +535,15 @@ export class Obligation extends Decodable {
   static _layout = struct([
     array(u8(), 8, "discriminator"),
     u64("tag"),
-    struct([
-      u64("slot"),
-      u8("stale"),
-      u8("priceStatus"),
-      array(u8(), 6, "placeholder"),
-    ], "lastUpdate"),
+    struct(
+      [
+        u64("slot"),
+        u8("stale"),
+        u8("priceStatus"),
+        array(u8(), 6, "placeholder"),
+      ],
+      "lastUpdate",
+    ),
     publicKey("lendingMarket"),
     publicKey("owner"),
     array(
@@ -521,10 +562,10 @@ export class Obligation extends Decodable {
     array(
       struct([
         publicKey("borrowReserve"),
-        struct([
-          array(u64(), 4, "value"),
-          array(u64(), 2, "padding"),
-        ], "cumulativeBorrowRateBsf"),
+        struct(
+          [array(u64(), 4, "value"), array(u64(), 2, "padding")],
+          "cumulativeBorrowRateBsf",
+        ),
         u64("padding"),
         u128("borrowedAmountSf"),
         u128("marketValueSf"),

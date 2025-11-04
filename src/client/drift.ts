@@ -303,8 +303,8 @@ export class DriftClient {
     };
   }
 
-  parsePerpMarket(data: Buffer): PerpMarket {
-    const perpMarket = DriftPerpMarket.decode(data);
+  parsePerpMarket(address: PublicKey, data: Buffer): PerpMarket {
+    const perpMarket = DriftPerpMarket.decode(address, data);
     return {
       name: perpMarket.nameStr,
       marketPda: perpMarket.marketPda,
@@ -314,8 +314,8 @@ export class DriftClient {
     };
   }
 
-  parseSpotMarket(data: Buffer): SpotMarket {
-    const driftSpotMarket = DriftSpotMarket.decode(data);
+  parseSpotMarket(address: PublicKey, data: Buffer): SpotMarket {
+    const driftSpotMarket = DriftSpotMarket.decode(address, data);
     return {
       name: driftSpotMarket.nameStr,
       marketIndex: driftSpotMarket.marketIndex,
@@ -335,13 +335,13 @@ export class DriftClient {
     };
   }
 
-  async calcSpotBalance(
-    marketIndex: number,
+  calcSpotBalance(
     scaledBalance: BN,
     scaledBalanceType: SpotBalanceType,
-  ): Promise<{ amount: number; uiAmount: number }> {
-    const { decimals, cumulativeDepositInterest, cumulativeBorrowInterest } =
-      await this.fetchAndParseSpotMarket(marketIndex);
+    decimals: number,
+    cumulativeDepositInterest: BN,
+    cumulativeBorrowInterest: BN,
+  ): { amount: number; uiAmount: number } {
     const precisionAdjustment = new BN(10 ** (19 - decimals));
 
     let interest = cumulativeDepositInterest;
@@ -357,6 +357,12 @@ export class DriftClient {
 
     const uiAmount = amount / 10 ** decimals;
     return { amount, uiAmount };
+  }
+
+  calcSpotBalanceBn(scaledBalance: BN, decimals: number, interest: BN): BN {
+    const precisionAdjustment = new BN(10 ** (19 - decimals));
+    const balance = scaledBalance.mul(interest).div(precisionAdjustment);
+    return balance;
   }
 
   public getDriftUserPdas(subAccountId: number = 0): {
@@ -409,9 +415,12 @@ export class DriftClient {
       );
       const accounts =
         await this.base.provider.connection.getMultipleAccountsInfo(marketPdas);
-      accounts.forEach((account) => {
+      accounts.forEach((account, index) => {
         if (account) {
-          const spotMarket = this.parseSpotMarket(account.data);
+          const spotMarket = this.parseSpotMarket(
+            marketPdas[index],
+            account.data,
+          );
           this.spotMarkets.set(spotMarket.marketIndex, spotMarket);
         }
       });
@@ -465,9 +474,12 @@ export class DriftClient {
       );
       const accounts =
         await this.base.provider.connection.getMultipleAccountsInfo(marketPdas);
-      accounts.forEach((account) => {
+      accounts.forEach((account, index) => {
         if (account) {
-          const perpMarket = this.parsePerpMarket(account.data);
+          const perpMarket = this.parsePerpMarket(
+            marketPdas[index],
+            account.data,
+          );
           this.perpMarkets.set(perpMarket.marketIndex, perpMarket);
         }
       });
@@ -594,12 +606,15 @@ export class DriftClient {
     // Extend spot positions with market info
     const spotPositionsExt = await Promise.all(
       spotPositions.map(async (p) => {
-        const { amount, uiAmount } = await this.calcSpotBalance(
-          p.marketIndex,
+        const spotMarket = this.spotMarkets.get(p.marketIndex);
+
+        const { amount, uiAmount } = this.calcSpotBalance(
           p.scaledBalance,
           p.balanceType,
+          spotMarket!.decimals,
+          spotMarket!.cumulativeDepositInterest,
+          spotMarket!.cumulativeBorrowInterest,
         );
-        const spotMarket = this.spotMarkets.get(p.marketIndex);
         return {
           ...p,
           amount,
@@ -1353,8 +1368,8 @@ export class DriftVaultsClient {
       return accountInfo;
     });
 
-    return validAccountsInfo.map((accountInfo) => {
-      return DriftVault.decode(accountInfo.data);
+    return validAccountsInfo.map((accountInfo, i) => {
+      return DriftVault.decode(driftVaults[i], accountInfo.data);
     });
   }
 

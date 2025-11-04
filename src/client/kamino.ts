@@ -35,6 +35,11 @@ import {
 } from "../deser/kaminoLayouts";
 import { getProgramAccountsWithRetry } from "../utils/rpc";
 import { VaultClient } from "./vault";
+import Decimal from "decimal.js";
+import { BigFractionBytes, PkSet } from "../utils";
+
+const FractionDecimal = Decimal.clone({ precision: 40 });
+const MULTIPLIER = new FractionDecimal(2).pow(60);
 
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
 const EVENT_AUTHORITY = new PublicKey(
@@ -75,24 +80,32 @@ interface RefreshObligationFarmsForReserveAccounts {
   systemProgram: PublicKey;
 }
 
-interface ParsedReserve {
+export interface ParsedReserve {
   address: PublicKey;
   market: PublicKey;
   farmCollateral: PublicKey | null;
   farmDebt: PublicKey | null;
   liquidityMint: PublicKey;
+  liquidityMintDecimals: number;
   liquiditySupplyVault: PublicKey;
   collateralMint: PublicKey;
   collateralSupplyVault: PublicKey;
   scopePriceFeed: PublicKey;
   feeVault: PublicKey;
+  collateralExchangeRate: Decimal;
+  cumulativeBorrowRate: Decimal;
 }
 
-interface ParsedObligation {
+export interface ParsedObligation {
   address: PublicKey;
   lendingMarket: PublicKey;
-  deposits: { reserve: PublicKey }[];
-  borrows: { reserve: PublicKey }[];
+  deposits: { reserve: PublicKey; depositedAmount: BN; marketValueSf: BN }[];
+  borrows: {
+    reserve: PublicKey;
+    borrowedAmountSf: BN;
+    marketValueSf: BN;
+    cumulativeBorrowRateBsf: BigFractionBytes;
+  }[];
 }
 
 interface ParsedFarmState {
@@ -571,21 +584,45 @@ export class KaminoLendingClient {
   }
 
   parseObligation(obligation: PublicKey, data: Buffer): ParsedObligation {
-    const decoded = Obligation.decode(data);
+    const {
+      lendingMarket,
+      deposits: _deposits,
+      borrows: _borrows,
+    } = Obligation.decode(obligation, data);
 
     // Map decoded deposits to the expected format, filtering out empty deposits
-    const deposits = decoded.deposits
-      .map((d) => ({ reserve: d.depositReserve }))
-      .filter((d) => !d.reserve.equals(PublicKey.default));
+    const deposits = _deposits
+      .filter(({ depositReserve }) => !depositReserve.equals(PublicKey.default))
+      .map(({ depositReserve, depositedAmount, marketValueSf }) => {
+        return {
+          reserve: depositReserve,
+          depositedAmount,
+          marketValueSf,
+        };
+      });
 
     // Map decoded borrows to the expected format, filtering out empty borrows
-    const borrows = decoded.borrows
-      .map((b) => ({ reserve: b.borrowReserve }))
-      .filter((b) => !b.reserve.equals(PublicKey.default));
+    const borrows = _borrows
+      .filter(({ borrowReserve }) => !borrowReserve.equals(PublicKey.default))
+      .map(
+        ({
+          borrowReserve,
+          borrowedAmountSf,
+          marketValueSf,
+          cumulativeBorrowRateBsf,
+        }) => {
+          return {
+            reserve: borrowReserve,
+            borrowedAmountSf,
+            marketValueSf,
+            cumulativeBorrowRateBsf,
+          };
+        },
+      );
 
     return {
       address: obligation,
-      lendingMarket: decoded.lendingMarket,
+      lendingMarket,
       deposits,
       borrows,
     };
@@ -622,13 +659,15 @@ export class KaminoLendingClient {
       lendingMarket,
       farmCollateral,
       farmDebt,
-      liquidity: { mintPubkey },
+      liquidity: { mintPubkey, mintDecimals },
       config: {
         tokenInfo: {
           scopeConfiguration: { priceFeed },
         },
       },
-    } = Reserve.decode(data);
+      collateralExchangeRate,
+      cumulativeBorrowRate,
+    } = Reserve.decode(pubkey, data);
 
     return {
       address: pubkey,
@@ -638,26 +677,31 @@ export class KaminoLendingClient {
         : farmCollateral,
       farmDebt: farmDebt.equals(PublicKey.default) ? null : farmDebt,
       liquidityMint: mintPubkey,
+      liquidityMintDecimals: mintDecimals.toNumber(),
       scopePriceFeed: priceFeed,
       ...this.reservePdas(lendingMarket, mintPubkey),
+      collateralExchangeRate,
+      cumulativeBorrowRate,
     };
   }
 
   async fetchAndParseReserves(reserves: PublicKey[]): Promise<ParsedReserve[]> {
-    const requestReservesSet = new Set(reserves.map((r) => r.toBase58()));
-    const cachedReservesSet = new Set(this.reserves.keys());
+    const requestReservesSet = new PkSet(reserves);
+    const cachedReservesSet = new PkSet(
+      Array.from(this.reserves.keys()).map((key) => new PublicKey(key)),
+    );
 
     // If all requested reserves are cached, return data from cache
-    if ([...requestReservesSet].every((r) => cachedReservesSet.has(r))) {
-      return Array.from(this.reserves.values()).filter((r) =>
-        requestReservesSet.has(r.address.toBase58()),
+    if (cachedReservesSet.includes(requestReservesSet)) {
+      return Array.from(this.reserves.values()).filter(({ address }) =>
+        requestReservesSet.has(address),
       );
     }
 
     // Only fetch reserves that are not cached
-    const reservesToFetch = [...requestReservesSet]
-      .filter((r) => !cachedReservesSet.has(r))
-      .map((r) => new PublicKey(r));
+    const reservesToFetch = Array.from(requestReservesSet).filter(
+      (r) => !cachedReservesSet.has(r),
+    );
     if (process.env.NODE_ENV !== "production") {
       console.log(
         "Fetching reserves:",
@@ -681,8 +725,8 @@ export class KaminoLendingClient {
     });
 
     // Return requested reserves
-    return Array.from(this.reserves.values()).filter((r) =>
-      requestReservesSet.has(r.address.toBase58()),
+    return Array.from(this.reserves.values()).filter(({ address }) =>
+      requestReservesSet.has(address),
     );
   }
 
@@ -851,31 +895,49 @@ export class KaminoLendingClient {
       }
     }
 
-    // Get a set of reserves to refresh
-    const { deposits, borrows } =
-      await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits
-      .concat(borrows)
-      .map(({ reserve }) => reserve);
-    const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
-    reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
-    reservesSet.add(depositReserve.address.toBase58());
+    if (obligationAccount) {
+      // Get a set of reserves to refresh
+      const { deposits, borrows } =
+        await this.fetchAndParseObligation(obligation);
+      const reservesInUse = deposits
+        .map(({ reserve }) => reserve)
+        .concat(borrows.map(({ reserve }) => reserve));
+      const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
+      reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
+      reservesSet.add(depositReserve.address.toBase58());
 
-    // Refresh all reserves in the set
-    const reservesToRefresh = Array.from(reservesSet).map(
-      (pubkey) => new PublicKey(pubkey),
-    );
-    const parsedReserves = await this.fetchAndParseReserves(reservesToRefresh);
-    preInstructions.push(this.refreshReservesBatchIxV2(parsedReserves, false));
+      // Refresh all reserves in the set
+      const reservesToRefresh = Array.from(reservesSet).map(
+        (pubkey) => new PublicKey(pubkey),
+      );
+      const parsedReserves =
+        await this.fetchAndParseReserves(reservesToRefresh);
+      preInstructions.push(
+        this.refreshReservesBatchIxV2(parsedReserves, false),
+      );
 
-    // Refresh obligation with reserves in use
-    preInstructions.push(
-      this.refreshObligationIx({
-        lendingMarket: market,
-        obligation,
-        reserves: reservesInUse,
-      }),
-    );
+      // Refresh obligation with reserves in use
+      preInstructions.push(
+        this.refreshObligationIx({
+          lendingMarket: market,
+          obligation,
+          reserves: reservesInUse,
+        }),
+      );
+    } else {
+      // Only refresh deposit reserve
+      preInstructions.push(
+        ...this.refreshReserveIxsV2(depositReserve.market, [depositReserve]),
+      );
+      // Refresh obligation with 0 reserves
+      preInstructions.push(
+        this.refreshObligationIx({
+          lendingMarket: market,
+          obligation,
+          reserves: [],
+        }),
+      );
+    }
 
     if (depositReserve.farmCollateral) {
       const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
@@ -991,8 +1053,8 @@ export class KaminoLendingClient {
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
     const reservesInUse = deposits
-      .concat(borrows)
-      .map(({ reserve }) => reserve);
+      .map(({ reserve }) => reserve)
+      .concat(borrows.map(({ reserve }) => reserve));
     const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
     reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
     reservesSet.add(withdrawReserve.address.toBase58());
@@ -1132,8 +1194,8 @@ export class KaminoLendingClient {
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
     const reservesInUse = deposits
-      .concat(borrows)
-      .map(({ reserve }) => reserve);
+      .map(({ reserve }) => reserve)
+      .concat(borrows.map(({ reserve }) => reserve));
     const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
     reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
     reservesSet.add(borrowReserve.address.toBase58());
@@ -1258,8 +1320,8 @@ export class KaminoLendingClient {
     const { deposits, borrows } =
       await this.fetchAndParseObligation(obligation);
     const reservesInUse = deposits
-      .concat(borrows)
-      .map(({ reserve }) => reserve);
+      .map(({ reserve }) => reserve)
+      .concat(borrows.map(({ reserve }) => reserve));
     const reservesSet = new Set<string>(); // includes reserves in use and deposit reserve
     reservesInUse.forEach((reserve) => reservesSet.add(reserve.toBase58()));
     reservesSet.add(repayReserve.address.toBase58());
@@ -1723,7 +1785,10 @@ export class KaminoVaultsClient {
       throw new Error("Kamino vaults not found");
     }
     return accounts.map((a) => {
-      const vaultState = KVaultState.decode(a.account.data) as KVaultState;
+      const vaultState = KVaultState.decode(
+        a.pubkey,
+        a.account.data,
+      ) as KVaultState;
 
       this.vaultStates.set(a.pubkey.toBase58(), vaultState);
       this.shareMintToVaultPdaMap.set(
@@ -1751,7 +1816,7 @@ export class KaminoVaultsClient {
     if (!vaultAccount) {
       throw new Error(`Kamino vault account not found:, ${vault}`);
     }
-    const vaultState = KVaultState.decode(vaultAccount.data);
+    const vaultState = KVaultState.decode(vault, vaultAccount.data);
     this.vaultStates.set(vault.toBase58(), vaultState);
     this.shareMintToVaultPdaMap.set(vaultState.sharesMint.toBase58(), vault);
     return vaultState as KVaultState;

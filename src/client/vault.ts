@@ -6,18 +6,11 @@ import {
   TransactionInstruction,
   Transaction,
   SystemProgram,
-  Keypair,
 } from "@solana/web3.js";
 
 import { BaseClient, TxOptions } from "./base";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
-import {
-  MESSAGE_TRANSMITTER_V2,
-  TOKEN_MESSENGER_MINTER_V2,
-  USDC,
-  USDC_DEVNET,
-  WSOL,
-} from "../constants";
+import { WSOL } from "../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createSyncNativeInstruction,
@@ -25,6 +18,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { PkMap } from "../utils";
 
 export class VaultClient {
   public constructor(readonly base: BaseClient) {}
@@ -55,22 +49,6 @@ export class VaultClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  public async bridgeUsdc(
-    amount: BN | number,
-    domain: number,
-    recipient: PublicKey,
-    params: { maxFee: BN; minFinalityThreshold: number },
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const [tx, keypair] = await this.bridgeUsdcTx(
-      new BN(amount),
-      domain,
-      recipient,
-      params,
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx, [keypair]);
-  }
 
   /**
    * Transfers SOL from vault to another account
@@ -309,28 +287,25 @@ export class VaultClient {
     }
 
     // split token accounts into 2 arrays by owner program
-    const tokenAccountsByProgram = new Map<string, PublicKey[]>([
-      [TOKEN_PROGRAM_ID.toBase58(), []],
-      [TOKEN_2022_PROGRAM_ID.toBase58(), []],
+    const tokenAccountsByProgram = new PkMap<PublicKey[]>([
+      [TOKEN_PROGRAM_ID, []],
+      [TOKEN_2022_PROGRAM_ID, []],
     ]);
+
     accountsInfo.forEach((accountInfo, i) => {
       [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].forEach((programId) => {
         if (accountInfo?.owner.equals(programId)) {
-          tokenAccountsByProgram.get(programId.toBase58())?.push(pubkeys[i]);
+          tokenAccountsByProgram.get(programId)?.push(pubkeys[i]);
         }
       });
     });
 
     const ixs = await Promise.all(
-      Array.from(tokenAccountsByProgram.entries())
+      Array.from(tokenAccountsByProgram.pkEntries())
         .filter(([_, accounts]) => accounts.length > 0)
         .map(([programId, accounts]) => {
           return accounts.map((account) =>
-            this.closeTokenAccountIx(
-              account,
-              new PublicKey(programId),
-              txOptions,
-            ),
+            this.closeTokenAccountIx(account, programId, txOptions),
           );
         })
         .flat(),
@@ -422,54 +397,6 @@ export class VaultClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  getDepositForBurnPdas = (
-    messageTransmitterProgram: PublicKey,
-    tokenMessengerMinterProgram: PublicKey,
-    usdcAddress: PublicKey,
-    destinationDomain: Number,
-  ) => {
-    const messageTransmitterAccount = PublicKey.findProgramAddressSync(
-      [Buffer.from("message_transmitter")],
-      messageTransmitterProgram,
-    )[0];
-    const tokenMessengerAccount = PublicKey.findProgramAddressSync(
-      [Buffer.from("token_messenger")],
-      tokenMessengerMinterProgram,
-    )[0];
-    const tokenMinterAccount = PublicKey.findProgramAddressSync(
-      [Buffer.from("token_minter")],
-      tokenMessengerMinterProgram,
-    )[0];
-    const localToken = PublicKey.findProgramAddressSync(
-      [Buffer.from("local_token"), usdcAddress.toBuffer()],
-      tokenMessengerMinterProgram,
-    )[0];
-    const remoteTokenMessengerKey = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("remote_token_messenger"),
-        Buffer.from(destinationDomain.toString()),
-      ],
-      tokenMessengerMinterProgram,
-    )[0];
-    const authorityPda = PublicKey.findProgramAddressSync(
-      [Buffer.from("sender_authority")],
-      tokenMessengerMinterProgram,
-    )[0];
-    const tokenMessengerEventAuthority = PublicKey.findProgramAddressSync(
-      [Buffer.from("__event_authority")],
-      tokenMessengerMinterProgram,
-    )[0];
-
-    return {
-      messageTransmitterAccount,
-      tokenMessengerAccount,
-      tokenMinterAccount,
-      localToken,
-      remoteTokenMessengerKey,
-      authorityPda,
-      tokenMessengerEventAuthority,
-    };
-  };
 
   public async tokenTransferIxs(
     mint: PublicKey,
@@ -545,60 +472,4 @@ export class VaultClient {
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 
-  public async bridgeUsdcTx(
-    amount: BN,
-    domain: number,
-    recipient: PublicKey,
-    params: { maxFee: BN; minFinalityThreshold: number },
-    txOptions: TxOptions,
-  ): Promise<[VersionedTransaction, Keypair]> {
-    const signer = txOptions.signer || this.base.signer;
-
-    const usdcAddress = this.base.isMainnet ? USDC : USDC_DEVNET;
-    const pdas = this.getDepositForBurnPdas(
-      MESSAGE_TRANSMITTER_V2,
-      TOKEN_MESSENGER_MINTER_V2,
-      usdcAddress,
-      domain,
-    );
-
-    const depositForBurnParams = {
-      amount,
-      destinationDomain: domain,
-      mintRecipient: recipient,
-      destinationCaller: PublicKey.default,
-      ...params,
-    };
-
-    const denylistAccount = PublicKey.findProgramAddressSync(
-      [Buffer.from("denylist_account"), this.base.vaultPda.toBuffer()],
-      TOKEN_MESSENGER_MINTER_V2,
-    )[0];
-    const messageSentEventAccountKeypair = Keypair.generate();
-
-    const burnTokenAccount = this.base.getVaultAta(usdcAddress);
-
-    const tx = await this.base.extCctpProgram.methods
-      .depositForBurn(depositForBurnParams)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner: signer,
-        senderAuthorityPda: pdas.authorityPda,
-        burnTokenAccount,
-        denylistAccount,
-        messageTransmitter: pdas.messageTransmitterAccount,
-        tokenMessenger: pdas.tokenMessengerAccount,
-        remoteTokenMessenger: pdas.remoteTokenMessengerKey,
-        tokenMinter: pdas.tokenMinterAccount,
-        localToken: pdas.localToken,
-        burnTokenMint: usdcAddress,
-        messageSentEventData: messageSentEventAccountKeypair.publicKey,
-        eventAuthority: pdas.tokenMessengerEventAuthority,
-      })
-      .transaction();
-    return [
-      await this.base.intoVersionedTransaction(tx, txOptions),
-      messageSentEventAccountKeypair,
-    ];
-  }
 }
