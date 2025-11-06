@@ -41,38 +41,33 @@ import {
 } from "../constants";
 import { fetchTokensList, TokenListItem } from "./jupiter";
 
-export abstract class Holding {
+export class Holding {
   mintAddress!: PublicKey;
   decimals!: number;
   amount!: BN;
-  uiAmount!: number;
   price!: number;
   protocol!: string;
-}
+  protocolMeta!: Record<string, any>;
 
-export class KaminoLendHolding extends Holding {
-  obligation!: PublicKey;
-  market!: PublicKey;
-  reserve!: PublicKey;
-  direction!: "deposit" | "borrow";
-}
+  constructor(
+    mintAddress: PublicKey,
+    decimals: number,
+    amount: BN,
+    price: number,
+    protocol: string,
+    protocolMeta: Record<string, any> = {}
+  ) {
+    this.mintAddress = mintAddress;
+    this.decimals = decimals;
+    this.amount = amount;
+    this.price = price;
+    this.protocol = protocol;
+    this.protocolMeta = protocolMeta;
+  }
 
-export class DriftSpotHolding extends Holding {
-  user!: PublicKey;
-  marketIndex!: number;
-  direction!: "deposit" | "borrow";
-}
-
-export class OutgoingBridgeHolding extends Holding {
-  destinationDomain!: number;
-  destinationAddress!: PublicKey;
-  status!: string;
-  delayReason!: string | null;
-  attestation!: string;
-}
-
-export class TokenHolding extends Holding {
-  tokenAccount!: PublicKey;
+  get uiAmount(): number {
+    return toUiAmount(this.amount, this.decimals);
+  }
 }
 
 export class VaultHoldings {
@@ -80,6 +75,7 @@ export class VaultHoldings {
 
   constructor(
     readonly vaultState: PublicKey,
+    readonly vaultPda: PublicKey,
     readonly slot: BN,
   ) {
     this.vaultState = vaultState;
@@ -254,7 +250,7 @@ export class PriceClient {
       tokenPricesMap,
     );
 
-    const ret = new VaultHoldings(this.base.vaultPda, slot);
+    const ret = new VaultHoldings(this.base.statePda, this.base.vaultPda, slot);
     tokenHoldings.forEach((holding) => ret.add(holding));
     driftSpotHoldings.forEach((holding) => ret.add(holding));
     kaminoLendHoldings.forEach((holding) => ret.add(holding));
@@ -351,8 +347,8 @@ export class PriceClient {
     tokenAccountPubkeys: PublicKey[],
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
-  ): TokenHolding[] {
-    const holdings: TokenHolding[] = [];
+  ): Holding[] {
+    const holdings: Holding[] = [];
     if (tokenAccountPubkeys.length === 0) {
       return holdings;
     }
@@ -365,16 +361,16 @@ export class PriceClient {
       const tokenInfo = tokenPricesMap.get(mint);
       if (tokenInfo) {
         const { decimals, usdPrice } = tokenInfo;
-        const holding = new TokenHolding();
-        Object.assign(holding, {
-          mintAddress: mint,
-          amount: new BN(amount),
-          uiAmount: toUiAmount(new BN(amount), decimals),
+        const holding = new Holding(
+          mint,
           decimals,
-          price: usdPrice,
-          protocol: "Token",
-          tokenAccount: pubkey,
-        });
+          new BN(amount),
+          usdPrice,
+          "Token",
+          {
+            tokenAccount: pubkey,
+          }
+        );
         holdings.push(holding);
       }
     }
@@ -387,8 +383,8 @@ export class PriceClient {
     spotMarketsMap: PkMap<SpotMarket>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
-  ): DriftSpotHolding[] {
-    const holdings: DriftSpotHolding[] = [];
+  ): Holding[] {
+    const holdings: Holding[] = [];
 
     for (const userPda of userPubkeys) {
       const { spotPositions } = decodeUser(accountsDataMap.get(userPda)!);
@@ -413,19 +409,19 @@ export class PriceClient {
           interest,
         );
 
-        const data = {
-          mintAddress: mint,
-          amount,
-          uiAmount: toUiAmount(amount, decimals),
+        const direction = Object.keys(balanceType)[0] as "deposit" | "borrow";
+        const holding = new Holding(
+          mint,
           decimals,
-          price: tokenPricesMap.get(mint)!.usdPrice,
-          protocol: "DriftProtocol",
-          user: userPda,
-          marketIndex: marketIndex,
-          direction: Object.keys(balanceType)[0] as "deposit" | "borrow",
-        };
-        const holding = new DriftSpotHolding();
-        Object.assign(holding, data);
+          amount,
+          tokenPricesMap.get(mint)!.usdPrice,
+          "DriftProtocol",
+          {
+            user: userPda,
+            marketIndex: marketIndex,
+            direction: direction,
+          }
+        );
         holdings.push(holding);
       }
     }
@@ -438,8 +434,8 @@ export class PriceClient {
     reservesMap: PkMap<ParsedReserve>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
-  ): KaminoLendHolding[] {
-    const holdings = [];
+  ): Holding[] {
+    const holdings: Holding[] = [];
     for (const obligation of obligationPubkeys) {
       const { deposits, borrows } = this.klend.parseObligation(
         obligation,
@@ -452,20 +448,19 @@ export class PriceClient {
           .div(parsedReserve.collateralExchangeRate)
           .floor();
         const amount = new BN(supplyAmount.toString());
-        const data = {
-          mintAddress: parsedReserve.liquidityMint,
+        const holding = new Holding(
+          parsedReserve.liquidityMint,
+          parsedReserve.liquidityMintDecimals,
           amount,
-          uiAmount: toUiAmount(amount, parsedReserve.liquidityMintDecimals),
-          decimals: parsedReserve.liquidityMintDecimals,
-          price: tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
-          protocol: "KaminoLend",
-          obligation,
-          market: parsedReserve.market,
-          reserve,
-          direction: "deposit",
-        };
-        const holding = new KaminoLendHolding();
-        Object.assign(holding, data);
+          tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
+          "KaminoLend",
+          {
+            obligation,
+            market: parsedReserve.market,
+            reserve,
+            direction: "deposit" as const,
+          }
+        );
         holdings.push(holding);
       }
 
@@ -485,20 +480,19 @@ export class PriceClient {
           .ceil();
 
         const amount = new BN(borrowAmount.toString());
-        const data = {
-          mintAddress: parsedReserve.liquidityMint,
+        const holding = new Holding(
+          parsedReserve.liquidityMint,
+          parsedReserve.liquidityMintDecimals,
           amount,
-          uiAmount: toUiAmount(amount, parsedReserve.liquidityMintDecimals),
-          decimals: parsedReserve.liquidityMintDecimals,
-          price: tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
-          protocol: "KaminoLend",
-          obligation,
-          market: parsedReserve.market,
-          reserve,
-          direction: "borrow",
-        };
-        const holding = new KaminoLendHolding();
-        Object.assign(holding, data);
+          tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
+          "KaminoLend",
+          {
+            obligation,
+            market: parsedReserve.market,
+            reserve,
+            direction: "borrow" as const,
+          }
+        );
         holdings.push(holding);
       }
     }
@@ -509,12 +503,12 @@ export class PriceClient {
   async getOutgoingBridgeHoldings(
     messagePubkeys: PublicKey[],
     tokenPricesMap: PkMap<TokenListItem>,
-  ): Promise<OutgoingBridgeHolding[]> {
+  ): Promise<Holding[]> {
     if (messagePubkeys.length === 0) {
       return [];
     }
 
-    const holdings: OutgoingBridgeHolding[] = [];
+    const holdings: Holding[] = [];
     const txns = new Set<string>(); // multiple messages could be in the same tx
     for (const pubkey of messagePubkeys) {
       const sigs = await this.base.connection.getSignaturesForAddress(pubkey);
@@ -545,21 +539,20 @@ export class PriceClient {
         throw new Error(`Unsupported token: ${token}`);
       }
 
-      const data = {
-        mintAddress: new PublicKey(token),
-        amount: new BN(amount),
-        uiAmount: toUiAmount(new BN(amount), 6),
-        decimals: 6,
-        price: tokenPricesMap.get(new PublicKey(token))!.usdPrice,
-        protocol: "CCTP",
-        destinationDomain,
-        destinationAddress,
-        status,
-        delayReason,
-        attestation,
-      };
-      const holding = new OutgoingBridgeHolding();
-      Object.assign(holding, data);
+      const holding = new Holding(
+        new PublicKey(token),
+        6,
+        new BN(amount),
+        tokenPricesMap.get(new PublicKey(token))!.usdPrice,
+        "CCTP",
+        {
+          destinationDomain,
+          destinationAddress,
+          status,
+          delayReason,
+          attestation,
+        }
+      );
       holdings.push(holding);
     }
 
