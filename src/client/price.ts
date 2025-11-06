@@ -42,31 +42,17 @@ import {
 import { fetchTokensList, TokenListItem } from "./jupiter";
 
 export class Holding {
-  mintAddress!: PublicKey;
-  decimals!: number;
-  amount!: BN;
-  price!: number;
-  protocol!: string;
-  protocolMeta!: Record<string, any>;
+  readonly uiAmount!: number;
 
   constructor(
-    mintAddress: PublicKey,
-    decimals: number,
-    amount: BN,
-    price: number,
-    protocol: string,
-    protocolMeta: Record<string, any> = {}
+    readonly mintAddress: PublicKey,
+    readonly decimals: number,
+    readonly amount: BN,
+    readonly price: number,
+    readonly protocol: string,
+    readonly protocolMeta: Record<string, any> = {},
   ) {
-    this.mintAddress = mintAddress;
-    this.decimals = decimals;
-    this.amount = amount;
-    this.price = price;
-    this.protocol = protocol;
-    this.protocolMeta = protocolMeta;
-  }
-
-  get uiAmount(): number {
-    return toUiAmount(this.amount, this.decimals);
+    this.uiAmount = toUiAmount(this.amount, this.decimals);
   }
 }
 
@@ -76,15 +62,20 @@ export class VaultHoldings {
   constructor(
     readonly vaultState: PublicKey,
     readonly vaultPda: PublicKey,
-    readonly slot: BN,
+    readonly priceBaseAssetMint: PublicKey,
+    readonly slot: number,
+    readonly timestamp: number,
+    readonly commitment: Commitment,
   ) {
-    this.vaultState = vaultState;
-    this.slot = slot;
     this.holdings = [];
   }
 
   add(holding: Holding) {
     this.holdings.push(holding);
+  }
+
+  toJson() {
+    return JSON.stringify(this, null, 2);
   }
 }
 
@@ -153,17 +144,16 @@ export class PriceClient {
    * Fetches all holdings in the vault.
    *
    * @param commitment Commitment level for fetching accounts
-   * @param priceBaseAssetMint Price denominator asset mint (USDC, SOL, JLP etc.)
+   * @param priceBaseAssetMint Price reference/numeraire asset mint (default: USD)
    * @returns VaultHoldings object containing all holdings
    */
   async getVaultHoldings(
     commitment: Commitment,
-    priceBaseAssetMint?: PublicKey,
+    priceBaseAssetMint: PublicKey = PublicKey.default,
   ): Promise<VaultHoldings> {
     const tokenPubkeys = await this.getPubkeysForTokenHoldings(commitment);
     const driftPubkeys = await this.getPubkeysForSpotHoldings(commitment); // user -> markets map
     const kaminoPubkeys = await this.getPubkeysForKaminoHoldings(commitment); // obligation -> reserves map
-    const cctpPubkeys = await this.cctp.findV2Messages(this.base.vaultPda);
 
     const driftUsers = Array.from(driftPubkeys.pkKeys());
     const driftSpotMarkets = [...driftPubkeys.values()]
@@ -179,7 +169,7 @@ export class PriceClient {
     const pubkeys = Array.from(
       new PkSet(
         tokenPubkeys.concat(
-          cctpPubkeys,
+          // cctpPubkeys,
           ...driftUsers,
           ...driftSpotMarkets,
           ...kaminoObligations,
@@ -233,10 +223,6 @@ export class PriceClient {
       accountsDataMap,
       tokenPricesMap,
     );
-    const outgoingBridgeHoldings = await this.getOutgoingBridgeHoldings(
-      cctpPubkeys,
-      tokenPricesMap,
-    );
     const driftSpotHoldings = this.getDriftSpotHoldings(
       driftPubkeys.pkKeys(),
       driftSpotMarketsMap,
@@ -250,11 +236,18 @@ export class PriceClient {
       tokenPricesMap,
     );
 
-    const ret = new VaultHoldings(this.base.statePda, this.base.vaultPda, slot);
+    const timestamp = await this.base.connection.getBlockTime(slot);
+    const ret = new VaultHoldings(
+      this.base.statePda,
+      this.base.vaultPda,
+      priceBaseAssetMint,
+      slot,
+      timestamp!,
+      commitment,
+    );
     tokenHoldings.forEach((holding) => ret.add(holding));
     driftSpotHoldings.forEach((holding) => ret.add(holding));
     kaminoLendHoldings.forEach((holding) => ret.add(holding));
-    outgoingBridgeHoldings.forEach((holding) => ret.add(holding));
     return ret;
   }
 
@@ -369,7 +362,7 @@ export class PriceClient {
           "Token",
           {
             tokenAccount: pubkey,
-          }
+          },
         );
         holdings.push(holding);
       }
@@ -420,7 +413,7 @@ export class PriceClient {
             user: userPda,
             marketIndex: marketIndex,
             direction: direction,
-          }
+          },
         );
         holdings.push(holding);
       }
@@ -459,7 +452,7 @@ export class PriceClient {
             market: parsedReserve.market,
             reserve,
             direction: "deposit" as const,
-          }
+          },
         );
         holdings.push(holding);
       }
@@ -491,69 +484,10 @@ export class PriceClient {
             market: parsedReserve.market,
             reserve,
             direction: "borrow" as const,
-          }
+          },
         );
         holdings.push(holding);
       }
-    }
-
-    return holdings;
-  }
-
-  async getOutgoingBridgeHoldings(
-    messagePubkeys: PublicKey[],
-    tokenPricesMap: PkMap<TokenListItem>,
-  ): Promise<Holding[]> {
-    if (messagePubkeys.length === 0) {
-      return [];
-    }
-
-    const holdings: Holding[] = [];
-    const txns = new Set<string>(); // multiple messages could be in the same tx
-    for (const pubkey of messagePubkeys) {
-      const sigs = await this.base.connection.getSignaturesForAddress(pubkey);
-      // find the sig with smallest slot
-      const createdTx = sigs.sort((a, b) => a.slot - b.slot)[0];
-      txns.add(createdTx.signature);
-    }
-
-    for (const tx of txns) {
-      // Call iris api to get the message using each txSig
-      const resonse = await fetch(
-        `https://iris-api.circle.com/v2/messages/5?transactionHash=${tx}`,
-      );
-      const { messages } = await resonse.json();
-      const message = messages[0];
-      const attestation = message.attestation;
-      const status = message.status;
-      const delayReason = message.delayReason;
-      const destinationDomain = Number(
-        message.decodedMessage.destinationDomain,
-      );
-      const destinationAddress =
-        message.decodedMessage.decodedMessageBody.mintRecipient;
-      const amount = message.decodedMessage.decodedMessageBody.amount;
-      const token = message.decodedMessage.decodedMessageBody.burnToken;
-
-      if (token !== USDC.toBase58()) {
-        throw new Error(`Unsupported token: ${token}`);
-      }
-
-      const holding = new Holding(
-        new PublicKey(token),
-        6,
-        new BN(amount),
-        tokenPricesMap.get(new PublicKey(token))!.usdPrice,
-        "CCTP",
-        {
-          destinationDomain,
-          destinationAddress,
-          status,
-          delayReason,
-          attestation,
-        }
-      );
-      holdings.push(holding);
     }
 
     return holdings;
