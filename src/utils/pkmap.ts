@@ -105,7 +105,7 @@ export class PkMap<V> {
    * @param callbackfn - Function to execute for each entry
    * @param thisArg - Value to use as this when executing callback
    */
-  forEachPk(
+  forEach(
     callbackfn: (value: V, key: PublicKey, map: PkMap<V>) => void,
     thisArg?: any,
   ): void {

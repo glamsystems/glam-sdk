@@ -204,7 +204,7 @@ export class PriceClient {
     // Build a map of parsed kamino reserves
     const kaminoReservesMap = new PkMap<ParsedReserve>();
     for (let i = 0; i < kaminoReserves.length; i++) {
-      const reserve = this.klend.parseReserveAccount(
+      const reserve = this.klend.parseReserve(
         kaminoReserves[i],
         accountsDataMap.get(kaminoReserves[i])!,
       );
@@ -527,7 +527,7 @@ export class PriceClient {
     const parsedReserves = await this.klend.fetchAndParseReserves(
       Array.from(reservesSet),
     );
-    ixs.push(this.klend.refreshReservesBatchIxV2(parsedReserves, false));
+    ixs.push(this.klend.refreshReservesBatchIx(parsedReserves, false));
 
     // Refresh obligations
     parsedObligations.forEach(({ address: obligation, lendingMarket }) => {
@@ -633,7 +633,7 @@ export class PriceClient {
       )
     ).flat();
 
-    const processed = new Set<string>();
+    const processed = new PkSet();
     const reserves = [] as PublicKey[];
     const markets = [] as PublicKey[];
     const chunkSize = 2;
@@ -646,16 +646,16 @@ export class PriceClient {
       remainingAccounts.push(chunk[1]);
 
       // record reserves and markets for refreshReservesBatchIx
-      if (!processed.has(reserve.toBase58())) {
+      if (!processed.has(reserve)) {
         reserves.push(reserve);
         markets.push(market);
-        processed.add(reserve.toBase58());
+        processed.add(reserve);
       }
     }
 
+    const parsedReserves = await this.klend.fetchAndParseReserves(reserves);
     const refreshReservesIx = this.klend.refreshReservesBatchIx(
-      reserves,
-      markets,
+      parsedReserves,
       false, // always update prices
     );
     const preInstructions = [refreshReservesIx];
@@ -711,7 +711,7 @@ export class PriceClient {
     }
 
     // Build a set of markets and oracles that are used by all sub accounts
-    const marketsAndOracles = new Set<string>();
+    const marketsAndOracles = new PkSet();
     const spotMarketIndexes = new Set<number>(
       driftUsers.map((u) => u.spotPositions.map((p) => p.marketIndex)).flat(),
     );
@@ -725,18 +725,18 @@ export class PriceClient {
       Array.from(perpMarketIndexes),
     );
     spotMarkets.forEach((m) => {
-      marketsAndOracles.add(m.oracle.toBase58());
-      marketsAndOracles.add(m.marketPda.toBase58());
+      marketsAndOracles.add(m.oracle);
+      marketsAndOracles.add(m.marketPda);
     });
     perpMarkets.forEach((m) => {
-      marketsAndOracles.add(m.oracle.toBase58());
-      marketsAndOracles.add(m.marketPda.toBase58());
+      marketsAndOracles.add(m.oracle);
+      marketsAndOracles.add(m.marketPda);
     });
 
     // Add markets and oracles to remaining accounts
     Array.from(marketsAndOracles).map((pubkey) =>
       remainingAccounts.push({
-        pubkey: new PublicKey(pubkey),
+        pubkey,
         isSigner: false,
         isWritable: false,
       }),
@@ -965,9 +965,9 @@ export class PriceClient {
     // - perp markets used by drift users of vaults (no specific order)
     // - oracles of spot markets and perp markets (no specific order)
     const remainingAccounts: AccountMeta[] = [];
-    const spotMarketsSet = new Set<string>();
-    const perpMarketsSet = new Set<string>();
-    const oraclesSet = new Set<string>();
+    const spotMarketsSet = new PkSet();
+    const perpMarketsSet = new PkSet();
+    const oraclesSet = new PkSet();
     for (const { address: depositor, driftVault } of parsedVaultDepositors) {
       const { user } = await this.dvaults.parseDriftVault(driftVault); // get drift user used by the vault
       [depositor, driftVault, user].forEach((k) =>
@@ -994,18 +994,18 @@ export class PriceClient {
         await this.drift.fetchAndParsePerpMarkets(perpMarketIndexes);
 
       spotMarkets.forEach((m) => {
-        oraclesSet.add(m.oracle.toBase58());
-        spotMarketsSet.add(m.marketPda.toBase58());
+        oraclesSet.add(m.oracle);
+        spotMarketsSet.add(m.marketPda);
       });
       perpMarkets.forEach((m) => {
-        oraclesSet.add(m.oracle.toBase58());
-        perpMarketsSet.add(m.marketPda.toBase58());
+        oraclesSet.add(m.oracle);
+        perpMarketsSet.add(m.marketPda);
       });
     }
 
-    [...spotMarketsSet, ...perpMarketsSet, ...oraclesSet].forEach((k) =>
+    [...spotMarketsSet, ...perpMarketsSet, ...oraclesSet].forEach((pubkey) =>
       remainingAccounts.push({
-        pubkey: new PublicKey(k),
+        pubkey,
         isSigner: false,
         isWritable: false,
       }),

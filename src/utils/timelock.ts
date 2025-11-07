@@ -1,7 +1,12 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { IntegrationAcl, DelegateAcl } from "../models";
-import { parseProtocolsBitmask, parseProtocolPermissionsBitmask } from "./bitmask";
+import {
+  parseProtocolsBitmask,
+  parseProtocolPermissionsBitmask,
+} from "./bitmask";
+import { PkMap } from "./pkmap";
+import { PkSet } from "./pkset";
 
 /**
  * Get protocol names from a bitmask for a given integration program
@@ -12,7 +17,7 @@ export function getProtocolNamesFromBitmask(
   bitmask: number,
 ): string[] {
   const { protocols } = parseProtocolsBitmask(integrationProgram, bitmask);
-  return protocols.map(p => p.name);
+  return protocols.map((p) => p.name);
 }
 
 /**
@@ -29,7 +34,7 @@ export function getPermissionNamesFromBitmask(
     protocolBitflag,
     permissionsBitmask,
   );
-  return permissions.map(p => p.name);
+  return permissions.map((p) => p.name);
 }
 
 /**
@@ -59,33 +64,33 @@ export function compareIntegrationAcls(
     disabledProtocols: string[];
   }> = [];
 
-  const currentMap = new Map<string, IntegrationAcl>();
+  const currentMap = new PkMap<IntegrationAcl>();
   (current || []).forEach((acl) => {
-    currentMap.set(acl.integrationProgram.toBase58(), acl);
+    currentMap.set(acl.integrationProgram, acl);
   });
 
-  const stagedMap = new Map<string, IntegrationAcl>();
+  const stagedMap = new PkMap<IntegrationAcl>();
   (staged || []).forEach((acl) => {
-    stagedMap.set(acl.integrationProgram.toBase58(), acl);
+    stagedMap.set(acl.integrationProgram, acl);
   });
 
   // Find added integrations
-  stagedMap.forEach((stagedAcl, programId) => {
-    if (!currentMap.has(programId)) {
+  stagedMap.forEach((stagedAcl, integrationProgram) => {
+    if (!currentMap.has(integrationProgram)) {
       added.push(stagedAcl);
     }
   });
 
   // Find removed integrations
-  currentMap.forEach((currentAcl, programId) => {
-    if (!stagedMap.has(programId)) {
+  currentMap.forEach((currentAcl, integrationProgram) => {
+    if (!stagedMap.has(integrationProgram)) {
       removed.push(currentAcl);
     }
   });
 
   // Find modified integrations (changed bitmask)
-  currentMap.forEach((currentAcl, programId) => {
-    const stagedAcl = stagedMap.get(programId);
+  currentMap.forEach((currentAcl, integrationProgram) => {
+    const stagedAcl = stagedMap.get(integrationProgram);
     if (
       stagedAcl &&
       currentAcl.protocolsBitmask !== stagedAcl.protocolsBitmask
@@ -154,14 +159,14 @@ export function compareDelegateAcls(
     }>;
   }> = [];
 
-  const currentMap = new Map<string, DelegateAcl>();
+  const currentMap = new PkMap<DelegateAcl>();
   (current || []).forEach((acl) => {
-    currentMap.set(acl.pubkey.toBase58(), acl);
+    currentMap.set(acl.pubkey, acl);
   });
 
-  const stagedMap = new Map<string, DelegateAcl>();
+  const stagedMap = new PkMap<DelegateAcl>();
   (staged || []).forEach((acl) => {
-    stagedMap.set(acl.pubkey.toBase58(), acl);
+    stagedMap.set(acl.pubkey, acl);
   });
 
   // Find added delegates
@@ -191,36 +196,35 @@ export function compareDelegateAcls(
     }> = [];
 
     // Create maps for easier comparison
-    const currentPermissionsMap = new Map<string, Map<number, BN>>();
+    const currentPermissionsMap = new PkMap<Map<number, BN>>();
     currentAcl.integrationPermissions.forEach((intPerm) => {
-      const programId = intPerm.integrationProgram.toBase58();
       const protocolMap = new Map<number, BN>();
       intPerm.protocolPermissions.forEach((protPerm) => {
         protocolMap.set(protPerm.protocolBitflag, protPerm.permissionsBitmask);
       });
-      currentPermissionsMap.set(programId, protocolMap);
+      currentPermissionsMap.set(intPerm.integrationProgram, protocolMap);
     });
 
-    const stagedPermissionsMap = new Map<string, Map<number, BN>>();
+    const stagedPermissionsMap = new PkMap<Map<number, BN>>();
     stagedAcl.integrationPermissions.forEach((intPerm) => {
-      const programId = intPerm.integrationProgram.toBase58();
       const protocolMap = new Map<number, BN>();
       intPerm.protocolPermissions.forEach((protPerm) => {
         protocolMap.set(protPerm.protocolBitflag, protPerm.permissionsBitmask);
       });
-      stagedPermissionsMap.set(programId, protocolMap);
+      stagedPermissionsMap.set(intPerm.integrationProgram, protocolMap);
     });
 
     // Check all integration programs and protocols
-    const allProgramIds = new Set([
-      ...currentPermissionsMap.keys(),
-      ...stagedPermissionsMap.keys(),
+    const allProgramIds = new PkSet([
+      ...currentPermissionsMap.pkKeys(),
+      ...stagedPermissionsMap.pkKeys(),
     ]);
 
-    allProgramIds.forEach((programId) => {
-      const currentProtocols = currentPermissionsMap.get(programId) || new Map();
-      const stagedProtocols = stagedPermissionsMap.get(programId) || new Map();
-      const integrationProgram = new PublicKey(programId);
+    allProgramIds.forEach((integrationProgram) => {
+      const currentProtocols =
+        currentPermissionsMap.get(integrationProgram) || new Map();
+      const stagedProtocols =
+        stagedPermissionsMap.get(integrationProgram) || new Map();
 
       const allProtocolBitflags = new Set([
         ...currentProtocols.keys(),

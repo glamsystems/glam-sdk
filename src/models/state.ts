@@ -16,6 +16,7 @@ import { MintPolicy } from "../deser/integrationPolicies";
 import { MintModel } from "./mint";
 import type { RequestQueue } from "./types";
 import type { IntegrationAcl, DelegateAcl } from "./acl";
+import { PkSet } from "../utils";
 
 export type StateAccount = IdlAccounts<GlamProtocol>["stateAccount"];
 
@@ -155,10 +156,8 @@ export class StateModel extends StateIdlModel {
 
   // A union set of assets and borrowable assets
   get assetsForPricing(): PublicKey[] {
-    const assets = new Set<string>([]);
-    this.assets?.forEach((a) => assets.add(a.toBase58()));
-    this.borrowable?.forEach((b) => assets.add(b.toBase58()));
-    return Array.from(assets).map((k) => new PublicKey(k));
+    const assets = new PkSet([...this.assets, ...(this.borrowable || [])]);
+    return Array.from(assets);
   }
 
   /**

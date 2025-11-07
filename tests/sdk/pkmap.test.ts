@@ -172,9 +172,7 @@ describe("PkMap", () => {
       const entries = Array.from(map.pkEntries());
       expect(entries).toHaveLength(2);
 
-      const entryMap = new Map(
-        entries.map(([k, v]) => [k.toBase58(), v]),
-      );
+      const entryMap = new Map(entries.map(([k, v]) => [k.toBase58(), v]));
       expect(entryMap.get(testKey1.toBase58())).toBe("value1");
       expect(entryMap.get(testKey2.toBase58())).toBe("value2");
     });
@@ -186,22 +184,20 @@ describe("PkMap", () => {
     });
   });
 
-  describe("forEachPk()", () => {
+  describe("forEach()", () => {
     it("should iterate over all entries with PublicKey keys", () => {
       const map = new PkMap<string>();
       map.set(testKey1, "value1");
       map.set(testKey2, "value2");
 
       const results: [PublicKey, string][] = [];
-      map.forEachPk((value, key) => {
+      map.forEach((value, key) => {
         results.push([key, value]);
       });
 
       expect(results).toHaveLength(2);
 
-      const resultMap = new Map(
-        results.map(([k, v]) => [k.toBase58(), v]),
-      );
+      const resultMap = new Map(results.map(([k, v]) => [k.toBase58(), v]));
       expect(resultMap.get(testKey1.toBase58())).toBe("value1");
       expect(resultMap.get(testKey2.toBase58())).toBe("value2");
     });
@@ -210,7 +206,7 @@ describe("PkMap", () => {
       const map = new PkMap<string>();
       map.set(testKey1, "value1");
 
-      map.forEachPk(function (this: any, value, key, m) {
+      map.forEach(function (this: any, value, key, m) {
         expect(m).toBe(map);
       });
     });
@@ -220,7 +216,7 @@ describe("PkMap", () => {
       map.set(testKey1, "value1");
 
       const context = { test: "context" };
-      map.forEachPk(function (this: any) {
+      map.forEach(function (this: any) {
         expect(this).toBe(context);
       }, context);
     });
@@ -229,7 +225,7 @@ describe("PkMap", () => {
       const map = new PkMap<string>();
       let executed = false;
 
-      map.forEachPk(() => {
+      map.forEach(() => {
         executed = true;
       });
 
@@ -411,9 +407,7 @@ describe("PkMap", () => {
       // Create 100 random keys
       for (let i = 0; i < 100; i++) {
         const key = new PublicKey(
-          Array.from({ length: 32 }, () =>
-            Math.floor(Math.random() * 256),
-          ),
+          Array.from({ length: 32 }, () => Math.floor(Math.random() * 256)),
         );
         keys.push(key);
         map.set(key, i);

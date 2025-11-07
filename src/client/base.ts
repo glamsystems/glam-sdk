@@ -73,6 +73,7 @@ import {
 } from "../utils/glamPDAs";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
 import { getGlamLookupTableAccounts } from "../utils/glamApi";
+import { PkMap } from "../utils";
 
 const LOOKUP_TABLES = [
   new PublicKey("284iwGtA9X9aLy3KsyV8uT2pXLARhYbiSi5SiM2g47M2"), // kamino lending
@@ -726,7 +727,7 @@ export class BaseClient {
             s.account.delegateAcls.some((acl) => acl.pubkey.equals(delegate))),
       );
 
-    let mintsCache = new Map<string, Mint>();
+    const mintsCache = new PkMap<Mint>();
     const mintPubkeys = filteredStateAccounts
       .map((s) => s.account.mint)
       .filter((p) => !p.equals(PublicKey.default));
@@ -735,21 +736,21 @@ export class BaseClient {
       mintPubkeys,
     );
     for (let i = 0; i < mintPubkeys.length; i++) {
-      mintsCache.set(mintPubkeys[i].toBase58(), mints[i].mint);
+      mintsCache.set(mintPubkeys[i], mints[i].mint);
     }
 
     // { publicKey, account: RequestQueue }[]
     const requestQueues = await this.mintProgram.account.requestQueue.all();
-    const requestQueueMap = new Map(
-      requestQueues.map((r) => [r.publicKey.toBase58(), r.account]),
+    const requestQueueMap = new PkMap(
+      requestQueues.map((r) => [r.publicKey, r.account]),
     );
 
     return filteredStateAccounts.map(({ publicKey, account: stateAccount }) => {
-      const mint = mintsCache.get(stateAccount.mint.toBase58());
+      const mint = mintsCache.get(stateAccount.mint);
       const requestQueuePda = mint
         ? getRequestQueuePda(stateAccount.mint, this.mintProgram.programId)
         : PublicKey.default;
-      const requestQueue = requestQueueMap.get(requestQueuePda.toBase58());
+      const requestQueue = requestQueueMap.get(requestQueuePda);
 
       return StateModel.fromOnchainAccounts(
         publicKey,

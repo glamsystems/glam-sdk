@@ -85,7 +85,7 @@ export class PkSet {
    * @param callbackfn - Function to execute for each value
    * @param thisArg - Value to use as this when executing callback
    */
-  forEachPk(
+  forEach(
     callbackfn: (value: PublicKey, value2: PublicKey, set: PkSet) => void,
     thisArg?: any,
   ): void {

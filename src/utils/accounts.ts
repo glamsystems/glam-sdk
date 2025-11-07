@@ -15,6 +15,7 @@ import {
   TOKEN_PROGRAM_ID,
   unpackMint,
 } from "@solana/spl-token";
+import { PkMap } from "./pkmap";
 
 export type StakeAccountInfo = {
   address: PublicKey;
@@ -64,20 +65,20 @@ export async function getTokenAccountsByOwner(
     );
 
   // Get mint decimals
-  const mintDecimalMap = new Map<string, number>();
+  const mintDecimalMap = new PkMap<number>();
   const mintAccountsInfo =
     await connection.getMultipleAccountsInfo(mintPubkeys);
   mintAccountsInfo.forEach((accountInfo, i) => {
     if (accountInfo) {
       const mint = unpackMint(mintPubkeys[i], accountInfo, accountInfo.owner);
-      mintDecimalMap.set(mintPubkeys[i].toBase58(), mint.decimals);
+      mintDecimalMap.set(mintPubkeys[i], mint.decimals);
     }
   });
 
   // Enrich token accounts with decimals and uiAmount
   return partialTokenAccounts
     .map((ta) => {
-      const decimals = mintDecimalMap.get(ta.mint.toBase58());
+      const decimals = mintDecimalMap.get(ta.mint);
       if (!decimals) {
         return null;
       }

@@ -198,24 +198,21 @@ describe("PkSet", () => {
     });
   });
 
-  describe("forEachPk()", () => {
+  describe("forEach()", () => {
     it("should iterate over all values", () => {
       const set = new PkSet();
       set.add(testKey1);
       set.add(testKey2);
 
       const results: PublicKey[] = [];
-      set.forEachPk((value) => {
+      set.forEach((value) => {
         results.push(value);
       });
 
       expect(results).toHaveLength(2);
 
       const resultStrings = results.map((k) => k.toBase58()).sort();
-      const expectedStrings = [
-        testKey1.toBase58(),
-        testKey2.toBase58(),
-      ].sort();
+      const expectedStrings = [testKey1.toBase58(), testKey2.toBase58()].sort();
 
       expect(resultStrings).toEqual(expectedStrings);
     });
@@ -224,7 +221,7 @@ describe("PkSet", () => {
       const set = new PkSet();
       set.add(testKey1);
 
-      set.forEachPk((value1, value2) => {
+      set.forEach((value1, value2) => {
         expect(value1.toBase58()).toBe(value2.toBase58());
         expect(value1.toBase58()).toBe(testKey1.toBase58());
       });
@@ -234,7 +231,7 @@ describe("PkSet", () => {
       const set = new PkSet();
       set.add(testKey1);
 
-      set.forEachPk(function (this: any, value1, value2, s) {
+      set.forEach(function (this: any, value1, value2, s) {
         expect(s).toBe(set);
       });
     });
@@ -244,7 +241,7 @@ describe("PkSet", () => {
       set.add(testKey1);
 
       const context = { test: "context" };
-      set.forEachPk(function (this: any) {
+      set.forEach(function (this: any) {
         expect(this).toBe(context);
       }, context);
     });
@@ -253,7 +250,7 @@ describe("PkSet", () => {
       const set = new PkSet();
       let executed = false;
 
-      set.forEachPk(() => {
+      set.forEach(() => {
         executed = true;
       });
 
@@ -315,10 +312,7 @@ describe("PkSet", () => {
 
       expect(values).toHaveLength(2);
       const valueStrings = values.map((k) => k.toBase58()).sort();
-      const expectedStrings = [
-        testKey1.toBase58(),
-        testKey2.toBase58(),
-      ].sort();
+      const expectedStrings = [testKey1.toBase58(), testKey2.toBase58()].sort();
       expect(valueStrings).toEqual(expectedStrings);
     });
 
