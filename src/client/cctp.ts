@@ -6,6 +6,10 @@ import {
   Keypair,
   Commitment,
   Finality,
+  AccountMeta,
+  TransactionInstruction,
+  Transaction,
+  SystemProgram,
 } from "@solana/web3.js";
 
 import { BaseClient, TxOptions } from "./base";
@@ -15,9 +19,14 @@ import {
   USDC,
   USDC_DEVNET,
 } from "../constants";
-import { toUiAmount } from "../utils";
+import { hexToBytes, toUiAmount } from "../utils";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { struct, array, u8, vec } from "@coral-xyz/borsh";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
+const RECEIVE_MESSAGE_DISCM = Buffer.from([
+  38, 144, 127, 225, 31, 225, 238, 25,
+]);
 const EMIT_CPI_IX_DISCM = new Uint8Array([
   0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d,
 ]);
@@ -69,6 +78,26 @@ export class CctpClient {
       txOptions,
     );
     return await this.base.sendAndConfirm(tx, [keypair]);
+  }
+
+  public async receiveUsdc(
+    sourceDomain: number,
+    params: {
+      txHash?: string;
+      nonce?: string;
+    },
+    txOptions: TxOptions = {},
+  ) {
+    const messages = await this.fetchV2Messages(sourceDomain, params);
+    const receiveMessageIxs = [];
+    for (const message of messages) {
+      const ix = await this.buildReceiveMessageIx(sourceDomain, message);
+      receiveMessageIxs.push(ix);
+    }
+
+    const tx = new Transaction().add(...receiveMessageIxs);
+    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.base.sendAndConfirm(vTx);
   }
 
   /**
@@ -138,6 +167,227 @@ export class CctpClient {
     ];
   }
 
+  async buildReceiveMessageIx(sourceDomain: number, messageObj: any) {
+    const {
+      message,
+      attestation,
+      eventNonce,
+      decodedMessage: {
+        decodedMessageBody: { burnToken },
+      },
+    } = messageObj;
+
+    // message, attestation, eventNonce, burnToken are hex strings
+    const pdas = await this.getReceiveMessagePdas(
+      MESSAGE_TRANSMITTER_V2,
+      TOKEN_MESSENGER_MINTER_V2,
+      USDC,
+      burnToken,
+      sourceDomain.toString(),
+      eventNonce,
+    );
+
+    // raw ix data: [discriminator][message][attestation]
+    const messageBuffer = Buffer.from(message.replace("0x", ""), "hex");
+    const attestationBuffer = Buffer.from(attestation.replace("0x", ""), "hex");
+
+    const keys: Array<AccountMeta> = [
+      { pubkey: this.base.signer, isSigner: false, isWritable: true }, // payer
+      { pubkey: this.base.signer, isSigner: false, isWritable: false }, // caller
+      { pubkey: pdas.authorityPda, isSigner: false, isWritable: false }, // authority pda
+      {
+        pubkey: pdas.messageTransmitter,
+        isSigner: false,
+        isWritable: false,
+      }, // messageTransmitter
+      { pubkey: pdas.usedNonce, isSigner: false, isWritable: true }, // usedNonce
+      {
+        pubkey: TOKEN_MESSENGER_MINTER_V2,
+        isSigner: false,
+        isWritable: true,
+      }, // receiver
+      {
+        pubkey: SystemProgram.programId,
+        isSigner: false,
+        isWritable: false,
+      }, // system program
+      {
+        pubkey: PublicKey.findProgramAddressSync(
+          [Buffer.from("__event_authority")],
+          MESSAGE_TRANSMITTER_V2,
+        )[0],
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: MESSAGE_TRANSMITTER_V2,
+        isSigner: false,
+        isWritable: false,
+      },
+      { isSigner: false, isWritable: false, pubkey: pdas.tokenMessenger },
+      {
+        isSigner: false,
+        isWritable: false,
+        pubkey: pdas.remoteTokenMessengerKey,
+      },
+      {
+        isSigner: false,
+        isWritable: true,
+        pubkey: pdas.tokenMinter,
+      },
+      {
+        isSigner: false,
+        isWritable: true,
+        pubkey: pdas.localToken,
+      },
+      {
+        isSigner: false,
+        isWritable: false,
+        pubkey: pdas.tokenPair,
+      },
+      {
+        isSigner: false,
+        isWritable: true,
+        pubkey: pdas.feeRecipientTokenAccount,
+      },
+      {
+        isSigner: false,
+        isWritable: true,
+        pubkey: this.base.getVaultAta(USDC),
+      },
+      {
+        isSigner: false,
+        isWritable: true,
+        pubkey: pdas.custodyTokenAccount,
+      },
+      {
+        isSigner: false,
+        isWritable: false,
+        pubkey: TOKEN_PROGRAM_ID,
+      },
+      {
+        isSigner: false,
+        isWritable: false,
+        pubkey: pdas.tokenMessengerEventAuthority,
+      },
+      {
+        isSigner: false,
+        isWritable: false,
+        pubkey: TOKEN_MESSENGER_MINTER_V2,
+      },
+    ];
+
+    const buffer = Buffer.alloc(2000);
+    const layout = struct([
+      array(u8(), 8, "discriminator"),
+      vec(u8(), "message"),
+      vec(u8(), "attestation"),
+    ]);
+    const len = layout.encode(
+      {
+        discriminator: RECEIVE_MESSAGE_DISCM,
+        message: messageBuffer,
+        attestation: attestationBuffer,
+      },
+      buffer,
+    );
+    const ixData = buffer.subarray(0, len);
+    return new TransactionInstruction({
+      keys,
+      data: ixData,
+      programId: MESSAGE_TRANSMITTER_V2,
+    });
+  }
+
+  private async getReceiveMessagePdas(
+    messageTransmitterProgram: PublicKey,
+    tokenMessengerMinterProgram: PublicKey,
+    solUsdcMint: PublicKey,
+    remoteUsdcAddressHex: string,
+    remoteDomain: string,
+    nonceHex: string,
+  ) {
+    const tokenMessenger = PublicKey.findProgramAddressSync(
+      [Buffer.from("token_messenger")],
+      tokenMessengerMinterProgram,
+    )[0];
+    const messageTransmitter = PublicKey.findProgramAddressSync(
+      [Buffer.from("message_transmitter")],
+      messageTransmitterProgram,
+    )[0];
+    const tokenMinter = PublicKey.findProgramAddressSync(
+      [Buffer.from("token_minter")],
+      tokenMessengerMinterProgram,
+    )[0];
+    const localToken = PublicKey.findProgramAddressSync(
+      [Buffer.from("local_token"), solUsdcMint.toBuffer()],
+      tokenMessengerMinterProgram,
+    )[0];
+    const remoteTokenMessengerKey = PublicKey.findProgramAddressSync(
+      [Buffer.from("remote_token_messenger"), Buffer.from(remoteDomain)],
+      tokenMessengerMinterProgram,
+    )[0];
+    const remoteTokenKey = new PublicKey(hexToBytes(remoteUsdcAddressHex));
+    const tokenPair = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("token_pair"),
+        Buffer.from(remoteDomain),
+        remoteTokenKey.toBuffer(),
+      ],
+      tokenMessengerMinterProgram,
+    )[0];
+    const custodyTokenAccount = PublicKey.findProgramAddressSync(
+      [Buffer.from("custody"), solUsdcMint.toBuffer()],
+      tokenMessengerMinterProgram,
+    )[0];
+    const authorityPda = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("message_transmitter_authority"),
+        tokenMessengerMinterProgram.toBuffer(),
+      ],
+      messageTransmitterProgram,
+    )[0];
+    const tokenMessengerEventAuthority = PublicKey.findProgramAddressSync(
+      [Buffer.from("__event_authority")],
+      tokenMessengerMinterProgram,
+    )[0];
+
+    const nonce = hexToBytes(nonceHex);
+    const usedNonce = PublicKey.findProgramAddressSync(
+      [Buffer.from("used_nonce"), Buffer.from(nonce)],
+      messageTransmitterProgram,
+    )[0];
+
+    const accountInfo =
+      await this.base.connection.getAccountInfo(tokenMessenger);
+    if (!accountInfo) {
+      throw new Error("Token messenger account not found");
+    }
+
+    const feeRecipient = new PublicKey(
+      accountInfo.data.subarray(109, 109 + 32),
+    );
+    const feeRecipientTokenAccount = this.base.getAta(
+      solUsdcMint,
+      feeRecipient,
+    );
+
+    return {
+      messageTransmitter,
+      tokenMessenger,
+      tokenMinter,
+      localToken,
+      remoteTokenMessengerKey,
+      remoteTokenKey,
+      tokenPair,
+      custodyTokenAccount,
+      authorityPda,
+      tokenMessengerEventAuthority,
+      usedNonce,
+      feeRecipientTokenAccount,
+    };
+  }
+
   /**
    * Get all PDAs required for CCTP deposit for burn operation
    *
@@ -196,7 +446,11 @@ export class CctpClient {
     };
   }
 
-  // TODO: filter by burned token mint
+  /**
+   * Find all message accounts onchain for a given sender
+   *
+   * TODO: filter by burned token mint
+   */
   async findV2Messages(
     sender: PublicKey,
     options: {
@@ -218,10 +472,11 @@ export class CctpClient {
     return accounts.map(({ pubkey }) => pubkey);
   }
 
-  async fromAttestion(
+  async fetchV2Messages(
     sourceDomain: number,
-    { txHash, nonce }: { txHash?: string; nonce?: string },
-  ): Promise<CctpBridgeEvent[]> {
+    params: { txHash?: string; nonce?: string },
+  ): Promise<any[]> {
+    const { txHash, nonce } = params;
     if (!txHash && !nonce) {
       throw new Error("txHash or nonce is required");
     }
@@ -233,12 +488,29 @@ export class CctpClient {
       queryParams.set("nonce", nonce);
     }
 
-    const events = [];
     const resonse = await fetch(
-      `https://iris-api.circle.com/v2/messages/${sourceDomain}?${queryParams.toString()}`,
+      `https://iris-api.circle.com/v2/messages/${sourceDomain}?${queryParams}`,
     );
     const { messages } = await resonse.json();
-    for (const message of messages) {
+    return messages;
+  }
+
+  /**
+   * Get bridge events from Circle API using either txHash or nonce
+   *
+   * @param sourceDomain Source domain
+   * @param params Either txHash or nonce is required
+   * @returns Array of bridge events
+   */
+  async parseEventsFromAttestion(
+    sourceDomain: number,
+    { txHash, nonce }: { txHash?: string; nonce?: string },
+  ): Promise<CctpBridgeEvent[]> {
+    const messages = await this.fetchV2Messages(sourceDomain, {
+      txHash,
+      nonce,
+    });
+    return messages.map((message) => {
       const attestation = message.attestation;
       const status = message.status;
       const nonce = message.decodedMessage.nonce;
@@ -252,20 +524,21 @@ export class CctpClient {
       const amount = message.decodedMessage.decodedMessageBody.amount;
       const token = message.decodedMessage.decodedMessageBody.burnToken;
 
-      events.push(
-        new CctpBridgeEvent(
-          new BN(amount),
-          sourceDomain,
-          sourceAddress,
-          destinationDomain,
-          destinationAddress,
-          attestation,
-          nonce,
-          status,
-        ),
+      if (sourceDomain === 5 && token !== USDC.toBase58()) {
+        throw new Error("Invalid message, expected burn token to be USDC");
+      }
+
+      return new CctpBridgeEvent(
+        new BN(amount),
+        sourceDomain,
+        sourceAddress,
+        destinationDomain,
+        destinationAddress,
+        attestation,
+        nonce,
+        status,
       );
-    }
-    return events;
+    });
   }
 
   /**
@@ -276,8 +549,6 @@ export class CctpClient {
    * 1. Fetch all transactions involing the vault's USDC token account
    * 2. Filter transactions that contain the bridge events
    * 3. Parse the bridge events from the transactions
-   *
-   * @param options
    */
   async getIncomingBridgeEvents(options: {
     batchSize?: number;
@@ -359,7 +630,7 @@ export class CctpClient {
 
         // Fetch all messages from Circle API
         for (const [sourceDomain, nonce] of sourceAndNonce) {
-          const events = await this.fromAttestion(sourceDomain, {
+          const events = await this.parseEventsFromAttestion(sourceDomain, {
             nonce,
           });
           allEvents.push(...events);
@@ -377,8 +648,6 @@ export class CctpClient {
    * 1. Find all Message accounts for the vault
    * 2. Get the created transaction for each message account
    * 3. Call iris api to get the attestation status and parsed message using each tx hash
-   *
-   * @param options
    */
   async getOutgoingBridgeEvents(options: {
     batchSize?: number;
@@ -419,7 +688,7 @@ export class CctpClient {
 
     const allEvents: CctpBridgeEvent[] = [];
     for (const txHash of txHashes) {
-      const events = await this.fromAttestion(5, { txHash });
+      const events = await this.parseEventsFromAttestion(5, { txHash });
       allEvents.push(...events);
     }
 
