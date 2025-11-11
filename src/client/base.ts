@@ -383,20 +383,18 @@ export class BaseClient {
     tx: VersionedTransaction | Transaction,
     additionalSigners: Keypair[] = [],
   ): Promise<TransactionSignature> {
-    const connection = this.provider.connection;
-
     // Mainnet only: use dedicated connection for sending transactions if available
     const txConnection =
       this.cluster === ClusterNetwork.Mainnet
         ? new Connection(
             process.env?.NEXT_PUBLIC_TX_RPC ||
-              process.env.TX_RPC ||
-              connection.rpcEndpoint,
+              process.env?.TX_RPC ||
+              this.connection.rpcEndpoint,
             {
-              commitment: "confirmed",
+              commitment: this.connection.commitment,
             },
           )
-        : connection;
+        : this.connection;
 
     // This is just a convenient method so that in tests we can send legacy
     // txs, for example transfer SOL, create ATA, etc.
@@ -411,21 +409,18 @@ export class BaseClient {
       );
     }
 
-    let serializedTx: Uint8Array;
-
     // Anchor provider.sendAndConfirm forces a signature with the wallet, which we don't want
     // https://github.com/coral-xyz/anchor/blob/v0.30.0/ts/packages/anchor/src/provider.ts#L159
-    const wallet = this.wallet;
-    const signedTx = await wallet.signTransaction(tx);
+    const signedTx = await this.wallet.signTransaction(tx);
     if (additionalSigners && additionalSigners.length > 0) {
       signedTx.sign(additionalSigners);
     }
-    serializedTx = signedTx.serialize();
+    const serializedTx = signedTx.serialize();
 
+    // skip simulation since we just did it to compute CUs
+    // however this means that we need to reconstruct the error, if
+    // the tx fails onchain execution.
     const txSig = await txConnection.sendRawTransaction(serializedTx, {
-      // skip simulation since we just did it to compute CUs
-      // however this means that we need to reconstruct the error, if
-      // the tx fails on chain execution.
       skipPreflight: true,
     });
 
@@ -433,15 +428,11 @@ export class BaseClient {
       console.log("Confirming tx:", txSig);
     }
 
-    const latestBlockhash = await this.blockhashWithCache.get();
-    const res = await connection.confirmTransaction({
-      ...latestBlockhash,
-      signature: txSig,
-    });
+    const res = await this.confirmTransaction(txSig);
 
     // if the tx fails, throw an error including logs
     if (res.value.err) {
-      const errTx = await connection.getTransaction(txSig, {
+      const errTx = await this.connection.getTransaction(txSig, {
         maxSupportedTransactionVersion: 0,
       });
       throw new GlamError(
@@ -451,6 +442,48 @@ export class BaseClient {
       );
     }
     return txSig;
+  }
+
+  private async confirmTransaction(
+    txSig: string,
+  ): Promise<{ value: { err: any } }> {
+    const useWebSocket = !(
+      process.env?.NEXT_PUBLIC_WEBSOCKET_DISABLED ||
+      process.env?.WEBSOCKET_DISABLED
+    );
+
+    if (useWebSocket) {
+      const latestBlockhash = await this.blockhashWithCache.get();
+      return await this.connection.confirmTransaction({
+        ...latestBlockhash,
+        signature: txSig,
+      });
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "WebSocket disabled, falling back to polling signature status",
+      );
+    }
+
+    const maxRetries = 60;
+    const retryDelayMs = 1000;
+    for (let i = 0; i < maxRetries; i++) {
+      const status = await this.connection.getSignatureStatus(txSig);
+      if (
+        status?.value?.confirmationStatus === "confirmed" ||
+        status?.value?.confirmationStatus === "finalized" ||
+        status?.value?.err
+      ) {
+        return { value: { err: status.value.err } };
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+
+    const expiry = (maxRetries * retryDelayMs) / 1000;
+    throw new Error(
+      `Transaction confirmation timeout after ${expiry} seconds.`,
+    );
   }
 
   get connection(): Connection {
