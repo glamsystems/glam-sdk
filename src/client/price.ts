@@ -34,11 +34,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import {
-  KAMINO_LENDING_PROGRAM,
-  KAMINO_OBTRIGATION_SIZE,
-  USDC,
-} from "../constants";
+import { KAMINO_LENDING_PROGRAM, KAMINO_OBTRIGATION_SIZE } from "../constants";
 import { fetchTokensList, TokenListItem } from "./jupiter";
 
 export class Holding {
@@ -151,10 +147,39 @@ export class PriceClient {
     commitment: Commitment,
     priceBaseAssetMint: PublicKey = PublicKey.default,
   ): Promise<VaultHoldings> {
-    const tokenPubkeys = await this.getPubkeysForTokenHoldings(commitment);
-    const driftPubkeys = await this.getPubkeysForSpotHoldings(commitment); // user -> markets map
-    const kaminoPubkeys = await this.getPubkeysForKaminoHoldings(commitment); // obligation -> reserves map
+    const vaultState = await this.base.fetchStateAccount(); // fetch state account only, don't need to build entire state model
+    const integrationAcls = vaultState.integrationAcls;
 
+    let driftPubkeys = new PkMap<PkSet>(); // user -> markets map
+    let kaminoPubkeys = new PkMap<PkSet>(); // obligation -> reserves map
+
+    const driftIntegrationAcl = integrationAcls.find((acl) =>
+      acl.integrationProgram.equals(this.base.extDriftProgram.programId),
+    );
+    if (driftIntegrationAcl) {
+      // drift protocol
+      if (driftIntegrationAcl.protocolsBitmask & 0b01) {
+        driftPubkeys = await this.getPubkeysForSpotHoldings(commitment);
+      }
+      // TODO: parse drift vaults holdings
+      if (driftIntegrationAcl.protocolsBitmask & 0b10) {
+      }
+    }
+
+    const kaminoIntegrationAcl = integrationAcls.find((acl) =>
+      acl.integrationProgram.equals(this.base.extKaminoProgram.programId),
+    );
+    if (kaminoIntegrationAcl) {
+      // kamino lending
+      if (kaminoIntegrationAcl.protocolsBitmask & 0b01) {
+        kaminoPubkeys = await this.getPubkeysForKaminoHoldings(commitment);
+      }
+      // TODO: parse kamino vaults holdings
+      if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {
+      }
+    }
+
+    const tokenPubkeys = await this.getPubkeysForTokenHoldings(commitment);
     const driftUsers = Array.from(driftPubkeys.pkKeys());
     const driftSpotMarkets = [...driftPubkeys.values()]
       .map((v) => Array.from(v.pkValues()))
@@ -169,7 +194,6 @@ export class PriceClient {
     const pubkeys = Array.from(
       new PkSet(
         tokenPubkeys.concat(
-          // cctpPubkeys,
           ...driftUsers,
           ...driftSpotMarkets,
           ...kaminoObligations,

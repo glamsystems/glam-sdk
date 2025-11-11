@@ -46,6 +46,7 @@ export class CctpBridgeEvent {
     readonly attestation: string,
     readonly nonce: string,
     readonly status: string,
+    readonly txHash: string,
   ) {
     this.uiAmount = toUiAmount(this.amount, 6);
   }
@@ -482,10 +483,10 @@ export class CctpClient {
     }
 
     const queryParams = new URLSearchParams();
-    if (txHash) {
-      queryParams.set("transactionHash", txHash);
-    } else if (nonce) {
+    if (nonce) {
       queryParams.set("nonce", nonce);
+    } else if (txHash) {
+      queryParams.set("transactionHash", txHash);
     }
 
     const resonse = await fetch(
@@ -537,6 +538,7 @@ export class CctpClient {
         attestation,
         nonce,
         status,
+        txHash ?? "",
       );
     });
   }
@@ -632,6 +634,7 @@ export class CctpClient {
         for (const [sourceDomain, nonce] of sourceAndNonce) {
           const events = await this.parseEventsFromAttestion(sourceDomain, {
             nonce,
+            txHash,
           });
           allEvents.push(...events);
         }
