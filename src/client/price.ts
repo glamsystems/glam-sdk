@@ -2,6 +2,7 @@ import {
   AccountMeta,
   Commitment,
   PublicKey,
+  SYSVAR_CLOCK_PUBKEY,
   TransactionInstruction,
 } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
@@ -198,6 +199,7 @@ export class PriceClient {
           ...driftSpotMarkets,
           ...kaminoObligations,
           ...kaminoReserves,
+          SYSVAR_CLOCK_PUBKEY, // read unix timestamp from sysvar clock account
         ),
       ),
     );
@@ -260,7 +262,9 @@ export class PriceClient {
       tokenPricesMap,
     );
 
-    const timestamp = await this.base.connection.getBlockTime(slot);
+    const timestamp = accountsDataMap
+      .get(SYSVAR_CLOCK_PUBKEY)!
+      .readUInt32LE(32);
     const ret = new VaultHoldings(
       this.base.statePda,
       this.base.vaultPda,

@@ -169,21 +169,28 @@ export class CctpClient {
   }
 
   async buildReceiveMessageIx(sourceDomain: number, messageObj: any) {
-    const {
-      message,
-      attestation,
-      eventNonce,
-      decodedMessage: {
-        decodedMessageBody: { burnToken },
-      },
-    } = messageObj;
+    const { message, attestation, eventNonce, decodedMessage, status } =
+      messageObj;
+
+    if (status !== "complete") {
+      throw new Error(`Attestation status is ${status}, expected "complete"`);
+    }
+    if (
+      !decodedMessage ||
+      !decodedMessage?.decodedMessageBody ||
+      !decodedMessage?.decodedMessageBody?.burnToken
+    ) {
+      throw new Error(
+        "Invalid message object: missing burnToken in decodedMessage",
+      );
+    }
 
     // message, attestation, eventNonce, burnToken are hex strings
     const pdas = await this.getReceiveMessagePdas(
       MESSAGE_TRANSMITTER_V2,
       TOKEN_MESSENGER_MINTER_V2,
       USDC,
-      burnToken,
+      decodedMessage.decodedMessageBody.burnToken,
       sourceDomain.toString(),
       eventNonce,
     );
@@ -492,7 +499,16 @@ export class CctpClient {
     const resonse = await fetch(
       `https://iris-api.circle.com/v2/messages/${sourceDomain}?${queryParams}`,
     );
+    if (resonse.status !== 200) {
+      const { error } = await resonse.json();
+      throw new Error(
+        `Failed to fetch messages from Circle API: ${resonse.status} ${error}`,
+      );
+    }
     const { messages } = await resonse.json();
+    if (!(messages instanceof Array)) {
+      throw new Error("Invalid response from Circle API: messages not found");
+    }
     return messages;
   }
 
