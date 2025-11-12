@@ -22,7 +22,10 @@ import {
 import { hexToBytes, toUiAmount } from "../utils";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { struct, array, u8, vec } from "@coral-xyz/borsh";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 const RECEIVE_MESSAGE_DISCM = Buffer.from([
   38, 144, 127, 225, 31, 225, 238, 25,
@@ -96,7 +99,13 @@ export class CctpClient {
       receiveMessageIxs.push(ix);
     }
 
-    const tx = new Transaction().add(...receiveMessageIxs);
+    const createUsdcAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      this.base.signer,
+      this.base.getVaultAta(USDC),
+      this.base.vaultPda,
+      USDC,
+    );
+    const tx = new Transaction().add(createUsdcAtaIx, ...receiveMessageIxs);
     const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
