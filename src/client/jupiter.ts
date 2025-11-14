@@ -55,6 +55,7 @@ export type TokenListItem = {
   logoURI: string;
   tags: string[];
   usdPrice: number;
+  slot: number;
 };
 
 export type TokenPrice = {
@@ -113,6 +114,13 @@ export async function fetchTokenPrices(
 export async function fetchTokensList(): Promise<TokenListItem[]> {
   const response = await fetch(`${JUPITER_API}/tokens/v2/tag?query=verified`);
   const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch tokens list and prices from Jupiter: ${response.status} ${data?.message}`,
+    );
+  }
+
   const tokenList = data?.map((t: any) => ({
     address: t.id,
     name: t.name,
@@ -121,6 +129,7 @@ export async function fetchTokensList(): Promise<TokenListItem[]> {
     logoURI: t.icon,
     tags: t.tags,
     usdPrice: t.usdPrice,
+    slot: t.priceBlockId,
   }));
   return tokenList;
 }

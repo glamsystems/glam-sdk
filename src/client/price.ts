@@ -46,6 +46,7 @@ export class Holding {
     readonly decimals: number,
     readonly amount: BN,
     readonly price: number,
+    readonly priceMeta: Record<string, any> = {},
     readonly protocol: string,
     readonly protocolMeta: Record<string, any> = {},
   ) {
@@ -248,18 +249,21 @@ export class PriceClient {
       tokenPubkeys,
       accountsDataMap,
       tokenPricesMap,
+      "Jupiter",
     );
     const driftSpotHoldings = this.getDriftSpotHoldings(
       driftPubkeys.pkKeys(),
       driftSpotMarketsMap,
       accountsDataMap,
       tokenPricesMap,
+      "Jupiter",
     );
     const kaminoLendHoldings = this.getKaminoLendHoldings(
       kaminoPubkeys.pkKeys(),
       kaminoReservesMap,
       accountsDataMap,
       tokenPricesMap,
+      "Jupiter",
     );
 
     const timestamp = accountsDataMap
@@ -368,6 +372,7 @@ export class PriceClient {
     tokenAccountPubkeys: PublicKey[],
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
+    priceSource: string,
   ): Holding[] {
     const holdings: Holding[] = [];
     if (tokenAccountPubkeys.length === 0) {
@@ -387,6 +392,10 @@ export class PriceClient {
           decimals,
           new BN(amount),
           usdPrice,
+          {
+            slot: tokenInfo.slot,
+            source: priceSource,
+          },
           "Token",
           {
             tokenAccount: pubkey,
@@ -404,6 +413,7 @@ export class PriceClient {
     spotMarketsMap: PkMap<SpotMarket>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
+    priceSource: string,
   ): Holding[] {
     const holdings: Holding[] = [];
 
@@ -436,6 +446,10 @@ export class PriceClient {
           decimals,
           amount,
           tokenPricesMap.get(mint)!.usdPrice,
+          {
+            slot: tokenPricesMap.get(mint)!.slot,
+            source: priceSource,
+          },
           "DriftProtocol",
           {
             user: userPda,
@@ -455,6 +469,7 @@ export class PriceClient {
     reservesMap: PkMap<ParsedReserve>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
+    priceSource: string,
   ): Holding[] {
     const holdings: Holding[] = [];
     for (const obligation of obligationPubkeys) {
@@ -474,6 +489,10 @@ export class PriceClient {
           parsedReserve.liquidityMintDecimals,
           amount,
           tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
+          {
+            slot: tokenPricesMap.get(parsedReserve.liquidityMint)!.slot,
+            source: priceSource,
+          },
           "KaminoLend",
           {
             obligation,
@@ -506,6 +525,10 @@ export class PriceClient {
           parsedReserve.liquidityMintDecimals,
           amount,
           tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
+          {
+            slot: tokenPricesMap.get(parsedReserve.liquidityMint)!.slot,
+            source: priceSource,
+          },
           "KaminoLend",
           {
             obligation,
