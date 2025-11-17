@@ -158,18 +158,19 @@ export class StakingClient {
     return { newStake, txSig };
   }
 
-  public async redelegate(
-    existingStake: PublicKey,
-    vote: PublicKey,
+  public async move(
+    sourceStake: PublicKey,
+    destinationStake: PublicKey,
+    amount: BN,
     txOptions: TxOptions = {},
-  ): Promise<{ newStake: PublicKey; txSig: TransactionSignature }> {
-    const { newStake, tx } = await this.redelegateStakeTx(
-      existingStake,
-      vote,
+  ): Promise<TransactionSignature> {
+    const tx = await this.moveStakeTx(
+      sourceStake,
+      destinationStake,
+      amount,
       txOptions,
     );
-    const txSig = await this.base.sendAndConfirm(tx);
-    return { newStake, txSig };
+    return await this.base.sendAndConfirm(tx);
   }
 
   /*
@@ -373,7 +374,6 @@ export class StakingClient {
         stakePoolWithdrawAuthority: withdrawAuthority,
         reserveStake,
         feeAccount,
-        referrerPoolTokensAccount: poolTokensTo,
         poolTokensTo,
         poolMint,
         tokenProgram,
@@ -401,6 +401,7 @@ export class StakingClient {
     const {
       programId: stakePoolProgram,
       poolMint,
+      depositAuthority,
       withdrawAuthority,
       feeAccount,
       validatorList,
@@ -440,6 +441,7 @@ export class StakingClient {
         glamState: this.base.statePda,
         cpiProgram: stakePoolProgram,
         stakePool,
+        stakePoolDepositAuthority: depositAuthority,
         stakePoolWithdrawAuthority: withdrawAuthority,
         validatorList,
         validatorStakeAccount,
@@ -448,7 +450,6 @@ export class StakingClient {
         poolTokensTo,
         poolMint,
         feeAccount,
-        referrerPoolTokensAccount: poolTokensTo,
         tokenProgram,
       })
       .preInstructions([
@@ -504,7 +505,6 @@ export class StakingClient {
     const postInstructions = deactivate
       ? [
           await this.base.protocolProgram.methods
-            // @ts-ignore
             .stakeDeactivate()
             .accounts({
               glamSigner,
@@ -548,7 +548,6 @@ export class StakingClient {
       await this.createStakeAccount(glamSigner);
 
     const initStakeIx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeInitialize()
       .accounts({
         glamState: this.base.statePda,
@@ -567,7 +566,6 @@ export class StakingClient {
       .instruction();
 
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeDelegateStake()
       .accounts({
         glamState: this.base.statePda,
@@ -592,7 +590,6 @@ export class StakingClient {
 
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeDeactivate()
       .accounts({
         glamState: this.base.statePda,
@@ -629,7 +626,6 @@ export class StakingClient {
 
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeWithdraw(lamports)
       .accounts({
         glamSigner,
@@ -655,7 +651,6 @@ export class StakingClient {
   ): Promise<VersionedTransaction> {
     const glamSigner = txOptions.signer || this.base.signer;
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeMerge()
       .accounts({
         glamSigner,
@@ -678,7 +673,6 @@ export class StakingClient {
       await this.createStakeAccount(glamSigner);
 
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
       .stakeSplit(lamports)
       .accounts({
         glamSigner,
@@ -693,30 +687,22 @@ export class StakingClient {
     return { tx: vTx, newStake };
   }
 
-  public async redelegateStakeTx(
-    existingStake: PublicKey,
-    vote: PublicKey,
+  public async moveStakeTx(
+    sourceStake: PublicKey,
+    destinationStake: PublicKey,
+    amount: BN,
     txOptions: TxOptions = {},
   ) {
     const glamSigner = txOptions.signer || this.base.signer;
-    const [newStake, createStakeAccountIx] =
-      await this.createStakeAccount(glamSigner);
-
     const tx = await this.base.protocolProgram.methods
-      // @ts-ignore
-      .stakeRedelegate()
+      .stakeMove(true, amount)
       .accounts({
         glamSigner,
         glamState: this.base.statePda,
-        vote,
-        stake: existingStake,
-        newStake,
-        stakeConfig: STAKE_CONFIG_ID,
+        sourceStake,
+        destinationStake,
       })
-      .preInstructions([createStakeAccountIx])
       .transaction();
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-
-    return { tx: vTx, newStake };
+    return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 }

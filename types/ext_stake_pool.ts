@@ -102,6 +102,10 @@ export type ExtStakePool = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "stakePool",
           "writable": true
         },
@@ -121,16 +125,8 @@ export type ExtStakePool = {
           "writable": true
         },
         {
-          "name": "referrerPoolTokensAccount",
-          "writable": true
-        },
-        {
           "name": "poolMint",
           "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "tokenProgram"
@@ -244,6 +240,9 @@ export type ExtStakePool = {
           "writable": true
         },
         {
+          "name": "stakePoolDepositAuthority"
+        },
+        {
           "name": "stakePoolWithdrawAuthority"
         },
         {
@@ -264,10 +263,6 @@ export type ExtStakePool = {
         },
         {
           "name": "feeAccount",
-          "writable": true
-        },
-        {
-          "name": "referrerPoolTokensAccount",
           "writable": true
         },
         {
@@ -1556,29 +1551,14 @@ export type ExtStakePool = {
       "value": "2"
     },
     {
-      "name": "protoStakePool",
+      "name": "protoSanctumMulti",
       "type": "u16",
-      "value": "1"
-    },
-    {
-      "name": "sanctumPermDepositSol",
-      "type": "u64",
-      "value": "1"
-    },
-    {
-      "name": "sanctumPermDepositStake",
-      "type": "u64",
-      "value": "2"
-    },
-    {
-      "name": "sanctumPermWithdrawSol",
-      "type": "u64",
       "value": "4"
     },
     {
-      "name": "sanctumPermWithdrawStake",
-      "type": "u64",
-      "value": "8"
+      "name": "protoStakePool",
+      "type": "u16",
+      "value": "1"
     },
     {
       "name": "stakePoolPermDepositSol",

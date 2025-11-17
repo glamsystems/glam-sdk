@@ -21,6 +21,7 @@ import { DriftClient, DriftUser, DriftVaultsClient, SpotMarket } from "./drift";
 import {
   bfToDecimal,
   decodeUser,
+  findStakeAccounts,
   Fraction,
   MarketType,
   PkMap,
@@ -879,10 +880,9 @@ export class PriceClient {
    * Returns an instruction that prices stake accounts.
    * If there are no stake accounts, returns null.
    */
-  /*
   async priceStakeAccountsIx(): Promise<TransactionInstruction | null> {
     const stakes = await findStakeAccounts(
-      this.base.provider.connection,
+      this.base.connection,
       this.base.vaultPda,
     );
     if (stakes.length === 0) {
@@ -905,7 +905,6 @@ export class PriceClient {
       .instruction();
     return priceStakesIx;
   }
-  */
 
   /**
    * Returns an instruction that prices Meteora positions.
@@ -974,6 +973,17 @@ export class PriceClient {
       if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {
         const ixs = await this.priceKaminoVaultSharesIx();
         if (ixs) pricingIxs.push(...ixs);
+      }
+    }
+
+    const nativeIntegrationAcl = integrationAcls.find((acl) =>
+      acl.integrationProgram.equals(this.base.protocolProgram.programId),
+    );
+    if (nativeIntegrationAcl) {
+      // stake program
+      if (nativeIntegrationAcl.protocolsBitmask & 0b10) {
+        const ix = await this.priceStakeAccountsIx();
+        if (ix) pricingIxs.push(ix);
       }
     }
 

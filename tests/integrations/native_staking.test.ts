@@ -4,16 +4,20 @@ import {
   airdrop,
   createGlamStateForTest,
   sleep,
-  stateModelForTest,
+  defaultInitStateParams,
 } from "../glam_protocol/setup";
 import { GlamClient, nameToChars, STAKE_ACCOUNT_SIZE } from "../../src";
 import { PublicKey } from "@solana/web3.js";
 
-describe("native_stake", () => {
+const txOptions = {
+  simulate: true,
+};
+
+describe("native_staking", () => {
   const glamClient = new GlamClient();
   const connection = glamClient.provider.connection;
 
-  let defaultVote; // the test validator's default vote account
+  let defaultVote: PublicKey; // the test validator's default vote account
 
   beforeAll(async () => {
     const voteAccountStatus = await connection.getVoteAccounts();
@@ -23,7 +27,7 @@ describe("native_stake", () => {
     defaultVote = new PublicKey(vote);
   });
 
-  it("Create fund with 100 SOL in vault", async () => {
+  it("Create vault with 100 SOL in vault", async () => {
     const integrationAcls = [
       {
         integrationProgram: glamClient.protocolProgram.programId,
@@ -33,7 +37,7 @@ describe("native_stake", () => {
     ];
 
     const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
-      ...stateModelForTest,
+      ...defaultInitStateParams,
       name: nameToChars("Stake Tests"),
       integrationAcls,
     });
@@ -153,4 +157,50 @@ describe("native_stake", () => {
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.externalPositions?.length).toEqual(0);
   }, 45_000);
+
+  it("Initialize 2 stake accounts and delegate them", async () => {
+    try {
+      const txSig0 = await glamClient.staking.initializeAndDelegateStake(
+        defaultVote,
+        new BN(10_000_000_000),
+        txOptions,
+      );
+      console.log("initializeAndDelegateStake #0:", txSig0);
+
+      const txSig1 = await glamClient.staking.initializeAndDelegateStake(
+        defaultVote,
+        new BN(1_000_000_000),
+        txOptions,
+      );
+      console.log("initializeAndDelegateStake #1:", txSig1);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
+    const stakeAccounts = await glamClient.staking.getStakeAccountsWithStates();
+    expect(stakeAccounts.length).toEqual(2);
+  }, 15_000);
+
+  it("Move stake", async () => {
+    // wait for the stake account to be fully activated
+    await sleep(75_000);
+
+    const stakeAccounts = await glamClient.staking.getStakeAccountsWithStates();
+    const sourceStake = stakeAccounts[0].address;
+    const destinationStake = stakeAccounts[1].address;
+
+    try {
+      const txSig = await glamClient.staking.move(
+        sourceStake,
+        destinationStake,
+        new BN(1_000_000_000),
+        txOptions,
+      );
+      console.log("move stake:", txSig);
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }, 90_000);
 });

@@ -96,6 +96,10 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "stake_pool",
           "writable": true
         },
@@ -115,16 +119,8 @@
           "writable": true
         },
         {
-          "name": "referrer_pool_tokens_account",
-          "writable": true
-        },
-        {
           "name": "pool_mint",
           "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_program"
@@ -238,6 +234,9 @@
           "writable": true
         },
         {
+          "name": "stake_pool_deposit_authority"
+        },
+        {
           "name": "stake_pool_withdraw_authority"
         },
         {
@@ -258,10 +257,6 @@
         },
         {
           "name": "fee_account",
-          "writable": true
-        },
-        {
-          "name": "referrer_pool_tokens_account",
           "writable": true
         },
         {
@@ -1550,29 +1545,14 @@
       "value": "2"
     },
     {
-      "name": "PROTO_STAKE_POOL",
+      "name": "PROTO_SANCTUM_MULTI",
       "type": "u16",
-      "value": "1"
-    },
-    {
-      "name": "SANCTUM_PERM_DEPOSIT_SOL",
-      "type": "u64",
-      "value": "1"
-    },
-    {
-      "name": "SANCTUM_PERM_DEPOSIT_STAKE",
-      "type": "u64",
-      "value": "2"
-    },
-    {
-      "name": "SANCTUM_PERM_WITHDRAW_SOL",
-      "type": "u64",
       "value": "4"
     },
     {
-      "name": "SANCTUM_PERM_WITHDRAW_STAKE",
-      "type": "u64",
-      "value": "8"
+      "name": "PROTO_STAKE_POOL",
+      "type": "u16",
+      "value": "1"
     },
     {
       "name": "STAKE_POOL_PERM_DEPOSIT_SOL",

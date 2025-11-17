@@ -752,6 +752,535 @@ export type GlamProtocol = {
       ]
     },
     {
+      "name": "stakeAuthorize",
+      "discriminator": [
+        127,
+        247,
+        88,
+        164,
+        201,
+        0,
+        79,
+        7
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "pubkey"
+        },
+        {
+          "name": "stakerOrWithdrawer",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "stakeDeactivate",
+      "discriminator": [
+        224,
+        10,
+        93,
+        175,
+        175,
+        145,
+        237,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "glamState"
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stakeDelegateStake",
+      "discriminator": [
+        202,
+        40,
+        152,
+        239,
+        175,
+        251,
+        66,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "vote"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        },
+        {
+          "name": "stakeHistory",
+          "address": "SysvarStakeHistory1111111111111111111111111"
+        },
+        {
+          "name": "stakeConfig"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stakeInitialize",
+      "discriminator": [
+        68,
+        66,
+        118,
+        79,
+        15,
+        144,
+        190,
+        190
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stakeMerge",
+      "discriminator": [
+        46,
+        181,
+        125,
+        12,
+        51,
+        179,
+        134,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "destinationStake",
+          "writable": true
+        },
+        {
+          "name": "sourceStake",
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        },
+        {
+          "name": "stakeHistory",
+          "address": "SysvarStakeHistory1111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stakeMove",
+      "discriminator": [
+        165,
+        157,
+        188,
+        245,
+        244,
+        234,
+        42,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "sourceStake",
+          "writable": true
+        },
+        {
+          "name": "destinationStake",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "moveStake",
+          "type": "bool"
+        },
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stakeSplit",
+      "discriminator": [
+        63,
+        128,
+        169,
+        206,
+        158,
+        60,
+        135,
+        48
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "splitStake",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stakeWithdraw",
+      "discriminator": [
+        199,
+        13,
+        168,
+        20,
+        92,
+        151,
+        29,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "glamState",
+          "writable": true
+        },
+        {
+          "name": "glamVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "glamState"
+              }
+            ]
+          }
+        },
+        {
+          "name": "glamSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "cpiProgram",
+          "address": "Stake11111111111111111111111111111111111111"
+        },
+        {
+          "name": "stake",
+          "writable": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        },
+        {
+          "name": "stakeHistory",
+          "address": "SysvarStakeHistory1111111111111111111111111"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "systemTransfer",
       "discriminator": [
         167,

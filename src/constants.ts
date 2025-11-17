@@ -109,17 +109,6 @@ export const MESSAGE_TRANSMITTER_V2 = new PublicKey(
 );
 
 /**
- * Stake pools
- */
-export const JITO_STAKE_POOL = new PublicKey(
-  "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb",
-);
-
-export const JUPSOL_STAKE_POOL = new PublicKey(
-  "8VpRhuxa7sUUepdY3kQiTmX9rS5vx4WgaXiAnXq4KCtr",
-);
-
-/**
  * Referrers
  */
 export const GLAM_REFERRER = new PublicKey(

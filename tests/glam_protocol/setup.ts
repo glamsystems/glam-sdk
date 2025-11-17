@@ -9,9 +9,7 @@ import {
   WSOL,
   MSOL,
   USDC,
-  StateModel,
   nameToChars,
-  StateIdlModel,
   StateAccountType,
 } from "../../src";
 import { Connection } from "@solana/web3.js";
@@ -24,10 +22,12 @@ import { InitStateParams } from "../../src/client/state";
 export const JITO_STAKE_POOL = new PublicKey(
   "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb",
 );
+export const JUPSOL_STAKE_POOL = new PublicKey(
+  "8VpRhuxa7sUUepdY3kQiTmX9rS5vx4WgaXiAnXq4KCtr",
+);
 export const BONK_STAKE_POOL = new PublicKey(
   "ArAQfbzsdotoKB5jJcZa3ajQrrPcWr2YQoDAEAiFxJAC",
 );
-
 export const PHASE_LABS_STAKE_POOL = new PublicKey(
   "phasejkG1akKgqkLvfWzWY17evnH6mSWznnUspmpyeG",
 );
