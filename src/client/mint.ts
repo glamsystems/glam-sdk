@@ -457,7 +457,7 @@ class TxBuilder extends BaseTxBuilder {
 
   public async closeMint(txOptions: TxOptions = {}) {
     const ix = await this.closeMintIx(txOptions.signer);
-    const tx = this.build(ix, txOptions);
+    const tx = this.build([ix], txOptions);
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 }

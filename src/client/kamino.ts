@@ -11,7 +11,7 @@ import {
   Transaction,
 } from "@solana/web3.js";
 
-import { BaseClient, TxOptions } from "./base";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import * as borsh from "@coral-xyz/borsh";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
 import {
@@ -23,7 +23,6 @@ import {
   KAMINO_LENDING_PROGRAM,
   KAMINO_OBTRIGATION_SIZE,
   KAMINO_RESERVE_SIZE,
-  KAMINO_SCOPE_PRICES,
   KAMINO_VAULTS_PROGRAM,
   WSOL,
 } from "../constants";
@@ -37,9 +36,6 @@ import { getProgramAccountsWithRetry } from "../utils/rpc";
 import { VaultClient } from "./vault";
 import Decimal from "decimal.js";
 import { BigFractionBytes, PkSet, PkMap } from "../utils";
-
-const FractionDecimal = Decimal.clone({ precision: 40 });
-const MULTIPLIER = new FractionDecimal(2).pow(60);
 
 const DEFAULT_OBLIGATION_ARGS = { tag: 0, id: 0 };
 const EVENT_AUTHORITY = new PublicKey(
@@ -129,163 +125,13 @@ interface ParsedFarmUser {
   unclaimedRewards: BN[];
 }
 
-export class KaminoLendingClient {
-  private reserves: PkMap<ParsedReserve> = new PkMap();
-  private obligations: PkMap<ParsedObligation> = new PkMap();
-
-  public constructor(
+class TxBuilder extends BaseTxBuilder {
+  constructor(
     readonly base: BaseClient,
     readonly vault: VaultClient,
-  ) {}
-
-  /**
-   * Initializes Kamino user metadata
-   *
-   * @param market Lending market
-   * @param referrer Referrer user metadata
-   * @param txOptions
-   * @returns
-   */
-  public async initUserMetadata(
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.initUserMetadataTx(txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Deposits asset to the lending market.
-   *
-   * @param market Lending market
-   * @param asset Asset mint
-   * @param amount Amount to deposit
-   * @param txOptions
-   * @returns
-   */
-  public async deposit(
-    market: PublicKey | string,
-    asset: PublicKey | string,
-    amount: BN | number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.depositTx(
-      new PublicKey(market),
-      new PublicKey(asset),
-      new BN(amount),
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Withdraws asset from the lending market.
-   *
-   * @param market Lending market
-   * @param asset Asset mint
-   * @param amount Amount to deposit
-   * @param txOptions
-   * @returns
-   */
-  public async withdraw(
-    market: PublicKey | string,
-    asset: PublicKey | string,
-    amount: BN | number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.withdrawTx(
-      new PublicKey(market),
-      new PublicKey(asset),
-      new BN(amount),
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Borrows asset from the lending market.
-   *
-   * @param market Lending market
-   * @param asset Asset mint
-   * @param amount Amount to borrow
-   * @param txOptions
-   * @returns
-   */
-  public async borrow(
-    market: PublicKey | string,
-    asset: PublicKey | string,
-    amount: BN | number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.borrowTx(
-      new PublicKey(market),
-      new PublicKey(asset),
-      new BN(amount),
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Repays asset to the lending market.
-   *
-   * @param market
-   * @param asset
-   * @param amount
-   * @param txOptions
-   * @returns
-   */
-  public async repay(
-    market: PublicKey | string,
-    asset: PublicKey | string,
-    amount: BN | number,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.repayTx(
-      new PublicKey(market),
-      new PublicKey(asset),
-      new BN(amount),
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  getUserMetadataPda(owner: PublicKey) {
-    const [userMetadataPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user_meta"), owner.toBuffer()],
-      KAMINO_LENDING_PROGRAM,
-    );
-    return userMetadataPda;
-  }
-
-  getObligationPda(
-    owner: PublicKey,
-    market: PublicKey,
-    args: { tag: number; id: number } = DEFAULT_OBLIGATION_ARGS,
+    readonly klend: KaminoLendingClient,
   ) {
-    const seed = [
-      Buffer.from([args.tag]),
-      Buffer.from([args.id]),
-      owner.toBuffer(),
-      market.toBuffer(),
-      PublicKey.default.toBuffer(),
-      PublicKey.default.toBuffer(),
-    ];
-    const [obligation, _] = PublicKey.findProgramAddressSync(
-      seed,
-      KAMINO_LENDING_PROGRAM,
-    );
-    return obligation;
-  }
-
-  // seeds = [BASE_SEED_USER_STATE, farm_state.key().as_ref(), delegatee.key().as_ref()],
-  // for a delegated farm, the delegatee is the obligation, the owner (of farm user state) is the vault PDA
-  // for an un-delegated farm, the delegatee and the owner are the same (vault PDA)
-  getFarmUserState(farmUser: PublicKey, farm: PublicKey) {
-    const [obligationFarm] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), farm.toBuffer(), farmUser.toBuffer()],
-      KAMINO_FARM_PROGRAM,
-    );
-    return obligationFarm;
+    super(base);
   }
 
   refreshObligationIx(
@@ -439,7 +285,7 @@ export class KaminoLendingClient {
         return [farmCollateral]
           .filter((farm) => !!farm)
           .map((farm) => {
-            const obligationFarmUserState = this.getFarmUserState(
+            const obligationFarmUserState = this.klend.getFarmUserState(
               obligation,
               farm,
             );
@@ -450,7 +296,7 @@ export class KaminoLendingClient {
                 baseAccounts: {
                   obligation,
                   lendingMarketAuthority:
-                    this.getMarketAuthority(lendingMarket),
+                    this.klend.getMarketAuthority(lendingMarket),
                   reserve: parsedReserve.address,
                   reserveFarmState: farm,
                   obligationFarmUserState,
@@ -477,7 +323,7 @@ export class KaminoLendingClient {
         return [farmDebt]
           .filter((farm) => !!farm)
           .map((farm) => {
-            const obligationFarmUserState = this.getFarmUserState(
+            const obligationFarmUserState = this.klend.getFarmUserState(
               obligation,
               farm,
             );
@@ -488,7 +334,7 @@ export class KaminoLendingClient {
                 baseAccounts: {
                   obligation,
                   lendingMarketAuthority:
-                    this.getMarketAuthority(lendingMarket),
+                    this.klend.getMarketAuthority(lendingMarket),
                   reserve: parsedReserve.address,
                   reserveFarmState: farm,
                   obligationFarmUserState,
@@ -502,6 +348,702 @@ export class KaminoLendingClient {
           });
       })
       .flat();
+  }
+
+  /**
+   * Returns two instructions that refresh reserves in batch and refresh obligation
+   */
+  async refreshReservesAndObligationIxs(
+    obligation: PublicKey,
+    targetReserve: ParsedReserve,
+  ) {
+    // Get a set of reserves to refresh
+    const { deposits, borrows, lendingMarket } =
+      await this.klend.fetchAndParseObligation(obligation);
+    const reservesInUse = deposits
+      .map(({ reserve }) => reserve)
+      .concat(borrows.map(({ reserve }) => reserve));
+
+    // Refresh all reserves, including those in use and target reserve
+    const reservesSet = new PkSet();
+    reservesInUse.forEach((reserve) => reservesSet.add(reserve));
+    reservesSet.add(targetReserve.address);
+    const parsedReserves = await this.klend.fetchAndParseReserves(
+      Array.from(reservesSet),
+    );
+    const refreshReservesIx = this.refreshReservesBatchIx(
+      parsedReserves,
+      false,
+    );
+
+    // Refresh obligation with reserves in use (exclude target reserve)
+    const refreshObligationIx = this.refreshObligationIx({
+      lendingMarket,
+      obligation,
+      reserves: reservesInUse,
+    });
+
+    return [refreshReservesIx, refreshObligationIx];
+  }
+
+  /**
+   * Returns an instruction to initialize obligation farm user if it doesn't exist
+   *
+   * @param mode 0 collateral farm, 1 debt farm
+   */
+  async initObligationFarmUserForReserveIx(
+    obligation: PublicKey,
+    { address, market, farmCollateral, farmDebt }: ParsedReserve,
+    mode: 0 | 1,
+    signer?: PublicKey,
+  ) {
+    const farmState = mode === 0 ? farmCollateral : farmDebt;
+
+    if (!farmState) {
+      return { farmUser: null, initIx: null };
+    }
+
+    const farmUser = this.klend.getFarmUserState(obligation, farmState);
+    const farmUserAccount =
+      await this.base.provider.connection.getAccountInfo(farmUser);
+    const initIx = farmUserAccount
+      ? null
+      : await this.base.extKaminoProgram.methods
+          .lendingInitObligationFarmsForReserve(mode)
+          .accounts({
+            glamState: this.base.statePda,
+            glamSigner: signer || this.base.signer,
+            obligation,
+            lendingMarketAuthority: this.klend.getMarketAuthority(market),
+            reserve: address,
+            reserveFarmState: farmState,
+            obligationFarm: farmUser,
+            lendingMarket: market,
+            farmsProgram: KAMINO_FARM_PROGRAM,
+          })
+          .instruction();
+    return { farmUser, initIx };
+  }
+
+  public async initUserMetadataTx(
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const vault = this.base.vaultPda;
+    const userMetadata = this.klend.getUserMetadataPda(vault);
+    const lookupTable = new PublicKey(0); // FIXME: create lookup table
+
+    const tx = await this.base.extKaminoProgram.methods
+      .lendingInitUserMetadata(lookupTable)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        userMetadata,
+        referrerUserMetadata: null,
+      })
+      .transaction();
+
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async depositIxs(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const vault = this.base.vaultPda;
+    const userMetadata = this.klend.getUserMetadataPda(vault);
+    const obligation = this.klend.getObligationPda(vault, market);
+
+    const preInstructions = [];
+    const postInstructions = [];
+
+    const [userMetadataAccount, obligationAccount] =
+      await this.base.provider.connection.getMultipleAccountsInfo([
+        userMetadata,
+        obligation,
+      ]);
+
+    // If user metadata doesn't exist, initialize it
+    if (!userMetadataAccount) {
+      preInstructions.push(
+        await this.base.extKaminoProgram.methods
+          .lendingInitUserMetadata(new PublicKey(0))
+          .accounts({
+            glamState: this.base.statePda,
+            glamSigner,
+            userMetadata,
+            referrerUserMetadata: null,
+          })
+          .instruction(),
+      );
+    }
+
+    // If obligation doesn't exist, initialize it
+    if (!obligationAccount) {
+      preInstructions.push(
+        await this.base.extKaminoProgram.methods
+          .lendingInitObligation(DEFAULT_OBLIGATION_ARGS)
+          .accounts({
+            glamState: this.base.statePda,
+            glamSigner,
+            obligation,
+            lendingMarket: market,
+            seed1Account: new PublicKey(0),
+            seed2Account: new PublicKey(0),
+            ownerUserMetadata: userMetadata,
+          })
+          .instruction(),
+      );
+    }
+
+    const depositReserve = await this.klend.findAndParseReserve(market, asset);
+
+    const { farmUser: obligationFarmUser, initIx } =
+      await this.initObligationFarmUserForReserveIx(
+        obligation,
+        depositReserve,
+        0, // collateral farm
+        glamSigner,
+      );
+    if (initIx) {
+      preInstructions.push(initIx);
+    }
+
+    if (obligationAccount) {
+      const ixs = await this.refreshReservesAndObligationIxs(
+        obligation,
+        depositReserve,
+      );
+      preInstructions.push(...ixs);
+    } else {
+      // Only refresh deposit reserve
+      preInstructions.push(
+        ...this.refreshReservesIxs(depositReserve.market, [depositReserve]),
+      );
+      // Refresh obligation with 0 reserves
+      preInstructions.push(
+        this.refreshObligationIx({
+          lendingMarket: market,
+          obligation,
+          reserves: [],
+        }),
+      );
+    }
+
+    if (depositReserve.farmCollateral) {
+      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
+        obligation,
+        market,
+        [depositReserve],
+      );
+      preInstructions.push(...ixs);
+      postInstructions.push(...ixs); // farms must be refreshed after deposit
+    }
+
+    // If deposit asset is WSOL, wrap SOL first in case vault doesn't have enough wSOL
+    const { tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.connection,
+      asset,
+    );
+    const userSourceLiquidity = this.base.getVaultAta(asset, tokenProgram);
+    if (asset.equals(WSOL)) {
+      const wrapSolIxs = await this.vault.maybeWrapSol(amount);
+      preInstructions.unshift(...wrapSolIxs);
+
+      // Close wSOL ata automatically after deposit
+      // if (wrapSolIxs.length > 0) {
+      //   const closeIx = await this.base.extSplProgram.methods
+      //     .tokenCloseAccount()
+      //     .accounts({
+      //       glamState: this.base.statePda,
+      //       glamSigner,
+      //       tokenAccount: userSourceLiquidity,
+      //       cpiProgram: TOKEN_PROGRAM_ID,
+      //     })
+      //     .instruction();
+      //   postInstructions.push(closeIx);
+      // }
+    }
+
+    const ix = await this.base.extKaminoProgram.methods
+      .lendingDepositReserveLiquidityAndObligationCollateralV2(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        obligation,
+        lendingMarket: market,
+        lendingMarketAuthority: this.klend.getMarketAuthority(market),
+        reserve: depositReserve.address,
+        reserveLiquidityMint: asset,
+        reserveLiquiditySupply: depositReserve.liquiditySupplyVault,
+        reserveCollateralMint: depositReserve.collateralMint,
+        reserveDestinationDepositCollateral:
+          depositReserve.collateralSupplyVault,
+        userSourceLiquidity,
+        placeholderUserDestinationCollateral: KAMINO_LENDING_PROGRAM,
+        collateralTokenProgram: TOKEN_PROGRAM_ID,
+        liquidityTokenProgram: tokenProgram,
+        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        obligationFarmUserState: obligationFarmUser,
+        reserveFarmState: depositReserve.farmCollateral,
+        farmsProgram: KAMINO_FARM_PROGRAM,
+      })
+      .instruction();
+
+    return [...preInstructions, ix, ...postInstructions];
+  }
+
+  public async depositTx(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const ixs = await this.depositIxs(market, asset, amount, glamSigner);
+
+    const tx = this.build(ixs, txOptions);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async withdrawIxs(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const vault = this.base.vaultPda;
+    const obligation = this.klend.getObligationPda(vault, market);
+
+    const preInstructions = [];
+    const postInstructions = [];
+
+    const withdrawReserve = await this.klend.findAndParseReserve(market, asset);
+
+    const { farmUser: obligationFarmUser, initIx } =
+      await this.initObligationFarmUserForReserveIx(
+        obligation,
+        withdrawReserve,
+        0, // collateral farm
+        glamSigner,
+      );
+    if (initIx) {
+      preInstructions.push(initIx);
+    }
+
+    const ixs = await this.refreshReservesAndObligationIxs(
+      obligation,
+      withdrawReserve,
+    );
+    preInstructions.push(...ixs);
+
+    if (withdrawReserve.farmCollateral) {
+      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
+        obligation,
+        market,
+        [withdrawReserve],
+      );
+      preInstructions.push(...ixs);
+      postInstructions.push(...ixs); // farms must be refreshed after withdraw
+    }
+
+    // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
+    const { tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      asset,
+    );
+    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
+    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      glamSigner,
+      userDestinationLiquidity,
+      vault,
+      asset,
+      tokenProgram,
+    );
+    preInstructions.unshift(createAtaIx);
+
+    // When all assets are being withdrawn from a market, the klend program attempts to close the
+    // obligation account, which requires the system program. We always pass the system program
+    // account as a remaining account just in case.
+    const withdrawIx = await this.base.extKaminoProgram.methods
+      .lendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        obligation,
+        lendingMarket: market,
+        lendingMarketAuthority: this.klend.getMarketAuthority(market),
+        withdrawReserve: withdrawReserve.address,
+        reserveLiquidityMint: asset,
+        reserveSourceCollateral: withdrawReserve.collateralSupplyVault,
+        reserveCollateralMint: withdrawReserve.collateralMint,
+        reserveLiquiditySupply: withdrawReserve.liquiditySupplyVault,
+        userDestinationLiquidity,
+        placeholderUserDestinationCollateral: null,
+        collateralTokenProgram: TOKEN_PROGRAM_ID,
+        liquidityTokenProgram: tokenProgram,
+        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        obligationFarmUserState: obligationFarmUser,
+        reserveFarmState: withdrawReserve.farmCollateral,
+        farmsProgram: KAMINO_FARM_PROGRAM,
+      })
+      .remainingAccounts([
+        {
+          pubkey: SystemProgram.programId,
+          isSigner: false,
+          isWritable: false,
+        },
+      ])
+      .instruction();
+
+    // The final instructions in the tx:
+    // - refreshReserve * N
+    // - refreshObligation
+    // - refreshObligationFarmsForReserve (if farm exists)
+    // - withdrawIx
+    // - refreshObligationFarmsForReserve (if farm exists)
+    return [...preInstructions, withdrawIx, ...postInstructions];
+  }
+
+  public async withdrawTx(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const ixs = await this.withdrawIxs(market, asset, amount, glamSigner);
+
+    const tx = this.build(ixs, txOptions);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async borrowIxs(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const vault = this.base.vaultPda;
+    const obligation = this.klend.getObligationPda(vault, market);
+
+    const preInstructions = [];
+    const postInstructions = [];
+    const borrowReserve = await this.klend.findAndParseReserve(market, asset);
+
+    const { farmUser: obligationFarmUser, initIx } =
+      await this.initObligationFarmUserForReserveIx(
+        obligation,
+        borrowReserve,
+        1, // debt farm
+        glamSigner,
+      );
+    if (initIx) {
+      preInstructions.push(initIx);
+    }
+
+    const ixs = await this.refreshReservesAndObligationIxs(
+      obligation,
+      borrowReserve,
+    );
+    preInstructions.push(...ixs);
+
+    if (borrowReserve.farmDebt) {
+      const ixs = this.refreshObligationDebtFarmsForReservesIxs(
+        obligation,
+        market,
+        [borrowReserve],
+      );
+      preInstructions.push(...ixs);
+      postInstructions.push(...ixs); // farms must be refreshed after borrow
+    }
+
+    // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
+    const { tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      asset,
+    );
+    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
+    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      glamSigner,
+      userDestinationLiquidity,
+      vault,
+      asset,
+      tokenProgram,
+    );
+    preInstructions.unshift(createAtaIx);
+
+    const borrowIx = await this.base.extKaminoProgram.methods
+      .lendingBorrowObligationLiquidityV2(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        obligation,
+        lendingMarket: market,
+        lendingMarketAuthority: this.klend.getMarketAuthority(market),
+        borrowReserve: borrowReserve.address,
+        borrowReserveLiquidityMint: asset,
+        reserveSourceLiquidity: borrowReserve.liquiditySupplyVault,
+        borrowReserveLiquidityFeeReceiver: borrowReserve.feeVault,
+        userDestinationLiquidity,
+        referrerTokenState: null,
+        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        tokenProgram,
+        obligationFarmUserState: obligationFarmUser,
+        reserveFarmState: borrowReserve.farmDebt,
+        farmsProgram: KAMINO_FARM_PROGRAM,
+      })
+      .instruction();
+
+    return [...preInstructions, borrowIx];
+  }
+
+  public async borrowTx(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const ixs = await this.borrowIxs(market, asset, amount, glamSigner);
+
+    const tx = this.build(ixs, txOptions);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+
+  public async repayIxs(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const vault = this.base.vaultPda;
+    const obligation = this.klend.getObligationPda(vault, market);
+
+    const preInstructions = [];
+    const repayReserve = await this.klend.findAndParseReserve(market, asset);
+
+    const { farmUser: obligationFarmUser, initIx } =
+      await this.initObligationFarmUserForReserveIx(
+        obligation,
+        repayReserve,
+        1, // debt farm
+        glamSigner,
+      );
+    if (initIx) {
+      preInstructions.push(initIx);
+    }
+
+    const ixs = await this.refreshReservesAndObligationIxs(
+      obligation,
+      repayReserve,
+    );
+    preInstructions.push(...ixs);
+
+    const { tokenProgram } = await fetchMintAndTokenProgram(
+      this.base.provider.connection,
+      asset,
+    );
+
+    const repayIx = await this.base.extKaminoProgram.methods
+      .lendingRepayObligationLiquidityV2(amount)
+      .accounts({
+        glamState: this.base.statePda,
+        glamSigner,
+        obligation,
+        lendingMarket: market,
+        lendingMarketAuthority: this.klend.getMarketAuthority(market),
+        repayReserve: repayReserve.address,
+        reserveLiquidityMint: asset,
+        reserveDestinationLiquidity: repayReserve.liquiditySupplyVault,
+        userSourceLiquidity: this.base.getVaultAta(asset, tokenProgram),
+        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+        tokenProgram,
+        obligationFarmUserState: obligationFarmUser,
+        reserveFarmState: repayReserve.farmDebt,
+        farmsProgram: KAMINO_FARM_PROGRAM,
+      })
+      .instruction();
+
+    return [...preInstructions, repayIx];
+  }
+
+  public async repayTx(
+    market: PublicKey,
+    asset: PublicKey,
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.base.signer;
+    const ixs = await this.repayIxs(market, asset, amount, glamSigner);
+
+    const tx = this.build(ixs, txOptions);
+    return await this.base.intoVersionedTransaction(tx, txOptions);
+  }
+}
+
+export class KaminoLendingClient {
+  private reserves: PkMap<ParsedReserve> = new PkMap();
+  private obligations: PkMap<ParsedObligation> = new PkMap();
+  txBuilder: TxBuilder;
+
+  public constructor(
+    readonly base: BaseClient,
+    readonly vault: VaultClient,
+  ) {
+    this.txBuilder = new TxBuilder(base, vault, this);
+  }
+
+  /**
+   * Initializes Kamino user metadata
+   *
+   * @param market Lending market
+   * @param referrer Referrer user metadata
+   * @param txOptions
+   * @returns
+   */
+  public async initUserMetadata(
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.initUserMetadataTx(txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Deposits asset to the lending market.
+   *
+   * @param market Lending market
+   * @param asset Asset mint
+   * @param amount Amount to deposit
+   * @param txOptions
+   * @returns
+   */
+  public async deposit(
+    market: PublicKey | string,
+    asset: PublicKey | string,
+    amount: BN | number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.depositTx(
+      new PublicKey(market),
+      new PublicKey(asset),
+      new BN(amount),
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Withdraws asset from the lending market.
+   *
+   * @param market Lending market
+   * @param asset Asset mint
+   * @param amount Amount to deposit
+   * @param txOptions
+   * @returns
+   */
+  public async withdraw(
+    market: PublicKey | string,
+    asset: PublicKey | string,
+    amount: BN | number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.withdrawTx(
+      new PublicKey(market),
+      new PublicKey(asset),
+      new BN(amount),
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Borrows asset from the lending market.
+   *
+   * @param market Lending market
+   * @param asset Asset mint
+   * @param amount Amount to borrow
+   * @param txOptions
+   * @returns
+   */
+  public async borrow(
+    market: PublicKey | string,
+    asset: PublicKey | string,
+    amount: BN | number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.borrowTx(
+      new PublicKey(market),
+      new PublicKey(asset),
+      new BN(amount),
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Repays asset to the lending market.
+   *
+   * @param market
+   * @param asset
+   * @param amount
+   * @param txOptions
+   * @returns
+   */
+  public async repay(
+    market: PublicKey | string,
+    asset: PublicKey | string,
+    amount: BN | number,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.repayTx(
+      new PublicKey(market),
+      new PublicKey(asset),
+      new BN(amount),
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  getUserMetadataPda(owner: PublicKey) {
+    const [userMetadataPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user_meta"), owner.toBuffer()],
+      KAMINO_LENDING_PROGRAM,
+    );
+    return userMetadataPda;
+  }
+
+  getObligationPda(
+    owner: PublicKey,
+    market: PublicKey,
+    args: { tag: number; id: number } = DEFAULT_OBLIGATION_ARGS,
+  ) {
+    const seed = [
+      Buffer.from([args.tag]),
+      Buffer.from([args.id]),
+      owner.toBuffer(),
+      market.toBuffer(),
+      PublicKey.default.toBuffer(),
+      PublicKey.default.toBuffer(),
+    ];
+    const [obligation, _] = PublicKey.findProgramAddressSync(
+      seed,
+      KAMINO_LENDING_PROGRAM,
+    );
+    return obligation;
+  }
+
+  // seeds = [BASE_SEED_USER_STATE, farm_state.key().as_ref(), delegatee.key().as_ref()],
+  // for a delegated farm, the delegatee is the obligation, the owner (of farm user state) is the vault PDA
+  // for an un-delegated farm, the delegatee and the owner are the same (vault PDA)
+  getFarmUserState(farmUser: PublicKey, farm: PublicKey) {
+    const [obligationFarm] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user"), farm.toBuffer(), farmUser.toBuffer()],
+      KAMINO_FARM_PROGRAM,
+    );
+    return obligationFarm;
   }
 
   getMarketAuthority(market: PublicKey) {
@@ -739,515 +1281,6 @@ export class KaminoLendingClient {
       this.obligations.set(a.pubkey, parsedObligation);
       return parsedObligation;
     });
-  }
-
-  /**
-   * Returns two instructions that refresh reserves in batch and refresh obligation
-   */
-  async refreshReservesAndObligationIxs(
-    obligation: PublicKey,
-    targetReserve: ParsedReserve,
-  ) {
-    // Get a set of reserves to refresh
-    const { deposits, borrows, lendingMarket } =
-      await this.fetchAndParseObligation(obligation);
-    const reservesInUse = deposits
-      .map(({ reserve }) => reserve)
-      .concat(borrows.map(({ reserve }) => reserve));
-
-    // Refresh all reserves, including those in use and target reserve
-    const reservesSet = new PkSet();
-    reservesInUse.forEach((reserve) => reservesSet.add(reserve));
-    reservesSet.add(targetReserve.address);
-    const parsedReserves = await this.fetchAndParseReserves(
-      Array.from(reservesSet),
-    );
-    const refreshReservesIx = this.refreshReservesBatchIx(
-      parsedReserves,
-      false,
-    );
-
-    // Refresh obligation with reserves in use (exclude target reserve)
-    const refreshObligationIx = this.refreshObligationIx({
-      lendingMarket,
-      obligation,
-      reserves: reservesInUse,
-    });
-
-    return [refreshReservesIx, refreshObligationIx];
-  }
-
-  /**
-   * Returns an instruction to initialize obligation farm user if it doesn't exist
-   *
-   * @param mode 0 collateral farm, 1 debt farm
-   */
-  async initObligationFarmUserForReserveIx(
-    obligation: PublicKey,
-    { address, market, farmCollateral, farmDebt }: ParsedReserve,
-    mode: 0 | 1,
-    signer?: PublicKey,
-  ) {
-    const farmState = mode === 0 ? farmCollateral : farmDebt;
-
-    if (!farmState) {
-      return { farmUser: null, initIx: null };
-    }
-
-    const farmUser = this.getFarmUserState(obligation, farmState);
-    const farmUserAccount =
-      await this.base.provider.connection.getAccountInfo(farmUser);
-    const initIx = farmUserAccount
-      ? null
-      : await this.base.extKaminoProgram.methods
-          .lendingInitObligationFarmsForReserve(mode)
-          .accounts({
-            glamState: this.base.statePda,
-            glamSigner: signer || this.base.signer,
-            obligation,
-            lendingMarketAuthority: this.getMarketAuthority(market),
-            reserve: address,
-            reserveFarmState: farmState,
-            obligationFarm: farmUser,
-            lendingMarket: market,
-            farmsProgram: KAMINO_FARM_PROGRAM,
-          })
-          .instruction();
-    return { farmUser, initIx };
-  }
-
-  public async initUserMetadataTx(
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vault = this.base.vaultPda;
-    const userMetadata = this.getUserMetadataPda(vault);
-    const lookupTable = new PublicKey(0); // FIXME: create lookup table
-
-    const tx = await this.base.extKaminoProgram.methods
-      .lendingInitUserMetadata(lookupTable)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        userMetadata,
-        referrerUserMetadata: null,
-      })
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async depositTx(
-    market: PublicKey,
-    asset: PublicKey,
-    amount: BN,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vault = this.base.vaultPda;
-    const userMetadata = this.getUserMetadataPda(vault);
-    const obligation = this.getObligationPda(vault, market);
-
-    const preInstructions = txOptions.preInstructions || [];
-    const postInstructions = txOptions.postInstructions || [];
-
-    const [userMetadataAccount, obligationAccount] =
-      await this.base.provider.connection.getMultipleAccountsInfo([
-        userMetadata,
-        obligation,
-      ]);
-
-    // If user metadata doesn't exist, initialize it
-    if (!userMetadataAccount) {
-      preInstructions.push(
-        await this.base.extKaminoProgram.methods
-          .lendingInitUserMetadata(new PublicKey(0))
-          .accounts({
-            glamState: this.base.statePda,
-            glamSigner,
-            userMetadata,
-            referrerUserMetadata: null,
-          })
-          .instruction(),
-      );
-    }
-
-    // If obligation doesn't exist, initialize it
-    if (!obligationAccount) {
-      preInstructions.push(
-        await this.base.extKaminoProgram.methods
-          .lendingInitObligation(DEFAULT_OBLIGATION_ARGS)
-          .accounts({
-            glamState: this.base.statePda,
-            glamSigner,
-            obligation,
-            lendingMarket: market,
-            seed1Account: new PublicKey(0),
-            seed2Account: new PublicKey(0),
-            ownerUserMetadata: userMetadata,
-          })
-          .instruction(),
-      );
-    }
-
-    const depositReserve = await this.findAndParseReserve(market, asset);
-
-    const { farmUser: obligationFarmUser, initIx } =
-      await this.initObligationFarmUserForReserveIx(
-        obligation,
-        depositReserve,
-        0, // collateral farm
-        glamSigner,
-      );
-    if (initIx) {
-      preInstructions.push(initIx);
-    }
-
-    if (obligationAccount) {
-      const ixs = await this.refreshReservesAndObligationIxs(
-        obligation,
-        depositReserve,
-      );
-      preInstructions.push(...ixs);
-    } else {
-      // Only refresh deposit reserve
-      preInstructions.push(
-        ...this.refreshReservesIxs(depositReserve.market, [depositReserve]),
-      );
-      // Refresh obligation with 0 reserves
-      preInstructions.push(
-        this.refreshObligationIx({
-          lendingMarket: market,
-          obligation,
-          reserves: [],
-        }),
-      );
-    }
-
-    if (depositReserve.farmCollateral) {
-      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
-        obligation,
-        market,
-        [depositReserve],
-      );
-      preInstructions.push(...ixs);
-      postInstructions.push(...ixs); // farms must be refreshed after deposit
-    }
-
-    // If deposit asset is WSOL, wrap SOL first in case vault doesn't have enough wSOL
-    const { tokenProgram } = await fetchMintAndTokenProgram(
-      this.base.connection,
-      asset,
-    );
-    const userSourceLiquidity = this.base.getVaultAta(asset, tokenProgram);
-    if (asset.equals(WSOL)) {
-      const wrapSolIxs = await this.vault.maybeWrapSol(amount);
-      preInstructions.unshift(...wrapSolIxs);
-
-      // Close wSOL ata automatically after deposit
-      // if (wrapSolIxs.length > 0) {
-      //   const closeIx = await this.base.extSplProgram.methods
-      //     .tokenCloseAccount()
-      //     .accounts({
-      //       glamState: this.base.statePda,
-      //       glamSigner,
-      //       tokenAccount: userSourceLiquidity,
-      //       cpiProgram: TOKEN_PROGRAM_ID,
-      //     })
-      //     .instruction();
-      //   postInstructions.push(closeIx);
-      // }
-    }
-
-    const tx = await this.base.extKaminoProgram.methods
-      .lendingDepositReserveLiquidityAndObligationCollateralV2(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        obligation,
-        lendingMarket: market,
-        lendingMarketAuthority: this.getMarketAuthority(market),
-        reserve: depositReserve.address,
-        reserveLiquidityMint: asset,
-        reserveLiquiditySupply: depositReserve.liquiditySupplyVault,
-        reserveCollateralMint: depositReserve.collateralMint,
-        reserveDestinationDepositCollateral:
-          depositReserve.collateralSupplyVault,
-        userSourceLiquidity,
-        placeholderUserDestinationCollateral: KAMINO_LENDING_PROGRAM,
-        collateralTokenProgram: TOKEN_PROGRAM_ID,
-        liquidityTokenProgram: tokenProgram,
-        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        obligationFarmUserState: obligationFarmUser,
-        reserveFarmState: depositReserve.farmCollateral,
-        farmsProgram: KAMINO_FARM_PROGRAM,
-      })
-      .preInstructions(preInstructions)
-      .postInstructions(postInstructions)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async withdrawTx(
-    market: PublicKey,
-    asset: PublicKey,
-    amount: BN,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vault = this.base.vaultPda;
-    const obligation = this.getObligationPda(vault, market);
-
-    const preInstructions = [];
-    const postInstructions = [];
-
-    const withdrawReserve = await this.findAndParseReserve(market, asset);
-
-    const { farmUser: obligationFarmUser, initIx } =
-      await this.initObligationFarmUserForReserveIx(
-        obligation,
-        withdrawReserve,
-        0, // collateral farm
-        glamSigner,
-      );
-    if (initIx) {
-      preInstructions.push(initIx);
-    }
-
-    const ixs = await this.refreshReservesAndObligationIxs(
-      obligation,
-      withdrawReserve,
-    );
-    preInstructions.push(...ixs);
-
-    if (withdrawReserve.farmCollateral) {
-      const ixs = this.refreshObligationCollateralFarmsForReservesIxs(
-        obligation,
-        market,
-        [withdrawReserve],
-      );
-      preInstructions.push(...ixs);
-      postInstructions.push(...ixs); // farms must be refreshed after withdraw
-    }
-
-    // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const { tokenProgram } = await fetchMintAndTokenProgram(
-      this.base.provider.connection,
-      asset,
-    );
-    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
-    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-      glamSigner,
-      userDestinationLiquidity,
-      vault,
-      asset,
-      tokenProgram,
-    );
-    preInstructions.unshift(createAtaIx);
-
-    // When all assets are being withdrawn from a market, the klend program attempts to close the
-    // obligation account, which requires the system program. We always pass the system program
-    // account as a remaining account just in case.
-    const withdrawIx = await this.base.extKaminoProgram.methods
-      .lendingWithdrawObligationCollateralAndRedeemReserveCollateralV2(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        obligation,
-        lendingMarket: market,
-        lendingMarketAuthority: this.getMarketAuthority(market),
-        withdrawReserve: withdrawReserve.address,
-        reserveLiquidityMint: asset,
-        reserveSourceCollateral: withdrawReserve.collateralSupplyVault,
-        reserveCollateralMint: withdrawReserve.collateralMint,
-        reserveLiquiditySupply: withdrawReserve.liquiditySupplyVault,
-        userDestinationLiquidity,
-        placeholderUserDestinationCollateral: null,
-        collateralTokenProgram: TOKEN_PROGRAM_ID,
-        liquidityTokenProgram: tokenProgram,
-        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        obligationFarmUserState: obligationFarmUser,
-        reserveFarmState: withdrawReserve.farmCollateral,
-        farmsProgram: KAMINO_FARM_PROGRAM,
-      })
-      .remainingAccounts([
-        {
-          pubkey: SystemProgram.programId,
-          isSigner: false,
-          isWritable: false,
-        },
-      ])
-      .instruction();
-
-    // The final instructions in the tx:
-    // - refreshReserve * N
-    // - refreshObligation
-    // - refreshObligationFarmsForReserve (if farm exists)
-    // - withdrawIx
-    // - refreshObligationFarmsForReserve (if farm exists)
-    const tx = new Transaction();
-    tx.add(...preInstructions, withdrawIx, ...postInstructions);
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async borrowTx(
-    market: PublicKey,
-    asset: PublicKey,
-    amount: BN,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vault = this.base.vaultPda;
-    const obligation = this.getObligationPda(vault, market);
-
-    const preInstructions = [];
-    const postInstructions = [];
-    const borrowReserve = await this.findAndParseReserve(market, asset);
-
-    const { farmUser: obligationFarmUser, initIx } =
-      await this.initObligationFarmUserForReserveIx(
-        obligation,
-        borrowReserve,
-        1, // debt farm
-        glamSigner,
-      );
-    if (initIx) {
-      preInstructions.push(initIx);
-    }
-
-    const ixs = await this.refreshReservesAndObligationIxs(
-      obligation,
-      borrowReserve,
-    );
-    preInstructions.push(...ixs);
-
-    if (borrowReserve.farmDebt) {
-      const ixs = this.refreshObligationDebtFarmsForReservesIxs(
-        obligation,
-        market,
-        [borrowReserve],
-      );
-      preInstructions.push(...ixs);
-      postInstructions.push(...ixs); // farms must be refreshed after borrow
-    }
-
-    // Create asset ATA in case it doesn't exist. Add it to the beginning of preInstructions
-    const { tokenProgram } = await fetchMintAndTokenProgram(
-      this.base.provider.connection,
-      asset,
-    );
-    const userDestinationLiquidity = this.base.getVaultAta(asset, tokenProgram);
-    const createAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-      glamSigner,
-      userDestinationLiquidity,
-      vault,
-      asset,
-      tokenProgram,
-    );
-    preInstructions.unshift(createAtaIx);
-
-    const borrowIx = await this.base.extKaminoProgram.methods
-      .lendingBorrowObligationLiquidityV2(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        obligation,
-        lendingMarket: market,
-        lendingMarketAuthority: this.getMarketAuthority(market),
-        borrowReserve: borrowReserve.address,
-        borrowReserveLiquidityMint: asset,
-        reserveSourceLiquidity: borrowReserve.liquiditySupplyVault,
-        borrowReserveLiquidityFeeReceiver: borrowReserve.feeVault,
-        userDestinationLiquidity,
-        referrerTokenState: null,
-        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        tokenProgram,
-        obligationFarmUserState: obligationFarmUser,
-        reserveFarmState: borrowReserve.farmDebt,
-        farmsProgram: KAMINO_FARM_PROGRAM,
-      })
-      .instruction();
-
-    // The final instructions in the tx:
-    // - refreshReserve * N
-    // - refreshObligation
-    // - borrowObligationLiquidityV2
-    const tx = new Transaction();
-    tx.add(...preInstructions, borrowIx);
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
-  }
-
-  public async repayTx(
-    market: PublicKey,
-    asset: PublicKey,
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vault = this.base.vaultPda;
-    const obligation = this.getObligationPda(vault, market);
-
-    const preInstructions = [];
-    const repayReserve = await this.findAndParseReserve(market, asset);
-
-    const { farmUser: obligationFarmUser, initIx } =
-      await this.initObligationFarmUserForReserveIx(
-        obligation,
-        repayReserve,
-        1, // debt farm
-        glamSigner,
-      );
-    if (initIx) {
-      preInstructions.push(initIx);
-    }
-
-    const ixs = await this.refreshReservesAndObligationIxs(
-      obligation,
-      repayReserve,
-    );
-    preInstructions.push(...ixs);
-
-    const { tokenProgram } = await fetchMintAndTokenProgram(
-      this.base.provider.connection,
-      asset,
-    );
-
-    const repayIx = await this.base.extKaminoProgram.methods
-      .lendingRepayObligationLiquidityV2(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        obligation,
-        lendingMarket: market,
-        lendingMarketAuthority: this.getMarketAuthority(market),
-        repayReserve: repayReserve.address,
-        reserveLiquidityMint: asset,
-        reserveDestinationLiquidity: repayReserve.liquiditySupplyVault,
-        userSourceLiquidity: this.base.getVaultAta(asset, tokenProgram),
-        instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        tokenProgram,
-        obligationFarmUserState: obligationFarmUser,
-        reserveFarmState: repayReserve.farmDebt,
-        farmsProgram: KAMINO_FARM_PROGRAM,
-      })
-      .instruction();
-
-    // The final instructions in the tx:
-    // - refreshReserve * N
-    // - refreshObligation
-    // - repayObligationLiquidityV2
-    const tx = new Transaction();
-    tx.add(...preInstructions, repayIx);
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
   }
 }
 

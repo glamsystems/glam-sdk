@@ -22,9 +22,6 @@ export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
 export const JITO_TIP_DEFAULT = new PublicKey(
   "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
 );
-export const KAMINO_SCOPE_PRICES = new PublicKey(
-  "3NJYftD5sjVfxSnUdZ1wVML8f3aC6mp1CXCL6L7TnU8C",
-);
 
 export const MARINADE_NATIVE_STAKE_AUTHORITY = new PublicKey(
   "stWirqFCf2Uts1JBL1Jsd3r6VBWhgnpdPxCTe1MFjrq",
@@ -61,9 +58,6 @@ export const DRIFT_PROGRAM_ID = new PublicKey(
 );
 export const DRIFT_VAULTS_PROGRAM_ID = new PublicKey(
   "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR",
-);
-export const DRIFT_DISTRIBUTOR_PROGRAM = new PublicKey(
-  "E7HtfkEMhmn9uwL7EFNydcXBWy5WCYN1vFmKKjipEH1x",
 );
 export const JUPITER_PROGRAM_ID = new PublicKey(
   "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",

@@ -14,7 +14,7 @@ class TxBuilder extends BaseTxBuilder {
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
     const ix = await this.emergencyAccessUpdateIx(args, txOptions.signer);
-    const tx = this.build(ix, txOptions);
+    const tx = this.build([ix], txOptions);
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 

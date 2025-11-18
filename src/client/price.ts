@@ -579,12 +579,14 @@ export class PriceClient {
     const parsedReserves = await this.klend.fetchAndParseReserves(
       Array.from(reservesSet),
     );
-    ixs.push(this.klend.refreshReservesBatchIx(parsedReserves, false));
+    ixs.push(
+      this.klend.txBuilder.refreshReservesBatchIx(parsedReserves, false),
+    );
 
     // Refresh obligations
     parsedObligations.forEach(({ address: obligation, lendingMarket }) => {
       ixs.push(
-        this.klend.refreshObligationIx({
+        this.klend.txBuilder.refreshObligationIx({
           obligation,
           lendingMarket,
           reserves: Array.from(obligationReservesMap.get(obligation) || []),
@@ -706,7 +708,7 @@ export class PriceClient {
     }
 
     const parsedReserves = await this.klend.fetchAndParseReserves(reserves);
-    const refreshReservesIx = this.klend.refreshReservesBatchIx(
+    const refreshReservesIx = this.klend.txBuilder.refreshReservesBatchIx(
       parsedReserves,
       false, // always update prices
     );

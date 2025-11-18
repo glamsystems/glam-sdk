@@ -4,7 +4,6 @@ import {
   TransactionSignature,
   PublicKey,
   TransactionInstruction,
-  Transaction,
 } from "@solana/web3.js";
 import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { CreatedModel, StateIdlModel, StateAccountType } from "../models";
@@ -79,7 +78,7 @@ class TxBuilder extends BaseTxBuilder {
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
     const ix = await this.updateIx(params, txOptions.signer);
-    const tx = this.build(ix, txOptions);
+    const tx = this.build([ix], txOptions);
     return await this.base.intoVersionedTransaction(tx, txOptions);
   }
 

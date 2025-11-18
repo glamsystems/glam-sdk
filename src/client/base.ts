@@ -816,10 +816,13 @@ export class BaseClient {
 export class BaseTxBuilder {
   constructor(readonly base: BaseClient) {}
 
-  build(ix: TransactionInstruction, txOptions: TxOptions = {}): Transaction {
+  /**
+   * Build a transaction with the given instructions. Pre and post instructions in txOptions are preserved.
+   */
+  build(ixs: TransactionInstruction[], txOptions: TxOptions = {}): Transaction {
     const tx = new Transaction().add(
       ...(txOptions.preInstructions || []),
-      ix,
+      ...ixs,
       ...(txOptions.postInstructions || []),
     );
     return tx;
