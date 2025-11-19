@@ -1,73 +1,84 @@
-import { VersionedTransaction, TransactionSignature } from "@solana/web3.js";
-import { BaseClient, TxOptions } from "./base";
-import { StateAccountType, StateIdlModel } from "../models";
+import {
+  VersionedTransaction,
+  TransactionSignature,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
+import { StateAccountType } from "../models";
 import { StateClient } from "./state";
 
-class TxBuilder {
-  constructor(private base: BaseClient) {}
-
-  /**
-   * Builds transaction to apply pending state updates after timelock expires
-   */
-  async applyStateTimelock(
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
+class TxBuilder extends BaseTxBuilder<TimelockClient> {
+  async applyStateTimelockIx(
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
       .updateStateApplyTimelock()
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
       })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
   }
 
-  /**
-   * Builds transaction to apply pending mint updates after timelock expires
-   */
-  async applyMintTimelock(
+  public async applyStateTimelockTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.mintProgram.methods
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.applyStateTimelockIx(glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
+  }
+
+  async applyMintTimelockIx(
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.mintProgram.methods
       .updateMintApplyTimelock()
       .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
+        glamState: this.client.base.statePda,
+        glamMint: this.client.base.mintPda,
         glamSigner,
       })
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
   }
 
-  /**
-   * Builds transaction to cancel pending timelock updates
-   */
-  async cancelTimelock(
+  async applyMintTimelockTx(
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.applyMintTimelockIx(glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
+  }
+
+  async cancelTimelockIx(
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
       .cancelTimelock()
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
       })
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
+  }
+
+  async cancelTimelockTx(
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.cancelTimelockIx(glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
   }
 }
 
 export class TimelockClient {
-  public readonly txBuilder: TxBuilder;
+  readonly txBuilder: TxBuilder;
 
   public constructor(
     readonly base: BaseClient,
     readonly stateClient: StateClient,
   ) {
-    this.txBuilder = new TxBuilder(base);
+    this.txBuilder = new TxBuilder(this);
   }
 
   /**
@@ -95,13 +106,13 @@ export class TimelockClient {
     let vTx: VersionedTransaction;
     if (StateAccountType.equals(accountType, StateAccountType.VAULT)) {
       // For Vault type, apply state timelock
-      vTx = await this.txBuilder.applyStateTimelock(txOptions);
+      vTx = await this.txBuilder.applyStateTimelockTx(txOptions);
     } else if (
       StateAccountType.equals(accountType, StateAccountType.MINT) ||
       StateAccountType.equals(accountType, StateAccountType.TOKENIZED_VAULT)
     ) {
       // For Mint or TokenizedVault types, apply mint timelock
-      vTx = await this.txBuilder.applyMintTimelock(txOptions);
+      vTx = await this.txBuilder.applyMintTimelockTx(txOptions);
     } else {
       throw new Error(
         `Unsupported account type: ${JSON.stringify(accountType)}`,
@@ -117,7 +128,7 @@ export class TimelockClient {
   public async cancel(
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.cancelTimelock(txOptions);
+    const vTx = await this.txBuilder.cancelTimelockTx(txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 }

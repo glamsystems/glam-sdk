@@ -15,101 +15,24 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
-import { BaseClient, TxOptions } from "./base";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { TRANSFER_HOOK_PROGRAM, WSOL } from "../constants";
 import { getAccountPolicyPda } from "../utils/glamPDAs";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { PendingRequest, RequestType } from "../models";
 
-export class InvestClient {
-  public constructor(readonly base: BaseClient) {}
-
-  public async subscribe(
+class TxBuilder extends BaseTxBuilder<InvestClient> {
+  public async subscribeIxs(
     amount: BN,
-    queued: boolean = false,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await (queued
-      ? this.queuedSubscribeTx(amount, txOptions)
-      : this.subscribeTx(amount, txOptions));
-    return await this.base.sendAndConfirm(tx);
-  }
+    signer: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const { baseAssetMint: depositAsset } =
+      await this.client.base.fetchStateModel();
 
-  public async queuedRedeem(
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.queuedRedeemTx(amount, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
+    const mintTo = this.client.base.getMintAta(signer);
+    const signerAta = this.client.base.getAta(depositAsset, signer);
 
-  public async cancel(
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.cancelTx(null, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async cancelForUser(
-    user: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.cancelTx(user, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async fulfill(
-    limit: number | null,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.fulfillTx(limit, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  /**
-   * Claims the pending request for the signer.
-   * @param txOptions
-   * @returns
-   */
-  public async claim(txOptions: TxOptions = {}): Promise<TransactionSignature> {
-    const tx = await this.claimTx(null, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async claimForUser(
-    user: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const tx = await this.claimTx(user, txOptions);
-    return await this.base.sendAndConfirm(tx);
-  }
-
-  public async fetchPendingRequest(
-    user?: PublicKey,
-  ): Promise<PendingRequest | null> {
-    const queue = await this.base.fetchRequestQueue();
-    if (!queue) {
-      return null;
-    }
-    return (
-      queue.data.find((r: PendingRequest) =>
-        r.user.equals(user || this.base.signer),
-      ) || null
-    );
-  }
-
-  public async subscribeTx(
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
-    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
-
-    const mintTo = this.base.getMintAta(signer);
-    const signerAta = this.base.getAta(depositAsset, signer);
-
-    const preInstructions: TransactionInstruction[] =
-      txOptions.preInstructions || [];
+    const preInstructions: TransactionInstruction[] = [];
     const postInstructions: TransactionInstruction[] = [];
     if (depositAsset.equals(WSOL)) {
       preInstructions.push(
@@ -135,53 +58,59 @@ export class InvestClient {
 
     // Check if lockup is enabled on the fund, if so, add signerPolicy
     let signerPolicy = null;
-    if (await this.base.isLockupEnabled()) {
-      signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
+    if (await this.client.base.isLockupEnabled()) {
+      signerPolicy = getAccountPolicyPda(mintTo);
       console.log(
         `signerPolicy: ${signerPolicy} for signer ${signer} (token account ${mintTo})`,
       );
     }
 
     const { tokenProgram: depositTokenProgram } =
-      await fetchMintAndTokenProgram(this.base.provider.connection, depositAsset);
-    const tx = await this.base.mintProgram.methods
+      await fetchMintAndTokenProgram(this.client.base.connection, depositAsset);
+    const ix = await this.client.base.mintProgram.methods
       .subscribe(amount)
       .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
+        glamState: this.client.base.statePda,
+        glamMint: this.client.base.mintPda,
         signer,
         depositAsset,
         signerPolicy,
         depositTokenProgram,
       })
-      .preInstructions(preInstructions)
-      .postInstructions(postInstructions)
-      .transaction();
+      .instruction();
 
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return [...preInstructions, ix, ...postInstructions];
   }
 
-  public async queuedSubscribeTx(
+  public async subscribeTx(
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
-    const { baseAssetMint: depositAsset } = await this.base.fetchStateModel();
-    const { tokenProgram: depositTokenProgram } =
-      await fetchMintAndTokenProgram(this.base.provider.connection, depositAsset);
+    const signer = txOptions.signer || this.client.base.signer;
+    const ixs = await this.subscribeIxs(amount, signer);
+    return await this.buildVersionedTx(ixs, txOptions);
+  }
 
-    const signerDepositAta = this.base.getAta(
+  public async queuedSubscribeIxs(
+    amount: BN,
+    signer: PublicKey,
+  ): Promise<TransactionInstruction[]> {
+    const { baseAssetMint: depositAsset } =
+      await this.client.base.fetchStateModel();
+    const { tokenProgram: depositTokenProgram } =
+      await fetchMintAndTokenProgram(this.client.base.connection, depositAsset);
+
+    const signerDepositAta = this.client.base.getAta(
       depositAsset,
       signer,
       depositTokenProgram,
     );
-    const escrowDepositAta = this.base.getAta(
+    const escrowDepositAta = this.client.base.getAta(
       depositAsset,
-      this.base.escrowPda,
+      this.client.base.escrowPda,
       depositTokenProgram,
     );
-    const preInstructions: TransactionInstruction[] =
-      txOptions.preInstructions || [];
+    const preInstructions: TransactionInstruction[] = [];
     const postInstructions: TransactionInstruction[] = [];
 
     if (depositAsset.equals(WSOL)) {
@@ -208,38 +137,46 @@ export class InvestClient {
       );
     }
 
-    const tx = await this.base.mintProgram.methods
+    const ix = await this.client.base.mintProgram.methods
       .queuedSubscribe(amount)
       .accountsPartial({
-        glamState: this.base.statePda,
-        glamEscrow: this.base.escrowPda,
-        glamMint: this.base.mintPda,
-        requestQueue: this.base.requestQueuePda,
+        glamState: this.client.base.statePda,
+        glamEscrow: this.client.base.escrowPda,
+        glamMint: this.client.base.mintPda,
+        requestQueue: this.client.base.requestQueuePda,
         signer,
         depositAsset,
         signerDepositAta,
         escrowDepositAta,
         depositTokenProgram,
       })
-      .preInstructions(preInstructions)
-      .postInstructions(postInstructions)
-      .transaction();
+      .instruction();
 
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return [...preInstructions, ix, ...postInstructions];
   }
 
-  public async queuedRedeemTx(
+  public async queuedSubscribeTx(
     amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
+    const signer = txOptions.signer || this.client.base.signer;
+    const ixs = await this.queuedSubscribeIxs(amount, signer);
+    return await this.buildVersionedTx(ixs, txOptions);
+  }
+
+  public async queuedRedeemIx(
+    amount: BN,
+    signer: PublicKey,
+  ): Promise<TransactionInstruction> {
+    const escrowPda = this.client.base.escrowPda;
+    const signerMintAta = this.client.base.getMintAta(signer);
+    const escrowMintAta = this.client.base.getMintAta(escrowPda);
 
     const remainingAccounts: PublicKey[] = [];
-    if (await this.base.isLockupEnabled()) {
-      const extraMetasAccount = this.base.extraMetasPda;
-      const signerPolicy = getAccountPolicyPda(this.base.getMintAta(signer));
-      const escrow = this.base.escrowPda;
-      const escrowPolicy = getAccountPolicyPda(this.base.getMintAta(escrow));
+    if (await this.client.base.isLockupEnabled()) {
+      const extraMetasAccount = this.client.base.extraMetasPda;
+      const signerPolicy = getAccountPolicyPda(signerMintAta);
+      const escrowPolicy = getAccountPolicyPda(escrowMintAta);
       remainingAccounts.push(
         ...[
           extraMetasAccount,
@@ -250,16 +187,16 @@ export class InvestClient {
       );
     }
 
-    const tx = await this.base.mintProgram.methods
+    return await this.client.base.mintProgram.methods
       .queuedRedeem(amount)
       .accountsPartial({
-        glamState: this.base.statePda,
-        glamEscrow: this.base.escrowPda,
-        glamMint: this.base.mintPda,
-        requestQueue: this.base.requestQueuePda,
+        glamState: this.client.base.statePda,
+        glamEscrow: escrowPda,
+        glamMint: this.client.base.mintPda,
+        requestQueue: this.client.base.requestQueuePda,
         signer,
-        signerMintAta: this.base.getMintAta(signer),
-        escrowMintAta: this.base.getMintAta(this.base.escrowPda),
+        signerMintAta,
+        escrowMintAta,
         systemProgram: SystemProgram.programId,
         token2022Program: TOKEN_2022_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -271,51 +208,57 @@ export class InvestClient {
           isWritable: false,
         })),
       )
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
   }
 
-  public async cancelTx(
-    pubkey: PublicKey | null,
+  public async queuedRedeemTx(
+    amount: BN,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
+    const signer = txOptions.signer || this.client.base.signer;
+    const ix = await this.queuedRedeemIx(amount, signer);
+    return this.buildVersionedTx([ix], txOptions);
+  }
+
+  public async cancelIx(
+    pubkey: PublicKey | null,
+    signer: PublicKey,
+  ): Promise<TransactionInstruction> {
     const user = pubkey || signer;
 
-    const pendingRequest = await this.fetchPendingRequest(user);
+    const pendingRequest = await this.client.fetchPendingRequest(user);
     if (!pendingRequest) {
       throw new Error("No pending request found to cancel.");
     }
 
     let requestType = pendingRequest.requestType as RequestType;
-    let recoverTokenMint = this.base.mintPda;
+    let recoverTokenMint = this.client.base.mintPda;
     let recoverTokenProgram = TOKEN_2022_PROGRAM_ID;
 
     if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
       const { baseAssetMint, baseAssetTokenProgramId } =
-        await this.base.fetchStateModel();
+        await this.client.base.fetchStateModel();
       recoverTokenMint = baseAssetMint;
       recoverTokenProgram = baseAssetTokenProgramId;
     }
-    const userAta = this.base.getAta(
+    const userAta = this.client.base.getAta(
       recoverTokenMint,
       user,
       recoverTokenProgram,
     );
-    const escrowAta = this.base.getAta(
+    const escrowAta = this.client.base.getAta(
       recoverTokenMint,
-      this.base.escrowPda,
+      this.client.base.escrowPda,
       recoverTokenProgram,
     );
 
-    const tx = await this.base.mintProgram.methods
+    return await this.client.base.mintProgram.methods
       .cancel()
       .accountsPartial({
-        glamState: this.base.statePda,
-        glamEscrow: this.base.escrowPda,
-        glamMint: this.base.mintPda,
-        requestQueue: this.base.requestQueuePda,
+        glamState: this.client.base.statePda,
+        glamEscrow: this.client.base.escrowPda,
+        glamMint: this.client.base.mintPda,
+        requestQueue: this.client.base.requestQueuePda,
         signer,
         user,
         recoverTokenMint,
@@ -325,42 +268,57 @@ export class InvestClient {
         recoverTokenProgram,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       })
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
+  }
+
+  public async cancelTx(
+    pubkey: PublicKey | null,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const signer = txOptions.signer || this.client.base.signer;
+    const ix = await this.cancelIx(pubkey, signer);
+    return this.buildVersionedTx([ix], txOptions);
+  }
+
+  public async fulfillIx(
+    limit: number | null,
+    signer: PublicKey,
+  ): Promise<TransactionInstruction> {
+    const { baseAssetMint } = await this.client.base.fetchStateModel();
+
+    const { tokenProgram: depositTokenProgram } =
+      await fetchMintAndTokenProgram(
+        this.client.base.connection,
+        baseAssetMint,
+      );
+    return await this.client.base.mintProgram.methods
+      .fulfill(limit)
+      .accounts({
+        glamState: this.client.base.statePda,
+        glamMint: this.client.base.mintPda,
+        signer,
+        asset: baseAssetMint,
+        depositTokenProgram,
+      })
+      .instruction();
   }
 
   public async fulfillTx(
     limit: number | null,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
-    const { baseAssetMint } = await this.base.fetchStateModel();
-
-    const { tokenProgram: depositTokenProgram } =
-      await fetchMintAndTokenProgram(this.base.provider.connection, baseAssetMint);
-    const tx = await this.base.mintProgram.methods
-      .fulfill(limit)
-      .accounts({
-        glamState: this.base.statePda,
-        glamMint: this.base.mintPda,
-        signer,
-        asset: baseAssetMint,
-        depositTokenProgram,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
-
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    const signer = txOptions.signer || this.client.base.signer;
+    const ix = await this.fulfillIx(limit, signer);
+    return this.buildVersionedTx([ix], txOptions);
   }
 
-  public async claimTx(
+  public async claimIx(
     user: PublicKey | null,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const signer = txOptions.signer || this.base.signer;
+    signer: PublicKey,
+  ): Promise<TransactionInstruction> {
     const claimUser = user || signer;
 
-    const pendingRequest = await this.fetchPendingRequest(claimUser);
+    const pendingRequest = await this.client.fetchPendingRequest(claimUser);
     if (!pendingRequest) {
       throw new Error("No eligible request found to claim.");
     }
@@ -377,32 +335,32 @@ export class InvestClient {
     // Claim redemption, user gets base asset back
     if (RequestType.equals(requestType, RequestType.REDEMPTION)) {
       const { baseAssetMint, baseAssetTokenProgramId } =
-        await this.base.fetchStateModel();
+        await this.client.base.fetchStateModel();
       claimTokenProgram = baseAssetTokenProgramId;
       claimTokenMint = baseAssetMint;
-      claimUserAta = this.base.getAta(
+      claimUserAta = this.client.base.getAta(
         baseAssetMint,
         claimUser,
         claimTokenProgram,
       );
-      escrowAta = this.base.getAta(
+      escrowAta = this.client.base.getAta(
         baseAssetMint,
-        this.base.escrowPda,
+        this.client.base.escrowPda,
         claimTokenProgram,
       );
       // Close wSOL ata so user gets SOL, only possible if signer is claiming for themselves
       baseAssetMint.equals(WSOL) &&
-        claimUser.equals(this.base.signer) &&
+        claimUser.equals(signer) &&
         postInstructions.push(
           createCloseAccountInstruction(claimUserAta, claimUser, claimUser),
         );
     } else if (RequestType.equals(requestType, RequestType.SUBSCRIPTION)) {
-      claimTokenMint = this.base.mintPda;
+      claimTokenMint = this.client.base.mintPda;
       claimTokenProgram = TOKEN_2022_PROGRAM_ID;
-      claimUserAta = this.base.getMintAta(claimUser);
-      escrowAta = this.base.getMintAta(this.base.escrowPda);
-      if (await this.base.isLockupEnabled()) {
-        const extraMetasAccount = this.base.extraMetasPda;
+      claimUserAta = this.client.base.getMintAta(claimUser);
+      escrowAta = this.client.base.getMintAta(this.client.base.escrowPda);
+      if (await this.client.base.isLockupEnabled()) {
+        const extraMetasAccount = this.client.base.extraMetasPda;
         const escrowPolicy = getAccountPolicyPda(escrowAta);
         claimUserPolicy = getAccountPolicyPda(claimUserAta);
         [
@@ -424,12 +382,12 @@ export class InvestClient {
       throw new Error("Missing required accounts.");
     }
 
-    const tx = await this.base.mintProgram.methods
+    return await this.client.base.mintProgram.methods
       .claim()
       .accountsPartial({
-        glamState: this.base.statePda,
-        glamEscrow: this.base.escrowPda,
-        glamMint: this.base.mintPda,
+        glamState: this.client.base.statePda,
+        glamEscrow: this.client.base.escrowPda,
+        glamMint: this.client.base.mintPda,
         signer,
         claimTokenMint,
         claimUser,
@@ -439,8 +397,97 @@ export class InvestClient {
         claimTokenProgram,
       })
       .remainingAccounts(remainingAccounts)
-      .transaction();
+      .instruction();
+  }
 
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+  public async claimTx(
+    user: PublicKey | null,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const signer = txOptions.signer || this.client.base.signer;
+    const ix = await this.claimIx(user, signer);
+    return await this.buildVersionedTx([ix], txOptions);
+  }
+}
+
+export class InvestClient {
+  readonly txBuilder: TxBuilder;
+
+  public constructor(readonly base: BaseClient) {
+    this.txBuilder = new TxBuilder(this);
+  }
+
+  public async subscribe(
+    amount: BN,
+    queued: boolean = false,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await (queued
+      ? this.txBuilder.queuedSubscribeTx(amount, txOptions)
+      : this.txBuilder.subscribeTx(amount, txOptions));
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async queuedRedeem(
+    amount: BN,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.queuedRedeemTx(amount, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async cancel(
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.cancelTx(null, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async cancelForUser(
+    user: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.cancelTx(user, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async fulfill(
+    limit: number | null,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.fulfillTx(limit, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  /**
+   * Claims the pending request for the signer.
+   * @param txOptions
+   * @returns
+   */
+  public async claim(txOptions: TxOptions = {}): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.claimTx(null, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async claimForUser(
+    user: PublicKey,
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const tx = await this.txBuilder.claimTx(user, txOptions);
+    return await this.base.sendAndConfirm(tx);
+  }
+
+  public async fetchPendingRequest(
+    user?: PublicKey,
+  ): Promise<PendingRequest | null> {
+    const queue = await this.base.fetchRequestQueue();
+    if (!queue) {
+      return null;
+    }
+    return (
+      queue.data.find((r: PendingRequest) =>
+        r.user.equals(user || this.base.signer),
+      ) || null
+    );
   }
 }

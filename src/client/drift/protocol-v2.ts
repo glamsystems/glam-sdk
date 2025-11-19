@@ -5,122 +5,50 @@ import {
   TransactionSignature,
   TransactionInstruction,
   AccountInfo,
+  AccountMeta,
 } from "@solana/web3.js";
 import {
   MarketType,
   OrderParams,
   PositionDirection,
-  SpotPosition,
-  PerpPosition,
   ModifyOrderParams,
   OracleSource,
   SpotBalanceType,
-  MarginMode,
-  Order,
-} from "../utils/drift/types";
-import {
-  DriftPerpMarket,
-  DriftSpotMarket,
-  DriftVault,
-} from "../deser/driftLayouts";
-import { decodeUser } from "../utils/drift/user";
+} from "../../utils/drift/types";
+import { DriftPerpMarket, DriftSpotMarket } from "../../deser/driftLayouts";
+import { decodeUser } from "../../utils/drift/user";
 
-import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
-import { AccountMeta } from "@solana/web3.js";
-import {
-  DRIFT_PROGRAM_ID,
-  DRIFT_VAULT_DEPOSITOR_SIZE,
-  DRIFT_VAULTS_PROGRAM_ID,
-  GLAM_REFERRER,
-  WSOL,
-} from "../constants";
+import { BaseClient, BaseTxBuilder, TxOptions } from "../base";
+import { DRIFT_PROGRAM_ID, GLAM_REFERRER, WSOL } from "../../constants";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
-import { charsToName } from "../utils/common";
-import { VaultClient } from "./vault";
+import { charsToName } from "../../utils/common";
+import { VaultClient } from "../vault";
+import {
+  DRIFT_SIGNER,
+  DRIFT_MARGIN_PRECISION,
+  SpotMarket,
+  PerpMarket,
+  DriftMarketConfigs,
+  DriftUser,
+} from "./types";
 
-interface OrderConstants {
-  perpBaseScale: number;
-  quoteScale: number;
-}
-
-export interface SpotMarket {
-  name: string;
-  marketIndex: number;
-  poolId: number;
-  marketPda: PublicKey;
-  vault: PublicKey;
-  oracle: PublicKey;
-  oracleSource: OracleSource;
-  mint: PublicKey;
-  decimals: number;
-  tokenProgram: PublicKey;
-  cumulativeDepositInterest: BN;
-  cumulativeBorrowInterest: BN;
-}
-
-export interface PerpMarket {
-  name: string;
-  marketIndex: number;
-  marketPda: PublicKey;
-  oracle: PublicKey;
-  oracleSource: OracleSource;
-}
-
-export interface DriftMarketConfigs {
-  orderConstants: OrderConstants;
-  perpMarkets: PerpMarket[];
-  spotMarkets: SpotMarket[];
-}
-
-export interface DriftUser {
-  delegate: PublicKey;
-  name: string;
-  spotPositions: (SpotPosition & {
-    amount: number;
-    uiAmount: number;
-    mint: PublicKey;
-    decimals: number;
-    marketName: string;
-  })[]; // extra fields amount and uiAmount
-  perpPositions: PerpPosition[];
-  marginMode: MarginMode;
-  subAccountId: number;
-  isMarginTradingEnabled: boolean;
-  maxMarginRatio: number;
-  orders: Order[];
-  poolId: number;
-}
-
-const DRIFT_SIGNER = new PublicKey(
-  "JCNCMFXo5M5qwUPg2Utu1u6YWp3MbygxqBsBeXXJfrw",
-);
-const DRIFT_MARGIN_PRECISION = 10_000;
-
-class TxBuilder extends BaseTxBuilder {
-  constructor(
-    readonly base: BaseClient,
-    readonly vault: VaultClient,
-    readonly drift: DriftClient,
-  ) {
-    super(base);
-  }
-
+class TxBuilder extends BaseTxBuilder<DriftProtocolClient> {
   async initializeUserStatsIx(
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { userStats } = this.drift.getDriftUserPdas();
+    const { userStats } = this.client.getDriftUserPdas();
 
-    return await this.base.extDriftProgram.methods
+    return await this.client.base.extDriftProgram.methods
       .initializeUserStats()
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
         userStats,
       })
       .instruction();
@@ -135,22 +63,22 @@ class TxBuilder extends BaseTxBuilder {
       .map((char) => char.charCodeAt(0))
       .concat(Array(24).fill(0));
 
-    const { user, userStats } = this.drift.getDriftUserPdas(subAccountId);
+    const { user, userStats } = this.client.getDriftUserPdas(subAccountId);
 
     const { user: referrer, userStats: referrerStats } =
-      this.drift.getGlamReferrerPdas();
+      this.client.getGlamReferrerPdas();
     const remainingAccounts = [
       { pubkey: referrer, isWritable: true, isSigner: false },
       { pubkey: referrerStats, isWritable: true, isSigner: false },
     ];
 
-    return await this.base.extDriftProgram.methods
+    return await this.client.base.extDriftProgram.methods
       .initializeUser(subAccountId, name)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         user,
         userStats,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
         glamSigner,
       })
       .remainingAccounts(remainingAccounts)
@@ -161,12 +89,12 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     poolId: number,
   ): Promise<TransactionInstruction> {
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
+    const { user } = this.client.getDriftUserPdas(subAccountId);
 
-    return await this.base.extDriftProgram.methods
+    return await this.client.base.extDriftProgram.methods
       .updateUserPoolId(subAccountId, poolId)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         user,
       })
       .instruction();
@@ -178,15 +106,13 @@ class TxBuilder extends BaseTxBuilder {
   ): Promise<TransactionInstruction[]> {
     const ixs = [];
 
-    // Create userStats account if it doesn't exist
-    const { userStats } = this.drift.getDriftUserPdas();
+    const { userStats } = this.client.getDriftUserPdas();
     const userStatsInfo =
-      await this.base.provider.connection.getAccountInfo(userStats);
+      await this.client.base.provider.connection.getAccountInfo(userStats);
     if (!userStatsInfo) {
       ixs.push(await this.initializeUserStatsIx(glamSigner));
     }
 
-    // Initialize user (aka sub-account)
     ixs.push(await this.initializeUserIx(glamSigner, subAccountId));
 
     return ixs;
@@ -196,11 +122,11 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ixs = await this.initializeIxs(subAccountId, glamSigner);
 
     const tx = this.build(ixs, txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async depositIxs(
@@ -209,7 +135,7 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction[]> {
-    const { user, userStats } = this.drift.getDriftUserPdas(subAccountId);
+    const { user, userStats } = this.client.getDriftUserPdas(subAccountId);
 
     const {
       mint,
@@ -218,7 +144,7 @@ class TxBuilder extends BaseTxBuilder {
       marketPda,
       vault: driftVault,
       name,
-    } = await this.drift.fetchAndParseSpotMarket(marketIndex);
+    } = await this.client.fetchAndParseSpotMarket(marketIndex);
     console.log(
       `Spot market ${marketIndex} mint ${mint}, oracle: ${oracle}, marketPda: ${marketPda}, vault: ${driftVault}`,
     );
@@ -226,9 +152,7 @@ class TxBuilder extends BaseTxBuilder {
     const preInstructions = [];
     const postInstructions = [];
 
-    // If drift user doesn't exist, prepend initialization ixs
-    if (!(await this.drift.fetchDriftUser(subAccountId))) {
-      // Only add ix to initialize user stats if subAccountId is 0
+    if (!(await this.client.fetchDriftUser(subAccountId))) {
       if (subAccountId === 0) {
         preInstructions.push(await this.initializeUserStatsIx(glamSigner));
       }
@@ -237,7 +161,6 @@ class TxBuilder extends BaseTxBuilder {
         await this.initializeUserIx(glamSigner, subAccountId),
       );
 
-      // If market name ends with "-N", it means we're depositing to an isolated pool
       const isolatedPoolMatch = name.match(/-(\d+)$/);
       if (isolatedPoolMatch) {
         const poolId = parseInt(isolatedPoolMatch[1]);
@@ -248,16 +171,17 @@ class TxBuilder extends BaseTxBuilder {
     }
 
     if (mint.equals(WSOL)) {
-      const wrapSolIxs = await this.vault.maybeWrapSol(amount, glamSigner);
+      const wrapSolIxs = await this.client.vault.maybeWrapSol(
+        amount,
+        glamSigner,
+      );
       preInstructions.push(...wrapSolIxs);
 
-      // If we need to wrap SOL, it means the wSOL balance will be drained,
-      // and we close the wSOL token account for convenience
-      const tokenAccount = this.base.getVaultAta(WSOL);
-      const closeTokenAccountIx = await this.base.extSplProgram.methods
+      const tokenAccount = this.client.base.getVaultAta(WSOL);
+      const closeTokenAccountIx = await this.client.base.extSplProgram.methods
         .tokenCloseAccount()
         .accounts({
-          glamState: this.base.statePda,
+          glamState: this.client.base.statePda,
           glamSigner,
           tokenAccount,
           cpiProgram: TOKEN_PROGRAM_ID,
@@ -278,16 +202,16 @@ class TxBuilder extends BaseTxBuilder {
       });
     }
 
-    const ix = await this.base.extDriftProgram.methods
+    const ix = await this.client.base.extDriftProgram.methods
       .deposit(marketIndex, amount, false)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
         user,
         userStats,
         spotMarketVault: driftVault,
-        userTokenAccount: this.base.getVaultAta(mint, tokenProgram),
+        userTokenAccount: this.client.base.getVaultAta(mint, tokenProgram),
         tokenProgram,
       })
       .remainingAccounts(remainingAccounts)
@@ -302,7 +226,7 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ixs = await this.depositIxs(
       amount,
       marketIndex,
@@ -310,7 +234,7 @@ class TxBuilder extends BaseTxBuilder {
       glamSigner,
     );
     const tx = this.build(ixs, txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async withdrawIxs(
@@ -319,17 +243,17 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction[]> {
-    const { user, userStats } = this.drift.getDriftUserPdas(subAccountId);
+    const { user, userStats } = this.client.getDriftUserPdas(subAccountId);
     const {
       mint,
       tokenProgram,
       vault: driftVault,
-    } = await this.drift.fetchAndParseSpotMarket(marketIndex);
+    } = await this.client.fetchAndParseSpotMarket(marketIndex);
 
-    const glamVault = this.base.vaultPda;
-    const glamVaultAta = this.base.getVaultAta(mint, tokenProgram);
+    const glamVault = this.client.base.vaultPda;
+    const glamVaultAta = this.client.base.getVaultAta(mint, tokenProgram);
 
-    const remainingAccounts = await this.drift.composeRemainingAccounts(
+    const remainingAccounts = await this.client.composeRemainingAccounts(
       subAccountId,
       MarketType.SPOT,
       marketIndex,
@@ -343,7 +267,6 @@ class TxBuilder extends BaseTxBuilder {
       });
     }
 
-    // Create vault ata in case it doesn't exist
     const preIx = createAssociatedTokenAccountIdempotentInstruction(
       glamSigner,
       glamVaultAta,
@@ -351,12 +274,12 @@ class TxBuilder extends BaseTxBuilder {
       mint,
       tokenProgram,
     );
-    const ix = await this.base.extDriftProgram.methods
+    const ix = await this.client.base.extDriftProgram.methods
       .withdraw(marketIndex, amount, false)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
         user,
         userStats,
         spotMarketVault: driftVault,
@@ -376,7 +299,7 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ixs = await this.withdrawIxs(
       amount,
       marketIndex,
@@ -385,25 +308,23 @@ class TxBuilder extends BaseTxBuilder {
     );
 
     const tx = this.build(ixs, txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async updateUserCustomMarginRatioIx(
-    maxLeverage: number, // 1=1x, 2=2x ... 50=50x leverage
+    maxLeverage: number,
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
+    const { user } = this.client.getDriftUserPdas(subAccountId);
 
-    // https://github.com/drift-labs/protocol-v2/blob/babed162b08b1fe34e49a81c5aa3e4ec0a88ecdf/programs/drift/src/math/constants.rs#L183-L184
-    // 0 means No Limit
     const marginRatio =
       maxLeverage === 0 ? 0 : DRIFT_MARGIN_PRECISION / maxLeverage;
 
-    return await this.base.extDriftProgram.methods
+    return await this.client.base.extDriftProgram.methods
       .updateUserCustomMarginRatio(subAccountId, marginRatio)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
       })
@@ -411,18 +332,18 @@ class TxBuilder extends BaseTxBuilder {
   }
 
   public async updateUserCustomMarginRatioTx(
-    maxLeverage: number, // 1=1x, 2=2x ... 50=50x leverage
+    maxLeverage: number,
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.updateUserCustomMarginRatioIx(
       maxLeverage,
       subAccountId,
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async updateUserMarginTradingEnabledIx(
@@ -430,11 +351,11 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .updateUserMarginTradingEnabled(subAccountId, marginTradingEnabled)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
       })
@@ -446,14 +367,14 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.updateUserMarginTradingEnabledIx(
       marginTradingEnabled,
       subAccountId,
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async updateUserDelegateIx(
@@ -461,11 +382,11 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .updateUserDelegate(subAccountId, new PublicKey(delegate))
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
       })
@@ -477,26 +398,26 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.updateUserDelegateIx(
       delegate,
       subAccountId,
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async deleteUserIx(
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { user, userStats } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user, userStats } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .deleteUser()
       .accounts({
-        glamState: this.base.statePda,
-        state: this.drift.driftStatePda,
+        glamState: this.client.base.statePda,
+        state: this.client.driftStatePda,
         user,
         userStats,
         glamSigner,
@@ -508,10 +429,10 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.deleteUserIx(subAccountId, glamSigner);
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async placeOrderIx(
@@ -522,10 +443,10 @@ class TxBuilder extends BaseTxBuilder {
     const { marketIndex, marketType } = orderParams;
 
     const { user: referrer, userStats: referrerStats } =
-      this.drift.getGlamReferrerPdas();
+      this.client.getGlamReferrerPdas();
 
     const remainingAccounts = (
-      await this.drift.composeRemainingAccounts(
+      await this.client.composeRemainingAccounts(
         subAccountId,
         marketType,
         marketIndex,
@@ -535,14 +456,14 @@ class TxBuilder extends BaseTxBuilder {
       { pubkey: referrerStats, isWritable: true, isSigner: false },
     ]);
 
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .placeOrders([orderParams])
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -553,10 +474,10 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.placeOrderIx(orderParams, subAccountId, glamSigner);
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async modifyOrderIx(
@@ -567,20 +488,20 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const remainingAccounts = await this.drift.composeRemainingAccounts(
+    const remainingAccounts = await this.client.composeRemainingAccounts(
       subAccountId,
       marketType,
       marketIndex,
     );
 
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .modifyOrder(orderId, modifyOrderParams)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -594,7 +515,7 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.modifyOrderIx(
       modifyOrderParams,
       orderId,
@@ -604,7 +525,7 @@ class TxBuilder extends BaseTxBuilder {
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async cancelOrdersIx(
@@ -614,20 +535,20 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const remainingAccounts = await this.drift.composeRemainingAccounts(
+    const remainingAccounts = await this.client.composeRemainingAccounts(
       subAccountId,
       marketType,
       marketIndex,
     );
 
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .cancelOrders(marketType, marketIndex, direction)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -640,7 +561,7 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.cancelOrdersIx(
       marketType,
       marketIndex,
@@ -649,7 +570,7 @@ class TxBuilder extends BaseTxBuilder {
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async cancelOrdersByIdsIx(
@@ -658,16 +579,16 @@ class TxBuilder extends BaseTxBuilder {
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
     const remainingAccounts =
-      await this.drift.composeRemainingAccounts(subAccountId);
+      await this.client.composeRemainingAccounts(subAccountId);
 
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .cancelOrdersByIds(orderIds)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
       })
       .remainingAccounts(remainingAccounts)
       .instruction();
@@ -678,14 +599,14 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.cancelOrdersByIdsIx(
       orderIds,
       subAccountId,
       glamSigner,
     );
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async settlePnlIx(
@@ -693,21 +614,21 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const { vault: driftVault } = await this.drift.fetchAndParseSpotMarket(0);
-    const remainingAccounts = await this.drift.composeRemainingAccounts(
+    const { vault: driftVault } = await this.client.fetchAndParseSpotMarket(0);
+    const remainingAccounts = await this.client.composeRemainingAccounts(
       subAccountId,
       MarketType.PERP,
       marketIndex,
     );
 
-    const { user } = this.drift.getDriftUserPdas(subAccountId);
-    return await this.base.extDriftProgram.methods
+    const { user } = this.client.getDriftUserPdas(subAccountId);
+    return await this.client.base.extDriftProgram.methods
       .settlePnl(marketIndex)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         user,
-        state: this.drift.driftStatePda,
+        state: this.client.driftStatePda,
         spotMarketVault: driftVault,
       })
       .remainingAccounts(remainingAccounts)
@@ -719,14 +640,14 @@ class TxBuilder extends BaseTxBuilder {
     subAccountId: number = 0,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
+    const glamSigner = txOptions.signer || this.client.base.signer;
     const ix = await this.settlePnlIx(marketIndex, subAccountId, glamSigner);
     const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 }
 
-export class DriftClient {
+export class DriftProtocolClient {
   private spotMarkets = new Map<number, SpotMarket>();
   private perpMarkets = new Map<number, PerpMarket>();
   private marketConfigs: DriftMarketConfigs | null = null;
@@ -736,12 +657,10 @@ export class DriftClient {
     readonly base: BaseClient,
     readonly vault: VaultClient,
   ) {
-    this.txBuilder = new TxBuilder(base, vault, this);
+    this.txBuilder = new TxBuilder(this);
   }
 
-  /*
-   * Client methods
-   */
+  // Client methods
 
   public async initialize(
     subAccountId: number = 0,
@@ -752,7 +671,7 @@ export class DriftClient {
   }
 
   public async updateUserCustomMarginRatio(
-    maxLeverage: number, // 1=1x, 2=2x ... 50=50x leverage
+    maxLeverage: number,
     subAccountId: number = 0,
   ): Promise<TransactionSignature> {
     const tx = await this.txBuilder.updateUserCustomMarginRatioTx(
@@ -899,43 +818,7 @@ export class DriftClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  /*
-   * Utils
-   */
-
-  getMarketPda = (marketType: MarketType, marketIndex: number) =>
-    PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(
-          `${marketType === MarketType.PERP ? "perp" : "spot"}_market`,
-        ),
-        new anchor.BN(marketIndex).toArrayLike(Buffer, "le", 2),
-      ],
-      DRIFT_PROGRAM_ID,
-    )[0];
-
-  getUserPda = (authority: PublicKey, subAccountId = 0) =>
-    PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("user"),
-        authority.toBuffer(),
-        new anchor.BN(subAccountId).toArrayLike(Buffer, "le", 2),
-      ],
-      DRIFT_PROGRAM_ID,
-    )[0];
-
-  getUserStatsPda = (authority: PublicKey): PublicKey =>
-    PublicKey.findProgramAddressSync(
-      [Buffer.from("user_stats"), authority.toBuffer()],
-      DRIFT_PROGRAM_ID,
-    )[0];
-
-  getGlamReferrerPdas(): { user: PublicKey; userStats: PublicKey } {
-    return {
-      user: this.getUserPda(GLAM_REFERRER, 0),
-      userStats: this.getUserStatsPda(GLAM_REFERRER),
-    };
-  }
+  // Utils
 
   parsePerpMarket(address: PublicKey, data: Buffer): PerpMarket {
     const perpMarket = DriftPerpMarket.decode(address, data);
@@ -999,6 +882,40 @@ export class DriftClient {
     return balance;
   }
 
+  // PDA helpers
+
+  getMarketPda = (marketType: MarketType, marketIndex: number) =>
+    PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(`${"perp" in marketType ? "perp" : "spot"}_market`),
+        new BN(marketIndex).toArrayLike(Buffer, "le", 2),
+      ],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getUserPda = (authority: PublicKey, subAccountId = 0) =>
+    PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("user"),
+        authority.toBuffer(),
+        new BN(subAccountId).toArrayLike(Buffer, "le", 2),
+      ],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getUserStatsPda = (authority: PublicKey): PublicKey =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("user_stats"), authority.toBuffer()],
+      DRIFT_PROGRAM_ID,
+    )[0];
+
+  getGlamReferrerPdas(): { user: PublicKey; userStats: PublicKey } {
+    return {
+      user: this.getUserPda(GLAM_REFERRER, 0),
+      userStats: this.getUserStatsPda(GLAM_REFERRER),
+    };
+  }
+
   public getDriftUserPdas(subAccountId: number = 0): {
     user: PublicKey;
     userStats: PublicKey;
@@ -1060,8 +977,6 @@ export class DriftClient {
       });
     }
 
-    // At this point this.spotMarkets should have all the requested markets
-    // If not, it means some market indexes are invalid and we throw an error
     const spotMarkets = marketIndexes
       .map((marketIndex) => this.spotMarkets.get(marketIndex)!)
       .filter((m) => m);
@@ -1140,7 +1055,6 @@ export class DriftClient {
   public async fetchMarketConfigs(
     skipCache: boolean = false,
   ): Promise<DriftMarketConfigs> {
-    // Attempt to fetch market configs from glam API first
     const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
     if (glamApi) {
       const response = await fetch(`${glamApi}/v0/drift/market_configs/`);
@@ -1152,7 +1066,6 @@ export class DriftClient {
       const data = await response.json();
       const { orderConstants, perp, spot } = data;
 
-      // Transform market data from API to `PerpMarket`/`SpotMarket` objects
       const perpMarkets = perp.map((m: any) => ({
         name: m.symbol,
         marketIndex: m.marketIndex,
@@ -1175,7 +1088,6 @@ export class DriftClient {
         cumulativeBorrowInterest: new BN(m.cumulativeBorrowInterest),
       })) as SpotMarket[];
 
-      // Cache market objects
       perpMarkets.forEach((m) => {
         this.perpMarkets.set(m.marketIndex, m);
       });
@@ -1192,8 +1104,6 @@ export class DriftClient {
       return marketConfigs;
     }
 
-    // If glam API is not available, fetch market configs from RPC
-    // Force refetching if skipCache is true
     if (!this.marketConfigs || skipCache) {
       const perpMarkets = await this.fetchAndParsePerpMarkets(
         Array.from(Array(100).keys()),
@@ -1229,7 +1139,6 @@ export class DriftClient {
       poolId,
     } = decodeUser(accountInfo.data);
 
-    // Fetch spot and perp markets used by this user
     const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
     const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
     await Promise.all([
@@ -1237,7 +1146,6 @@ export class DriftClient {
       this.fetchAndParsePerpMarkets(perpMarketIndexes),
     ]);
 
-    // Extend spot positions with market info
     const spotPositionsExt = await Promise.all(
       spotPositions.map(async (p) => {
         const spotMarket = this.spotMarkets.get(p.marketIndex);
@@ -1285,7 +1193,6 @@ export class DriftClient {
       return null;
     }
 
-    // Prefetch market configs
     await this.fetchMarketConfigs(skipCache);
 
     return await this.parseDriftUser(accountInfo, subAccountId);
@@ -1308,7 +1215,6 @@ export class DriftClient {
       }
     });
 
-    // Prefetch market configs
     await this.fetchMarketConfigs(skipCache);
 
     return await Promise.all(
@@ -1334,7 +1240,6 @@ export class DriftClient {
     const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
     const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
 
-    // Note that marketIndex is could be 0, need to explicitly check undefined
     if (
       this.marketTypeEquals(marketType, MarketType.SPOT) &&
       marketIndex !== undefined &&
@@ -1349,7 +1254,6 @@ export class DriftClient {
       perpMarketIndexes.push(marketIndex);
     }
 
-    // Also include USDC spot market if we're composing remaining accounts for spot or perp orders
     if (
       this.marketTypeEquals(marketType, MarketType.PERP) ||
       this.marketTypeEquals(marketType, MarketType.SPOT)
@@ -1397,318 +1301,5 @@ export class DriftClient {
           isSigner: false,
         })),
       );
-  }
-}
-
-export class DriftVaultsClient {
-  public constructor(
-    readonly base: BaseClient,
-    readonly drift: DriftClient,
-  ) {}
-
-  async fetchUserPositions(user: PublicKey): Promise<{
-    perpPositions: PerpPosition[];
-    spotPositions: SpotPosition[];
-  }> {
-    const accountInfo =
-      await this.base.provider.connection.getAccountInfo(user);
-    if (!accountInfo) {
-      throw new Error(`Drift user ${user} account not found for vault.`);
-    }
-    const { spotPositions, perpPositions } = decodeUser(accountInfo.data);
-    return { perpPositions, spotPositions };
-  }
-
-  getDepositorPda(driftVault: PublicKey) {
-    return PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("vault_depositor"),
-        driftVault.toBuffer(),
-        this.base.vaultPda.toBuffer(),
-      ],
-      DRIFT_VAULTS_PROGRAM_ID,
-    )[0];
-  }
-
-  async parseDriftVaults(driftVaults: PublicKey[]) {
-    const connection = this.base.provider.connection;
-    const accountsInfo = await connection.getMultipleAccountsInfo(driftVaults);
-
-    const validAccountsInfo = accountsInfo.map((accountInfo, i) => {
-      if (!accountInfo) {
-        throw new Error(`Drift vault account not found: ${driftVaults[i]}`);
-      }
-      return accountInfo;
-    });
-
-    return validAccountsInfo.map((accountInfo, i) => {
-      return DriftVault.decode(driftVaults[i], accountInfo.data);
-    });
-  }
-
-  async parseDriftVault(driftVault: PublicKey) {
-    return (await this.parseDriftVaults([driftVault]))[0];
-  }
-
-  async composeRemainingAccounts(user: PublicKey): Promise<AccountMeta[]> {
-    const { spotPositions, perpPositions } =
-      await this.fetchUserPositions(user);
-    const spotMarketIndexes = spotPositions.map((p) => p.marketIndex);
-    const perpMarketIndexes = perpPositions.map((p) => p.marketIndex);
-
-    // If there are perp positions, add spot market 0 as it's used as quote market for perp
-    if (perpMarketIndexes.length > 0 && !spotMarketIndexes.includes(0)) {
-      spotMarketIndexes.push(0);
-    }
-
-    const spotMarkets =
-      await this.drift.fetchAndParseSpotMarkets(spotMarketIndexes);
-    const perpMarkets =
-      await this.drift.fetchAndParsePerpMarkets(perpMarketIndexes);
-
-    const oracles = spotMarkets
-      .map((m) => m.oracle)
-      .concat(perpMarkets.map((m) => m.oracle));
-    const markets = spotMarkets
-      .map((m) => m.marketPda)
-      .concat(perpMarkets.map((m) => m.marketPda));
-
-    return oracles
-      .map((o) => ({
-        pubkey: new PublicKey(o),
-        isWritable: false,
-        isSigner: false,
-      }))
-      .concat(
-        markets.map((m) => ({
-          pubkey: new PublicKey(m),
-          isWritable: true,
-          isSigner: false,
-        })),
-      );
-  }
-
-  parseDepositor(depositor: PublicKey, data: Buffer) {
-    const driftVault = new PublicKey(data.subarray(8, 40));
-    const shares = new BN(data.subarray(104, 112), "le");
-    return { address: depositor, driftVault, shares };
-  }
-
-  /**
-   * Finds all drift vault depositors
-   */
-  public async findAndParseVaultDepositors(authority?: PublicKey) {
-    const accounts = await this.base.provider.connection.getProgramAccounts(
-      DRIFT_VAULTS_PROGRAM_ID,
-      {
-        filters: [
-          { dataSize: DRIFT_VAULT_DEPOSITOR_SIZE },
-          {
-            memcmp: {
-              offset: 72,
-              bytes: (authority || this.base.vaultPda).toBase58(),
-            },
-          },
-        ],
-      },
-    );
-    return accounts.map((a) => this.parseDepositor(a.pubkey, a.account.data));
-  }
-
-  public async initializeVaultDepositor(
-    driftVault: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vaultDepositor = this.getDepositorPda(driftVault);
-
-    const tx = await this.base.extDriftProgram.methods
-      .vaultsInitializeVaultDepositor()
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        vault: driftVault,
-        vaultDepositor,
-      })
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async deposit(
-    driftVault: PublicKey,
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
-
-    const {
-      user: driftUser,
-      tokenAccount: vaultTokenAccount,
-      userStats: driftUserStats,
-      spotMarketIndex,
-      vaultProtocol, // if true the last remaining account should be the vaultProtocol account (for protocol fee)
-    } = await this.parseDriftVault(driftVault);
-    if (vaultProtocol) {
-      throw new Error("Drift Vault with an external protocol is not supported");
-    }
-
-    const preInstructions = [];
-
-    // Auto create vault depositor if not initialized
-    const vaultDepositor = this.getDepositorPda(driftVault);
-    if (!(await this.base.provider.connection.getAccountInfo(vaultDepositor))) {
-      preInstructions.push(
-        await this.base.extDriftProgram.methods
-          .vaultsInitializeVaultDepositor()
-          .accounts({
-            glamState: this.base.statePda,
-            glamSigner,
-            vault: driftVault,
-            vaultDepositor,
-          })
-          .instruction(),
-      );
-    }
-
-    const {
-      vault: driftSpotMarketVault,
-      mint,
-      tokenProgram,
-    } = await this.drift.fetchAndParseSpotMarket(spotMarketIndex);
-
-    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
-
-    // GLAM vault's token account for deposit asset, we assume it exists
-    const userTokenAccount = this.base.getVaultAta(mint, tokenProgram);
-
-    const tx = await this.base.extDriftProgram.methods
-      .vaultsDeposit(amount)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        vault: driftVault,
-        vaultDepositor,
-        vaultTokenAccount,
-        driftUserStats,
-        driftUser,
-        driftState: this.drift.driftStatePda,
-        driftSpotMarketVault,
-        userTokenAccount,
-        tokenProgram,
-        driftProgram: DRIFT_PROGRAM_ID,
-      })
-      .preInstructions(preInstructions)
-      .remainingAccounts(remainingAccounts)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async requestWithdraw(
-    driftVault: PublicKey,
-    amount: BN,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vaultDepositor = this.getDepositorPda(driftVault);
-
-    const { user: driftUser, userStats: driftUserStats } =
-      await this.parseDriftVault(driftVault);
-
-    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
-
-    const tx = await this.base.extDriftProgram.methods
-      .vaultsRequestWithdraw(amount, { shares: {} })
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        vault: driftVault,
-        vaultDepositor,
-        driftUserStats,
-        driftUser,
-      })
-      .remainingAccounts(remainingAccounts)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async cancelWithdrawRequest(
-    driftVault: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vaultDepositor = this.getDepositorPda(driftVault);
-
-    const { user: driftUser, userStats: driftUserStats } =
-      await this.parseDriftVault(driftVault);
-
-    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
-
-    const tx = await this.base.extDriftProgram.methods
-      .vaultsCancelRequestWithdraw()
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        vault: driftVault,
-        vaultDepositor,
-        driftUserStats,
-        driftUser,
-      })
-      .remainingAccounts(remainingAccounts)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  public async withdraw(
-    driftVault: PublicKey,
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const vaultDepositor = this.getDepositorPda(driftVault);
-
-    const {
-      user: driftUser,
-      userStats: driftUserStats,
-      tokenAccount: vaultTokenAccount,
-      spotMarketIndex,
-    } = await this.parseDriftVault(driftVault);
-    const {
-      vault: driftSpotMarketVault,
-      mint,
-      tokenProgram,
-    } = await this.drift.fetchAndParseSpotMarket(spotMarketIndex);
-    const userTokenAccount = this.base.getVaultAta(mint, tokenProgram);
-
-    const remainingAccounts = await this.composeRemainingAccounts(driftUser);
-
-    const tx = await this.base.extDriftProgram.methods
-      .vaultsWithdraw()
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-        vault: driftVault,
-        vaultDepositor,
-        vaultTokenAccount,
-        driftUserStats,
-        driftUser,
-        driftSpotMarketVault,
-        driftSigner: DRIFT_SIGNER,
-        userTokenAccount,
-        driftState: this.drift.driftStatePda,
-        driftProgram: DRIFT_PROGRAM_ID,
-        tokenProgram,
-      })
-      .remainingAccounts(remainingAccounts)
-      .transaction();
-
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
   }
 }

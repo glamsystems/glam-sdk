@@ -5,6 +5,8 @@ import {
   StakeProgram,
   ParsedAccountData,
   LAMPORTS_PER_SOL,
+  SystemProgram,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { STAKE_ACCOUNT_SIZE } from "../constants";
 import { type TokenAccount } from "../client/base";

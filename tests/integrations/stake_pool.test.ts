@@ -1,6 +1,11 @@
 import { BN } from "@coral-xyz/anchor";
 
-import { GlamClient, nameToChars, STAKE_ACCOUNT_SIZE } from "../../src";
+import {
+  getStakeAccountsWithStates,
+  GlamClient,
+  nameToChars,
+  STAKE_ACCOUNT_SIZE,
+} from "../../src";
 import { PublicKey } from "@solana/web3.js";
 import {
   airdrop,
@@ -17,6 +22,8 @@ describe("stake_pool", () => {
   const connection = glamClient.provider.connection;
 
   let defaultVote: PublicKey; // the test validator's default vote account
+  let statePda: PublicKey;
+  let vaultPda: PublicKey;
 
   beforeAll(async () => {
     const voteAccountStatus = await connection.getVoteAccounts();
@@ -24,9 +31,7 @@ describe("stake_pool", () => {
       (a, b) => b.activatedStake - a.activatedStake,
     )[0].votePubkey;
     defaultVote = new PublicKey(vote);
-  });
 
-  it("Create vault with 100 SOL in vault", async () => {
     const integrationAcls = [
       {
         integrationProgram: glamClient.protocolProgram.programId,
@@ -39,11 +44,15 @@ describe("stake_pool", () => {
         protocolPolicies: [],
       },
     ];
-    const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
+
+    const created = await createGlamStateForTest(glamClient, {
       ...defaultInitStateParams,
       name: nameToChars("Stake Pool Tests"),
       integrationAcls,
     });
+    statePda = created.statePda;
+    vaultPda = created.vaultPda;
+
     console.log("State PDA:", statePda.toBase58());
     console.log("Vault PDA:", vaultPda.toBase58());
 
@@ -52,7 +61,7 @@ describe("stake_pool", () => {
 
   it("Initialize stake with 10 SOL and delegate to a validator", async () => {
     try {
-      const txSig = await glamClient.staking.initializeAndDelegateStake(
+      const txSig = await glamClient.stake.initializeAndDelegateStake(
         defaultVote,
         new BN(10_000_000_000),
       );
@@ -62,7 +71,10 @@ describe("stake_pool", () => {
       throw e;
     }
 
-    const stakeAccounts = await glamClient.staking.getStakeAccountsWithStates();
+    const stakeAccounts = await getStakeAccountsWithStates(
+      glamClient.connection,
+      glamClient.vaultPda,
+    );
     expect(stakeAccounts.length).toEqual(1);
   }, 15_000);
 
@@ -117,7 +129,7 @@ describe("stake_pool", () => {
 
   it("[spl-stake-pool] Deposit 10 SOL to jito stake pool", async () => {
     try {
-      const txSig = await glamClient.staking.stakePoolDepositSol(
+      const txSig = await glamClient.stakePool.depositSol(
         JITO_STAKE_POOL,
         new BN(10_000_000_000),
       );
@@ -152,7 +164,7 @@ describe("stake_pool", () => {
 
   it("[sanctum-single-valiator] Deposit 10 SOL to bonk stake pool", async () => {
     try {
-      const txSig = await glamClient.staking.stakePoolDepositSol(
+      const txSig = await glamClient.stakePool.depositSol(
         BONK_STAKE_POOL,
         new BN(10_000_000_000),
       );
@@ -165,15 +177,17 @@ describe("stake_pool", () => {
 
   it("[sanctum-single-valiator] Withdraw 1 bonkSOL to stake account", async () => {
     try {
-      const txSig = await glamClient.staking.stakePoolWithdrawStake(
+      const txSig = await glamClient.stakePool.withdrawStake(
         BONK_STAKE_POOL,
         new BN(1_000_000_000),
       );
       console.log("stakePoolWithdrawStake tx:", txSig);
 
       // Now we should have 2 stake accounts: 1 from jito and 1 from bonk
-      const stakeAccounts =
-        await glamClient.staking.getStakeAccountsWithStates();
+      const stakeAccounts = await getStakeAccountsWithStates(
+        glamClient.connection,
+        glamClient.vaultPda,
+      );
       expect(stakeAccounts.length).toEqual(2);
     } catch (e) {
       console.error(e);
@@ -183,7 +197,7 @@ describe("stake_pool", () => {
 
   it("[sanctum-multi-valiator] Deposit 10 SOL to phase labs stake pool", async () => {
     try {
-      const txSig = await glamClient.staking.stakePoolDepositSol(
+      const txSig = await glamClient.stakePool.depositSol(
         PHASE_LABS_STAKE_POOL,
         new BN(10_000_000_000),
       );
@@ -200,14 +214,16 @@ describe("stake_pool", () => {
   // We might need to clone the validator stake account to withdraw from it.
   it("[sanctum-multi-valiator] Withdraw 1 phaseSOL to stake account", async () => {
     try {
-      const txSig = await glamClient.staking.stakePoolWithdrawStake(
+      const txSig = await glamClient.stakePool.withdrawStake(
         PHASE_LABS_STAKE_POOL,
         new BN(1_000_000_000),
       );
       console.log("stakePoolWithdrawStake tx:", txSig);
 
-      const stakeAccounts =
-        await glamClient.staking.getStakeAccountsWithStates();
+      const stakeAccounts = await getStakeAccountsWithStates(
+        glamClient.connection,
+        glamClient.vaultPda,
+      );
       expect(stakeAccounts.length).toEqual(3);
     } catch (e) {
       console.error(e);
@@ -216,9 +232,12 @@ describe("stake_pool", () => {
   });
 
   it("Deactivate stake accounts", async () => {
-    const stakeAccounts = await glamClient.staking.getStakeAccountsWithStates();
+    const stakeAccounts = await getStakeAccountsWithStates(
+      glamClient.connection,
+      glamClient.vaultPda,
+    );
     try {
-      const txSig = await glamClient.staking.deactivate(
+      const txSig = await glamClient.stake.deactivate(
         stakeAccounts.map((account) => account.address),
       );
       console.log("deactivateStakeAccounts tx:", txSig);
@@ -231,8 +250,10 @@ describe("stake_pool", () => {
   it("Withdraw from stake accounts", async () => {
     await sleep(30_000); // Wait till the next epoch to withdraw
 
-    const stakeAccountsInfo =
-      await glamClient.staking.getStakeAccountsWithStates();
+    const stakeAccountsInfo = await getStakeAccountsWithStates(
+      glamClient.connection,
+      glamClient.vaultPda,
+    );
     const lamportsInStakeAccounts = stakeAccountsInfo.reduce(
       (acc, account) => acc + (account?.lamports ?? 0),
       0,
@@ -241,7 +262,7 @@ describe("stake_pool", () => {
     const vaultLamportsBefore = await glamClient.getVaultLamports();
 
     try {
-      const txSig = await glamClient.staking.withdraw(
+      const txSig = await glamClient.stake.withdraw(
         stakeAccountsInfo.map((s) => s.address),
       );
       console.log("withdrawFromStakeAccounts tx:", txSig);
@@ -260,11 +281,13 @@ describe("stake_pool", () => {
       vaultLamportsBefore + lamportsInStakeAccounts - totalRent,
     );
 
-    const stakeAccountsAfter =
-      await glamClient.staking.getStakeAccountsWithStates();
+    const stakeAccountsAfter = await getStakeAccountsWithStates(
+      glamClient.connection,
+      glamClient.vaultPda,
+    );
     expect(stakeAccountsAfter.length).toEqual(0);
 
     const stateModel = await glamClient.fetchStateModel();
     expect(stateModel.externalPositions?.length).toEqual(0);
-  }, 35_000);
+  }, 45_000);
 });

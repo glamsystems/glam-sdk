@@ -3,7 +3,7 @@ import { BN, Wallet } from "@coral-xyz/anchor";
 import {
   airdrop,
   createGlamStateForTest,
-  stateModelForTest,
+  defaultInitStateParams,
   str2seed,
 } from "../glam_protocol/setup";
 import {
@@ -39,7 +39,7 @@ describe("jupiter_swap", () => {
 
   it("Create vault and enable JupiterSwap protocol", async () => {
     const { statePda, vaultPda } = await createGlamStateForTest(glamClient, {
-      ...stateModelForTest,
+      ...defaultInitStateParams,
       name: nameToChars("Jupiter Swap Tests"),
       assets: [WSOL],
     });
@@ -104,7 +104,7 @@ describe("jupiter_swap", () => {
           "confirmed",
         );
         expect(tokenAccount).toBeUndefined();
-      } catch (e) {
+      } catch (e: any) {
         expect(e.name).toEqual("TokenAccountNotFoundError");
       }
     });
@@ -238,7 +238,7 @@ describe("jupiter_swap", () => {
         txOptions,
       );
       expect(txSig).toBeUndefined();
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe("Signer is not authorized");
     }
 

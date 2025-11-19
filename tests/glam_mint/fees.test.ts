@@ -64,7 +64,7 @@ describe("fees", () => {
 
   it("Set protocol fees: fail before fees crystallized", async () => {
     try {
-      const setIx = await glamClient.fees.setProtocolFeesIx(2, 4000);
+      const setIx = await glamClient.fees.txBuilder.setProtocolFeesIx(2, 4000);
       const vTx = await glamClient.intoVersionedTransaction(
         new Transaction().add(setIx),
         txOptions,

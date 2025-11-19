@@ -1,6 +1,6 @@
 import { GlamClientConfig } from "./clientConfig";
 import { BaseClient } from "./client/base";
-import { DriftClient, DriftVaultsClient } from "./client/drift";
+import { DriftProtocolClient, DriftVaultsClient } from "./client/drift";
 import { JupiterSwapClient } from "./client/jupiter";
 import { MarinadeClient } from "./client/marinade";
 import { VaultClient } from "./client/vault";
@@ -16,10 +16,9 @@ import { FeesClient } from "./client/fees";
 import { MintClient } from "./client/mint";
 import { AccessClient } from "./client/access";
 import { TimelockClient } from "./client/timelock";
-import { StakingClient } from "./client/staking";
+import { StakeClient } from "./client/stake";
+import { StakePoolClient } from "./client/stake-pool";
 import { CctpClient } from "./client/cctp";
-// import { JupiterVoteClient } from "./client/jupiter";
-// import { MeteoraDlmmClient } from "./client/meteora";
 
 /**
  * Main entrypoint for the GLAM SDK
@@ -27,14 +26,15 @@ import { CctpClient } from "./client/cctp";
  * Lazy loads each client/module at first use
  */
 export class GlamClient extends BaseClient {
-  private _drift?: DriftClient;
+  private _drift?: DriftProtocolClient;
   private _driftVaults?: DriftVaultsClient;
   private _invest?: InvestClient;
   private _jupiterSwap?: JupiterSwapClient;
   private _marinade?: MarinadeClient;
   private _vault?: VaultClient;
   private _price?: PriceClient;
-  private _staking?: StakingClient;
+  private _stake?: StakeClient;
+  private _stakePool?: StakePoolClient;
   private _state?: StateClient;
   private _mint?: MintClient;
   private _access?: AccessClient;
@@ -44,16 +44,14 @@ export class GlamClient extends BaseClient {
   private _fees?: FeesClient;
   private _timelock?: TimelockClient;
   private _cctp?: CctpClient;
-  // private _meteoraDlmm?: MeteoraDlmmClient;
-  // private _jupiterVote?: JupiterVoteClient;
 
   public constructor(config?: GlamClientConfig) {
     super(config);
   }
 
-  get drift(): DriftClient {
+  get drift(): DriftProtocolClient {
     if (!this._drift) {
-      this._drift = new DriftClient(this, this.vault);
+      this._drift = new DriftProtocolClient(this, this.vault);
     }
     return this._drift;
   }
@@ -86,16 +84,9 @@ export class GlamClient extends BaseClient {
     return this._jupiterSwap;
   }
 
-  // get jupiterVote(): JupiterVoteClient {
-  //   if (!this._jupiterVote) {
-  //     this._jupiterVote = new JupiterVoteClient(this);
-  //   }
-  //   return this._jupiterVote;
-  // }
-
   get marinade(): MarinadeClient {
     if (!this._marinade) {
-      this._marinade = new MarinadeClient(this);
+      this._marinade = new MarinadeClient(this, this.stake);
     }
     return this._marinade;
   }
@@ -107,11 +98,18 @@ export class GlamClient extends BaseClient {
     return this._vault;
   }
 
-  get staking(): StakingClient {
-    if (!this._staking) {
-      this._staking = new StakingClient(this, this.marinade);
+  get stake(): StakeClient {
+    if (!this._stake) {
+      this._stake = new StakeClient(this);
     }
-    return this._staking;
+    return this._stake;
+  }
+
+  get stakePool(): StakePoolClient {
+    if (!this._stakePool) {
+      this._stakePool = new StakePoolClient(this, this.stake, this.marinade);
+    }
+    return this._stakePool;
   }
 
   get price(): PriceClient {
@@ -183,11 +181,4 @@ export class GlamClient extends BaseClient {
     }
     return this._cctp;
   }
-
-  // get meteoraDlmm(): MeteoraDlmmClient {
-  //   if (!this._meteoraDlmm) {
-  //     this._meteoraDlmm = new MeteoraDlmmClient(this);
-  //   }
-  //   return this._meteoraDlmm;
-  // }
 }

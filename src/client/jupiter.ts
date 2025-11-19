@@ -11,7 +11,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
 
-import { BaseClient, TxOptions } from "./base";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { JUPITER_API_DEFAULT, WSOL } from "../constants";
 import { STAKE_POOLS_MAP } from "../assets";
 import { fetchMintsAndTokenPrograms } from "../utils/accounts";
@@ -173,22 +173,19 @@ export async function getSwapInstructions(
   return await res.json();
 }
 
-class TxBuilder {
-  public constructor(
-    readonly base: BaseClient,
-    readonly vault: VaultClient,
-  ) {}
-
-  async swap(
+class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
+  /**
+   * Returns the instructions for a Jupiter swap and the lookup tables
+   */
+  async swapIxs(
     options: {
       quoteParams?: QuoteParams;
       quoteResponse?: QuoteResponse;
       swapInstructions?: SwapInstructions;
     },
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const glamVault = this.base.vaultPda;
+    glamSigner: PublicKey,
+  ): Promise<[TransactionInstruction[], PublicKey[]]> {
+    const glamVault = this.client.base.vaultPda;
 
     let swapInstruction: InstructionFromJupiter;
     let addressLookupTableAddresses: string[];
@@ -249,7 +246,7 @@ class TxBuilder {
       this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
     const [inputTokenProgram, outputTokenProgram] = (
-      await fetchMintsAndTokenPrograms(this.base.provider.connection, [
+      await fetchMintsAndTokenPrograms(this.client.base.connection, [
         inputMint,
         outputMint,
       ])
@@ -267,10 +264,10 @@ class TxBuilder {
       amount,
       outputTokenProgram,
     );
-    const tx = await this.base.protocolProgram.methods
+    const ix = await this.client.base.protocolProgram.methods
       .jupiterSwap(swapIx.data)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
         inputMint,
         outputMint,
@@ -280,13 +277,21 @@ class TxBuilder {
         outputStakePool,
       })
       .remainingAccounts(swapIx.keys)
-      .preInstructions(preInstructions)
-      .transaction();
+      .instruction();
+    return [[...preInstructions, ix], lookupTables];
+  }
 
-    return this.base.intoVersionedTransaction(tx, {
-      lookupTables,
-      ...txOptions,
-    });
+  async swapTx(
+    options: {
+      quoteParams?: QuoteParams;
+      quoteResponse?: QuoteResponse;
+      swapInstructions?: SwapInstructions;
+    },
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const [ixs, lookupTables] = await this.swapIxs(options, glamSigner);
+    return await this.buildVersionedTx(ixs, { lookupTables, ...txOptions });
   }
 
   getPreInstructions = async (
@@ -299,8 +304,8 @@ class TxBuilder {
     const preInstructions = [
       createAssociatedTokenAccountIdempotentInstruction(
         signer,
-        this.base.getVaultAta(outputMint, outputTokenProgram),
-        this.base.vaultPda,
+        this.client.base.getVaultAta(outputMint, outputTokenProgram),
+        this.client.base.vaultPda,
         outputMint,
         outputTokenProgram,
       ),
@@ -308,7 +313,7 @@ class TxBuilder {
 
     // Transfer SOL to wSOL ATA if needed for the vault
     if (inputMint.equals(WSOL)) {
-      const wrapSolIxs = await this.vault.maybeWrapSol(amount, signer);
+      const wrapSolIxs = await this.client.vault.maybeWrapSol(amount, signer);
       preInstructions.push(...wrapSolIxs);
     }
 
@@ -342,7 +347,7 @@ export class JupiterSwapClient {
     readonly base: BaseClient,
     readonly vault: VaultClient,
   ) {
-    this.txBuilder = new TxBuilder(base, vault);
+    this.txBuilder = new TxBuilder(this);
   }
 
   public async swap(
@@ -353,7 +358,7 @@ export class JupiterSwapClient {
     },
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const tx = await this.txBuilder.swap(options, txOptions);
+    const tx = await this.txBuilder.swapTx(options, txOptions);
     return await this.base.sendAndConfirm(tx);
   }
 }

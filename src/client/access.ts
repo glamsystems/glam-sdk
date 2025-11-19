@@ -8,71 +8,58 @@ import { BN } from "@coral-xyz/anchor";
 import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { EmergencyAccessUpdateArgs } from "../models";
 
-class TxBuilder extends BaseTxBuilder {
-  async emergencyAccessUpdate(
-    args: Partial<EmergencyAccessUpdateArgs>,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const ix = await this.emergencyAccessUpdateIx(args, txOptions.signer);
-    const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
+class TxBuilder extends BaseTxBuilder<AccessClient> {
   async emergencyAccessUpdateIx(
     args: Partial<EmergencyAccessUpdateArgs>,
     signer?: PublicKey,
   ): Promise<TransactionInstruction> {
-    return await this.base.protocolProgram.methods
+    return await this.client.base.protocolProgram.methods
       .emergencyAccessUpdate(new EmergencyAccessUpdateArgs(args))
       .accounts({
-        glamState: this.base.statePda,
-        glamSigner: signer || this.base.signer,
+        glamState: this.client.base.statePda,
+        glamSigner: signer || this.client.base.signer,
       })
       .instruction();
   }
 
-  async enableDisableProtocols(
+  async emergencyAccessUpdateTx(
+    args: Partial<EmergencyAccessUpdateArgs>,
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.emergencyAccessUpdateIx(args, glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
+  }
+
+  async enableDisableProtocolsIx(
+    integrationProgram: PublicKey,
+    protocolBitmask: number,
+    setEnabled: boolean,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
+      .enableDisableProtocols(integrationProgram, protocolBitmask, setEnabled)
+      .accounts({
+        glamState: this.client.base.statePda,
+        glamSigner,
+      })
+      .instruction();
+  }
+
+  async enableDisableProtocolsTx(
     integrationProgram: PublicKey,
     protocolBitmask: number,
     setEnabled: boolean,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
-      .enableDisableProtocols(integrationProgram, protocolBitmask, setEnabled)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
-  }
-
-  async grantRevokeDelegatePermissions(
-    delegate: PublicKey,
-    integrationProgram: PublicKey,
-    protocolBitflag: number,
-    permissionsBitmask: BN,
-    setGranted: boolean,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
-      .grantRevokeDelegatePermissions(
-        delegate,
-        integrationProgram,
-        protocolBitflag,
-        permissionsBitmask,
-        setGranted,
-      )
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.enableDisableProtocolsIx(
+      integrationProgram,
+      protocolBitmask,
+      setEnabled,
+      glamSigner,
+    );
+    return await this.buildVersionedTx([ix], txOptions);
   }
 
   async grantRevokeDelegatePermissionsIx(
@@ -81,10 +68,9 @@ class TxBuilder extends BaseTxBuilder {
     protocolBitflag: number,
     permissionsBitmask: BN,
     setGranted: boolean,
-    txOptions: TxOptions = {},
+    signer?: PublicKey,
   ): Promise<TransactionInstruction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    return await this.base.protocolProgram.methods
+    return await this.client.base.protocolProgram.methods
       .grantRevokeDelegatePermissions(
         delegate,
         integrationProgram,
@@ -93,36 +79,70 @@ class TxBuilder extends BaseTxBuilder {
         setGranted,
       )
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
+        glamSigner: signer || this.client.base.signer,
+      })
+      .instruction();
+  }
+
+  async grantRevokeDelegatePermissionsTx(
+    delegate: PublicKey,
+    integrationProgram: PublicKey,
+    protocolBitflag: number,
+    permissionsBitmask: BN,
+    setGranted: boolean,
+    txOptions: TxOptions,
+  ): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.grantRevokeDelegatePermissionsIx(
+      delegate,
+      integrationProgram,
+      protocolBitflag,
+      permissionsBitmask,
+      setGranted,
+      glamSigner,
+    );
+    return await this.buildVersionedTx([ix], txOptions);
+  }
+
+  async setProtocolPolicyIx(
+    integrationProgram: PublicKey,
+    protocolBitflag: number,
+    data: Buffer,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
+      .setProtocolPolicy(integrationProgram, protocolBitflag, data)
+      .accounts({
+        glamState: this.client.base.statePda,
         glamSigner,
       })
       .instruction();
   }
 
-  async setProtocolPolicy(
+  async setProtocolPolicyTx(
     integrationProgram: PublicKey,
     protocolBitflag: number,
     data: Buffer,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.client.base.protocolProgram.methods
       .setProtocolPolicy(integrationProgram, protocolBitflag, data)
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
       })
-      .preInstructions(txOptions.preInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
+    return await this.buildVersionedTx([ix], txOptions);
   }
 }
 
 export class AccessClient {
-  public readonly txBuilder: TxBuilder;
+  txBuilder: TxBuilder;
 
   public constructor(readonly base: BaseClient) {
-    this.txBuilder = new TxBuilder(base);
+    this.txBuilder = new TxBuilder(this);
   }
 
   /**
@@ -132,7 +152,7 @@ export class AccessClient {
     args: Partial<EmergencyAccessUpdateArgs>,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.emergencyAccessUpdate(args, txOptions);
+    const vTx = await this.txBuilder.emergencyAccessUpdateTx(args, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -144,7 +164,7 @@ export class AccessClient {
     protocolBitmask: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.enableDisableProtocols(
+    const vTx = await this.txBuilder.enableDisableProtocolsTx(
       integrationProgram,
       protocolBitmask,
       true,
@@ -161,7 +181,7 @@ export class AccessClient {
     protocolBitmask: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.enableDisableProtocols(
+    const vTx = await this.txBuilder.enableDisableProtocolsTx(
       integrationProgram,
       protocolBitmask,
       false,
@@ -180,7 +200,7 @@ export class AccessClient {
     permissionsBitmask: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.grantRevokeDelegatePermissions(
+    const vTx = await this.txBuilder.grantRevokeDelegatePermissionsTx(
       delegate,
       integrationProgram,
       protocolBitflag,
@@ -201,7 +221,7 @@ export class AccessClient {
     permissionsBitmask: BN,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.grantRevokeDelegatePermissions(
+    const vTx = await this.txBuilder.grantRevokeDelegatePermissionsTx(
       delegate,
       integrationProgram,
       protocolBitflag,
@@ -221,7 +241,7 @@ export class AccessClient {
     data: Buffer,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.setProtocolPolicy(
+    const vTx = await this.txBuilder.setProtocolPolicyTx(
       integrationProgram,
       protocolBitflag,
       data,

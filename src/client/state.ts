@@ -28,13 +28,11 @@ export type UpdateStateParams = {
   borrowable?: PublicKey[];
 };
 
-class TxBuilder extends BaseTxBuilder {
-  async initialize(
+class TxBuilder extends BaseTxBuilder<StateClient> {
+  async initializeIx(
     params: InitStateParams,
-    txOptions: TxOptions = {},
-  ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-
+    glamSigner: PublicKey,
+  ): Promise<[TransactionInstruction, PublicKey]> {
     // stateInitKey = hash state name and get first 8 bytes
     // useful for re-computing state account PDA in the future
     const stateInitKey = [
@@ -47,7 +45,7 @@ class TxBuilder extends BaseTxBuilder {
     const statePda = getStatePda(
       stateInitKey,
       owner,
-      this.base.protocolProgram.programId,
+      this.client.base.protocolProgram.programId,
     );
     const uri = params.uri || `https://gui.glam.systems/products/${statePda}`;
 
@@ -58,98 +56,93 @@ class TxBuilder extends BaseTxBuilder {
       owner,
       uri,
     });
-    const tx = await this.base.protocolProgram.methods
+    const ix = await this.client.base.protocolProgram.methods
       .initializeState(stateIdlModel)
       .accountsPartial({
         glamState: statePda,
         glamSigner,
         baseAssetMint: params.baseAssetMint,
       })
-      .preInstructions(txOptions.preInstructions || [])
-      .postInstructions(txOptions.postInstructions || [])
-      .transaction();
-
-    this.base.statePda = statePda;
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+      .instruction();
+    return [ix, statePda];
   }
 
-  async update(
-    params: UpdateStateParams,
-    txOptions: TxOptions,
-  ): Promise<VersionedTransaction> {
-    const ix = await this.updateIx(params, txOptions.signer);
-    const tx = this.build([ix], txOptions);
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+  async initializeTx(
+    params: InitStateParams,
+    txOptions: TxOptions = {},
+  ): Promise<[VersionedTransaction, PublicKey]> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const [ix, statePda] = await this.initializeIx(params, glamSigner);
+    const tx = await this.buildVersionedTx([ix], txOptions);
+    return [tx, statePda];
   }
 
   async updateIx(
     params: UpdateStateParams,
-    signer?: PublicKey,
+    glamSigner: PublicKey,
   ): Promise<TransactionInstruction> {
-    const glamSigner = signer || this.base.signer;
-    return await this.base.protocolProgram.methods
+    return await this.client.base.protocolProgram.methods
       .updateState(new StateIdlModel(params))
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
       })
       .instruction();
   }
 
-  async updateApplyTimelock(
+  async updateTx(
+    params: UpdateStateParams,
     txOptions: TxOptions,
   ): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-    const tx = await this.base.protocolProgram.methods
-      .updateStateApplyTimelock()
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .postInstructions(txOptions.postInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.updateIx(params, glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
   }
 
-  async extend(
+  async extendIx(
+    newBytes: number,
+    glamSigner: PublicKey,
+  ): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
+      .extendState(newBytes)
+      .accounts({
+        glamState: this.client.base.statePda,
+        glamSigner,
+      })
+      .instruction();
+  }
+
+  async extendTx(
     newBytes: number,
     txOptions: TxOptions = {},
   ): Promise<VersionedTransaction> {
-    const tx = await this.base.protocolProgram.methods
-      .extendState(newBytes)
-      .accounts({
-        glamState: this.base.statePda,
-        glamSigner: this.base.signer,
-      })
-      .preInstructions(txOptions.preInstructions || [])
-      .postInstructions(txOptions.postInstructions || [])
-      .transaction();
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.extendIx(newBytes, glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
   }
 
-  async close(txOptions: TxOptions = {}): Promise<VersionedTransaction> {
-    const glamSigner = txOptions.signer || this.base.signer;
-
-    const tx = await this.base.protocolProgram.methods
+  async closeIx(glamSigner: PublicKey): Promise<TransactionInstruction> {
+    return await this.client.base.protocolProgram.methods
       .closeState()
       .accounts({
-        glamState: this.base.statePda,
+        glamState: this.client.base.statePda,
         glamSigner,
       })
-      .preInstructions(txOptions.preInstructions || [])
-      .postInstructions(txOptions.postInstructions || [])
-      .transaction();
+      .instruction();
+  }
 
-    return await this.base.intoVersionedTransaction(tx, txOptions);
+  async closeTx(txOptions: TxOptions = {}): Promise<VersionedTransaction> {
+    const glamSigner = txOptions.signer || this.client.base.signer;
+    const ix = await this.closeIx(glamSigner);
+    return await this.buildVersionedTx([ix], txOptions);
   }
 }
 
 export class StateClient {
-  public readonly txBuilder: TxBuilder;
+  readonly txBuilder: TxBuilder;
 
   public constructor(readonly base: BaseClient) {
-    this.txBuilder = new TxBuilder(base);
+    this.txBuilder = new TxBuilder(this);
   }
 
   /**
@@ -159,7 +152,11 @@ export class StateClient {
     params: InitStateParams,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.initialize(params, txOptions);
+    const [vTx, statePda] = await this.txBuilder.initializeTx(
+      params,
+      txOptions,
+    );
+    this.base.statePda = statePda;
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -175,17 +172,7 @@ export class StateClient {
     params: UpdateStateParams,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.update(params, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  /**
-   * Applies timelock updates to GLAM state
-   */
-  public async updateApplyTimelock(
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.updateApplyTimelock(txOptions);
+    const vTx = await this.txBuilder.updateTx(params, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -196,7 +183,7 @@ export class StateClient {
     newBytes: number,
     txOptions: TxOptions = {},
   ): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.extend(newBytes, txOptions);
+    const vTx = await this.txBuilder.extendTx(newBytes, txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 
@@ -204,7 +191,7 @@ export class StateClient {
    * Closes GLAM state account
    */
   public async close(txOptions: TxOptions = {}): Promise<TransactionSignature> {
-    const vTx = await this.txBuilder.close(txOptions);
+    const vTx = await this.txBuilder.closeTx(txOptions);
     return await this.base.sendAndConfirm(vTx);
   }
 }

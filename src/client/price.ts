@@ -17,7 +17,12 @@ import { BaseClient } from "./base";
 import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "../assets";
 import { fetchMeteoraPositions, parseMeteoraPosition } from "../utils/meteora";
 import { StateModel } from "../models";
-import { DriftClient, DriftUser, DriftVaultsClient, SpotMarket } from "./drift";
+import {
+  DriftProtocolClient,
+  DriftUser,
+  DriftVaultsClient,
+  SpotMarket,
+} from "./drift";
 import {
   bfToDecimal,
   decodeUser,
@@ -87,7 +92,7 @@ export class PriceClient {
     readonly base: BaseClient,
     readonly klend: KaminoLendingClient,
     readonly kvaults: KaminoVaultsClient,
-    readonly drift: DriftClient,
+    readonly drift: DriftProtocolClient,
     readonly dvaults: DriftVaultsClient,
     readonly cctp: CctpClient,
   ) {}

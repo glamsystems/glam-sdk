@@ -7,7 +7,6 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
-  SystemProgram,
   Transaction,
   TransactionInstruction,
   TransactionMessage,
@@ -87,7 +86,6 @@ export type TxOptions = {
   getPriorityFeeMicroLamports?: (tx: VersionedTransaction) => Promise<number>;
   maxFeeLamports?: number;
   useMaxFee?: boolean;
-  jitoTipLamports?: number;
   preInstructions?: TransactionInstruction[];
   postInstructions?: TransactionInstruction[];
   lookupTables?: PublicKey[] | AddressLookupTableAccount[];
@@ -284,24 +282,12 @@ export class BaseClient {
       getPriorityFeeMicroLamports,
       maxFeeLamports,
       useMaxFee = false,
-      jitoTipLamports,
       simulate = false,
     }: TxOptions,
   ): Promise<VersionedTransaction> {
     signer = signer || this.signer;
 
     const instructions = tx.instructions;
-
-    // Set Jito tip if provided
-    if (jitoTipLamports) {
-      instructions.unshift(
-        SystemProgram.transfer({
-          fromPubkey: signer,
-          toPubkey: JITO_TIP_DEFAULT,
-          lamports: jitoTipLamports,
-        }),
-      );
-    }
 
     // Fetch custom lookup tables and default lookup tables
     const lookupTableAccounts: AddressLookupTableAccount[] = [];
@@ -350,7 +336,7 @@ export class BaseClient {
     }
 
     // Add CU instructions if jitoTipLamports is not provided and computeUnitLimit is provided
-    if (!jitoTipLamports && computeUnitLimit) {
+    if (computeUnitLimit) {
       const vTx = new VersionedTransaction(
         new TransactionMessage({
           payerKey: signer,
@@ -813,18 +799,32 @@ export class BaseClient {
   }
 }
 
-export class BaseTxBuilder {
-  constructor(readonly base: BaseClient) {}
+/**
+ * Base transaction builder for sub-clients
+ */
+export class BaseTxBuilder<T extends { base: BaseClient }> {
+  constructor(readonly client: T) {}
 
   /**
-   * Build a transaction with the given instructions. Pre and post instructions in txOptions are preserved.
+   * Build a legacy transaction with the given instructions.
+   * Pre and post instructions in txOptions are preserved.
    */
   build(ixs: TransactionInstruction[], txOptions: TxOptions = {}): Transaction {
-    const tx = new Transaction().add(
+    return new Transaction().add(
       ...(txOptions.preInstructions || []),
       ...ixs,
       ...(txOptions.postInstructions || []),
     );
-    return tx;
+  }
+
+  /**
+   * Build a versioned transaction that is ready to be sent.
+   */
+  async buildVersionedTx(
+    ixs: TransactionInstruction[],
+    txOptions: TxOptions = {},
+  ): Promise<VersionedTransaction> {
+    const tx = this.build(ixs, txOptions);
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 }

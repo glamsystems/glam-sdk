@@ -8,11 +8,10 @@ import {
   Finality,
   AccountMeta,
   TransactionInstruction,
-  Transaction,
   SystemProgram,
 } from "@solana/web3.js";
 
-import { BaseClient, TxOptions } from "./base";
+import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import {
   MESSAGE_TRANSMITTER_V2,
   TOKEN_MESSENGER_MINTER_V2,
@@ -55,82 +54,20 @@ export class CctpBridgeEvent {
   }
 }
 
-export class CctpClient {
-  public constructor(readonly base: BaseClient) {}
-
+class TxBuilder extends BaseTxBuilder<CctpClient> {
   /**
-   * Bridge USDC to another chain using Circle's CCTP protocol
-   *
-   * @param amount Amount of USDC to bridge (in smallest units)
-   * @param domain Destination domain (e.g., 0 for Ethereum, 1 for Avalanche)
-   * @param recipient Recipient address on destination chain
-   * @param params Additional parameters (maxFee, minFinalityThreshold)
-   * @param txOptions Transaction options
+   * Returns a transaction that calls CCTP's `depositForBurn` instruction that bridges USDC to another chain.
+   * A keypair is generated for the message sent event account, which must be included as a transaction signer.
    */
-  public async bridgeUsdc(
-    amount: BN | number,
-    domain: number,
-    recipient: PublicKey,
-    params: { maxFee: BN; minFinalityThreshold: number },
-    txOptions: TxOptions = {},
-  ): Promise<TransactionSignature> {
-    const [tx, keypair] = await this.bridgeUsdcTx(
-      new BN(amount),
-      domain,
-      recipient,
-      params,
-      txOptions,
-    );
-    return await this.base.sendAndConfirm(tx, [keypair]);
-  }
-
-  public async receiveUsdc(
-    sourceDomain: number,
-    params: {
-      txHash?: string;
-      nonce?: string;
-    },
-    txOptions: TxOptions = {},
-  ) {
-    const messages = await this.fetchV2Messages(sourceDomain, params);
-    const receiveMessageIxs = [];
-    for (const message of messages) {
-      const ix = await this.buildReceiveMessageIx(sourceDomain, message);
-      receiveMessageIxs.push(ix);
-    }
-
-    const createUsdcAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-      this.base.signer,
-      this.base.getVaultAta(USDC),
-      this.base.vaultPda,
-      USDC,
-    );
-    const tx = new Transaction().add(createUsdcAtaIx, ...receiveMessageIxs);
-    const vTx = await this.base.intoVersionedTransaction(tx, txOptions);
-    return await this.base.sendAndConfirm(vTx);
-  }
-
-  /**
-   * Create transaction for bridging USDC to another chain
-   *
-   * @param amount Amount of USDC to bridge (in smallest units)
-   * @param domain Destination domain
-   * @param recipient Recipient address on destination chain
-   * @param params Additional parameters
-   * @param txOptions Transaction options
-   * @returns Tuple of [transaction, message event keypair]
-   */
-  public async bridgeUsdcTx(
+  public async bridgeUsdcIx(
     amount: BN,
     domain: number,
     recipient: PublicKey,
     params: { maxFee: BN; minFinalityThreshold: number },
-    txOptions: TxOptions,
-  ): Promise<[VersionedTransaction, Keypair]> {
-    const signer = txOptions.signer || this.base.signer;
-
-    const usdcAddress = this.base.isMainnet ? USDC : USDC_DEVNET;
-    const pdas = this.getDepositForBurnPdas(
+    glamSigner: PublicKey,
+  ): Promise<[TransactionInstruction, Keypair]> {
+    const usdcAddress = this.client.base.isMainnet ? USDC : USDC_DEVNET;
+    const pdas = this.client.getDepositForBurnPdas(
       MESSAGE_TRANSMITTER_V2,
       TOKEN_MESSENGER_MINTER_V2,
       usdcAddress,
@@ -146,18 +83,18 @@ export class CctpClient {
     };
 
     const denylistAccount = PublicKey.findProgramAddressSync(
-      [Buffer.from("denylist_account"), this.base.vaultPda.toBuffer()],
+      [Buffer.from("denylist_account"), this.client.base.vaultPda.toBuffer()],
       TOKEN_MESSENGER_MINTER_V2,
     )[0];
     const messageSentEventAccountKeypair = Keypair.generate();
 
-    const burnTokenAccount = this.base.getVaultAta(usdcAddress);
+    const burnTokenAccount = this.client.base.getVaultAta(usdcAddress);
 
-    const tx = await this.base.extCctpProgram.methods
+    const ix = await this.client.base.extCctpProgram.methods
       .depositForBurn(depositForBurnParams)
       .accounts({
-        glamState: this.base.statePda,
-        glamSigner: signer,
+        glamState: this.client.base.statePda,
+        glamSigner,
         senderAuthorityPda: pdas.authorityPda,
         burnTokenAccount,
         denylistAccount,
@@ -170,14 +107,30 @@ export class CctpClient {
         messageSentEventData: messageSentEventAccountKeypair.publicKey,
         eventAuthority: pdas.tokenMessengerEventAuthority,
       })
-      .transaction();
-    return [
-      await this.base.intoVersionedTransaction(tx, txOptions),
-      messageSentEventAccountKeypair,
-    ];
+      .instruction();
+    return [ix, messageSentEventAccountKeypair];
   }
 
-  async buildReceiveMessageIx(sourceDomain: number, messageObj: any) {
+  public async bridgeUsdcTx(
+    amount: BN,
+    domain: number,
+    recipient: PublicKey,
+    params: { maxFee: BN; minFinalityThreshold: number },
+    txOptions: TxOptions,
+  ): Promise<[VersionedTransaction, Keypair]> {
+    const signer = txOptions.signer || this.client.base.signer;
+    const [ix, messageSentEventAccountKeypair] = await this.bridgeUsdcIx(
+      amount,
+      domain,
+      recipient,
+      params,
+      signer,
+    );
+    const tx = await this.buildVersionedTx([ix], txOptions);
+    return [tx, messageSentEventAccountKeypair];
+  }
+
+  async receiveMessageIx(sourceDomain: number, messageObj: any) {
     const { message, attestation, eventNonce, decodedMessage, status } =
       messageObj;
 
@@ -195,7 +148,7 @@ export class CctpClient {
     }
 
     // message, attestation, eventNonce, burnToken are hex strings
-    const pdas = await this.getReceiveMessagePdas(
+    const pdas = await this.client.getReceiveMessagePdas(
       MESSAGE_TRANSMITTER_V2,
       TOKEN_MESSENGER_MINTER_V2,
       USDC,
@@ -209,8 +162,8 @@ export class CctpClient {
     const attestationBuffer = Buffer.from(attestation.replace("0x", ""), "hex");
 
     const keys: Array<AccountMeta> = [
-      { pubkey: this.base.signer, isSigner: false, isWritable: true }, // payer
-      { pubkey: this.base.signer, isSigner: false, isWritable: false }, // caller
+      { pubkey: this.client.base.signer, isSigner: false, isWritable: true }, // payer
+      { pubkey: this.client.base.signer, isSigner: false, isWritable: false }, // caller
       { pubkey: pdas.authorityPda, isSigner: false, isWritable: false }, // authority pda
       {
         pubkey: pdas.messageTransmitter,
@@ -270,7 +223,7 @@ export class CctpClient {
       {
         isSigner: false,
         isWritable: true,
-        pubkey: this.base.getVaultAta(USDC),
+        pubkey: this.client.base.getVaultAta(USDC),
       },
       {
         isSigner: false,
@@ -316,7 +269,91 @@ export class CctpClient {
     });
   }
 
-  private async getReceiveMessagePdas(
+  public async receiveUsdcTx(
+    sourceDomain: number,
+    params: {
+      txHash?: string;
+      nonce?: string;
+    },
+    txOptions: TxOptions = {},
+  ) {
+    const messages = await this.client.fetchV2Messages(sourceDomain, params);
+    const receiveMessageIxs = [];
+    for (const message of messages) {
+      const ix = await this.receiveMessageIx(sourceDomain, message);
+      receiveMessageIxs.push(ix);
+    }
+
+    const createUsdcAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+      this.client.base.signer,
+      this.client.base.getVaultAta(USDC),
+      this.client.base.vaultPda,
+      USDC,
+    );
+    return await this.buildVersionedTx(
+      [createUsdcAtaIx, ...receiveMessageIxs],
+      txOptions,
+    );
+  }
+}
+
+export class CctpClient {
+  txBuilder: TxBuilder;
+
+  public constructor(readonly base: BaseClient) {
+    this.txBuilder = new TxBuilder(this);
+  }
+
+  /**
+   * Bridge USDC to another chain using Circle's CCTP protocol
+   *
+   * @param amount Amount of USDC to bridge (in smallest units)
+   * @param domain Destination domain (e.g., 0 for Ethereum, 1 for Avalanche)
+   * @param recipient Recipient address on destination chain
+   * @param params Additional parameters (maxFee, minFinalityThreshold)
+   * @param txOptions Transaction options
+   */
+  public async bridgeUsdc(
+    amount: BN | number,
+    domain: number,
+    recipient: PublicKey,
+    params: { maxFee: BN; minFinalityThreshold: number },
+    txOptions: TxOptions = {},
+  ): Promise<TransactionSignature> {
+    const [tx, keypair] = await this.txBuilder.bridgeUsdcTx(
+      new BN(amount),
+      domain,
+      recipient,
+      params,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(tx, [keypair]);
+  }
+
+  /**
+   * Receive USDC from another chain using Circle's CCTP protocol
+   *
+   * @param sourceDomain Source domain (e.g., 0 for Ethereum, 6 for Base)
+   * @param params Additional parameters (txHash, nonce)
+   * @param txOptions Transaction options
+   */
+  public async receiveUsdc(
+    sourceDomain: number,
+    params: {
+      txHash?: string;
+      nonce?: string;
+    },
+    txOptions: TxOptions = {},
+  ) {
+    const vTx = await this.txBuilder.receiveUsdcTx(
+      sourceDomain,
+      params,
+      txOptions,
+    );
+    return await this.base.sendAndConfirm(vTx);
+  }
+
+  async getReceiveMessagePdas(
     messageTransmitterProgram: PublicKey,
     tokenMessengerMinterProgram: PublicKey,
     solUsdcMint: PublicKey,
@@ -414,7 +451,7 @@ export class CctpClient {
    * @param destinationDomain Destination domain
    * @returns Object containing all required PDAs
    */
-  private getDepositForBurnPdas(
+  getDepositForBurnPdas(
     messageTransmitterProgram: PublicKey,
     tokenMessengerMinterProgram: PublicKey,
     usdcAddress: PublicKey,
