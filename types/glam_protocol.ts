@@ -1282,6 +1282,11 @@ export type GlamProtocol = {
     },
     {
       "name": "systemTransfer",
+      "docs": [
+        "Transfers SOL from the vault to another account.",
+        "",
+        "Token program ID is required as a remaining account when wrapping SOL (i.e., transfer to wSOL token account)."
+      ],
       "discriminator": [
         167,
         164,

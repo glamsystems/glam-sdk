@@ -24,24 +24,31 @@ class TxBuilder extends BaseTxBuilder<VaultClient> {
     amount: BN,
     glamSigner: PublicKey,
   ): Promise<TransactionInstruction[]> {
-    const to = this.client.base.getVaultAta(WSOL);
+    const vaultAta = this.client.base.getVaultAta(WSOL);
+
+    const preIx = createAssociatedTokenAccountIdempotentInstruction(
+      glamSigner,
+      vaultAta,
+      this.client.base.vaultPda,
+      WSOL,
+    );
     const ix = await this.client.base.protocolProgram.methods
       .systemTransfer(amount)
       .accounts({
         glamState: this.client.base.statePda,
         glamSigner,
-        to,
+        to: vaultAta,
       })
+      .remainingAccounts([
+        {
+          pubkey: TOKEN_PROGRAM_ID,
+          isSigner: false,
+          isWritable: false,
+        },
+      ])
       .instruction();
-    const preIx = createAssociatedTokenAccountIdempotentInstruction(
-      glamSigner,
-      to,
-      this.client.base.vaultPda,
-      WSOL,
-    );
-    const postIx = createSyncNativeInstruction(to);
 
-    return [preIx, ix, postIx];
+    return [preIx, ix];
   }
 
   public async wrapTx(
