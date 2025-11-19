@@ -100,6 +100,10 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -128,10 +132,6 @@
         },
         {
           "name": "msol_mint_authority"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_program"
@@ -237,6 +237,10 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -273,10 +277,6 @@
         {
           "name": "rent",
           "address": "SysvarRent111111111111111111111111111111111"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_program"
@@ -385,6 +385,10 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -407,14 +411,6 @@
         {
           "name": "get_msol_from",
           "writable": true
-        },
-        {
-          "name": "transfer_sol_to",
-          "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_program"
@@ -520,6 +516,10 @@
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -560,10 +560,6 @@
         },
         {
           "name": "clock"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "token_program"

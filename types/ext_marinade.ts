@@ -106,6 +106,10 @@ export type ExtMarinade = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -134,10 +138,6 @@ export type ExtMarinade = {
         },
         {
           "name": "msolMintAuthority"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "tokenProgram"
@@ -243,6 +243,10 @@ export type ExtMarinade = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -279,10 +283,6 @@ export type ExtMarinade = {
         {
           "name": "rent",
           "address": "SysvarRent111111111111111111111111111111111"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "tokenProgram"
@@ -391,6 +391,10 @@ export type ExtMarinade = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -413,14 +417,6 @@ export type ExtMarinade = {
         {
           "name": "getMsolFrom",
           "writable": true
-        },
-        {
-          "name": "transferSolTo",
-          "writable": true
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "tokenProgram"
@@ -526,6 +522,10 @@ export type ExtMarinade = {
           "address": "GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz"
         },
         {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
           "name": "state",
           "writable": true
         },
@@ -566,10 +566,6 @@ export type ExtMarinade = {
         },
         {
           "name": "clock"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         },
         {
           "name": "tokenProgram"
