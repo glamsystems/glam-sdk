@@ -185,6 +185,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
         [1 << 4]: "ClaimFees",
         [1 << 5]: "Fulfill",
         [1 << 6]: "EmergencyUpdate",
+        [1 << 7]: "CancelRequest",
+        [1 << 8]: "ClaimRequest",
       },
     },
   },

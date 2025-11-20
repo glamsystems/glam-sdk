@@ -223,24 +223,6 @@ export class BaseClient {
     return this.cluster === ClusterNetwork.Mainnet;
   }
 
-  get isPhantomConnected(): boolean {
-    const isBrowser =
-      process.env.ANCHOR_BROWSER ||
-      (typeof window !== "undefined" &&
-        !window.process?.hasOwnProperty("type"));
-
-    if (!isBrowser) return false;
-
-    // Phantom automatically estimates fees
-    // https://docs.phantom.app/developer-powertools/solana-priority-fees#how-phantom-applies-priority-fees-to-dapp-transactions
-
-    // @ts-ignore
-    const isPhantom = !!window?.phantom?.solana?.isPhantom;
-    // @ts-ignore
-    const isConnected = !!window?.phantom?.solana?.isConnected;
-    return isPhantom && isConnected;
-  }
-
   /**
    * Fetches lookup tables for the current GLAM instance
    */
@@ -254,16 +236,13 @@ export class BaseClient {
 
     // Fetch all accounts owned by the ALT program
     // This is very likely to hit the RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
-    const accounts = await this.provider.connection.getProgramAccounts(
-      ALT_PROGRAM_ID,
-      {
-        filters: [
-          { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
-          { memcmp: { offset: 56, bytes: this.statePda.toBase58() } }, // 1st entry in the table is the state PDA
-          { memcmp: { offset: 88, bytes: this.vaultPda.toBase58() } }, // 2st entry in the table is the vault PDA
-        ],
-      },
-    );
+    const accounts = await this.connection.getProgramAccounts(ALT_PROGRAM_ID, {
+      filters: [
+        { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
+        { memcmp: { offset: 56, bytes: this.statePda.toBase58() } }, // 1st entry in the table is the state PDA
+        { memcmp: { offset: 88, bytes: this.vaultPda.toBase58() } }, // 2st entry in the table is the vault PDA
+      ],
+    });
     return accounts.map(
       ({ pubkey, account }) =>
         new AddressLookupTableAccount({

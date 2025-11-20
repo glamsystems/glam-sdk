@@ -250,10 +250,5 @@ describe("glam_drift_vaults", () => {
       console.error(e);
       throw e;
     }
-
-    const aum = await glamClient.price.getAum();
-    console.log("AUM:", aum.toString());
-    expect(aum.gte(new BN(1_000_000_000))).toBeTruthy();
-    expect(aum.lte(new BN(1_100_000_000))).toBeTruthy();
   }, 15_000);
 });

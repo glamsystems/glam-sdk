@@ -118,33 +118,6 @@ export class PriceClient {
   }
 
   /**
-   * @deprecated
-   *
-   * Calculates the Assets Under Management (AUM) based on cached pricing data.
-   *
-   * @warning This is a convenience method for testing purposes only and should NOT be used in production.
-   * @warning The returned value may be inaccurate if:
-   *   - The vault has not been priced recently
-   *   - Pricing data is stale or outdated
-   *   - Not all assets have been included in the pricing calculation
-   *
-   * @returns The total AUM in the base asset denomination as a BN
-   * @see priceVaultIxs() to update pricing data before calling this method
-   */
-  public async getAum() {
-    console.warn(
-      "getAum() should only be used for testing. It may not reflect the actual AUM of the vault.",
-    );
-
-    const stateModel =
-      this.cachedStateModel || (await this.base.fetchStateModel());
-    return (stateModel?.pricedProtocols || []).reduce(
-      (sum, p) => new BN(p.amount).add(sum),
-      new BN(0),
-    ) as BN;
-  }
-
-  /**
    * Fetches all holdings in the vault.
    *
    * @param commitment Commitment level for fetching accounts
@@ -339,6 +312,20 @@ export class PriceClient {
     }
 
     return userMarketsMap;
+  }
+
+  // TODO: implement
+  async getPubkeysForDriftVaultsHoldings(
+    commitment?: Commitment,
+  ): Promise<PkMap<PkSet>> {
+    return new PkMap<PkSet>();
+  }
+
+  // TODO: implement
+  async getPubkeysForKaminoVaultsHoldings(
+    commitment?: Commitment,
+  ): Promise<PkMap<PkSet>> {
+    return new PkMap<PkSet>();
   }
 
   async getPubkeysForKaminoHoldings(
@@ -912,30 +899,6 @@ export class PriceClient {
       .instruction();
     return priceStakesIx;
   }
-
-  /**
-   * Returns an instruction that prices Meteora positions.
-   * If there are no Meteora positions, returns null.
-   */
-  /*
-  async priceMeteoraPositionsIx(
-    priceDenom: PriceDenom,
-  ): Promise<TransactionInstruction | null> {
-    const remainingAccounts = await this.remainingAccountsForPricingMeteora();
-    if (remainingAccounts.length === 0) {
-      return null;
-    }
-    const priceMeteoraIx = await this.base.protocolProgram.methods
-      .priceMeteoraPositions(priceDenom)
-      .accounts({
-        glamState: this.base.statePda,
-        solUsdOracle: SOL_ORACLE,
-      })
-      .remainingAccounts(remainingAccounts)
-      .instruction();
-    return priceMeteoraIx;
-  }
-  */
 
   public async priceVaultIxs(): Promise<TransactionInstruction[]> {
     // Cache state model

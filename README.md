@@ -14,7 +14,7 @@ npm i @glamsystems/glam-sdk
 
 ## Getting Started
 
-- [GLAM docs](https://docs.glam.systems/v1)
+- [GLAM docs](https://docs.glam.systems/v1/sdk)
 
 ## Examples
 

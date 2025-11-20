@@ -1,6 +1,9 @@
 import { AddressLookupTableAccount, PublicKey } from "@solana/web3.js";
 
-const EXCLUDED_LOOKUP_TABLES: string[] = [];
+interface LookupTableResponse {
+  tables: string[]; // table addresses
+  tx: string[]; // base64 encoded transactions
+}
 
 export async function getGlamLookupTableAccounts(
   statePda: PublicKey,
@@ -12,9 +15,7 @@ export async function getGlamLookupTableAccounts(
 
   let data = null;
   try {
-    const response = await fetch(
-      `${glamApi}/v0/lut/glam/?state=${statePda.toBase58()}`,
-    );
+    const response = await fetch(`${glamApi}/v0/lut/glam/?state=${statePda}`);
     data = await response.json();
   } catch (e) {
     console.error("Failed to fetch lookup tables:", e); // Fail open
@@ -24,9 +25,6 @@ export async function getGlamLookupTableAccounts(
 
   const lookupTableAccounts: AddressLookupTableAccount[] = [];
   for (const [key, lookupTableData] of Object.entries(lookupTables)) {
-    if (EXCLUDED_LOOKUP_TABLES.includes(key)) {
-      continue;
-    }
     const account = new AddressLookupTableAccount({
       key: new PublicKey(key),
       state: AddressLookupTableAccount.deserialize(
@@ -36,4 +34,36 @@ export async function getGlamLookupTableAccounts(
     lookupTableAccounts.push(account);
   }
   return lookupTableAccounts;
+}
+
+export async function getCreateLookupTableTx(
+  statePda: PublicKey,
+  payer: PublicKey,
+) {
+  const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+  if (!glamApi) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${glamApi}/v0/lut/vault/create?state=${statePda}&payer=${payer}`,
+  );
+  const data: LookupTableResponse = await response.json();
+  return data;
+}
+
+export async function getExtendLookupTableTx(
+  statePda: PublicKey,
+  payer: PublicKey,
+) {
+  const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
+  if (!glamApi) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${glamApi}/v0/lut/vault/extend?state=${statePda}&payer=${payer}`,
+  );
+  const data: LookupTableResponse = await response.json();
+  return data;
 }
