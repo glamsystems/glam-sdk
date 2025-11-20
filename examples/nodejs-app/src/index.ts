@@ -5,6 +5,8 @@ import {
   nameToChars,
   StateAccountType,
   WSOL,
+  fetchMintAndTokenProgram,
+  TransferPolicy,
 } from "@glamsystems/glam-sdk";
 import * as dotenv from "dotenv";
 import { Command } from "commander";
@@ -41,13 +43,13 @@ program
       const glamClient = new GlamClient();
 
       // Initialize the vault, convert name from string to char array
-      const txSig = await glamClient.state.create(
+      const txSig = await glamClient.state.initialize(
         {
           name: nameToChars(name),
           enabled,
           accountType: StateAccountType.VAULT,
+          baseAssetMint: new PublicKey(baseAsset),
         },
-        new PublicKey(baseAsset),
         txOptions,
       );
 
@@ -82,7 +84,10 @@ program
   .action(async (vault: PublicKey, tokenMint: PublicKey, amount: number) => {
     const glamClient = await createGlamClient(vault);
 
-    const { mint } = await glamClient.fetchMintAndTokenProgram(tokenMint);
+    const { mint } = await fetchMintAndTokenProgram(
+      glamClient.provider.connection,
+      tokenMint,
+    );
     const amountBN = new BN(amount * 10 ** mint.decimals);
 
     const txSig = await glamClient.vault.deposit(
@@ -109,7 +114,10 @@ program
     ) => {
       const glamClient = await createGlamClient(vault);
 
-      const { mint } = await glamClient.fetchMintAndTokenProgram(tokenMint);
+      const { mint } = await fetchMintAndTokenProgram(
+        glamClient.provider.connection,
+        tokenMint,
+      );
       const amountBN = new BN(amount * 10 ** mint.decimals);
 
       const txSig = await glamClient.vault.tokenTransfer(
@@ -150,5 +158,40 @@ program
       console.log("✅ Enable integration successful:", txSig);
     },
   );
+
+program
+  .command("allowlist-destination")
+  .argument("<vault>", "Vault address", (v) => new PublicKey(v))
+  .argument(
+    "<pubkey>",
+    "Pubkey of the destination address to add to the allowlist",
+    (v) => new PublicKey(v),
+  )
+  .description("Add a destination address to the token transfer allowlist")
+  .action(async (vault: PublicKey, dest: PublicKey) => {
+    const glamClient = await createGlamClient(vault);
+    const policy =
+      (await glamClient.fetchProtocolPolicy(
+        glamClient.extSplProgram.programId,
+        0b01,
+        TransferPolicy,
+      )) ?? new TransferPolicy([]);
+    if (policy.allowlist.find((p) => p.equals(dest))) {
+      console.error(`Destination address ${dest} is already in the allowlist.`);
+      process.exit(1);
+    }
+
+    policy.allowlist.push(dest);
+
+    const txSig = await glamClient.access.setProtocolPolicy(
+      glamClient.extSplProgram.programId,
+      0b01,
+      policy.encode(),
+      txOptions,
+    );
+    console.log(
+      `Added destination ${dest} to allowlist. Transaction signature: ${txSig}`,
+    );
+  });
 
 program.parse(process.argv);

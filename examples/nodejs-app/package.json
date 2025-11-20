@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@glamsystems/glam-sdk": "1.0.0",
+    "@glamsystems/glam-sdk": "1.0.4",
     "@solana/web3.js": "^1.98.0",
     "commander": "^11.1.0",
     "dotenv": "^16.3.1"
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.5.3"
   },
   "pnpm": {
     "overrides": {
