@@ -55,7 +55,7 @@ class TxBuilder extends BaseTxBuilder<StakePoolClient> {
       tokenProgram,
     );
     const ix = await this.client.base.extStakePoolProgram.methods
-      .depositSol(lamports)
+      .depositSol(lamports, null)
       .accounts({
         glamSigner,
         glamState,
@@ -132,7 +132,7 @@ class TxBuilder extends BaseTxBuilder<StakePoolClient> {
       tokenProgram,
     );
     const ix = await this.client.base.extStakePoolProgram.methods
-      .depositStake()
+      .depositStake(null)
       .accounts({
         glamSigner,
         glamState,
@@ -213,7 +213,7 @@ class TxBuilder extends BaseTxBuilder<StakePoolClient> {
       : [];
 
     const ix = await this.client.base.extStakePoolProgram.methods
-      .withdrawStake(amount)
+      .withdrawStake(amount, null)
       .accounts({
         glamSigner,
         glamState,

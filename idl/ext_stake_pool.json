@@ -128,8 +128,14 @@
       ],
       "args": [
         {
-          "name": "lamports",
+          "name": "lamports_in",
           "type": "u64"
+        },
+        {
+          "name": "minimum_pool_tokens_out",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -279,7 +285,14 @@
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "minimum_pool_tokens_out",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "withdraw_sol",
@@ -414,8 +427,14 @@
       ],
       "args": [
         {
-          "name": "pool_tokens",
+          "name": "pool_tokens_in",
           "type": "u64"
+        },
+        {
+          "name": "minimum_lamports_out",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -556,8 +575,14 @@
       ],
       "args": [
         {
-          "name": "pool_tokens",
+          "name": "pool_tokens_in",
           "type": "u64"
+        },
+        {
+          "name": "minimum_lamports_out",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     }
@@ -1540,14 +1565,14 @@
   ],
   "constants": [
     {
-      "name": "PROTO_SANCTUM",
-      "type": "u16",
-      "value": "2"
-    },
-    {
       "name": "PROTO_SANCTUM_MULTI",
       "type": "u16",
       "value": "4"
+    },
+    {
+      "name": "PROTO_SANCTUM_SINGLE",
+      "type": "u16",
+      "value": "2"
     },
     {
       "name": "PROTO_STAKE_POOL",
@@ -1560,19 +1585,29 @@
       "value": "1"
     },
     {
+      "name": "STAKE_POOL_PERM_DEPOSIT_SOL_ANY",
+      "type": "u64",
+      "value": "4"
+    },
+    {
       "name": "STAKE_POOL_PERM_DEPOSIT_STAKE",
       "type": "u64",
       "value": "2"
     },
     {
+      "name": "STAKE_POOL_PERM_DEPOSIT_STAKE_ANY",
+      "type": "u64",
+      "value": "8"
+    },
+    {
       "name": "STAKE_POOL_PERM_WITHDRAW_SOL",
       "type": "u64",
-      "value": "4"
+      "value": "16"
     },
     {
       "name": "STAKE_POOL_PERM_WITHDRAW_STAKE",
       "type": "u64",
-      "value": "8"
+      "value": "32"
     }
   ]
 }

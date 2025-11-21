@@ -134,8 +134,14 @@ export type ExtStakePool = {
       ],
       "args": [
         {
-          "name": "lamports",
+          "name": "lamportsIn",
           "type": "u64"
+        },
+        {
+          "name": "minimumPoolTokensOut",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -285,7 +291,14 @@ export type ExtStakePool = {
           "address": "Stake11111111111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "minimumPoolTokensOut",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
     },
     {
       "name": "withdrawSol",
@@ -420,8 +433,14 @@ export type ExtStakePool = {
       ],
       "args": [
         {
-          "name": "poolTokens",
+          "name": "poolTokensIn",
           "type": "u64"
+        },
+        {
+          "name": "minimumLamportsOut",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -562,8 +581,14 @@ export type ExtStakePool = {
       ],
       "args": [
         {
-          "name": "poolTokens",
+          "name": "poolTokensIn",
           "type": "u64"
+        },
+        {
+          "name": "minimumLamportsOut",
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     }
@@ -1546,14 +1571,14 @@ export type ExtStakePool = {
   ],
   "constants": [
     {
-      "name": "protoSanctum",
-      "type": "u16",
-      "value": "2"
-    },
-    {
       "name": "protoSanctumMulti",
       "type": "u16",
       "value": "4"
+    },
+    {
+      "name": "protoSanctumSingle",
+      "type": "u16",
+      "value": "2"
     },
     {
       "name": "protoStakePool",
@@ -1566,19 +1591,29 @@ export type ExtStakePool = {
       "value": "1"
     },
     {
+      "name": "stakePoolPermDepositSolAny",
+      "type": "u64",
+      "value": "4"
+    },
+    {
       "name": "stakePoolPermDepositStake",
       "type": "u64",
       "value": "2"
     },
     {
+      "name": "stakePoolPermDepositStakeAny",
+      "type": "u64",
+      "value": "8"
+    },
+    {
       "name": "stakePoolPermWithdrawSol",
       "type": "u64",
-      "value": "4"
+      "value": "16"
     },
     {
       "name": "stakePoolPermWithdrawStake",
       "type": "u64",
-      "value": "8"
+      "value": "32"
     }
   ]
 };

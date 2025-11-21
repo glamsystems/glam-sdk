@@ -262,6 +262,42 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
+  // Stake pool integration program
+  G1NTstCVkEhGVQPnPe6r7yEyRTvnp3ta63AFkEKxqg25: {
+    "0000000000000001": {
+      name: "Stake Pool",
+      permissions: {
+        [1 << 0]: "DepositSol",
+        [1 << 1]: "DepositStake",
+        [1 << 2]: "DepositSolAny",
+        [1 << 3]: "DepositStakeAny",
+        [1 << 4]: "WithdrawSol",
+        [1 << 5]: "WithdrawStake",
+      },
+    },
+    "0000000000000010": {
+      name: "Sanctum Single",
+      permissions: {
+        [1 << 0]: "DepositSol",
+        [1 << 1]: "DepositStake",
+        [1 << 2]: "DepositSolAny",
+        [1 << 3]: "DepositStakeAny",
+        [1 << 4]: "WithdrawSol",
+        [1 << 5]: "WithdrawStake",
+      },
+    },
+    "0000000000000100": {
+      name: "Sanctum Multi",
+      permissions: {
+        [1 << 0]: "DepositSol",
+        [1 << 1]: "DepositStake",
+        [1 << 2]: "DepositSolAny",
+        [1 << 3]: "DepositStakeAny",
+        [1 << 4]: "WithdrawSol",
+        [1 << 5]: "WithdrawStake",
+      },
+    },
+  },
 };
 
 /**
