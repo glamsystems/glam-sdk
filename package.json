@@ -35,8 +35,7 @@
     "node": ">=20.18.0"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
-    "rollup-plugin-javascript-obfuscator": "^1.0.4"
+    "@rollup/plugin-terser": "^0.4.4"
   },
   "pnpm": {
     "overrides": {
