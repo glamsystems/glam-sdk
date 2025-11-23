@@ -7,7 +7,6 @@ export * from "./common";
 export * from "./glamApi";
 export * from "./glamPDAs";
 export * from "./lookupTables";
-export * from "./meteora";
 export * from "./priorityfee";
 export * from "./rpc";
 export * from "./timelock";

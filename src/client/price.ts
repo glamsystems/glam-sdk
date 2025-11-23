@@ -14,8 +14,7 @@ import {
 
 import { BaseClient } from "./base";
 
-import { ASSETS_MAINNET, SOL_ORACLE, USDC_ORACLE } from "../assets";
-import { fetchMeteoraPositions, parseMeteoraPosition } from "../utils/meteora";
+import { ASSETS_MAINNET, SOL_ORACLE } from "../assets";
 import { StateModel } from "../models";
 import {
   DriftProtocolClient,
@@ -1047,34 +1046,6 @@ export class PriceClient {
       numSpotMarkets: spotMarketsSet.size,
       numPerpMarkets: perpMarketsSet.size,
     };
-  }
-
-  async remainingAccountsForPricingMeteora(): Promise<AccountMeta[]> {
-    const positions = await fetchMeteoraPositions(
-      this.base.provider.connection,
-      this.base.vaultPda,
-    );
-
-    let chunks = await Promise.all(
-      positions.map(async (pubkey) => {
-        const { lbPair, binArrayLower, binArrayUpper } =
-          await parseMeteoraPosition(this.base.provider.connection, pubkey);
-
-        return [
-          pubkey,
-          lbPair,
-          binArrayLower,
-          binArrayUpper,
-          SOL_ORACLE, // FIXME: token x oracle
-          USDC_ORACLE, // FIXME: token y oracle
-        ].map((k) => ({
-          pubkey: k,
-          isSigner: false,
-          isWritable: false,
-        }));
-      }),
-    );
-    return chunks.flat();
   }
 
   async remainingAccountsForPricingVaultAssets(): Promise<AccountMeta[]> {
