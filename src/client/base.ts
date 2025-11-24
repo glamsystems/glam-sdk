@@ -15,7 +15,10 @@ import {
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import { getSimulationResult, parseProgramLogs } from "../utils/transaction";
-import { buildComputeBudgetInstructions } from "../utils/computeBudget";
+import {
+  buildComputeBudgetInstructions,
+  ComputeBudgetOptions,
+} from "../utils/computeBudget";
 import { fetchAddressLookupTableAccounts } from "../utils/lookupTables";
 import {
   fetchMintAndTokenProgram,
@@ -32,7 +35,6 @@ import {
   getExtensionData,
   ExtensionType,
 } from "@solana/spl-token";
-import { JITO_TIP_DEFAULT, ALT_PROGRAM_ID } from "../constants";
 
 import {
   ExtCctpProgram,
@@ -60,18 +62,16 @@ import {
   StateModel,
 } from "../models";
 import { GlamError } from "../error";
-import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { BlockhashWithCache } from "../utils/blockhash";
 import {
   getEscrowPda,
   getExtraMetasPda,
   getMintPda,
-  getOpenfundsPda,
   getRequestQueuePda,
   getVaultPda,
 } from "../utils/glamPDAs";
 import { TokenMetadata, unpack } from "@solana/spl-token-metadata";
-import { getGlamLookupTableAccounts } from "../utils/glamApi";
+import { fetchGlamLookupTableAccounts } from "../utils/glamApi";
 import { PkMap } from "../utils";
 
 const LOOKUP_TABLES = [
@@ -146,10 +146,7 @@ export class BaseClient {
       this.statePda = config.statePda;
     }
 
-    this.blockhashWithCache = new BlockhashWithCache(
-      this.provider,
-      false, // always disable browser cache (use in-memory cache instead), for in-app browser compatibility
-    );
+    this.blockhashWithCache = new BlockhashWithCache(this.provider);
   }
 
   get protocolProgram(): GlamProtocolProgram {
@@ -208,6 +205,10 @@ export class BaseClient {
     return this._extCctpProgram;
   }
 
+  get isVaultConnected(): boolean {
+    return !!this._statePda;
+  }
+
   get statePda(): PublicKey {
     if (!this._statePda) {
       throw new Error("State PDA is not specified");
@@ -224,34 +225,8 @@ export class BaseClient {
   }
 
   /**
-   * Fetches lookup tables for the current GLAM instance
+   * Converts a legacy transaction into a versioned transaction.
    */
-  public async findGlamLookupTables(): Promise<AddressLookupTableAccount[]> {
-    const glamLookupTableAccounts = await getGlamLookupTableAccounts(
-      this.statePda,
-    );
-    if (glamLookupTableAccounts.length > 0) {
-      return glamLookupTableAccounts;
-    }
-
-    // Fetch all accounts owned by the ALT program
-    // This is very likely to hit the RPC error "Request deprioritized due to number of accounts requested. Slow down requests or add filters to narrow down results"
-    const accounts = await this.connection.getProgramAccounts(ALT_PROGRAM_ID, {
-      filters: [
-        { memcmp: { offset: 0, bytes: bs58.encode([1, 0, 0, 0]) } },
-        { memcmp: { offset: 56, bytes: this.statePda.toBase58() } }, // 1st entry in the table is the state PDA
-        { memcmp: { offset: 88, bytes: this.vaultPda.toBase58() } }, // 2st entry in the table is the vault PDA
-      ],
-    });
-    return accounts.map(
-      ({ pubkey, account }) =>
-        new AddressLookupTableAccount({
-          key: pubkey,
-          state: AddressLookupTableAccount.deserialize(account.data),
-        }),
-    );
-  }
-
   public async intoVersionedTransaction(
     tx: Transaction,
     {
@@ -267,26 +242,26 @@ export class BaseClient {
     signer = signer || this.signer;
 
     const instructions = tx.instructions;
+    const lookupTableAccounts: AddressLookupTableAccount[] = [];
 
     // Fetch custom lookup tables and default lookup tables
-    const lookupTableAccounts: AddressLookupTableAccount[] = [];
     if (lookupTables.every((t) => t instanceof AddressLookupTableAccount)) {
       const accounts = await fetchAddressLookupTableAccounts(
-        this.provider.connection,
+        this.connection,
         LOOKUP_TABLES,
       );
       lookupTableAccounts.push(...lookupTables, ...accounts);
     } else {
-      const accounts = await fetchAddressLookupTableAccounts(
-        this.provider.connection,
-        [...lookupTables, ...LOOKUP_TABLES],
-      );
+      const accounts = await fetchAddressLookupTableAccounts(this.connection, [
+        ...lookupTables,
+        ...LOOKUP_TABLES,
+      ]);
       lookupTableAccounts.push(...accounts);
     }
 
-    if (this._statePda) {
-      // Fetch GLAM specific lookup tables
-      const glamLookupTableAccounts = await getGlamLookupTableAccounts(
+    // Fetch GLAM specific lookup tables only if vault state has been set
+    if (this.isVaultConnected) {
+      const glamLookupTableAccounts = await fetchGlamLookupTableAccounts(
         this.statePda,
       );
       lookupTableAccounts.push(...glamLookupTableAccounts);
@@ -314,23 +289,26 @@ export class BaseClient {
       throw error;
     }
 
-    // Add CU instructions if jitoTipLamports is not provided and computeUnitLimit is provided
+    // Add CU instructions if computeUnitLimit is provided
     if (computeUnitLimit) {
-      const vTx = new VersionedTransaction(
-        new TransactionMessage({
-          payerKey: signer,
-          recentBlockhash,
-          instructions,
-        }).compileToV0Message(lookupTableAccounts),
-      );
-      const cuIxs = await buildComputeBudgetInstructions(
-        vTx,
-        computeUnitLimit,
-        {
+      let cuOptions = { maxFeeLamports, useMaxFee } as ComputeBudgetOptions;
+      if (getPriorityFeeMicroLamports) {
+        const vTx = new VersionedTransaction(
+          new TransactionMessage({
+            payerKey: signer,
+            recentBlockhash,
+            instructions,
+          }).compileToV0Message(lookupTableAccounts),
+        );
+        cuOptions = {
+          ...cuOptions,
+          vTx,
           getPriorityFeeMicroLamports,
-          maxFeeLamports,
-          useMaxFee,
-        },
+        };
+      }
+      const cuIxs = await buildComputeBudgetInstructions(
+        computeUnitLimit,
+        cuOptions,
       );
       instructions.unshift(...cuIxs);
     }
@@ -476,12 +454,6 @@ export class BaseClient {
   // derived from state pda
   get vaultPda(): PublicKey {
     return getVaultPda(this.statePda, this.protocolProgram.programId);
-  }
-
-  // @deprecated
-  // derived from state pda
-  get openfundsPda(): PublicKey {
-    return getOpenfundsPda(this.statePda, this.protocolProgram.programId);
   }
 
   // derived from state pda

@@ -1,9 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
 import {
+  GLAM_CONFIG_PROGRAM,
   SEED_ACCOUNT_POLICY,
   SEED_ESCROW,
   SEED_EXTRA_ACCOUNT_METAS,
-  SEED_METADATA,
+  SEED_GLOBAL_CONFIG,
   SEED_MINT,
   SEED_REQUEST_QUEUE,
   SEED_STATE,
@@ -29,17 +30,6 @@ export function getVaultPda(
 ): PublicKey {
   const [pda, _bump] = PublicKey.findProgramAddressSync(
     [Buffer.from(SEED_VAULT), statePda.toBuffer()],
-    programId,
-  );
-  return pda;
-}
-
-export function getOpenfundsPda(
-  statePda: PublicKey,
-  programId: PublicKey,
-): PublicKey {
-  const [pda, _] = PublicKey.findProgramAddressSync(
-    [Buffer.from(SEED_METADATA), statePda.toBuffer()],
     programId,
   );
   return pda;
@@ -94,5 +84,12 @@ export function getAccountPolicyPda(tokenAccount: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from(SEED_ACCOUNT_POLICY), tokenAccount.toBuffer()],
     TRANSFER_HOOK_PROGRAM,
+  )[0];
+}
+
+export function getGlobalConfigPda() {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from(SEED_GLOBAL_CONFIG)],
+    GLAM_CONFIG_PROGRAM,
   )[0];
 }

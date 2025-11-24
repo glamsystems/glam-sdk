@@ -5,10 +5,27 @@ export enum ClusterNetwork {
   Mainnet = "mainnet-beta",
   Testnet = "testnet",
   Devnet = "devnet",
+  Localnet = "localnet",
   Custom = "custom",
 }
 
 export namespace ClusterNetwork {
+  export function fromStr(cluster: string) {
+    switch (cluster) {
+      case "mainnet-beta":
+        return ClusterNetwork.Mainnet;
+      case "testnet":
+        return ClusterNetwork.Testnet;
+      case "devnet":
+        return ClusterNetwork.Devnet;
+      case "localnet":
+        return ClusterNetwork.Localnet;
+      case "custom":
+        return ClusterNetwork.Custom;
+    }
+    throw new Error("Unrecognized cluster");
+  }
+
   /**
    * Detects the Solana cluster network from an RPC endpoint URL
    *
@@ -20,7 +37,7 @@ export namespace ClusterNetwork {
       return ClusterNetwork.Devnet;
     }
     if (rpcUrl.includes("localhost") || rpcUrl.includes("127.0.0.1")) {
-      return ClusterNetwork.Custom;
+      return ClusterNetwork.Localnet;
     }
     if (rpcUrl.includes("mainnet")) {
       return ClusterNetwork.Mainnet;

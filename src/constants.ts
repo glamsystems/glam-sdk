@@ -15,6 +15,7 @@ export const STAKE_ACCOUNT_SIZE = 200;
 export const METEORA_POSITION_SIZE = 8120;
 export const KAMINO_OBTRIGATION_SIZE = 3344;
 export const KAMINO_RESERVE_SIZE = 8624;
+export const KAMINO_VAULT_STATE_SIZE = 62552;
 export const DRIFT_VAULT_DEPOSITOR_SIZE = 272;
 
 export const JUPITER_API_DEFAULT = "https://lite-api.jup.ag";
@@ -65,21 +66,6 @@ export const JUPITER_PROGRAM_ID = new PublicKey(
 export const SANCTUM_STAKE_POOL_PROGRAM_ID = new PublicKey(
   "SP12tWFxD9oJsVWNavTTBZvMbA6gkAmxtVgxdqvyvhY",
 );
-export const GOVERNANCE_PROGRAM_ID = new PublicKey(
-  "GovaE4iu227srtG2s3tZzB4RmWBzw8sTwrCLZz7kN7rY",
-);
-export const JUP_VOTE_PROGRAM = new PublicKey(
-  "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj",
-);
-export const MERKLE_DISTRIBUTOR_PROGRAM = new PublicKey(
-  "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R",
-);
-export const TRANSFER_HOOK_PROGRAM = new PublicKey(
-  "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
-);
-export const METEORA_DLMM_PROGRAM = new PublicKey(
-  "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
-);
 export const KAMINO_LENDING_PROGRAM = new PublicKey(
   "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD",
 );
@@ -100,6 +86,16 @@ export const TOKEN_MESSENGER_MINTER_V2 = new PublicKey(
 );
 export const MESSAGE_TRANSMITTER_V2 = new PublicKey(
   "CCTPV2Sm4AdWt5296sk4P66VBZ7bEhcARwFaaS9YPbeC",
+);
+
+/**
+ * GLAM programs
+ */
+export const TRANSFER_HOOK_PROGRAM = new PublicKey(
+  "po1iCYakK3gHCLbuju4wGzFowTMpAJxkqK1iwUqMonY",
+);
+export const GLAM_CONFIG_PROGRAM = new PublicKey(
+  "gConFzxKL9USmwTdJoeQJvfKmqhJ2CyUaXTyQ8v9TGX",
 );
 
 /**

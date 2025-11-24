@@ -127,6 +127,12 @@ export class KVaultState extends Decodable {
   get nameStr(): string {
     return charsToName(this.name);
   }
+
+  get validAllocations(): KVaultAllocation[] {
+    return this.vaultAllocationStrategy.filter(
+      ({ reserve }) => !reserve.equals(PublicKey.default),
+    );
+  }
 }
 
 //

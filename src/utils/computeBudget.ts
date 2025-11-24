@@ -7,6 +7,7 @@ import {
 const DEFAULT_PRIORITY_FEE = 10_000; // microLamports
 
 export type ComputeBudgetOptions = {
+  vTx?: VersionedTransaction;
   getPriorityFeeMicroLamports?: (tx: VersionedTransaction) => Promise<number>;
   maxFeeLamports?: number;
   useMaxFee?: boolean;
@@ -21,11 +22,11 @@ export type ComputeBudgetOptions = {
  * @returns Array of compute budget instructions
  */
 export async function buildComputeBudgetInstructions(
-  vTx: VersionedTransaction,
   computeUnitLimit: number,
   options?: ComputeBudgetOptions,
 ): Promise<Array<TransactionInstruction>> {
   const {
+    vTx,
     getPriorityFeeMicroLamports,
     maxFeeLamports,
     useMaxFee = false,
@@ -41,7 +42,7 @@ export async function buildComputeBudgetInstructions(
     priorityFeeMicroLamports = Math.ceil(
       (maxFeeLamports * 1_000_000) / computeUnitLimit,
     );
-  } else if (getPriorityFeeMicroLamports) {
+  } else if (getPriorityFeeMicroLamports && vTx) {
     try {
       const feeEstimate = await getPriorityFeeMicroLamports(vTx);
       if (

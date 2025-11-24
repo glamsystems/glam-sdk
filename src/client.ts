@@ -120,7 +120,6 @@ export class GlamClient extends BaseClient {
         this.kaminoVaults,
         this.drift,
         this.driftVaults,
-        this.cctp,
       );
     }
     return this._price;

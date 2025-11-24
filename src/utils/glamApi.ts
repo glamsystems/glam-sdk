@@ -5,7 +5,10 @@ interface LookupTableResponse {
   tx: string[]; // base64 encoded transactions
 }
 
-export async function getGlamLookupTableAccounts(
+/**
+ * Fetches GLAM specific lookup tables from GLAM API for the given vault state
+ */
+export async function fetchGlamLookupTableAccounts(
   statePda: PublicKey,
 ): Promise<AddressLookupTableAccount[]> {
   const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
@@ -21,7 +24,7 @@ export async function getGlamLookupTableAccounts(
     console.error("Failed to fetch lookup tables:", e); // Fail open
     return [];
   }
-  const lookupTables = data?.t || {};
+  const lookupTables = data?.t || {}; // KVs: table pubkey -> base64 table data
 
   const lookupTableAccounts: AddressLookupTableAccount[] = [];
   for (const [key, lookupTableData] of Object.entries(lookupTables)) {
@@ -36,10 +39,10 @@ export async function getGlamLookupTableAccounts(
   return lookupTableAccounts;
 }
 
-export async function getCreateLookupTableTx(
+export async function fetchCreateLookupTableTx(
   statePda: PublicKey,
   payer: PublicKey,
-) {
+): Promise<LookupTableResponse | null> {
   const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
   if (!glamApi) {
     return null;
@@ -55,7 +58,7 @@ export async function getCreateLookupTableTx(
 export async function getExtendLookupTableTx(
   statePda: PublicKey,
   payer: PublicKey,
-) {
+): Promise<LookupTableResponse | null> {
   const glamApi = process.env.NEXT_PUBLIC_GLAM_API || process.env.GLAM_API;
   if (!glamApi) {
     return null;

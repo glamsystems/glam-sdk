@@ -34,7 +34,6 @@ import {
   toUiAmount,
 } from "../utils";
 import Decimal from "decimal.js";
-import { CctpClient } from "./cctp";
 import {
   AccountLayout,
   TOKEN_2022_PROGRAM_ID,
@@ -42,6 +41,7 @@ import {
 } from "@solana/spl-token";
 import { KAMINO_LENDING_PROGRAM, KAMINO_OBTRIGATION_SIZE } from "../constants";
 import { fetchTokensList, TokenListItem } from "./jupiter";
+import { KVaultState } from "../deser";
 
 export class Holding {
   readonly uiAmount!: number;
@@ -93,7 +93,6 @@ export class PriceClient {
     readonly kvaults: KaminoVaultsClient,
     readonly drift: DriftProtocolClient,
     readonly dvaults: DriftVaultsClient,
-    readonly cctp: CctpClient,
   ) {}
 
   get cachedStateModel(): StateModel | null {
@@ -127,11 +126,14 @@ export class PriceClient {
     commitment: Commitment,
     priceBaseAssetMint: PublicKey = PublicKey.default,
   ): Promise<VaultHoldings> {
-    const vaultState = await this.base.fetchStateAccount(); // fetch state account only, don't need to build entire state model
-    const integrationAcls = vaultState.integrationAcls;
+    const { integrationAcls, externalPositions } =
+      await this.base.fetchStateAccount(); // fetch state account only, don't need to build entire state model
+    const externalPositionsSet = new PkSet(externalPositions);
 
     let driftPubkeys = new PkMap<PkSet>(); // user -> markets map
     let kaminoPubkeys = new PkMap<PkSet>(); // obligation -> reserves map
+    let kvaultAtasAndStates = new PkMap<KVaultState>(); // kvault share ata -> kvault state
+    let kvaultReserves = new PkSet();
 
     const driftIntegrationAcl = integrationAcls.find((acl) =>
       acl.integrationProgram.equals(this.base.extDriftProgram.programId),
@@ -154,33 +156,48 @@ export class PriceClient {
       if (kaminoIntegrationAcl.protocolsBitmask & 0b01) {
         kaminoPubkeys = await this.getPubkeysForKaminoHoldings(commitment);
       }
-      // TODO: parse kamino vaults holdings
+      // kamino vaults
       if (kaminoIntegrationAcl.protocolsBitmask & 0b10) {
+        kvaultAtasAndStates = await this.getKaminoVaultStates(
+          externalPositionsSet,
+          commitment,
+        );
+        // from each kvault state we can get the allocations (including reserves)
+        Array.from(kvaultAtasAndStates.pkEntries()).map(([_, kvaultState]) => {
+          kvaultState.validAllocations.forEach(({ reserve }) => {
+            kvaultReserves.add(reserve);
+          });
+        });
       }
     }
 
-    const tokenPubkeys = await this.getPubkeysForTokenHoldings(commitment);
+    const tokenPubkeys = await this.getPubkeysForTokenHoldings(
+      externalPositionsSet,
+      commitment,
+    );
     const driftUsers = Array.from(driftPubkeys.pkKeys());
     const driftSpotMarkets = [...driftPubkeys.values()]
-      .map((v) => Array.from(v.pkValues()))
+      .map((s) => Array.from(s.pkValues()))
       .flat();
 
     const kaminoObligations = Array.from(kaminoPubkeys.pkKeys());
     const kaminoReserves = [...kaminoPubkeys.values()]
       .map((v) => Array.from(v.pkValues()))
-      .flat();
+      .flat()
+      .concat(Array.from(kvaultReserves));
+    const kvaultAtas = Array.from(kvaultAtasAndStates.pkKeys());
 
     // Dedupe keys and fetch all accounts in a single RPC call
     const pubkeys = Array.from(
-      new PkSet(
-        tokenPubkeys.concat(
-          ...driftUsers,
-          ...driftSpotMarkets,
-          ...kaminoObligations,
-          ...kaminoReserves,
-          SYSVAR_CLOCK_PUBKEY, // read unix timestamp from sysvar clock account
-        ),
-      ),
+      new PkSet([
+        ...tokenPubkeys,
+        ...driftUsers,
+        ...driftSpotMarkets,
+        ...kaminoObligations,
+        ...kaminoReserves,
+        ...kvaultAtas,
+        SYSVAR_CLOCK_PUBKEY, // read unix timestamp from sysvar clock account
+      ]),
     );
     const {
       context: { slot },
@@ -243,6 +260,13 @@ export class PriceClient {
       tokenPricesMap,
       "Jupiter",
     );
+    const kaminoVaultsHoldings = this.getKaminoVaultsHoldings(
+      kvaultAtasAndStates,
+      kaminoReservesMap,
+      accountsDataMap,
+      tokenPricesMap,
+      "Jupiter",
+    );
 
     const timestamp = accountsDataMap
       .get(SYSVAR_CLOCK_PUBKEY)!
@@ -258,30 +282,29 @@ export class PriceClient {
     tokenHoldings.forEach((holding) => ret.add(holding));
     driftSpotHoldings.forEach((holding) => ret.add(holding));
     kaminoLendHoldings.forEach((holding) => ret.add(holding));
+    kaminoVaultsHoldings.forEach((holding) => ret.add(holding));
     return ret;
   }
 
   async getPubkeysForTokenHoldings(
+    externalPositionsSet: PkSet,
     commitment?: Commitment,
   ): Promise<PublicKey[]> {
-    const tokenAccounts = await this.base.connection.getTokenAccountsByOwner(
-      this.base.vaultPda,
-      {
-        programId: TOKEN_PROGRAM_ID,
-      },
-      commitment,
+    const results = await Promise.all(
+      [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].map((programId) =>
+        this.base.connection.getTokenAccountsByOwner(
+          this.base.vaultPda,
+          { programId },
+          commitment,
+        ),
+      ),
     );
-    const token2022Accounts =
-      await this.base.connection.getTokenAccountsByOwner(
-        this.base.vaultPda,
-        {
-          programId: TOKEN_2022_PROGRAM_ID,
-        },
-        commitment,
-      );
-    return tokenAccounts.value
-      .map((ta) => ta.pubkey)
-      .concat(token2022Accounts.value.map((ta) => ta.pubkey));
+    const pubkeys = results.flatMap((result) =>
+      result.value.map((ta) => ta.pubkey),
+    );
+    // Filter out token accounts tracked as external positions
+    // They are NOT considered as token holdings
+    return pubkeys.filter((p) => !externalPositionsSet.has(p));
   }
 
   async getPubkeysForSpotHoldings(
@@ -320,11 +343,32 @@ export class PriceClient {
     return new PkMap<PkSet>();
   }
 
-  // TODO: implement
-  async getPubkeysForKaminoVaultsHoldings(
+  async getKaminoVaultStates(
+    externalPositionsSet: PkSet,
     commitment?: Commitment,
-  ): Promise<PkMap<PkSet>> {
-    return new PkMap<PkSet>();
+  ): Promise<PkMap<KVaultState>> {
+    // Get all kvault states and share token mints
+    const allKvaultStates =
+      await this.kvaults.findAndParseKaminoVaults(commitment);
+    const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
+    const possibleShareAtas = allKvaultMints.map((mint) =>
+      this.base.getVaultAta(mint),
+    );
+    const possibleShareAtaAccountsInfo =
+      await this.base.provider.connection.getMultipleAccountsInfo(
+        possibleShareAtas,
+        commitment,
+      );
+
+    const map = new PkMap<KVaultState>();
+    possibleShareAtaAccountsInfo.forEach((info, i) => {
+      // share ata must exist and it must be tracked by glam state
+      const ata = possibleShareAtas[i];
+      if (info !== null && externalPositionsSet.has(possibleShareAtas[i])) {
+        map.set(ata, allKvaultStates[i]);
+      }
+    });
+    return map;
   }
 
   async getPubkeysForKaminoHoldings(
@@ -384,10 +428,7 @@ export class PriceClient {
           decimals,
           new BN(amount),
           usdPrice,
-          {
-            slot: tokenInfo.slot,
-            source: priceSource,
-          },
+          { slot: tokenInfo.slot, source: priceSource },
           "Token",
           {
             tokenAccount: pubkey,
@@ -433,15 +474,13 @@ export class PriceClient {
         );
 
         const direction = Object.keys(balanceType)[0] as "deposit" | "borrow";
+        const { usdPrice, slot } = tokenPricesMap.get(mint)!;
         const holding = new Holding(
           mint,
           decimals,
           amount,
-          tokenPricesMap.get(mint)!.usdPrice,
-          {
-            slot: tokenPricesMap.get(mint)!.slot,
-            source: priceSource,
-          },
+          usdPrice,
+          { slot, source: priceSource },
           "DriftProtocol",
           {
             user: userPda,
@@ -471,24 +510,27 @@ export class PriceClient {
       );
 
       for (const { reserve, depositedAmount } of deposits) {
-        const parsedReserve = reservesMap.get(reserve)!;
+        const {
+          collateralExchangeRate,
+          liquidityMint,
+          liquidityMintDecimals,
+          market,
+        } = reservesMap.get(reserve)!;
         const supplyAmount = new Decimal(depositedAmount.toString())
-          .div(parsedReserve.collateralExchangeRate)
+          .div(collateralExchangeRate)
           .floor();
         const amount = new BN(supplyAmount.toString());
+        const { usdPrice, slot } = tokenPricesMap.get(liquidityMint)!;
         const holding = new Holding(
-          parsedReserve.liquidityMint,
-          parsedReserve.liquidityMintDecimals,
+          liquidityMint,
+          liquidityMintDecimals,
           amount,
-          tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
-          {
-            slot: tokenPricesMap.get(parsedReserve.liquidityMint)!.slot,
-            source: priceSource,
-          },
+          usdPrice,
+          { slot, source: priceSource },
           "KaminoLend",
           {
             obligation,
-            market: parsedReserve.market,
+            market,
             reserve,
             direction: "deposit" as const,
           },
@@ -501,36 +543,85 @@ export class PriceClient {
         borrowedAmountSf,
         cumulativeBorrowRateBsf,
       } of borrows) {
-        const parsedReserve = reservesMap.get(reserve)!;
+        const {
+          cumulativeBorrowRate,
+          liquidityMint,
+          liquidityMintDecimals,
+          market,
+        } = reservesMap.get(reserve)!;
         const obligationCumulativeBorrowRate = bfToDecimal(
           cumulativeBorrowRateBsf,
         );
         const borrowAmount = new Fraction(borrowedAmountSf)
           .toDecimal()
-          .mul(parsedReserve.cumulativeBorrowRate)
+          .mul(cumulativeBorrowRate)
           .div(obligationCumulativeBorrowRate)
           .ceil();
 
         const amount = new BN(borrowAmount.toString());
+        const { usdPrice, slot } = tokenPricesMap.get(liquidityMint)!;
         const holding = new Holding(
-          parsedReserve.liquidityMint,
-          parsedReserve.liquidityMintDecimals,
+          liquidityMint,
+          liquidityMintDecimals,
           amount,
-          tokenPricesMap.get(parsedReserve.liquidityMint)!.usdPrice,
-          {
-            slot: tokenPricesMap.get(parsedReserve.liquidityMint)!.slot,
-            source: priceSource,
-          },
+          usdPrice,
+          { slot, source: priceSource },
           "KaminoLend",
           {
             obligation,
-            market: parsedReserve.market,
+            market,
             reserve,
             direction: "borrow" as const,
           },
         );
         holdings.push(holding);
       }
+    }
+
+    return holdings;
+  }
+
+  getKaminoVaultsHoldings(
+    kvaultAtasAndStates: PkMap<KVaultState>,
+    reservesMap: PkMap<ParsedReserve>,
+    accountsDataMap: PkMap<Buffer>,
+    tokenPricesMap: PkMap<TokenListItem>,
+    priceSource: string,
+  ): Holding[] {
+    const holdings: Holding[] = [];
+    for (const [ata, kvaultState] of kvaultAtasAndStates.pkEntries()) {
+      const tokenAccount = AccountLayout.decode(accountsDataMap.get(ata)!);
+
+      let aum = new Decimal(kvaultState.tokenAvailable.toString());
+      kvaultState.validAllocations.map((allocation) => {
+        const { collateralExchangeRate } = reservesMap.get(allocation.reserve)!;
+
+        // allocation ctoken amount to liq asset amount
+        const liqAmount = new Decimal(allocation.ctokenAllocation.toString())
+          .div(collateralExchangeRate)
+          .floor();
+        aum = aum.add(liqAmount);
+      });
+
+      // calculate liquidity token amount
+      const amount = new Decimal(tokenAccount.amount.toString())
+        .div(new Decimal(kvaultState.sharesIssued.toString()))
+        .mul(aum)
+        .floor();
+      const { usdPrice, slot } = tokenPricesMap.get(kvaultState.tokenMint)!;
+      const holding = new Holding(
+        kvaultState.tokenMint,
+        kvaultState.tokenMintDecimals.toNumber(),
+        new BN(amount.toString()),
+        usdPrice,
+        { slot, source: priceSource },
+        "KaminoVaults",
+        {
+          kaminoVault: kvaultState._address,
+          kaminoVaultAta: ata,
+        },
+      );
+      holdings.push(holding);
     }
 
     return holdings;
@@ -613,7 +704,7 @@ export class PriceClient {
     const allKvaultStates = await this.kvaults.findAndParseKaminoVaults();
     const allKvaultMints = allKvaultStates.map((kvault) => kvault.sharesMint);
 
-    // All kvaut share token accounts GLAM vault could possibly hold
+    // All kvault share token accounts GLAM vault could possibly hold
     const possibleShareAtas = allKvaultMints.map((mint) =>
       this.base.getVaultAta(mint),
     );
@@ -654,7 +745,7 @@ export class PriceClient {
 
     const remainingAccounts = [] as AccountMeta[];
 
-    // first 3N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state)
+    // first 4N remaining accounts are N tuples of (kvault_shares_ata, kvault_shares_mint, kvault_state, kvault_deposit_asset_oracle)
     for (let i = 0; i < shareAtas.length; i++) {
       [shareAtas[i], shareMints[i], kvaultPdas[i], oracles[i]].map((pubkey) => {
         remainingAccounts.push({

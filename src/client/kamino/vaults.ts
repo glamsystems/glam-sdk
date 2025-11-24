@@ -5,6 +5,7 @@ import {
   TransactionSignature,
   AccountMeta,
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  Commitment,
 } from "@solana/web3.js";
 
 import { BaseClient, BaseTxBuilder, TxOptions } from "../base";
@@ -15,6 +16,7 @@ import {
 } from "@solana/spl-token";
 import {
   KAMINO_LENDING_PROGRAM,
+  KAMINO_VAULT_STATE_SIZE,
   KAMINO_VAULTS_PROGRAM,
 } from "../../constants";
 import { KVaultAllocation, KVaultState } from "../../deser/kaminoLayouts";
@@ -58,9 +60,7 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
 
     // Remaining accounts, skip empty allocation strategies
     const remainingAccounts = await this.client.composeRemainingAccounts(
-      vaultState.vaultAllocationStrategy.filter(
-        ({ reserve }) => !reserve.equals(PublicKey.default),
-      ),
+      vaultState.validAllocations,
     );
 
     const tx = await this.client.base.extKaminoProgram.methods
@@ -85,8 +85,7 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
       .preInstructions(preInstructions)
       .transaction();
 
-    const vTx = await this.client.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 
   public async withdrawTx(
@@ -160,7 +159,8 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
           this.client.kaminoLending.getMarketAuthority(withdrawReserve.market),
         withdrawFromReserveReserveLiquiditySupply:
           withdrawReserve.liquiditySupplyVault,
-        withdrawFromReserveReserveCollateralMint: withdrawReserve.collateralMint,
+        withdrawFromReserveReserveCollateralMint:
+          withdrawReserve.collateralMint,
         withdrawFromReserveReserveCollateralTokenProgram: TOKEN_PROGRAM_ID,
         withdrawFromReserveInstructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
         eventAuthority: EVENT_AUTHORITY,
@@ -170,8 +170,7 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
       .preInstructions(preInstructions)
       .transaction();
 
-    const vTx = await this.client.base.intoVersionedTransaction(tx, txOptions);
-    return vTx;
+    return await this.client.base.intoVersionedTransaction(tx, txOptions);
   }
 }
 
@@ -215,12 +214,16 @@ export class KaminoVaultsClient {
     return await this.base.sendAndConfirm(tx);
   }
 
-  async findAndParseKaminoVaults(): Promise<KVaultState[]> {
-    const accounts = await this.base.provider.connection.getProgramAccounts(
+  async findAndParseKaminoVaults(
+    commitment?: Commitment,
+  ): Promise<KVaultState[]> {
+    // Find state accounts of all kamino vaults
+    const accounts = await this.base.connection.getProgramAccounts(
       KAMINO_VAULTS_PROGRAM,
       {
+        commitment,
         filters: [
-          { dataSize: 62552 },
+          { dataSize: KAMINO_VAULT_STATE_SIZE },
           { memcmp: { offset: 0, bytes: "5MRSpWLS65g=", encoding: "base64" } },
         ],
       },
@@ -228,6 +231,7 @@ export class KaminoVaultsClient {
     if (accounts.length === 0) {
       throw new Error("Kamino vaults not found");
     }
+    // Parse and cache vault states
     return accounts.map((a) => {
       const vaultState = KVaultState.decode(
         a.pubkey,
@@ -241,6 +245,8 @@ export class KaminoVaultsClient {
     });
   }
 
+  // Given a list of token mints (may or may not be kvault share), return
+  // matched kvault addresses
   async getVaultPdasByShareMints(mints: PublicKey[]): Promise<PublicKey[]> {
     if (this.vaultStates.size === 0) {
       await this.findAndParseKaminoVaults();
@@ -264,10 +270,10 @@ export class KaminoVaultsClient {
   }
 
   public async composeRemainingAccounts(
-    allocationStrategies: KVaultAllocation[],
+    allocations: KVaultAllocation[],
     pricingMode: boolean = false,
   ): Promise<AccountMeta[]> {
-    const reserves = allocationStrategies.map((strategy) => strategy.reserve);
+    const reserves = allocations.map((strategy) => strategy.reserve);
     const parsedReserves =
       await this.kaminoLending.fetchAndParseReserves(reserves);
 
