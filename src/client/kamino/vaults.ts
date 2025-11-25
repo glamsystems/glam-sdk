@@ -22,7 +22,7 @@ import {
 import { KVaultAllocation, KVaultState } from "../../deser/kaminoLayouts";
 import { PkMap } from "../../utils";
 import { KaminoLendingClient } from "./lending";
-import { EVENT_AUTHORITY } from "./types";
+import { KAMINO_VAULTS_EVENT_AUTHORITY } from "./types";
 
 class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
   public async depositTx(
@@ -78,7 +78,7 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
         klendProgram: KAMINO_LENDING_PROGRAM,
         tokenProgram: vaultState.tokenProgram,
         sharesTokenProgram,
-        eventAuthority: EVENT_AUTHORITY,
+        eventAuthority: KAMINO_VAULTS_EVENT_AUTHORITY,
         program: KAMINO_VAULTS_PROGRAM,
       })
       .remainingAccounts(remainingAccounts)
@@ -149,21 +149,23 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
         withdrawFromAvailableTokenProgram: vaultState.tokenProgram,
         withdrawFromAvailableSharesTokenProgram: sharesTokenProgram,
         withdrawFromAvailableKlendProgram: KAMINO_LENDING_PROGRAM,
-        withdrawFromAvailableEventAuthority: EVENT_AUTHORITY,
+        withdrawFromAvailableEventAuthority: KAMINO_VAULTS_EVENT_AUTHORITY,
         withdrawFromAvailableProgram: KAMINO_VAULTS_PROGRAM,
         withdrawFromReserveVaultState: vault,
-        withdrawFromReserveReserve: withdrawReserve.address,
+        withdrawFromReserveReserve: withdrawReserve.getAddress(),
         withdrawFromReserveCtokenVault: vaultCollateralTokenVault,
-        withdrawFromReserveLendingMarket: withdrawReserve.market,
+        withdrawFromReserveLendingMarket: withdrawReserve.lendingMarket,
         withdrawFromReserveLendingMarketAuthority:
-          this.client.kaminoLending.getMarketAuthority(withdrawReserve.market),
+          this.client.kaminoLending.getMarketAuthority(
+            withdrawReserve.lendingMarket,
+          ),
         withdrawFromReserveReserveLiquiditySupply:
-          withdrawReserve.liquiditySupplyVault,
+          withdrawReserve.liquidity.supplyVault,
         withdrawFromReserveReserveCollateralMint:
-          withdrawReserve.collateralMint,
+          withdrawReserve.collateral.mintPubkey,
         withdrawFromReserveReserveCollateralTokenProgram: TOKEN_PROGRAM_ID,
         withdrawFromReserveInstructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
-        eventAuthority: EVENT_AUTHORITY,
+        eventAuthority: KAMINO_VAULTS_EVENT_AUTHORITY,
         program: KAMINO_VAULTS_PROGRAM,
       })
       .remainingAccounts(remainingAccounts)
@@ -282,8 +284,8 @@ export class KaminoVaultsClient {
       isSigner: false,
       isWritable: true,
     }));
-    const marketMetas = parsedReserves.map(({ market }) => ({
-      pubkey: market,
+    const marketMetas = parsedReserves.map(({ lendingMarket }) => ({
+      pubkey: lendingMarket,
       isSigner: false,
       isWritable: false,
     }));

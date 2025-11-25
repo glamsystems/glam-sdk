@@ -267,6 +267,13 @@ export class BaseClient {
       lookupTableAccounts.push(...glamLookupTableAccounts);
     }
 
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "Lookup tables:",
+        lookupTableAccounts.map((a) => a.key.toBase58()),
+      );
+    }
+
     const recentBlockhash = (await this.blockhashWithCache.get()).blockhash;
 
     const { unitsConsumed, error, serializedTx } = await getSimulationResult(
@@ -330,12 +337,10 @@ export class BaseClient {
     const txConnection =
       this.cluster === ClusterNetwork.Mainnet
         ? new Connection(
-            process.env?.NEXT_PUBLIC_TX_RPC ||
-              process.env?.TX_RPC ||
+            process.env.NEXT_PUBLIC_TX_RPC ||
+              process.env.TX_RPC ||
               this.connection.rpcEndpoint,
-            {
-              commitment: this.connection.commitment,
-            },
+            { commitment: this.connection.commitment },
           )
         : this.connection;
 

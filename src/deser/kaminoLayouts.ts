@@ -14,6 +14,7 @@ import { PublicKey } from "@solana/web3.js";
 import { bfToDecimal, BigFractionBytes, charsToName, Fraction } from "../utils";
 import { Decodable } from "./base";
 import Decimal from "decimal.js";
+import { KAMINO_LENDING_PROGRAM } from "../constants";
 
 const MAX_RESERVES = 25;
 
@@ -472,6 +473,31 @@ export class Reserve extends Decodable {
   get pendingReferrerFees(): Decimal {
     return new Fraction(this.liquidity.pendingReferrerFeesSf).toDecimal();
   }
+
+  get scopePriceFeed(): PublicKey {
+    return this.config.tokenInfo.scopeConfiguration.priceFeed;
+  }
+
+  get liquidityFeeReceiver(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fee_receiver"),
+        this.lendingMarket.toBuffer(),
+        this.liquidity.mintPubkey.toBuffer(),
+      ],
+      KAMINO_LENDING_PROGRAM,
+    )[0];
+  }
+
+  get farmDebtNullable(): PublicKey | null {
+    return this.farmDebt.equals(PublicKey.default) ? null : this.farmDebt;
+  }
+
+  get farmCollateralNullable(): PublicKey | null {
+    return this.farmCollateral.equals(PublicKey.default)
+      ? null
+      : this.farmCollateral;
+  }
 }
 
 //
@@ -615,4 +641,16 @@ export class Obligation extends Decodable {
     ),
     array(u64(), 93, "padding3"),
   ]);
+
+  get activeDeposits() {
+    return this.deposits.filter(
+      ({ depositReserve }) => !depositReserve.equals(PublicKey.default),
+    );
+  }
+
+  get activeBorrows() {
+    return this.borrows.filter(
+      ({ borrowReserve }) => !borrowReserve.equals(PublicKey.default),
+    );
+  }
 }

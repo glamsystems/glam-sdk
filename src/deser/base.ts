@@ -10,6 +10,7 @@ import { PublicKey } from "@solana/web3.js";
  */
 export abstract class Decodable {
   readonly _address!: PublicKey; // To avoid potential name conflict with decoded fields
+
   static _layout: ReturnType<typeof struct>;
 
   static decode<T extends Decodable>(
@@ -21,5 +22,9 @@ export abstract class Decodable {
     const instance = new this();
     Object.assign(instance, { _address: address, ...data });
     return instance;
+  }
+
+  getAddress() {
+    return this._address;
   }
 }

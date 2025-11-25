@@ -6,11 +6,7 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import {
-  KaminoLendingClient,
-  KaminoVaultsClient,
-  ParsedReserve,
-} from "./kamino";
+import { KaminoLendingClient, KaminoVaultsClient } from "./kamino";
 
 import { BaseClient } from "./base";
 
@@ -41,7 +37,7 @@ import {
 } from "@solana/spl-token";
 import { KAMINO_LENDING_PROGRAM, KAMINO_OBTRIGATION_SIZE } from "../constants";
 import { fetchTokensList, TokenListItem } from "./jupiter";
-import { KVaultState } from "../deser";
+import { KVaultState, Obligation, Reserve } from "../deser";
 
 export class Holding {
   readonly uiAmount!: number;
@@ -224,9 +220,9 @@ export class PriceClient {
     }
 
     // Build a map of parsed kamino reserves
-    const kaminoReservesMap = new PkMap<ParsedReserve>();
+    const kaminoReservesMap = new PkMap<Reserve>();
     for (let i = 0; i < kaminoReserves.length; i++) {
-      const reserve = this.klend.parseReserve(
+      const reserve = Reserve.decode(
         kaminoReserves[i],
         accountsDataMap.get(kaminoReserves[i])!,
       );
@@ -391,13 +387,14 @@ export class PriceClient {
 
     const obligationReservesMap = new PkMap<PkSet>();
     for (const { pubkey, account } of obligationAccounts) {
-      const reservesSet = new PkSet();
-      const { deposits, borrows } = this.klend.parseObligation(
+      const { activeDeposits, activeBorrows } = Obligation.decode(
         pubkey,
         account.data,
       );
-      deposits.map(({ reserve }) => reservesSet.add(reserve));
-      borrows.map(({ reserve }) => reservesSet.add(reserve));
+      const reservesSet = new PkSet([
+        ...activeDeposits.map((d) => d.depositReserve),
+        ...activeBorrows.map((b) => b.borrowReserve),
+      ]);
       obligationReservesMap.set(pubkey, reservesSet);
     }
 
@@ -497,41 +494,37 @@ export class PriceClient {
 
   getKaminoLendHoldings(
     obligationPubkeys: Iterable<PublicKey>,
-    reservesMap: PkMap<ParsedReserve>,
+    reservesMap: PkMap<Reserve>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
     priceSource: string,
   ): Holding[] {
     const holdings: Holding[] = [];
     for (const obligation of obligationPubkeys) {
-      const { deposits, borrows } = this.klend.parseObligation(
+      const { activeDeposits, activeBorrows } = Obligation.decode(
         obligation,
         accountsDataMap.get(obligation)!,
       );
 
-      for (const { reserve, depositedAmount } of deposits) {
-        const {
-          collateralExchangeRate,
-          liquidityMint,
-          liquidityMintDecimals,
-          market,
-        } = reservesMap.get(reserve)!;
+      for (const { depositReserve, depositedAmount } of activeDeposits) {
+        const { collateralExchangeRate, lendingMarket, liquidity } =
+          reservesMap.get(depositReserve)!;
         const supplyAmount = new Decimal(depositedAmount.toString())
           .div(collateralExchangeRate)
           .floor();
         const amount = new BN(supplyAmount.toString());
-        const { usdPrice, slot } = tokenPricesMap.get(liquidityMint)!;
+        const { usdPrice, slot } = tokenPricesMap.get(liquidity.mintPubkey)!;
         const holding = new Holding(
-          liquidityMint,
-          liquidityMintDecimals,
+          liquidity.mintPubkey,
+          liquidity.mintDecimals.toNumber(),
           amount,
           usdPrice,
           { slot, source: priceSource },
           "KaminoLend",
           {
             obligation,
-            market,
-            reserve,
+            market: lendingMarket,
+            reserve: depositReserve,
             direction: "deposit" as const,
           },
         );
@@ -539,16 +532,12 @@ export class PriceClient {
       }
 
       for (const {
-        reserve,
+        borrowReserve,
         borrowedAmountSf,
         cumulativeBorrowRateBsf,
-      } of borrows) {
-        const {
-          cumulativeBorrowRate,
-          liquidityMint,
-          liquidityMintDecimals,
-          market,
-        } = reservesMap.get(reserve)!;
+      } of activeBorrows) {
+        const { cumulativeBorrowRate, lendingMarket, liquidity } =
+          reservesMap.get(borrowReserve)!;
         const obligationCumulativeBorrowRate = bfToDecimal(
           cumulativeBorrowRateBsf,
         );
@@ -559,18 +548,18 @@ export class PriceClient {
           .ceil();
 
         const amount = new BN(borrowAmount.toString());
-        const { usdPrice, slot } = tokenPricesMap.get(liquidityMint)!;
+        const { usdPrice, slot } = tokenPricesMap.get(liquidity.mintPubkey)!;
         const holding = new Holding(
-          liquidityMint,
-          liquidityMintDecimals,
+          liquidity.mintPubkey,
+          liquidity.mintDecimals.toNumber(),
           amount,
           usdPrice,
           { slot, source: priceSource },
           "KaminoLend",
           {
             obligation,
-            market,
-            reserve,
+            market: lendingMarket,
+            reserve: borrowReserve,
             direction: "borrow" as const,
           },
         );
@@ -583,7 +572,7 @@ export class PriceClient {
 
   getKaminoVaultsHoldings(
     kvaultAtasAndStates: PkMap<KVaultState>,
-    reservesMap: PkMap<ParsedReserve>,
+    reservesMap: PkMap<Reserve>,
     accountsDataMap: PkMap<Buffer>,
     tokenPricesMap: PkMap<TokenListItem>,
     priceSource: string,
@@ -645,15 +634,17 @@ export class PriceClient {
     const reservesSet = new PkSet();
 
     // Get all reserves used by obligations
-    parsedObligations.map(({ address: obligation, deposits, borrows }) => {
-      obligationReservesMap.set(obligation, new PkSet());
-      deposits.forEach(({ reserve }) => {
-        reservesSet.add(reserve);
-        obligationReservesMap.get(obligation)?.add(reserve);
+    parsedObligations.map((obligation) => {
+      const { activeDeposits, activeBorrows } = obligation;
+      const address = obligation.getAddress();
+      obligationReservesMap.set(address, new PkSet());
+      activeDeposits.forEach(({ depositReserve }) => {
+        reservesSet.add(depositReserve);
+        obligationReservesMap.get(address)?.add(depositReserve);
       });
-      borrows.forEach(({ reserve }) => {
-        reservesSet.add(reserve);
-        obligationReservesMap.get(obligation)?.add(reserve);
+      activeBorrows.forEach(({ borrowReserve }) => {
+        reservesSet.add(borrowReserve);
+        obligationReservesMap.get(address)?.add(borrowReserve);
       });
     });
 
@@ -666,12 +657,15 @@ export class PriceClient {
     );
 
     // Refresh obligations
-    parsedObligations.forEach(({ address: obligation, lendingMarket }) => {
+    parsedObligations.forEach((obligation) => {
+      const { lendingMarket } = obligation;
+      const address = obligation.getAddress();
+
       ixs.push(
         this.klend.txBuilder.refreshObligationIx({
-          obligation,
+          obligation: address,
           lendingMarket,
-          reserves: Array.from(obligationReservesMap.get(obligation) || []),
+          reserves: Array.from(obligationReservesMap.get(address) || []),
         }),
       );
     });
