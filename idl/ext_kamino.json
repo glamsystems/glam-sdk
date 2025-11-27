@@ -1928,6 +1928,9 @@
           "writable": true
         },
         {
+          "name": "withdraw_from_available_global_config"
+        },
+        {
           "name": "withdraw_from_available_token_vault",
           "writable": true
         },

@@ -1934,6 +1934,9 @@ export type ExtKamino = {
           "writable": true
         },
         {
+          "name": "withdrawFromAvailableGlobalConfig"
+        },
+        {
           "name": "withdrawFromAvailableTokenVault",
           "writable": true
         },

@@ -140,6 +140,7 @@ class TxBuilder extends BaseTxBuilder<KaminoVaultsClient> {
         glamState: this.client.base.statePda,
         glamSigner,
         withdrawFromAvailableVaultState: vault,
+        withdrawFromAvailableGlobalConfig: this.client.globalConfigPda,
         withdrawFromAvailableTokenVault: vaultState.tokenVault,
         withdrawFromAvailableBaseVaultAuthority: vaultState.baseVaultAuthority,
         withdrawFromAvailableUserTokenAta: userTokenAta,
@@ -245,6 +246,13 @@ export class KaminoVaultsClient {
 
       return vaultState;
     });
+  }
+
+  get globalConfigPda() {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("global_config")],
+      KAMINO_VAULTS_PROGRAM,
+    )[0];
   }
 
   // Given a list of token mints (may or may not be kvault share), return
