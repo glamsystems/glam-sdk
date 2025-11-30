@@ -11,6 +11,14 @@ import {
 } from "@solana/web3.js";
 import { GlamProtocolIdlJson } from "../glamExports";
 
+const JUPITER_SWAP_ERRORS: Record<number, string> = {
+  6001: "Jupiter swap failed: Slippage tolerance exceeded",
+  6008: "Jupiter swap failed: Not enough account keys",
+  6014: "Jupiter swap failed: Incorrect token program ID",
+  6024: "Jupiter swap failed: Insufficient funds",
+  6025: "Jupiter swap failed: Invalid token account",
+};
+
 /**
  * Parses program logs to extract error message
  */
@@ -28,6 +36,28 @@ export function parseProgramLogs(logs?: null | string[]): string {
       return errorMsgLog.split("Error Message:")[1].trim();
     } else {
       return "Insufficient funds";
+    }
+  }
+
+  // Match the following pattern to find Jupiter error code in logs
+  // "Program JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4 failed: custom program error: 0x1788"
+  const jupiterErrorLog = (logs || []).find(
+    (log) =>
+      log.includes("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4") &&
+      log.includes("custom program error:"),
+  );
+
+  if (jupiterErrorLog) {
+    const match = jupiterErrorLog.match(
+      /custom program error: (0x[0-9a-fA-F]+)/,
+    );
+    if (match) {
+      const errorCodeHex = match[1];
+      const errorCode = parseInt(errorCodeHex, 16);
+      const jupiterError = JUPITER_SWAP_ERRORS[errorCode];
+      if (jupiterError) {
+        return jupiterError;
+      }
     }
   }
 
@@ -96,8 +126,7 @@ const getErrorFromRpcResponse = (
         }
         // @ts-ignore due to missing typing information mentioned above.
         const instructionError = error["InstructionError"];
-        // An instruction error is a custom program error and looks like:
-        // [1, {"Custom": 1}]
+        // An instruction error is a custom program error and looks like: [1, {"Custom": 1}]
         // See also https://solana.stackexchange.com/a/931/294
         const customErrorCode = instructionError[1]["Custom"];
         const { errors: glamErrors } = GlamProtocolIdlJson;
