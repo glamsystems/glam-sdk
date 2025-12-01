@@ -9,7 +9,7 @@ import {
   RpcResponseAndContext,
   SimulatedTransactionResponse,
 } from "@solana/web3.js";
-import { GlamProtocolIdlJson } from "../glamExports";
+import GlamProtocolIdlJson from "../../target/idl/glam_protocol.json";
 
 const JUPITER_SWAP_ERRORS: Record<number, string> = {
   6001: "Jupiter swap failed: Slippage tolerance exceeded",

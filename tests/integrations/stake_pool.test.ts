@@ -31,7 +31,6 @@ describe("stake_pool", () => {
       (a, b) => b.activatedStake - a.activatedStake,
     )[0].votePubkey;
     defaultVote = new PublicKey(vote);
-
     const integrationAcls = [
       {
         integrationProgram: glamClient.protocolProgram.programId,

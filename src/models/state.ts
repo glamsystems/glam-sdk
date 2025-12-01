@@ -1,5 +1,5 @@
 import { IdlTypes, IdlAccounts } from "@coral-xyz/anchor";
-import { GlamProtocol, GlamMintIdlJson } from "../glamExports";
+import { GlamProtocol, getGlamMintProgramId } from "../glamExports";
 import { PublicKey } from "@solana/web3.js";
 import {
   ExtensionType,
@@ -269,8 +269,8 @@ export class StateModel extends StateIdlModel {
       }
 
       // Parse mint policy
-      const mintIntegrationPolicy = stateAccount.integrationAcls?.find(
-        (acl) => acl.integrationProgram.toString() === GlamMintIdlJson.address,
+      const mintIntegrationPolicy = stateAccount.integrationAcls?.find((acl) =>
+        acl.integrationProgram.equals(getGlamMintProgramId()),
       );
       const mintPolicyData = mintIntegrationPolicy?.protocolPolicies?.find(
         (policy: any) => policy.protocolBitflag === 1,

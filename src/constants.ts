@@ -1,4 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
+import {
+  getExtCctpProgramId,
+  getExtDriftProgramId,
+  getExtKaminoProgramId,
+  getExtSplProgramId,
+  getExtStakePoolProgramId,
+  getGlamMintProgramId,
+  getGlamProtocolProgramId,
+} from "./glamExports";
 
 export const SEED_STATE = "state"; // protocol program
 export const SEED_VAULT = "vault"; // protocol program
@@ -145,7 +154,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
   Record<string, { name: string; permissions: Record<number, string> }>
 > = {
   // Self integration
-  GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz: {
+  [getGlamProtocolProgramId().toBase58()]: {
     "0000000000000001": {
       name: "System Program",
       permissions: {
@@ -170,7 +179,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // GLAM mint
-  GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh: {
+  [getGlamMintProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Glam Mint",
       permissions: {
@@ -187,7 +196,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // Kamino integration program
-  G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde: {
+  [getExtKaminoProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Kamino Lend",
       permissions: {
@@ -215,7 +224,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // Drift integration program
-  G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F: {
+  [getExtDriftProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Drift Protocol",
       permissions: {
@@ -241,7 +250,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // Token integration program
-  G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta: {
+  [getExtSplProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Spl Token",
       permissions: {
@@ -250,7 +259,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // CCTP integration program
-  G1NTcMDYgNLpDwgnrpSZvoSKQuR9NXG7S3DmtNQCDmrK: {
+  [getExtCctpProgramId().toBase58()]: {
     "0000000000000001": {
       name: "CCTP",
       permissions: {
@@ -259,7 +268,7 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
     },
   },
   // Stake pool integration program
-  G1NTstCVkEhGVQPnPe6r7yEyRTvnp3ta63AFkEKxqg25: {
+  [getExtStakePoolProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Stake Pool",
       permissions: {
