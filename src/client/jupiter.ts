@@ -14,7 +14,7 @@ import {
 import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
 import { JUPITER_API_DEFAULT, WSOL } from "../constants";
 import { STAKE_POOLS_MAP } from "../assets";
-import { fetchMintsAndTokenPrograms } from "../utils/accounts";
+import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { VaultClient } from "./vault";
 
 export type QuoteParams = {
@@ -30,6 +30,7 @@ export type QuoteParams = {
   maxAccounts?: number;
   dexes?: string[];
   excludeDexes?: string[];
+  instructionVersion: "V1" | "V2";
 };
 
 export type QuoteResponse = {
@@ -111,7 +112,21 @@ export async function fetchTokenPrices(
   });
 }
 
-export async function fetchTokensList(): Promise<TokenListItem[]> {
+let tokenListCache: { data: TokenListItem[]; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+export async function fetchTokensList(
+  forceRefresh = false,
+): Promise<TokenListItem[]> {
+  const now = Date.now();
+
+  if (
+    !forceRefresh &&
+    tokenListCache &&
+    now - tokenListCache.timestamp < CACHE_TTL
+  ) {
+    return tokenListCache.data;
+  }
+
   const response = await fetch(`${JUPITER_API}/tokens/v2/tag?query=verified`);
   const data = await response.json();
 
@@ -131,6 +146,8 @@ export async function fetchTokensList(): Promise<TokenListItem[]> {
     usdPrice: t.usdPrice,
     slot: t.priceBlockId,
   }));
+
+  tokenListCache = { data: tokenList, timestamp: now };
   return tokenList;
 }
 
@@ -174,9 +191,6 @@ export async function getSwapInstructions(
 }
 
 class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
-  /**
-   * Returns the instructions for a Jupiter swap and the lookup tables
-   */
   async swapIxs(
     options: {
       quoteParams?: QuoteParams;
@@ -245,13 +259,10 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
     const swapIx: { data: any; keys: AccountMeta[] } =
       this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
-    const [inputTokenProgram, outputTokenProgram] = (
-      await fetchMintsAndTokenPrograms(this.client.base.connection, [
-        inputMint,
-        outputMint,
-      ])
-    ).map((x) => x.tokenProgram);
-
+    const { tokenProgram: outputTokenProgram } = await fetchMintAndTokenProgram(
+      this.client.base.connection,
+      outputMint,
+    );
     const inputStakePool =
       STAKE_POOLS_MAP.get(inputMint.toBase58())?.poolState || null;
     const outputStakePool =
@@ -269,10 +280,6 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
       .accounts({
         glamState: this.client.base.statePda,
         glamSigner,
-        inputMint,
-        outputMint,
-        inputTokenProgram,
-        outputTokenProgram,
         inputStakePool,
         outputStakePool,
       })

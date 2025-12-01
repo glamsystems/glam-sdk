@@ -429,142 +429,12 @@
           "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
         },
         {
-          "name": "input_vault_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "glam_vault"
-              },
-              {
-                "kind": "account",
-                "path": "input_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "input_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "output_vault_ata",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "glam_vault"
-              },
-              {
-                "kind": "account",
-                "path": "output_token_program"
-              },
-              {
-                "kind": "account",
-                "path": "output_mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "input_mint"
-        },
-        {
-          "name": "output_mint"
-        },
-        {
           "name": "input_stake_pool",
           "optional": true
         },
         {
           "name": "output_stake_pool",
           "optional": true
-        },
-        {
-          "name": "associated_token_program",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "input_token_program"
-        },
-        {
-          "name": "output_token_program"
         }
       ],
       "args": [
@@ -1775,8 +1645,8 @@
     },
     {
       "code": 50006,
-      "name": "InvalidVoteSide",
-      "msg": "Invalid vote side"
+      "name": "InvalidSwapAmount",
+      "msg": "Invalid swap amount"
     },
     {
       "code": 50007,

@@ -75,7 +75,7 @@ export class JupiterSwapPolicy {
   swapAllowlist: PublicKey[] | null;
 
   static _layout = struct([
-    u32("maxSlippageBps"),
+    u16("maxSlippageBps"),
     option(vec(publicKey()), "swapAllowlist"),
   ]);
 
@@ -92,14 +92,9 @@ export class JupiterSwapPolicy {
   }
 
   public encode(): Buffer {
-    const swapAllowlistSize = this.swapAllowlist
-      ? 1 + 4 + this.swapAllowlist.length * 32
-      : 1;
-    const totalSize = 4 + swapAllowlistSize;
-
-    const buffer = Buffer.alloc(totalSize);
-    JupiterSwapPolicy._layout.encode(this, buffer);
-    return buffer;
+    const buf = Buffer.alloc(1000);
+    const written = JupiterSwapPolicy._layout.encode(this, buf);
+    return buf.subarray(0, written);
   }
 }
 
