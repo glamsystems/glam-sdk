@@ -3,6 +3,7 @@ import {
   getExtCctpProgramId,
   getExtDriftProgramId,
   getExtKaminoProgramId,
+  getExtMarinadeProgramId,
   getExtSplProgramId,
   getExtStakePoolProgramId,
   getGlamMintProgramId,
@@ -146,12 +147,15 @@ export const DRIFT_POOL_MAPPING: Record<number, string> = {
   3: "Exponent Market",
 };
 
-// Permission mappings for each protocol - maps bit positions to permission names
-export const PROTOCOLS_AND_PERMISSIONS: Record<
+/**
+ * Get protocol and permission mappings at runtime to ensure correct program IDs based on environment
+ */
+export const getProtocolsAndPermissions = (): Record<
   string,
   Record<string, { name: string; permissions: Record<number, string> }>
-> = {
-  // Self integration
+> => ({
+  // Supported protocols and permissions are defined in:
+  // @anchor/programs/glam_protocol/src/state/acl.rs
   [getGlamProtocolProgramId().toBase58()]: {
     "0000000000000001": {
       name: "System Program",
@@ -176,7 +180,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // GLAM mint
+  // GLAM mint protocols and permissions are defined in:
+  // @anchor/programs/glam_mint/src/state/acl.rs
   [getGlamMintProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Glam Mint",
@@ -193,7 +198,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // Kamino integration program
+  // Kamino integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_kamino/src/state/acl.rs
   [getExtKaminoProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Kamino Lend",
@@ -221,7 +227,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // Drift integration program
+  // Drift integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_drift/src/state/acl.rs
   [getExtDriftProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Drift Protocol",
@@ -247,7 +254,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // Token integration program
+  // Token integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_spl/src/state/acl.rs
   [getExtSplProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Spl Token",
@@ -256,7 +264,8 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // CCTP integration program
+  // CCTP integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_cctp/src/state/acl.rs
   [getExtCctpProgramId().toBase58()]: {
     "0000000000000001": {
       name: "CCTP",
@@ -265,7 +274,19 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-  // Stake pool integration program
+  // Marinade integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_marinade/src/state/acl.rs
+  [getExtMarinadeProgramId().toBase58()]: {
+    "0000000000000001": {
+      name: "Marinade",
+      permissions: {
+        [1 << 0]: "Stake",
+        [1 << 1]: "Unstake",
+      },
+    },
+  },
+  // Stake pool integration program protocols and permissions are defined in:
+  // @anchor/programs/ext_stake_pool/src/state/acl.rs
   [getExtStakePoolProgramId().toBase58()]: {
     "0000000000000001": {
       name: "Stake Pool",
@@ -301,15 +322,15 @@ export const PROTOCOLS_AND_PERMISSIONS: Record<
       },
     },
   },
-};
+});
 
 /**
  * (Program ID, Bitflag) -> Protocol Name
  */
-export const PROTOCOL_NAME_BY_PROGRAM_AND_BITFLAG = (() => {
+export const getProtocolNameByProgramAndBitflag = () => {
   const mapping: Record<string, Record<string, string>> = {};
 
-  Object.entries(PROTOCOLS_AND_PERMISSIONS).forEach(
+  Object.entries(getProtocolsAndPermissions()).forEach(
     ([programId, protocols]) => {
       mapping[programId] = {};
       Object.entries(protocols).forEach(([bitflag, protocol]) => {
@@ -319,15 +340,15 @@ export const PROTOCOL_NAME_BY_PROGRAM_AND_BITFLAG = (() => {
   );
 
   return mapping;
-})();
+};
 
 /**
  * Protocol Name -> (Program ID, Bitflag)
  */
-export const PROGRAM_AND_BITFLAG_BY_PROTOCOL_NAME = (() => {
+export const getProgramAndBitflagByProtocolName = () => {
   const mapping: Record<string, [string, string]> = {};
 
-  Object.entries(PROTOCOLS_AND_PERMISSIONS).forEach(
+  Object.entries(getProtocolsAndPermissions()).forEach(
     ([programId, protocols]) => {
       Object.entries(protocols).forEach(([bitflag, protocol]) => {
         const name = protocol.name.replace(" ", "");
@@ -337,4 +358,4 @@ export const PROGRAM_AND_BITFLAG_BY_PROTOCOL_NAME = (() => {
   );
 
   return mapping;
-})();
+};

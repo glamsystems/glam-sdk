@@ -395,9 +395,15 @@ export class BaseClient {
   private async confirmTransaction(
     txSig: string,
   ): Promise<{ value: { err: any } }> {
+    const websocketDisabled =
+      process.env.NEXT_PUBLIC_WEBSOCKET_DISABLED ||
+      process.env.WEBSOCKET_DISABLED;
+    // Treat "0", "false", "", undefined, null as false
+    // Treat "1", "true", or any other truthy string as true
     const useWebSocket = !(
-      process.env?.NEXT_PUBLIC_WEBSOCKET_DISABLED ||
-      process.env?.WEBSOCKET_DISABLED
+      websocketDisabled &&
+      websocketDisabled !== "0" &&
+      websocketDisabled !== "false"
     );
 
     if (useWebSocket) {

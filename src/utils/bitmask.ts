@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { PROTOCOLS_AND_PERMISSIONS } from "../constants";
+import { getProtocolsAndPermissions } from "../constants";
 
 /**
  * Formats a bitmask as a binary string.
@@ -26,7 +26,8 @@ export function parseProtocolsBitmask(
 ): {
   protocols: { bitflag: number | BN; name: string }[];
 } {
-  const integration = PROTOCOLS_AND_PERMISSIONS[integrationProgram.toBase58()];
+  const integration =
+    getProtocolsAndPermissions()[integrationProgram.toBase58()];
   if (!integration) {
     return {
       protocols: [],
@@ -86,7 +87,8 @@ export function parseProtocolPermissionsBitmask(
     throw new Error("Protocol bitflag must have exactly 1 bit set");
   }
 
-  const integration = PROTOCOLS_AND_PERMISSIONS[integrationProgram.toBase58()];
+  const integration =
+    getProtocolsAndPermissions()[integrationProgram.toBase58()];
   if (!integration) {
     return {
       protocol: formatBits(protocolBitflag), // Unknown protocol bitflag

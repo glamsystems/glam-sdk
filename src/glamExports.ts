@@ -33,43 +33,50 @@ export type ExtMarinadeProgram = Program<ExtMarinade>;
 export type ExtStakePoolProgram = Program<ExtStakePool>;
 export type ExtCctpProgram = Program<ExtCctp>;
 
+const isStaging = () => {
+  const s = process.env.NEXT_PUBLIC_GLAM_STAGING || process.env.GLAM_STAGING;
+  // Treat "0", "false", "", undefined, null as false
+  // Treat "1", "true", or any other truthy string as true
+  return !!(s && s !== "0" && s !== "false");
+};
+
 export function getGlamProtocolProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgptmbgJVi5f8ZmSRVZjZkDQwqKa3xWuUtD5WmJHz");
   }
   return new PublicKey("GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz");
 }
 
 export function getGlamMintProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgm1M39mhgnvgyScGUDRwNn5kNVSd97hTtyow1Et5");
   }
   return new PublicKey("GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh");
 }
 
 export function getExtSplProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgs9nJgX8PmRHWAAEP9H7xT3ZkaPWSGPYbj3mXdTa");
   }
   return new PublicKey("G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta");
 }
 
 export function getExtDriftProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgdpMFXKobURsFtStdaMLRSuwdmDUsrndov7kyu9h");
   }
   return new PublicKey("G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F");
 }
 
 export function getExtKaminoProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgKa2Gq9wf5hM3DFWx1TvUrGYzDYszyFGq3XBY9Uq");
   }
   return new PublicKey("G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde");
 }
 
 export function getExtStakePoolProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey("gstgS4dNeT3BTEQa1aaTS2b8CsAUz1SmwQDGosHSPsw");
   }
   return new PublicKey("G1NTstCVkEhGVQPnPe6r7yEyRTvnp3ta63AFkEKxqg25");
@@ -77,10 +84,18 @@ export function getExtStakePoolProgramId() {
 
 // TODO: Update pubkey after ext_cctp staging program is deployed
 export function getExtCctpProgramId() {
-  if (process.env.GLAM_STAGING) {
+  if (isStaging()) {
     return new PublicKey(ExtCctpIdlJson.address);
   }
   return new PublicKey(ExtCctpIdlJson.address);
+}
+
+// TODO: Update pubkey after ext_marinade staging program is deployed
+export function getExtMarinadeProgramId() {
+  if (isStaging()) {
+    return new PublicKey(ExtMarinadeIdlJson.address);
+  }
+  return new PublicKey(ExtMarinadeIdlJson.address);
 }
 
 export function getGlamProtocolProgram(
