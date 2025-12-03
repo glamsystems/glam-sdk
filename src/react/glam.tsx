@@ -20,12 +20,10 @@ import { DriftMarketConfigs, DriftUser } from "../client/drift";
 import { TokenAccount } from "../client/base";
 import { useCluster } from "./cluster-provider";
 import {
-  fetchTokenPrices,
-  fetchTokensList,
   TokenListItem,
   TokenPrice,
-} from "../client/jupiter";
-import { charsToName } from "../utils/common";
+  JupiterApiClient,
+} from "../utils/jupiterApi";
 
 declare global {
   interface Window {
@@ -262,7 +260,7 @@ export function GlamProvider({
     enabled: cluster.network === "mainnet-beta",
     refetchInterval: 30_000,
     queryFn: () => {
-      const tokenMints = new Set([] as string[]);
+      const tokenMints = new Set<string>([]);
 
       tokenMints.add(WSOL.toBase58()); // Always add wSOL feed so that we can price SOL
 
@@ -282,7 +280,7 @@ export function GlamProvider({
       });
 
       const tokens = Array.from(tokenMints);
-      return fetchTokenPrices(tokens);
+      return new JupiterApiClient().fetchTokenPrices(tokens);
     },
   });
   useEffect(() => {
@@ -296,7 +294,7 @@ export function GlamProvider({
   //
   const { data: tokenListData } = useQuery({
     queryKey: ["jupiter-tokens-list"],
-    queryFn: () => fetchTokensList(),
+    queryFn: () => new JupiterApiClient().fetchTokensList(),
     staleTime: 1000 * 60 * 60, // 1 hour
   });
   useEffect(() => setJupTokenList(tokenListData || []), [tokenListData]);

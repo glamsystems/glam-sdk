@@ -4,7 +4,6 @@ import {
   TransactionInstruction,
   TransactionSignature,
   VersionedTransaction,
-  AccountMeta,
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -12,183 +11,17 @@ import {
 } from "@solana/spl-token";
 
 import { BaseClient, BaseTxBuilder, TxOptions } from "./base";
-import { JUPITER_API_DEFAULT, WSOL } from "../constants";
+import { WSOL } from "../constants";
 import { STAKE_POOLS_MAP } from "../assets";
 import { fetchMintAndTokenProgram } from "../utils/accounts";
 import { VaultClient } from "./vault";
-
-export type QuoteParams = {
-  inputMint: string;
-  outputMint: string;
-  amount: number;
-  autoSlippage?: boolean;
-  autoSlippageCollisionUsdValue?: number;
-  slippageBps?: number;
-  swapMode?: string;
-  onlyDirectRoutes?: boolean;
-  asLegacyTransaction?: boolean;
-  maxAccounts?: number;
-  dexes?: string[];
-  excludeDexes?: string[];
-  instructionVersion: "V1" | "V2";
-};
-
-export type QuoteResponse = {
-  inputMint: string;
-  inAmount: number | string;
-  outputMint: string;
-  outAmount: number | string;
-  otherAmountThreshold: number | string;
-  swapMode: string;
-  slippageBps: number;
-  platformFee: number | null;
-  priceImpactPct: number | string;
-  routePlan: any[];
-  contextSlot: number;
-  timeTaken: number;
-};
-
-export type TokenListItem = {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI: string;
-  tags: string[];
-  usdPrice: number;
-  slot: number;
-};
-
-export type TokenPrice = {
-  mint: string;
-  price: number; // USD
-};
-
-type JsonAccountMeta = {
-  pubkey: string; // not PublicKey but just string
-  isSigner: boolean;
-  isWritable: boolean;
-};
-
-type InstructionFromJupiter = {
-  programId: string;
-  accounts: JsonAccountMeta[];
-  data: string;
-};
-
-type SwapInstructions = {
-  tokenLedgerInstruction?: InstructionFromJupiter | null;
-  otherInstructions?: InstructionFromJupiter[];
-  computeBudgetInstructions: InstructionFromJupiter[];
-  setupInstructions?: InstructionFromJupiter[];
-  swapInstruction: InstructionFromJupiter;
-  cleanupInstruction?: InstructionFromJupiter;
-  addressLookupTableAddresses: string[];
-};
-
-// Jupiter API for tokens and prices
-const JUPITER_API =
-  process.env.NEXT_PUBLIC_JUPITER_API ||
-  process.env.JUPITER_API ||
-  JUPITER_API_DEFAULT;
-
-// Jupiter API for swap
-const JUPITER_SWAP_API =
-  process.env.NEXT_PUBLIC_JUPITER_SWAP_API ||
-  process.env.JUPITER_SWAP_API ||
-  JUPITER_API_DEFAULT + "/swap/v1";
-
-export async function fetchTokenPrices(
-  pubkeys: string[],
-): Promise<TokenPrice[]> {
-  const res = await fetch(`${JUPITER_API}/price/v3?ids=${pubkeys.join(",")}`);
-  const data = await res.json();
-
-  return Object.entries(data).map(([key, val]) => {
-    return {
-      mint: key,
-      price: (val as any).usdPrice,
-    };
-  });
-}
-
-let tokenListCache: { data: TokenListItem[]; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-export async function fetchTokensList(
-  forceRefresh = false,
-): Promise<TokenListItem[]> {
-  const now = Date.now();
-
-  if (
-    !forceRefresh &&
-    tokenListCache &&
-    now - tokenListCache.timestamp < CACHE_TTL
-  ) {
-    return tokenListCache.data;
-  }
-
-  const response = await fetch(`${JUPITER_API}/tokens/v2/tag?query=verified`);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch tokens list and prices from Jupiter: ${response.status} ${data?.message}`,
-    );
-  }
-
-  const tokenList = data?.map((t: any) => ({
-    address: t.id,
-    name: t.name,
-    symbol: t.symbol,
-    decimals: t.decimals,
-    logoURI: t.icon,
-    tags: t.tags,
-    usdPrice: t.usdPrice,
-    slot: t.priceBlockId,
-  }));
-
-  tokenListCache = { data: tokenList, timestamp: now };
-  return tokenList;
-}
-
-export async function fetchProgramLabels(): Promise<{ [key: string]: string }> {
-  const res = await fetch(`${JUPITER_SWAP_API}/program-id-to-label`);
-  const data = await res.json();
-  return data;
-}
-
-export async function getQuoteResponse(quoteParams: QuoteParams): Promise<any> {
-  const res = await fetch(
-    `${JUPITER_SWAP_API}/quote?` +
-      new URLSearchParams(
-        Object.entries(quoteParams).map(([key, val]) => [key, String(val)]),
-      ),
-  );
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error);
-  }
-  return data;
-}
-
-export async function getSwapInstructions(
-  quoteResponse: any,
-  from: PublicKey,
-): Promise<any> {
-  const res = await fetch(`${JUPITER_SWAP_API}/swap-instructions`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      quoteResponse,
-      userPublicKey: from.toBase58(),
-    }),
-  });
-
-  return await res.json();
-}
+import {
+  JupiterApiClient,
+  JupiterInstruction,
+  QuoteParams,
+  QuoteResponse,
+  SwapInstructions,
+} from "../utils/jupiterApi";
 
 class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
   async swapIxs(
@@ -201,15 +34,13 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
   ): Promise<[TransactionInstruction[], PublicKey[]]> {
     const glamVault = this.client.base.vaultPda;
 
-    let swapInstruction: InstructionFromJupiter;
-    let addressLookupTableAddresses: string[];
+    const { quoteParams, quoteResponse } = options;
+    let swapInstructions = options?.swapInstructions;
     let inputMint: PublicKey;
     let outputMint: PublicKey;
     let amount: BN;
 
-    const { quoteParams, quoteResponse, swapInstructions } = options;
-
-    if (swapInstructions === undefined) {
+    if (!swapInstructions) {
       let resolvedQuoteResponse = quoteResponse;
       if (resolvedQuoteResponse === undefined) {
         if (quoteParams === undefined) {
@@ -217,7 +48,8 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
             "quoteParams must be specified when quoteResponse and swapInstructions are not specified.",
           );
         }
-        resolvedQuoteResponse = await getQuoteResponse(quoteParams);
+        resolvedQuoteResponse =
+          await this.client.jupApi.getQuoteResponse(quoteParams);
       }
 
       inputMint = new PublicKey(
@@ -228,9 +60,10 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
       );
       amount = new BN(quoteParams?.amount || resolvedQuoteResponse!.inAmount);
 
-      const ins = await getSwapInstructions(resolvedQuoteResponse, glamVault);
-      swapInstruction = ins.swapInstruction;
-      addressLookupTableAddresses = ins.addressLookupTableAddresses;
+      swapInstructions = await this.client.jupApi.getSwapInstructions(
+        resolvedQuoteResponse,
+        glamVault,
+      );
     } else {
       // If swapInstructions is provided, we need to extract mints and amount from quoteParams or quoteResponse
       if (quoteParams) {
@@ -246,18 +79,14 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
           "Either quoteParams or quoteResponse must be specified when using swapInstructions.",
         );
       }
-
-      swapInstruction = swapInstructions.swapInstruction;
-      addressLookupTableAddresses =
-        swapInstructions.addressLookupTableAddresses;
     }
 
+    const { swapInstruction, addressLookupTableAddresses } = swapInstructions;
+
+    const swapIx = this.toTransactionInstruction(swapInstruction);
     const lookupTables = addressLookupTableAddresses.map(
       (pubkey) => new PublicKey(pubkey),
     );
-
-    const swapIx: { data: any; keys: AccountMeta[] } =
-      this.toTransactionInstruction(swapInstruction, glamVault.toBase58());
 
     const { tokenProgram: outputTokenProgram } = await fetchMintAndTokenProgram(
       this.client.base.connection,
@@ -327,34 +156,33 @@ class TxBuilder extends BaseTxBuilder<JupiterSwapClient> {
     return preInstructions;
   };
 
-  toTransactionInstruction = (
-    ixPayload: InstructionFromJupiter,
-    vaultStr: string,
-  ) => {
-    if (ixPayload === null) {
-      throw new Error("ixPayload is null");
+  toTransactionInstruction = (ix: JupiterInstruction) => {
+    if (ix === null) {
+      throw new Error("Cannot parse a null instruction");
     }
 
     return new TransactionInstruction({
-      programId: new PublicKey(ixPayload.programId),
-      keys: ixPayload.accounts.map((key: any) => ({
-        pubkey: new PublicKey(key.pubkey),
-        isSigner: key.isSigner && key.pubkey != vaultStr,
-        isWritable: key.isWritable,
+      programId: new PublicKey(ix.programId),
+      keys: ix.accounts.map(({ pubkey, isWritable }) => ({
+        pubkey: new PublicKey(pubkey),
+        isSigner: false, // No additional signer needed
+        isWritable,
       })),
-      data: Buffer.from(ixPayload.data, "base64"),
+      data: Buffer.from(ix.data, "base64"),
     });
   };
 }
 
 export class JupiterSwapClient {
   public readonly txBuilder: TxBuilder;
+  public readonly jupApi: JupiterApiClient;
 
   public constructor(
     readonly base: BaseClient,
     readonly vault: VaultClient,
   ) {
     this.txBuilder = new TxBuilder(this);
+    this.jupApi = new JupiterApiClient();
   }
 
   public async swap(

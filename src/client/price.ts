@@ -36,8 +36,8 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { KAMINO_LENDING_PROGRAM, KAMINO_OBTRIGATION_SIZE } from "../constants";
-import { fetchTokensList, TokenListItem } from "./jupiter";
 import { KVaultState, Obligation, Reserve } from "../deser";
+import { JupiterApiClient, TokenListItem } from "../utils/jupiterApi";
 
 export class Holding {
   readonly uiAmount!: number;
@@ -89,6 +89,7 @@ export class PriceClient {
     readonly kvaults: KaminoVaultsClient,
     readonly drift: DriftProtocolClient,
     readonly dvaults: DriftVaultsClient,
+    readonly jupiterApi: JupiterApiClient,
   ) {}
 
   get cachedStateModel(): StateModel | null {
@@ -231,7 +232,8 @@ export class PriceClient {
 
     // Build a map of token prices (in USD)
     const tokenPricesMap = new PkMap<TokenListItem>();
-    (await fetchTokensList()).forEach((item) => {
+    const tokenList = await this.jupiterApi.fetchTokensList();
+    tokenList.forEach((item) => {
       const tokenMint = new PublicKey(item.address);
       tokenPricesMap.set(tokenMint, item);
     });

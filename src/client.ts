@@ -120,6 +120,7 @@ export class GlamClient extends BaseClient {
         this.kaminoVaults,
         this.drift,
         this.driftVaults,
+        this.jupiterSwap.jupApi,
       );
     }
     return this._price;
