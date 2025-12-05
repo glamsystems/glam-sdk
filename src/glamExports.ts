@@ -21,6 +21,13 @@ import ExtMarinadeIdlJson from "../target/idl/ext_marinade.json";
 import ExtStakePoolIdlJson from "../target/idl/ext_stake_pool.json";
 import ExtCctpIdlJson from "../target/idl/ext_cctp.json";
 
+import GlamProtocolIdlJsonStaging from "../target/idl/glam_protocol-staging.json";
+import GlamMintIdlJsonStaging from "../target/idl/glam_mint-staging.json";
+import ExtSplIdlJsonStaging from "../target/idl/ext_spl-staging.json";
+import ExtDriftIdlJsonStaging from "../target/idl/ext_drift-staging.json";
+import ExtKaminoIdlJsonStaging from "../target/idl/ext_kamino-staging.json";
+import ExtStakePoolIdlJsonStaging from "../target/idl/ext_stake_pool-staging.json";
+
 export { GlamProtocol, GlamMint, GlamConfig };
 
 export type GlamProtocolProgram = Program<GlamProtocol>;
@@ -40,76 +47,81 @@ const isStaging = () => {
   return !!(s && s !== "0" && s !== "false");
 };
 
+export function getGlamProtocolIdl() {
+  return isStaging() ? GlamProtocolIdlJsonStaging : GlamProtocolIdlJson;
+}
+
+export function getGlamMintIdl() {
+  return isStaging() ? GlamMintIdlJsonStaging : GlamMintIdlJson;
+}
+
+export function getExtSplIdl() {
+  return isStaging() ? ExtSplIdlJsonStaging : ExtSplIdlJson;
+}
+
+export function getExtDriftIdl() {
+  return isStaging() ? ExtDriftIdlJsonStaging : ExtDriftIdlJson;
+}
+
+export function getExtKaminoIdl() {
+  return isStaging() ? ExtKaminoIdlJsonStaging : ExtKaminoIdlJson;
+}
+
+export function getExtStakePoolIdl() {
+  return isStaging() ? ExtStakePoolIdlJsonStaging : ExtStakePoolIdlJson;
+}
+
+export function getExtCctpIdl() {
+  // TODO: Update pubkey after ext_cctp staging program is deployed
+  return isStaging() ? ExtCctpIdlJson : ExtCctpIdlJson;
+}
+
+export function getExtMarinadeIdl() {
+  // TODO: Update pubkey after ext_cctp staging program is deployed
+  return isStaging() ? ExtMarinadeIdlJson : ExtMarinadeIdlJson;
+}
+
 export function getGlamProtocolProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgptmbgJVi5f8ZmSRVZjZkDQwqKa3xWuUtD5WmJHz");
-  }
-  return new PublicKey("GLAMpaME8wdTEzxtiYEAa5yD8fZbxZiz2hNtV58RZiEz");
+  const idl = isStaging() ? GlamProtocolIdlJsonStaging : GlamProtocolIdlJson;
+  return new PublicKey(idl.address);
 }
 
 export function getGlamMintProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgm1M39mhgnvgyScGUDRwNn5kNVSd97hTtyow1Et5");
-  }
-  return new PublicKey("GM1NtvvnSXUptTrMCqbogAdZJydZSNv98DoU5AZVLmGh");
+  return new PublicKey(getGlamMintIdl().address);
 }
 
 export function getExtSplProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgs9nJgX8PmRHWAAEP9H7xT3ZkaPWSGPYbj3mXdTa");
-  }
-  return new PublicKey("G1NTsQ36mjPe89HtPYqxKsjY5HmYsDR6CbD2gd2U2pta");
+  return new PublicKey(getExtSplIdl().address);
 }
 
 export function getExtDriftProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgdpMFXKobURsFtStdaMLRSuwdmDUsrndov7kyu9h");
-  }
-  return new PublicKey("G1NTdrBmBpW43msRQmsf7qXSw3MFBNaqJcAkGiRmRq2F");
+  return new PublicKey(getExtDriftIdl().address);
 }
 
 export function getExtKaminoProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgKa2Gq9wf5hM3DFWx1TvUrGYzDYszyFGq3XBY9Uq");
-  }
-  return new PublicKey("G1NTkDEUR3pkEqGCKZtmtmVzCUEdYa86pezHkwYbLyde");
+  return new PublicKey(getExtKaminoIdl().address);
 }
 
 export function getExtStakePoolProgramId() {
-  if (isStaging()) {
-    return new PublicKey("gstgS4dNeT3BTEQa1aaTS2b8CsAUz1SmwQDGosHSPsw");
-  }
-  return new PublicKey("G1NTstCVkEhGVQPnPe6r7yEyRTvnp3ta63AFkEKxqg25");
+  return new PublicKey(getExtStakePoolIdl().address);
 }
 
-// TODO: Update pubkey after ext_cctp staging program is deployed
 export function getExtCctpProgramId() {
-  if (isStaging()) {
-    return new PublicKey(ExtCctpIdlJson.address);
-  }
-  return new PublicKey(ExtCctpIdlJson.address);
+  return new PublicKey(getExtCctpIdl().address);
 }
 
-// TODO: Update pubkey after ext_marinade staging program is deployed
 export function getExtMarinadeProgramId() {
-  if (isStaging()) {
-    return new PublicKey(ExtMarinadeIdlJson.address);
-  }
-  return new PublicKey(ExtMarinadeIdlJson.address);
+  return new PublicKey(getExtMarinadeIdl().address);
 }
 
 export function getGlamProtocolProgram(
   provider: Provider,
 ): GlamProtocolProgram {
-  const idl = { ...GlamProtocolIdlJson };
-  idl.address = getGlamProtocolProgramId().toBase58();
-  return new Program<GlamProtocol>(idl, provider);
+  return new Program<GlamProtocol>(getGlamProtocolIdl(), provider);
 }
 
 export function getGlamMintProgram(provider: Provider): GlamMintProgram {
-  const idl = { ...GlamMintIdlJson };
-  idl.address = getGlamMintProgramId().toBase58();
-  return new Program<GlamMint>(idl, provider);
+  return new Program<GlamMint>(getGlamMintIdl(), provider);
 }
 
 export function getGlamConfigProgram(provider: Provider): GlamConfigProgram {
@@ -117,21 +129,15 @@ export function getGlamConfigProgram(provider: Provider): GlamConfigProgram {
 }
 
 export function getExtSplProgram(provider: Provider): ExtSplProgram {
-  const idl = { ...ExtSplIdlJson };
-  idl.address = getExtSplProgramId().toBase58();
-  return new Program<ExtSpl>(idl, provider);
+  return new Program<ExtSpl>(getExtSplIdl(), provider);
 }
 
 export function getExtDriftProgram(provider: Provider): ExtDriftProgram {
-  const idl = { ...ExtDriftIdlJson };
-  idl.address = getExtDriftProgramId().toBase58();
-  return new Program<ExtDrift>(idl, provider);
+  return new Program<ExtDrift>(getExtDriftIdl(), provider);
 }
 
 export function getExtKaminoProgram(provider: Provider): ExtKaminoProgram {
-  const idl = { ...ExtKaminoIdlJson };
-  idl.address = getExtKaminoProgramId().toBase58();
-  return new Program<ExtKamino>(idl, provider);
+  return new Program<ExtKamino>(getExtKaminoIdl(), provider);
 }
 
 export function getExtMarinadeProgram(provider: Provider): ExtMarinadeProgram {
@@ -141,9 +147,7 @@ export function getExtMarinadeProgram(provider: Provider): ExtMarinadeProgram {
 export function getExtStakePoolProgram(
   provider: Provider,
 ): ExtStakePoolProgram {
-  const idl = { ...ExtStakePoolIdlJson };
-  idl.address = getExtStakePoolProgramId().toBase58();
-  return new Program<ExtStakePool>(idl, provider);
+  return new Program<ExtStakePool>(getExtStakePoolIdl(), provider);
 }
 
 export function getExtCctpProgram(provider: Provider): ExtCctpProgram {

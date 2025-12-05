@@ -9,7 +9,7 @@ import {
   RpcResponseAndContext,
   SimulatedTransactionResponse,
 } from "@solana/web3.js";
-import GlamProtocolIdlJson from "../../target/idl/glam_protocol.json";
+import { getGlamProtocolIdl } from "../glamExports";
 
 const JUPITER_SWAP_ERRORS: Record<number, string> = {
   6001: "Jupiter swap failed: Slippage tolerance exceeded",
@@ -129,7 +129,7 @@ const getErrorFromRpcResponse = (
         // An instruction error is a custom program error and looks like: [1, {"Custom": 1}]
         // See also https://solana.stackexchange.com/a/931/294
         const customErrorCode = instructionError[1]["Custom"];
-        const { errors: glamErrors } = GlamProtocolIdlJson;
+        const { errors: glamErrors } = getGlamProtocolIdl();
         const glamError = glamErrors.find((e) => e.code === customErrorCode);
         if (glamError?.msg) {
           throw new Error(glamError.msg);
